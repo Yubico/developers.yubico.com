@@ -1,0 +1,60 @@
+= developers.yubico.com
+
+The developers.yubico.com site is generated from the content located in the
+content subdirectory. Directories form the site hierarchy and AsciiDoc files
+form the content.
+
+The hierarchy consists of 2 levels of directories (for Sections and
+Subsections), with Documents contained in Subsections. Filenames are
+case-sensitive and should be both readable and URL safe (underscores will be
+converted into spaces when displayed in the menu structure).
+Ordering can be specified for items in a directory by creating a ".order" file,
+containing each child filename on a separate line, in the desired order.
+Each Section and Subsection should have an index page.
+
+Different modules can be added to extend functionality, such as generating a
+releases page from a template and a file listing, or creating a whole
+subsection from a GitHub projects README and wiki pages.
+
+== Notes:
+/usr/share/asciidoc/asciidocapi.py can be used!
+-s strips header/footer
+
+== Context
+A context object provides information about the current state. It provides:
+* Base source directory
+* Base target directory
+* Relative current source directory
+* Relative current target directory
+
+== Modules
+Modules can be used to modify content in Subsections, like converting AsciiDoc
+files to HTML, or pulling content from an external source such as GitHub. Each
+module gets invoked with a source Subsection directory, as well as the output
+directory. A module is used to decorate partials with surrounding content.
+
+Which modules to use is defined by the configuration in settings.json
+
+=== GitHub project module
+Pulls README and docs from a GitHub repository, renaming the README to
+index.adoc, and placing the asciidoc files in docs as Documents.
+
+=== AsciiDoc module
+Converts .adoc files to .partial files, Documents missing header/footer.
+
+=== man page module
+Converts .1 files to .partial files in /man/ (not listed as documents).
+
+=== Releases module
+Generates an index.partial in a directory with release artifacts, with
+accompanying signatures. Triggered by a .releases file containing a regular
+expression matching releases and capturing the version in a group named
+"version".
+
+=== PageRenderer module
+Renders .partial files as full pages using a template and the current context.
+
+== Building a Subsection from GitHub
+Given a GitHub project, we can extract the README for the index page, and the
+documentation pages for Documents. This requires the README as well as each
+documentation page to be asciidoc formatted.

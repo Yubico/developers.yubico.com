@@ -1,0 +1,284 @@
+== Installation and configuration of Yubikey KSM ==
+
+The Yubikey KSM module is responsible for storing AES keys and
+providing two interfaces:
+
+* Decrypting an OTP
+
+* Adding new AES keys
+
+It is intentionally not possible to extract the AES keys or to make
+modifications to the database content, see [[DesignGoals]].
+
+The installation procedure documented below applies to any Unix-like
+environment, although it was written for Debian GNU/Linux version 5.0
+(aka "lenny").
+
+Since version 1.1 of the YK-KSM, any database supported by the PHP PDO
+interface is supported by the YK-KSM.  To give concrete examples, we
+will here explain how to set it up using MySQL or PostgreSQL.  Note
+that you only need to install either MySQL or PostgreSQL (or any other
+supported database), not both!
+
+=== Step 1: YK-KSM Installation ===
+
+First you should download and install the latest YK-KSM release:
+
+ <nowiki>user@ksm:~$ sudo apt-get install wget make help2man
+ ...
+ user@ksm:~$ wget http://yubico.github.com/yubikey-ksm/releases/yubikey-ksm-1.8.tgz
+ ...
+ user@ksm:~$ tar xfz yubikey-ksm-1.8.tgz
+ user@ksm:~$ cd yubikey-ksm-1.8
+ user@ksm:~/yubikey-ksm-1.8$ sudo make install
+ ...
+ user@ksm:~/yubikey-ksm-1.8$</nowiki>
+ 
+Alternatively, you may also check out YK-KSM from its source code repository.  For example:
+ 
+ <nowiki>user@ksm:~$ sudo apt-get install git make help2man
+ ...
+ user@ksm:~$ git clone git://github.com/Yubico/yubikey-ksm.git
+ ...
+ user@ksm:~$ cd yubikey-ksm
+ user@ksm:~/yubikey-ksm$ sudo make install
+ ...
+ user@ksm:~/yubikey-ksm$</nowiki>
+
+The rest of this documentation will assume you have installed the
+YK-KSM with 'make install'.
+
+=== Step 2: Install web server and PHP ===
+
+You will need to install a web server with PHP5 and the PHP mcrypt
+interface:
+
+ user@ksm:~$ sudo apt-get install apache2 php5 php5-mcrypt
+
+Any web server with PHP support should work.
+
+=== Step 3A: MySQL Installation ===
+
+Install the required packages:
+
+ <nowiki>user@ksm:~$ sudo apt-get install mysql-server php5-mysql libdbd-mysql-perl
+ ...
+ user@ksm:~$</nowiki>
+ 
+The installation asks you for a MySQL "root" password, and I recommend
+to specify one.
+ 
+To avoid having to specify a password when using the 'mysql' tool
+interactively, you can store the password in ~/.my.cnf, see
+/usr/share/doc/mysql-server-5.0/README.Debian.gz.  For example:
+ 
+ <nowiki>user@ksm:~$ cat > .my.cnf
+ [client]
+ user = root
+ password = YOURPASSWORD
+ user@ksm:~$</nowiki>
+
+First create the database and the tables as follows:
+
+ <nowiki>user@ksm:~$ echo 'create database ykksm' | mysql
+ user@ksm:~$ mysql ykksm < /usr/share/doc/yubikey-ksm/ykksm-db.sql 
+ user@ksm:~$</nowiki>
+
+You should also create database users for the decrypt and import
+interfaces, normally called 'ykksmreader' and 'ykksmimporter':
+
+ <nowiki>user@ksm:~$ mysql --silent ykksm
+ mysql> CREATE USER 'ykksmreader';
+ mysql> GRANT SELECT ON ykksm.yubikeys TO 'ykksmreader'@'localhost';
+ mysql> SET PASSWORD FOR 'ykksmreader'@'localhost' = PASSWORD('yourpassword');
+ mysql> CREATE USER 'ykksmimporter';
+ mysql> GRANT INSERT ON ykksm.yubikeys TO 'ykksmimporter'@'localhost';
+ mysql> SET PASSWORD FOR 'ykksmimporter'@'localhost' = PASSWORD('otherpassword');
+ mysql> FLUSH PRIVILEGES;
+ mysql> \q
+ user@ksm:~$</nowiki>
+
+== Step 3B: PostgreSQL Installation ==
+
+Install some packages:
+
+ <nowiki>
+ user@ksm:~$ sudo apt-get install postgresql php5-pgsql libdbd-pg-perl
+ ...
+ user@ksm:~$ 
+</nowiki>
+
+The database needs to be initialized as follows:
+
+ <nowiki>
+ user@ksm:~$ sudo su postgres
+ postgres@ksm:~$ createdb ykksm
+ postgres@ksm:~$ psql ykksm < /usr/share/doc/yubikey-ksm/ykksm-db.sql 
+ postgres@ksm:~$
+</nowiki>
+
+You also need to create a user for the decrypt interface, normally
+called 'ykksmreader':
+
+ <nowiki>
+ postgres@ksm:~$ psql ykksm -q
+ ykksm=# CREATE USER ykksmreader PASSWORD 'yourpassword';
+ ykksm=# GRANT SELECT ON yubikeys TO ykksmreader;
+ ykksm=# CREATE USER ykksmimporter PASSWORD 'otherpassword';
+ ykksm=# GRANT INSERT ON yubikeys TO ykksmimporter;
+ ykksm=# \q
+ postgres@ksm:~$ 
+</nowiki>
+
+During installation and debugging it may be useful to watch the
+database log entries:
+
+ <nowiki>
+ user@ksm:~$ sudo tail -F /var/log/postgresql/postgresql-*-main.log &
+</nowiki>
+
+== Step 4: Include path configuration ==
+
+Set the include path by creating a file /etc/php5/conf.d/ykksm.ini
+with the following content:
+
+ <nowiki>
+ user@ksm:~$ sudo sh -c 'cat > /etc/php5/conf.d/ykksm.ini'
+ include_path = "/etc/yubico/ksm:/usr/share/yubikey-ksm"
+ user@ksm:~$ sudo /etc/init.d/apache2 restart
+ user@ksm:~$ 
+</nowiki>
+
+The paths are the default, if you installed the YK-KSM in some other
+place you need to modify the paths.
+
+== Step 5: Logging ==
+
+The PHP interface uses syslog for logging of incoming requests.  The
+facility is set in ykksm-config.php but defaults the LOG_LOCAL0.  To
+place these messages in a separate file, you can add the following to
+/etc/syslog.conf, or if you use rsyslog, create a file
+/etc/rsyslog.d/ykksm.conf with this content:
+
+ <nowiki>
+ user@ksm:~$ sudo sh -c 'cat > /etc/rsyslog.d/ykksm.conf'
+ local0.* -/var/log/ykksm.log
+ user@ksm:~$ sudo /etc/init.d/rsyslog restart
+ ...
+ user@ksm:~$ 
+</nowiki>
+
+The '-' before the filename avoids syncing the file after each write,
+which is recommended for performance.
+
+The log file can grow large quickly, so it is a good idea to setup
+rotation of log files.  Here is an example that rotates the log file
+weekly.  Create a file /etc/logrotate.d/ykksm like this:
+
+ <nowiki>
+ user@ksm:~$ sudo sh -c 'cat > /etc/logrotate.d/ykksm'
+ /var/log/ykksm.log {
+ 	weekly
+ 	missingok
+ 	rotate 9999
+ 	notifempty
+ 	postrotate
+ 		invoke-rc.d rsyslog reload > /dev/null
+ 	endscript
+ }
+ user@ksm:~$ 
+</nowiki>
+
+=== Step 5.1: Fix default log (optional) ===
+
+Unfortunately, most default syslog configuration, including the
+syslog.conf configuration file on Debian, will also log all entries to
+/var/log/syslog and/or /var/log/messages.
+
+I am not aware of any way to avoid this without modifying these other
+rules.  To avoid YK-KSM log entries in these other files, you must
+modify the default rules.  For example, edit the following lines of
+/etc/rsyslog.conf (or /etc/syslog.conf if you don't use rsyslog):
+
+ <nowiki>
+ *.*;auth,authpriv.none          -/var/log/syslog
+ *.=info;*.=notice;*.=warn;\
+         auth,authpriv.none;\
+         cron,daemon.none;\
+         mail,news.none          -/var/log/messages
+</nowiki>
+
+Change them into:
+
+ <nowiki>
+ *.*;auth,authpriv.none,local0.none              -/var/log/syslog
+ *.=info;*.=notice;*.=warn;\
+         auth,authpriv.none;\
+         cron,daemon.none;\
+         local0.none;\
+         mail,news.none          -/var/log/messages
+</nowiki>
+
+== Step 6: Decrypt OTP Interface ==
+
+The interface to decrypt OTPs is implemented using a PHP script.  You
+can place the script under any URL, but we recommend serving it as
+http://ykksm.example.org/wsapi/decrypt.  The simplest way is to use
+the 'symlink' rule in our makefile:
+
+ <nowiki>
+ user@ksm:~$ sudo make -f /usr/share/doc/yubikey-ksm/ykksm.mk symlink
+ install -d /var/www/wsapi
+ ln -sf /usr/share/yubikey-ksm/.htaccess /var/www/wsapi/.htaccess
+ ln -sf /usr/share/yubikey-ksm/ykksm-decrypt.php /var/www/wsapi/decrypt.php
+ user@ksm:~$ 
+</nowiki>
+
+You may also run the commands manually.
+
+== Step 7: YK-KSM Configuration ==
+
+You need to edit the ykksm-config.php script.  An example file is
+included in YK-KSM as 'ykksm-config.php'.  It is normally installed as
+/etc/yubico/ksm/ykksm-config.php:
+
+ <nowiki>
+ user@ksm:~$ sudo cat /etc/yubico/ksm/ykksm-config.php 
+ <?php
+ $db_dsn      = "mysql:dbname=ykksm;host=127.0.0.1";
+ $db_username = "ykksmreader";
+ $db_password = "yourpassword";
+ $db_options  = array();
+ $logfacility = LOG_LOCAL0;
+ ?>
+ user@ksm:~$ 
+</nowiki>
+
+Be careful about the user permissions and ownership so that unrelated
+users on the system cannot read the database password.
+
+Typically you only need to modify the database password, and possibly
+the database definition in $db_dsn.  Example DSN for a MySQL setup:
+
+ $db_dsn      = "mysql:dbname=ykksm;host=127.0.0.1";
+
+An example DSN for a PostgreSQL setup:
+
+ $db_dsn      = "pgsql:dbname=ykksm;host=127.0.0.1";
+
+=== The End ===
+
+You now have a YK-KSM up and running.  You can test the service by
+requesting a URL.  Using wget, for example:
+
+ <nowiki>
+ user@ksm:~$ sudo apt-get install wget
+ user@ksm:~$ wget -q -O - 'http://localhost/wsapi/decrypt?otp=dteffujehknhfjbrjnlnldnhcujvddbikngjrtgh'
+ ERR Unknown yubikey
+ user@ksm:~$
+</nowiki>
+ 
+You will need to import keys into the database for the decrypt
+function to do anything useful.  See [[ServerHardening]] on how to
+improve security of your system.  Likely next steps are
+[[GenerateKSMKey]], [[GenerateKeys]] and/or [[ImportKeysToKSM]].

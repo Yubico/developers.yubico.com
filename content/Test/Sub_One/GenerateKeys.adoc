@@ -1,0 +1,78 @@
+== Generate Keys ==
+
+To generate some AES keys for your !YubiKeys served via your YK-KSM,
+you use the 'ykksm-gen-keys' tool.  The tool is useful for generating
+large sets of test keys, for performance testing of the database and
+web interface.  It can also be used to produce keying material that
+are intended to used for programming real keys.
+
+As you should never store encryption keys in plaintext, you typically
+use the tool by piping it directly to GnuPG.  So the first step will
+always be to create a OpenPGP key for your KSM host, see
+[[GenerateKSMKey]].  Below we will both sign the data from and encrypt
+it to the same key id '8B88A11B'.  Here is how you would generate 5
+keys for test purposes:
+
+ user@ksm:~$ ykksm-gen-keys --urandom 1 5 | gpg -a --encrypt -r 8B88A11B -s > keys.txt
+ user@ksm:~$ 
+
+Note the flag --urandom will cause the tool to use /dev/urandom rather
+than /dev/random, which speed things up but is considered by some to
+have weaker security.
+
+After this step you may want to import the keys into your KSM, see
+[[ImportKeysToKSM]].
+
+In production, you may want to separate the key generation facility
+into a separate machine with a separate OpenPGP key.
+
+To display the test keys above, you can decrypt them using GnuPG:
+
+ <nowiki>user@ksm:~$ gpg < keys.txt 
+
+ You need a passphrase to unlock the secret key for
+ user: "YK-KSM crater Import Key"
+ 2048-bit ELG-E key, ID 140A17F1, created 2009-12-14 (main key ID 8B88A11B)
+ 
+ gpg: encrypted with 2048-bit ELG-E key, ID 140A17F1, created 2009-12-14
+       "YK-KSM crater Import Key"
+ # ykksm 1
+ # serialnr,identity,internaluid,aeskey,lockpw,created,accessed[,progflags]
+ 1,cccccccccccb,d74fbdf6a890,82211e0854e7369e83d941f24761a84e,881ae7bee927,2009-12-14T16:40:57,
+ 2,cccccccccccd,7a5ad1886b70,3091a8048524ab8407ae816457d764e5,8e5ab609e346,2009-12-14T16:40:57,
+ 3,ccccccccccce,981abbbeafb8,91be4bfd2f40e24ebd39386868aa9619,037b6f6ae73c,2009-12-14T16:40:57,
+ 4,cccccccccccf,c1f33c17f77b,a2389839d7b80bfe4c80258184aff4ce,abf92cbbdab3,2009-12-14T16:40:57,
+ 5,cccccccccccg,c55773192393,7387b5f6bede83f64a9cd75b2023826a,d70c937bbbff,2009-12-14T16:40:57,
+ gpg: Signature made Mon 14 Dec 2009 04:40:57 PM CET using DSA key ID 8B88A11B
+ gpg: Good signature from "YK-KSM crater Import Key"
+ user@ksm:~$</nowiki>
+
+The format is documented in the KeyProvisioningFormat wiki page.
+
+To generate many small files each containing just one key, you can use
+a small wrapper like this:
+
+
+ <nowiki>#!/bin/sh
+ 
+ set -e
+ 
+ start=$1
+ stop=$2
+ key=$3
+ urandom=$4
+ 
+ if test -z "$start" || test -z "$stop" || test -z "$key"; then
+     echo "Usage: run-gen-keys START STOP KEY [--urandom]"
+     echo ""
+     echo "Example usage:"
+     echo "  run-gen-keys 4711 11147 A1296239 --urandom"
+     echo ""
+     exit 0
+ fi
+ 
+ cur=$start
+ while test $cur -le $stop; do
+     ykksm-gen-keys $urandom $cur | gpg -a --sign --encrypt -r $key > $cur.asc
+     cur=`expr $cur + 1`
+ done</nowiki>

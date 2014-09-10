@@ -1,0 +1,36 @@
+== Yubikey KSM Decryption Protocol ==
+
+The protocol for asking the Yubikey Key Storage Module to decrypt an
+OTP is to request a HTTP resource as follows:
+
+ http://ykksm.example.com/wsapi/decrypt/?otp=dteffujehknhfjbrjnlnldnhcujvddbikngjrtgh
+
+On success, the response will follow this format:
+
+ ^OK .*
+
+For example:
+
+ OK counter=000f low=c541 high=a7 use=04
+
+The content of the various fields are as follows:
+
+* '''counter''': 16-bit hex integer, counting upwards on each powerup&touch
+
+* '''low''': 16-bit hex integer, low part of time-stamp of OTP
+
+* '''high''': 8-bit hex integer, high part of time-stamp of OTP
+
+* '''use''': 8-bit hex integer, counting upwards on each touch
+
+On soft errors, the response will follow this format:
+
+ ^ERR .*
+
+For example:
+
+ ERR Invalid OTP format
+
+The data matching .* will be a english error message in one line.
+
+Any other kind of response means a hard error occured.
