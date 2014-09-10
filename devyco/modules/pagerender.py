@@ -55,7 +55,9 @@ class PageRenderModule(Module):
         children = dirs + partials + htmls
         self._populate_children(current, children)
         set_active(self._site, self._context['path'])
+        self._context['nav'] = self._site['children']
         self._render_children(current, partials)
+        self._ensure_index()
 
     def _get_current(self):
         return traverse_to(self._site, self._context['path'])
@@ -89,12 +91,18 @@ class PageRenderModule(Module):
     def _render_partial(self, fname):
         out_name = path.basename(fname).replace('.partial', '.html')
         tplt = self._env.get_template('site.template')
-        self._context['nav'] = self._site['children']
         with open(fname, 'r') as infile:
             content = infile.read()
         with open(path.join(self._target, out_name), 'w') as outfile:
             outfile.write(tplt.render(content=content, **self._context))
         os.remove(fname)
+
+    def _ensure_index(self):
+        index_file = path.join(self._target, 'index.html')
+        if not path.isfile(index_file):
+            tplt = self._env.get_template('site.template')
+            with open(index_file, 'w') as f:
+                f.write(tplt.render(content='', **self._context))
 
 
 module = PageRenderModule()

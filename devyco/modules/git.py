@@ -13,7 +13,7 @@ from devyco.module import Module
 class GitModule(Module):
 
     def _run(self):
-        conf_file = path.join(self._target, '.github.json')
+        conf_file = path.join(self._target, '.git.json')
         if path.isfile(conf_file):
             with open(conf_file, 'r') as f:
                 conf = json.load(f)
