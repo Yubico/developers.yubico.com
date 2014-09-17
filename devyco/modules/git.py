@@ -1,5 +1,12 @@
 """
 Clones a git repo and extracts data.
+Activated by a .git.json file in a content directory, containing the following
+settings:
+    url: Git repository URL (required).
+    index: File to use as index page (optional, defaults to "README")
+    documents: File pattern of documents (optional, defaults to "doc/*")
+
+TODO: Read BLURB file and add additional stuff to index page.
 """
 
 import os

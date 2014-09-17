@@ -4,7 +4,6 @@ Converts AsciiDoc formatted files with .adoc extension to .partial HTML files.
 
 import sys
 import os
-from os import path
 from devyco.module import Module
 
 sys.path.append('/usr/share/asciidoc/')
