@@ -11,7 +11,7 @@ from asciidocapi import AsciiDocAPI
 
 
 def strip_suffix(value):
-    return value.rsplit('.')[0]
+    return value.rsplit('.', 1)[0]
 
 
 class AsciiDocModule(Module):
