@@ -1,5 +1,7 @@
 """
 Wraps .partial HTML files in a template and outputs full .html files.
+Files listed in a "hidden" entry of the .conf.json will not be shown in the
+navigation.
 """
 
 import os

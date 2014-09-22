@@ -1,9 +1,11 @@
 """
 Clones a git repo and extracts data.
-Activated by a .git.json file in a content directory, containing the following
-settings:
+Activated by a "git" entry in .conf.json, containing the following settings:
     url: Git repository URL (required).
     files: List of filepatterns to copy from the repository (default: all)
+
+The "git" entry can also be a list of objects containing the settings above if
+multiple repositories should be clones.
 """
 
 import os
@@ -15,23 +17,33 @@ from devyco.module import Module
 
 class GitModule(Module):
 
+    def __init__(self):
+        super(GitModule, self).__init__()
+        self._updated = []
+
     def _run(self):
-        conf = self._context['dirconfig'].get('git')
-        if conf is None:
+        confs = self._context['dirconfig'].get('git')
+        if confs is None:
             return
 
-        repo_dir = self._clone(conf)
-        self._copy_files(repo_dir, conf.get('files', '*'))
+        if not isinstance(confs, list):
+            confs = [confs]
+
+        for conf in confs:
+            repo_dir = self._clone(conf)
+            self._copy_files(repo_dir, conf.get('files', '*'))
 
     def _clone(self, conf):
         url = conf['url']
         repo_dir = self.cache_dir(url, False)
-        if path.isdir(repo_dir):
-            print "Update:", url
-            os.system('(cd "%s" && git pull)' % repo_dir)
-        else:
-            print "clone:", url
-            os.system('git clone "%s" "%s"' % (url, repo_dir))
+        if url not in self._updated:
+            if path.isdir(repo_dir):
+                print "Update:", url
+                os.system('(cd "%s" && git pull)' % repo_dir)
+            else:
+                print "clone:", url
+                os.system('git clone "%s" "%s"' % (url, repo_dir))
+            self._updated.append(url)
         return repo_dir
 
     def _copy_files(self, repo_dir, files):
@@ -39,15 +51,19 @@ class GitModule(Module):
             files = [files]
         for fpattern in files:
             if isinstance(fpattern, basestring):
-                self._copy_file(repo_dir, fpattern, self._target)
+                self._copy_file(repo_dir, fpattern, None)
             else:
                 fpattern, dest = fpattern
                 self._copy_file(repo_dir, fpattern, dest)
 
-    def _copy_file(self, repo_dir, fpattern, dest):
+    def _copy_file(self, repo_dir, fpattern, dest=None):
         for match in glob(path.join(repo_dir, fpattern)):
-            target = path.join(dest, match[len(repo_dir)+1:])
-            dest_dir = path.dirname(target)
+            if dest is None:
+                target = path.join(self._target, match[len(repo_dir)+1:])
+                dest_dir = path.dirname(target)
+            else:
+                target = path.join(self._target, dest)
+                dest_dir = target
             if not path.isdir(dest_dir):
                 os.makedirs(dest_dir)
             if path.isdir(match):

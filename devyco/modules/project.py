@@ -1,7 +1,7 @@
 """
 Generates data from a project directory.
-Activated by a .project.json file in a content directory, containing the
-following settings:
+Activated by a "project" entry in a .conf.json file, containing the following
+settings:
     index: File to use as index page (optional, defaults to "README")
     documents: File pattern of documents (optional, defaults to "doc/*")
 
