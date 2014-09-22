@@ -69,12 +69,13 @@ class PageRenderModule(Module):
             if child_id == 'index.html':
                 continue  # Exclude index pages from being listed
             child_name = child_id.replace('.html', '')
+            hide = child_name in hidden or path.isdir(child) and not os.listdir(child)
             current['children'].append({
                 'id': child_id,
                 'url': current['url'] + '/' + child_id,
                 'name': display_name(child_name),
                 'active': False,
-                'hidden': child_name in hidden,
+                'hidden': hide,
                 'children': []
             })
 

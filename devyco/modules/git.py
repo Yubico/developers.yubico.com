@@ -3,14 +3,10 @@ Clones a git repo and extracts data.
 Activated by a .git.json file in a content directory, containing the following
 settings:
     url: Git repository URL (required).
-    index: File to use as index page (optional, defaults to "README")
-    documents: File pattern of documents (optional, defaults to "doc/*")
-
-TODO: Read BLURB file and add additional stuff to index page.
+    files: List of filepatterns to copy from the repository (default: all)
 """
 
 import os
-import json
 import shutil
 from os import path
 from glob import glob
@@ -20,13 +16,14 @@ from devyco.module import Module
 class GitModule(Module):
 
     def _run(self):
-        conf_file = path.join(self._target, '.git.json')
-        if path.isfile(conf_file):
-            with open(conf_file, 'r') as f:
-                conf = json.load(f)
-            self._extract(conf)
+        conf = self.read_json('.git.json')
+        if conf is None:
+            return
 
-    def _extract(self, conf):
+        repo_dir = self._clone(conf)
+        self._copy_files(repo_dir, conf.get('files', '*'))
+
+    def _clone(self, conf):
         url = conf['url']
         repo_dir = self.cache_dir(url, False)
         if path.isdir(repo_dir):
@@ -35,8 +32,29 @@ class GitModule(Module):
         else:
             print "clone:", url
             os.system('git clone "%s" "%s"' % (url, repo_dir))
-        self._get_index(repo_dir, conf)
-        self._get_docs(repo_dir, conf)
+        return repo_dir
+
+    def _copy_files(self, repo_dir, files):
+        if isinstance(files, basestring):
+            files = [files]
+        for fpattern in files:
+            if isinstance(fpattern, basestring):
+                self._copy_file(repo_dir, fpattern, self._target)
+            else:
+                fpattern, dest = fpattern
+                self._copy_file(repo_dir, fpattern, dest)
+
+    def _copy_file(self, repo_dir, fpattern, dest):
+        for match in glob(path.join(repo_dir, fpattern)):
+            target = path.join(dest, match[len(repo_dir)+1:])
+            dest_dir = path.dirname(target)
+            if not path.isdir(dest_dir):
+                os.makedirs(dest_dir)
+            print "copy to", target
+            if path.isdir(match):
+                shutil.copytree(match, target)
+            else:
+                shutil.copy(match, target)
 
     def _get_index(self, repo_dir, conf):
         source = path.join(repo_dir, conf.get('index', 'README'))

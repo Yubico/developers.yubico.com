@@ -1,4 +1,5 @@
 import os
+import json
 from os import path
 from glob import glob
 from hashlib import sha1
@@ -44,6 +45,13 @@ class Module(object):
         for name_filter in name_filters:
             target_files.extend(glob(path.join(target, name_filter)))
         return self._sort(target, self._exclude(target, target_files))
+
+    def read_json(self, fname):
+        fpath = path.join(self._target, fname)
+        if path.isfile(fpath):
+            with open(fpath, 'r') as f:
+                return json.load(f)
+        return None
 
     def read_files_list(self, basedir, fname):
         fpath = path.join(basedir, fname)
