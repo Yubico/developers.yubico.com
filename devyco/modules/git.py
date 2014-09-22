@@ -42,7 +42,6 @@ class GitModule(Module):
         source = path.join(repo_dir, conf.get('index', 'README'))
         target = path.join(self._target, 'index.adoc')
         shutil.copy(source, target)
-        print "cp %s %s" % (source, target)
 
     def _get_docs(self, repo_dir, conf):
         for doc in glob(path.join(repo_dir, conf.get('documents', 'doc/*'))):
@@ -51,7 +50,6 @@ class GitModule(Module):
                 shutil.copytree(doc, target)
             else:
                 shutil.copy(doc, target)
-            print "cp %s %s" % (doc, target)
 
 
 module = GitModule()

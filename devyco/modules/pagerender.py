@@ -40,8 +40,7 @@ def set_active(node, remaining):
 class PageRenderModule(Module):
     def __init__(self):
         super(PageRenderModule, self).__init__()
-        self._site = {'children':[], 'url': None}
-
+        self._site = {'children': [], 'url': None}
 
     def _run(self):
         if not hasattr(self, '_env'):
@@ -50,13 +49,13 @@ class PageRenderModule(Module):
 
         current = self._get_current()
         dirs = filter(path.isdir, self.list_files())
-        partials = self.list_files('*.partial')
-        htmls = self.list_files('*.html')
-        children = dirs + partials + htmls
+        documents = self.list_files(['*.partial', '*.html'])
+        children = dirs + documents
         self._populate_children(current, children)
         set_active(self._site, self._context['path'])
         self._context['nav'] = self._site['children']
-        self._render_children(current, partials)
+        self._render_children(current, filter(lambda x: x.endswith('.partial'),
+                                              documents))
         self._ensure_index()
 
     def _get_current(self):
