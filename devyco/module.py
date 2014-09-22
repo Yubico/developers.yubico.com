@@ -46,7 +46,7 @@ class Module(object):
         return self._sort(target, self._exclude(target, target_files))
 
     def read_files_list(self, basedir, fname):
-        fpath = path.join(basedir, '.exclude')
+        fpath = path.join(basedir, fname)
         if path.isfile(fpath):
             with open(fpath, 'r') as f:
                 return map(noext, f.read().splitlines())
