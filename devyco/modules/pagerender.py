@@ -40,7 +40,7 @@ def set_active(node, remaining):
 class PageRenderModule(Module):
     def __init__(self):
         super(PageRenderModule, self).__init__()
-        self._site = {'children': [], 'url': None}
+        self._site = {'children': [], 'url': ''}
 
     def _run(self):
         if not hasattr(self, '_env'):
@@ -69,7 +69,7 @@ class PageRenderModule(Module):
                 continue  # Exclude index pages from being listed
             current['children'].append({
                 'id': child_id,
-                'url': '/'.join(filter(None, [current['url'], child_id])),
+                'url': current['url'] + '/' + child_id,
                 'name': display_name(child_id.replace('.html', '')),
                 'active': False,
                 'children': []
