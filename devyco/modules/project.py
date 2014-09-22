@@ -1,11 +1,12 @@
 """
 Generates data from a project directory.
-Activated by a .project.json file in a content directory, containing the following
-settings:
+Activated by a .project.json file in a content directory, containing the
+following settings:
     index: File to use as index page (optional, defaults to "README")
     documents: File pattern of documents (optional, defaults to "doc/*")
 
-TODO: Read BLURB file and add additional stuff to index page.
+TODO: Read BLURB file and add additional stuff to index page (GitHub, TravisCI,
+license, etc.).
 """
 
 import shutil
@@ -17,22 +18,22 @@ from devyco.module import Module
 class ProjectModule(Module):
 
     def _run(self):
-        conf = self.read_json('.project.json')
+        conf = self._context['dirconfig'].get('project')
         if conf is None:
             return
 
-        self._get_index(conf)
-        self._get_docs(conf)
+        self._move_index(conf)
+        self._move_docs(conf)
 
-    def _get_index(self, conf):
+    def _move_index(self, conf):
         source = path.join(self._target, conf.get('index', 'README'))
         target = path.join(self._target, 'index.adoc')
         shutil.move(source, target)
 
-    def _get_docs(self, conf):
-        for doc in glob(path.join(self._target, conf.get('documents', 'doc/*'))):
+    def _move_docs(self, conf):
+        documents = conf.get('documents', 'doc/*')
+        for doc in glob(path.join(self._target, documents)):
             target = path.join(self._target, path.basename(doc))
-            print "mv %s %s" % (doc, target)
             shutil.move(doc, target)
 
 

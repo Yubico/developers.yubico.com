@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 from os import path
 from importlib import import_module
 
@@ -15,14 +16,18 @@ def traverse(context):
     if not path.isdir(target):
         os.mkdir(target)
 
+    config_file = path.join(target, '.conf.json')
+    if path.isfile(config_file):
+        print "Read conf:", config_file
+        with open(config_file, 'r') as f:
+            context['dirconfig'] = json.load(f)
+    else:
+        context['dirconfig'] = {}
+
     for module in context['modules']:
         module.run(context)
 
-    exclude_file = path.join(target, '.exclude')
-    excluded = []
-    if path.isfile(exclude_file):
-        with open(exclude_file, 'r') as f:
-            excluded = f.read().splitlines()
+    excluded = context['dirconfig'].get('exclude', [])
 
     for item in os.listdir(target):
         abs_item = path.join(target, item)

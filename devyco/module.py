@@ -46,13 +46,6 @@ class Module(object):
             target_files.extend(glob(path.join(target, name_filter)))
         return self._sort(target, self._exclude(target, target_files))
 
-    def read_json(self, fname):
-        fpath = path.join(self._target, fname)
-        if path.isfile(fpath):
-            with open(fpath, 'r') as f:
-                return json.load(f)
-        return None
-
     def read_files_list(self, basedir, fname):
         fpath = path.join(basedir, fname)
         if path.isfile(fpath):
@@ -62,7 +55,7 @@ class Module(object):
 
     def _exclude(self, basedir, files):
         target_files = []
-        exclude = self.read_files_list(basedir, '.exclude')
+        exclude = map(noext, self._context['dirconfig'].get('exclude', []))
         for filename in files:
             if noext(path.basename(filename)) not in exclude:
                 target_files.append(filename)
@@ -71,7 +64,7 @@ class Module(object):
     def _sort(self, basedir, files):
         sorted_files = []
         target_files = files[:]
-        for name in self.read_files_list(basedir, '.order'):
+        for name in map(noext, self._context['dirconfig'].get('order', [])):
             for filename in target_files[:]:
                 if noext(path.basename(filename)) == name:
                     sorted_files.append(filename)

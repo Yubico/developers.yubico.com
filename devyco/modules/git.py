@@ -16,7 +16,7 @@ from devyco.module import Module
 class GitModule(Module):
 
     def _run(self):
-        conf = self.read_json('.git.json')
+        conf = self._context['dirconfig'].get('git')
         if conf is None:
             return
 
@@ -50,24 +50,10 @@ class GitModule(Module):
             dest_dir = path.dirname(target)
             if not path.isdir(dest_dir):
                 os.makedirs(dest_dir)
-            print "copy to", target
             if path.isdir(match):
                 shutil.copytree(match, target)
             else:
                 shutil.copy(match, target)
-
-    def _get_index(self, repo_dir, conf):
-        source = path.join(repo_dir, conf.get('index', 'README'))
-        target = path.join(self._target, 'index.adoc')
-        shutil.copy(source, target)
-
-    def _get_docs(self, repo_dir, conf):
-        for doc in glob(path.join(repo_dir, conf.get('documents', 'doc/*'))):
-            target = path.join(self._target, path.basename(doc))
-            if path.isdir(doc):
-                shutil.copytree(doc, target)
-            else:
-                shutil.copy(doc, target)
 
 
 module = GitModule()

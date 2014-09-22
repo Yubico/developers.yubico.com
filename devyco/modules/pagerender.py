@@ -5,7 +5,7 @@ Wraps .partial HTML files in a template and outputs full .html files.
 import os
 from os import path
 from jinja2 import Environment, FileSystemLoader
-from devyco.module import Module
+from devyco.module import Module, noext
 
 
 def display_name(name):
@@ -62,7 +62,7 @@ class PageRenderModule(Module):
         return traverse_to(self._site, self._context['path'])
 
     def _populate_children(self, current, children):
-        hidden = self.read_files_list(self._target, '.hidden')
+        hidden = map(noext, self._context['dirconfig'].get('hidden', []))
         current['children'] = []
         for child in children:
             child_id = path.basename(child).replace('.partial', '.html')
