@@ -18,9 +18,16 @@ def traverse(context):
     for module in context['modules']:
         module.run(context)
 
+    exclude_file = path.join(target, '.exclude')
+    excluded = []
+    if path.isfile(exclude_file):
+        with open(exclude_file, 'r') as f:
+            excluded = f.read().splitlines()
+
     for item in os.listdir(target):
         abs_item = path.join(target, item)
-        if path.isdir(abs_item) and not item.startswith('.'):
+        if path.isdir(abs_item) and item not in excluded \
+                and not item.startswith('.'):
             context['path'].append(item)
             traverse(context)
             context['path'].pop()

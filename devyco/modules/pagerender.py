@@ -91,9 +91,10 @@ class PageRenderModule(Module):
         out_name = path.basename(fname).replace('.partial', '.html')
         tplt = self._env.get_template('site.template')
         with open(fname, 'r') as infile:
-            content = infile.read()
+            content = infile.read().decode('utf-8')
         with open(path.join(self._target, out_name), 'w') as outfile:
-            outfile.write(tplt.render(content=content, **self._context))
+            outfile.write(tplt.render(content=content, **self._context) \
+                          .encode('utf-8'))
         os.remove(fname)
 
     def _ensure_index(self):
@@ -101,7 +102,8 @@ class PageRenderModule(Module):
         if not path.isfile(index_file):
             tplt = self._env.get_template('site.template')
             with open(index_file, 'w') as f:
-                f.write(tplt.render(content='', **self._context))
+                f.write(tplt.render(content=u'', **self._context) \
+                        .encode('utf-8'))
 
 
 module = PageRenderModule()

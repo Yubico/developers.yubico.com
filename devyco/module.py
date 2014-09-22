@@ -43,17 +43,33 @@ class Module(object):
         target_files = []
         for name_filter in name_filters:
             target_files.extend(glob(path.join(target, name_filter)))
-        order_file = path.join(target, '.order')
+        return self._sort(target, self._exclude(target, target_files))
+
+    def read_files_list(self, basedir, fname):
+        fpath = path.join(basedir, '.exclude')
+        if path.isfile(fpath):
+            with open(fpath, 'r') as f:
+                return map(noext, f.read().splitlines())
+        return []
+
+    def _exclude(self, basedir, files):
+        target_files = []
+        exclude = self.read_files_list(basedir, '.exclude')
+        for filename in files:
+            if noext(path.basename(filename)) not in exclude:
+                target_files.append(filename)
+        return target_files
+
+    def _sort(self, basedir, files):
         sorted_files = []
-        if path.isfile(order_file):
-            with open(order_file, 'r') as f:
-                for line in f.read().splitlines():
-                    name = noext(line)
-                    for filename in target_files[:]:
-                        if noext(path.basename(filename)) == name:
-                            sorted_files.append(filename)
-                            target_files.remove(filename)
-                            break
+        target_files = files[:]
+        for name in self.read_files_list(basedir, '.order'):
+            for filename in target_files[:]:
+                if noext(path.basename(filename)) == name:
+                    sorted_files.append(filename)
+                    target_files.remove(filename)
+                    break
+        target_files.sort()
         sorted_files.extend(target_files)
         return sorted_files
 
