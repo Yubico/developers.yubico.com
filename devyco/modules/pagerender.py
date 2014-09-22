@@ -62,16 +62,19 @@ class PageRenderModule(Module):
         return traverse_to(self._site, self._context['path'])
 
     def _populate_children(self, current, children):
+        hidden = self.read_files_list(self._target, '.hidden')
         current['children'] = []
         for child in children:
             child_id = path.basename(child).replace('.partial', '.html')
             if child_id == 'index.html':
                 continue  # Exclude index pages from being listed
+            child_name = child_id.replace('.html', '')
             current['children'].append({
                 'id': child_id,
                 'url': current['url'] + '/' + child_id,
-                'name': display_name(child_id.replace('.html', '')),
+                'name': display_name(child_name),
                 'active': False,
+                'hidden': child_name in hidden,
                 'children': []
             })
 
