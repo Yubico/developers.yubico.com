@@ -64,7 +64,7 @@ class PageRenderModule(Module):
         return traverse_to(self._site, self._context['path'])
 
     def _populate_children(self, current, children):
-        hidden = map(noext, self._context['dirconfig'].get('hidden', []))
+        hidden = map(noext, self.get_conf('hidden', []))
         current['children'] = []
         for child in children:
             child_id = path.basename(child).replace('.partial', '.html')

@@ -18,7 +18,7 @@ from devyco.module import Module
 class ProjectModule(Module):
 
     def _run(self):
-        conf = self._context['dirconfig'].get('project')
+        conf = self.get_conf('project')
         if conf is None:
             return
 

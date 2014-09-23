@@ -4,14 +4,10 @@ Converts AsciiDoc formatted files with .adoc extension to .partial HTML files.
 
 import sys
 import os
-from devyco.module import Module
+from devyco.module import Module, noext
 
 sys.path.append('/usr/share/asciidoc/')
 from asciidocapi import AsciiDocAPI
-
-
-def strip_suffix(value):
-    return value.rsplit('.', 1)[0]
 
 
 class AsciiDocModule(Module):
@@ -21,8 +17,8 @@ class AsciiDocModule(Module):
         self._asciidoc.options('--no-header-footer')
 
     def _run(self):
-        for item in self.list_files('*.adoc') + self.list_files('*.asciidoc'):
-            self._asciidoc.execute(item, strip_suffix(item)+'.partial')
+        for item in self.list_files(['*.adoc', '*.asciidoc']):
+            self._asciidoc.execute(item, noext(item) + '.partial')
             os.remove(item)
 
 

@@ -22,7 +22,7 @@ class GitModule(Module):
         self._updated = []
 
     def _run(self):
-        confs = self._context['dirconfig'].get('git')
+        confs = self.get_conf('git')
         if confs is None:
             return
 
@@ -44,6 +44,8 @@ class GitModule(Module):
                 print "clone:", url
                 os.system('git clone "%s" "%s"' % (url, repo_dir))
             self._updated.append(url)
+        else:
+            print "Already updated:", url
         return repo_dir
 
     def _copy_files(self, repo_dir, files):

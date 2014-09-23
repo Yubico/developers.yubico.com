@@ -37,6 +37,9 @@ class Module(object):
     def _run(self):
         raise NotImplementedError('Subclasses must implement this!')
 
+    def get_conf(self, name, default=None):
+        return self._context['dirconfig'].get(name, default)
+
     def list_files(self, name_filters='*', relative=''):
         target = path.join(self._target, relative)
         if not isinstance(name_filters, list):
@@ -55,7 +58,7 @@ class Module(object):
 
     def _exclude(self, basedir, files):
         target_files = []
-        exclude = map(noext, self._context['dirconfig'].get('exclude', []))
+        exclude = map(noext, self.get_conf('exclude', []))
         for filename in files:
             if noext(path.basename(filename)) not in exclude:
                 target_files.append(filename)
@@ -64,7 +67,7 @@ class Module(object):
     def _sort(self, basedir, files):
         sorted_files = []
         target_files = files[:]
-        for name in map(noext, self._context['dirconfig'].get('order', [])):
+        for name in map(noext, self.get_conf('order', [])):
             for filename in target_files[:]:
                 if noext(path.basename(filename)) == name:
                     sorted_files.append(filename)
@@ -75,7 +78,7 @@ class Module(object):
         return sorted_files
 
     def cache_dir(self, key, create=True):
-        digest = hash(':'.join(self._context['path'] + [key]))
+        digest = hash('%s:%s' % (self.__module__, key))
         target = path.join(self._context['cachedir'], digest)
         if not path.isdir(target) and create:
             os.mkdir(target)
