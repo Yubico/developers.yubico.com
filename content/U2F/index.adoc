@@ -1,5 +1,4 @@
-== U2F ==
-=== What is U2F? ===
+== What is U2F? ==
 +++<abbr title="Universal 2nd Factor">U2F</abbr>+++ is a new, open 2-factor 
 authentication standard that enables keychain tokens, mobile phones and other 
 devices to securely access any
@@ -10,14 +9,31 @@ link:https://fidoalliance.org[FIDO Alliance].
 
 image:u2f_workflow.png[]
 
-=== Adding client support ===
-As shown in the diagram below, the main part of the client (web browser) is to
-be a middle-man between the server and the hardware token.
 
-image:sequence_diagram.svg[]
-////
-Image generated using http://bramp.github.io/js-sequence-diagrams. Source code is embedded in the SVG file.
-////
+== Adding U2F support ==
+This is a sequence diagram explains a how U2F works:
+
+++++
+<div class="diagram">
+participant Token
+participant Browser
+Browser->Server: username and\npassword
+Note over Server: verify username\nand password
+Note over Server: ask U2F library to\ngenerate challenge
+Server->Browser: challenge (e.g. embedded\nin a HTML page)
+Note over Browser: use U2F JavaScript\nAPI to send challenge\nto token
+Browser->Token: challenge
+Note over Token: button flashing
+Note over Token: user touches button
+Token-->Browser: response
+Browser-->Server: response
+Note over Server: ask U2F library to\nverify response
+</div>
+++++
+
+=== Client-side  ===
+As shown in the diagram above, the main part of the client (web browser) is to
+be a middle-man between the server and the hardware token.
 
 Below is an example snippet using JQuery. The `u2f` object is provided by browsers that supports U2F.
 
@@ -34,7 +50,7 @@ u2f.sign([challenge], [], // Forward challenge to token
 
 When registering a new token `u2f.register` is used instead of `u2f.sign`.
 
-=== Adding server support ===
+=== Server-side ===
 We provide three alternatives:
 
  * *link:foo[Plugins for Content Management Systems]* (CMS), such as Wordpress
@@ -45,3 +61,6 @@ We provide three alternatives:
  * *link:foo[Libraries for programming languages]*. With these, you have the 
    flexibility/burden to setup HTTP endpoints for U2F and implement storage of U2F
    yourself.
+
+pass::[<script src="jquery-1.11.1.min.js"></script><script src="raphael-min.js"></script><script src="underscore-min.js"></script><script src="sequence-diagram-min.js"></script><script>$(".diagram").sequenceDiagram({theme: 'simple'});</script>]
+
