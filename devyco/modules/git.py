@@ -36,8 +36,12 @@ class GitModule(Module):
     def _clone(self, conf):
         url = conf['url']
         repo_dir = self.cache_dir(url, False)
+
         if url not in self._updated:
             if path.isdir(repo_dir):
+                if os.environ.get('NOGIT'):
+                    print "NOGIT set, skip update"
+                    return repo_dir
                 print "Update:", url
                 os.system('(cd "%s" && git pull)' % repo_dir)
             else:

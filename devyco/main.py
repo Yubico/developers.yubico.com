@@ -18,7 +18,6 @@ def traverse(context):
 
     config_file = path.join(target, '.conf.json')
     if path.isfile(config_file):
-        print "Read conf:", config_file
         with open(config_file, 'r') as f:
             context['dirconfig'] = json.load(f)
     else:
