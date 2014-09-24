@@ -49,6 +49,7 @@ class PageRenderModule(Module):
             self._env = Environment(
                 loader=FileSystemLoader(self._context['basedir']))
 
+        self._ensure_index()
         current = self._get_current()
         dirs = filter(path.isdir, self.list_files())
         documents = self.list_files(['*.partial', '*.html'])
@@ -58,7 +59,6 @@ class PageRenderModule(Module):
         self._context['nav'] = self._site['children']
         self._render_children(current, filter(lambda x: x.endswith('.partial'),
                                               documents))
-        self._ensure_index()
 
     def _get_current(self):
         return traverse_to(self._site, self._context['path'])
@@ -107,12 +107,12 @@ class PageRenderModule(Module):
         os.remove(fname)
 
     def _ensure_index(self):
-        index_file = path.join(self._target, 'index.html')
-        if not path.isfile(index_file):
-            tplt = self._env.get_template('site.template')
-            with open(index_file, 'w') as f:
-                f.write(tplt.render(content=u'', **self._context) \
-                        .encode('utf-8'))
+        index_partial = path.join(self._target, 'index.partial')
+        index_html = path.join(self._target, 'index.html')
+        if not path.isfile(index_partial) and not path.isfile(index_html):
+            with open(index_partial, 'w') as f:
+                f.write("<h2>%s</h2>" %
+                        display_name(self._context['path'][-1]))
 
 
 module = PageRenderModule()
