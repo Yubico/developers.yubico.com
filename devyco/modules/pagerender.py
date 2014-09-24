@@ -42,7 +42,7 @@ def set_active(node, remaining):
 class PageRenderModule(Module):
     def __init__(self):
         super(PageRenderModule, self).__init__()
-        self._site = {'children': [], 'url': ''}
+        self._site = {'id': '', 'children': [], 'url': ''}
 
     def _run(self):
         if not hasattr(self, '_env'):
@@ -82,15 +82,18 @@ class PageRenderModule(Module):
             })
 
     def _render_children(self, current, partials):
+        self._context['current'] = current['id']
         for partial in partials:
             for child in current['children']:
                 if path.basename(partial) \
                         .replace('.partial', '.html') == child['id']:
                     child['active'] = True
+                    self._context['current'] = child['id']
                     self._render_partial(partial)
                     child['active'] = False
                     break
             else:
+                self._context['current'] = current['id']
                 self._render_partial(partial)
 
     def _render_partial(self, fname):
