@@ -27,16 +27,21 @@ def traverse_to(node, remaining):
 
 def set_active(node, remaining):
     if not remaining:
-        return
+        for child in node['children']:
+            child['active'] = False
+        return node
 
     child_id = remaining[0]
     remaining = remaining[1:]
+    active_child = None
+
     for child in node['children']:
         if child['id'] == child_id:
             child['active'] = True
-            set_active(child, remaining)
+            active_child = set_active(child, remaining)
         else:
             child['active'] = False
+    return active_child
 
 
 class PageRenderModule(Module):
@@ -49,19 +54,22 @@ class PageRenderModule(Module):
             self._env = Environment(
                 loader=FileSystemLoader(self._context['basedir']))
 
-        self._ensure_index()
         current = self._get_current()
         dirs = filter(path.isdir, self.list_files())
         documents = self.list_files(['*.partial', '*.html'])
         children = dirs + documents
         self._populate_children(current, children)
-        set_active(self._site, self._context['path'])
         self._context['nav'] = self._site['children']
         self._render_children(current, filter(lambda x: x.endswith('.partial'),
                                               documents))
 
+    def _post_run(self):
+        self._get_current()
+        documents = self.list_files(['*.partial', '*.html'])
+        self._ensure_index(documents)
+
     def _get_current(self):
-        return traverse_to(self._site, self._context['path'])
+        return set_active(self._site, self._context['path'])
 
     def _populate_children(self, current, children):
         hidden = map(noext, self.get_conf('hidden', []))
@@ -102,17 +110,19 @@ class PageRenderModule(Module):
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
         with open(path.join(self._target, out_name), 'w') as outfile:
-            outfile.write(tplt.render(content=content, **self._context) \
+            outfile.write(tplt.render(content=content, **self._context)
                           .encode('utf-8'))
         os.remove(fname)
 
-    def _ensure_index(self):
+    def _ensure_index(self, documents):
         index_partial = path.join(self._target, 'index.partial')
         index_html = path.join(self._target, 'index.html')
-        if not path.isfile(index_partial) and not path.isfile(index_html):
+        if index_partial not in documents and index_html not in documents:
+            documents.append(index_partial)
+            tplt = self._env.get_template('index.template')
             with open(index_partial, 'w') as f:
-                f.write("<h2>%s</h2>" %
-                        display_name(self._context['path'][-1]))
+                f.write(tplt.render(**self._context).encode('utf-8'))
+            self._render_partial(index_partial)
 
 
 module = PageRenderModule()

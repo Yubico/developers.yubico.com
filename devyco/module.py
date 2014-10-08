@@ -34,8 +34,16 @@ class Module(object):
         self._target = path.join(context['basedir'], *context['path'])
         self._run()
 
+    def post_run(self, context):
+        self._context = context
+        self._target = path.join(context['basedir'], *context['path'])
+        self._post_run()
+
     def _run(self):
         raise NotImplementedError('Subclasses must implement this!')
+
+    def _post_run(self):
+        pass
 
     def get_conf(self, name, default=None):
         return self._context['dirconfig'].get(name, default)

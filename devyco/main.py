@@ -36,6 +36,9 @@ def traverse(context):
             traverse(context)
             context['path'].pop()
 
+    for module in context['modules']:
+        module.post_run(context)
+
 
 def copy_static(source, dest):
     # Would prefer to do this in python, but the standard functions are too
