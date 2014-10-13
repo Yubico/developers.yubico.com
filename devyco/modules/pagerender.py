@@ -4,9 +4,10 @@ Files listed in a "hidden" entry of the .conf.json will not be shown in the
 navigation.
 """
 
-import os
 from os import path
 from devyco.module import Module, noext
+import json
+import os
 
 
 def display_name(name):
@@ -101,12 +102,18 @@ class PageRenderModule(Module):
 
     def _render_partial(self, fname):
         out_name = path.basename(fname).replace('.partial', '.html')
+        links_name = fname.replace('.partial', '.links')
         tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
+        if path.isfile(links_name):
+            with open(links_name, 'r') as linksfile:
+                links = json.load(linksfile)
+        else:
+            links = []
         with open(path.join(self._target, out_name), 'w') as outfile:
-            outfile.write(tplt.render(content=content, **self._context)
-                          .encode('utf-8'))
+            outfile.write(tplt.render(content=content, sidelinks=links,
+                                      **self._context).encode('utf-8'))
         os.remove(fname)
 
     def _ensure_index(self, documents):
