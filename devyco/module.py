@@ -1,8 +1,8 @@
 import os
-import json
 from os import path
 from glob import glob
 from hashlib import sha1
+from jinja2 import Environment, FileSystemLoader
 
 
 def hash(value):
@@ -47,6 +47,11 @@ class Module(object):
 
     def get_conf(self, name, default=None):
         return self._context['dirconfig'].get(name, default)
+
+    def get_template(self, name):
+        templatedir = self._context['templatedir']
+        env = Environment(loader=FileSystemLoader(templatedir))
+        return env.get_template('%s.template' % name)
 
     def list_files(self, name_filters='*', relative=''):
         target = path.join(self._target, relative)

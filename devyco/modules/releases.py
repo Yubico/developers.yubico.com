@@ -9,15 +9,14 @@ TODO: Read BLURB file and add additional stuff to index page (GitHub, TravisCI,
 license, etc.).
 """
 
-import shutil
 from os import path
 from distutils.version import LooseVersion
-from jinja2 import Environment, FileSystemLoader
-from devyco.module import Module, noext
+from devyco.module import Module
 
 
 SUFFIXES = ['tar', 'gz', 'sig', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
 CLASSIFIERS = ['win', 'win32', 'win64', 'mac']
+
 
 def remove_suffixes(part):
     split = part.rsplit('.', 1)
@@ -45,17 +44,13 @@ def version(filename):
 class ReleasesModule(Module):
 
     def _run(self):
-        if not hasattr(self, '_env'):
-            self._env = Environment(
-                loader=FileSystemLoader(self._context['basedir']))
-
         conf = self.get_conf('releases')
         if conf is None:
             return
 
         files = map(path.basename, self.list_files())
         files = [file for file in files if file.endswith('.sig') and
-                file[:-4] in files]
+                 file[:-4] in files]
         files.sort(key=lambda s: LooseVersion(version(s)))
         files.reverse()
 
@@ -68,7 +63,7 @@ class ReleasesModule(Module):
 
         #artifacts = extract_artifacts(versions, files)
 
-        tplt = self._env.get_template('releases.template')
+        tplt = self.get_template('releases')
 
         with open(path.join(self._target, 'index.partial'), 'w') as outfile:
             outfile.write(tplt.render(releases=entries).encode('utf-8'))

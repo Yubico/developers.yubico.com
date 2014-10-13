@@ -65,6 +65,7 @@ def main(base_dir=path.curdir, settings=None):
     dest = path.join(base_dir, 'dist')
     clean(source, dest)
     cache = path.join(base_dir, '.cache')
+    templates = path.join(base_dir, 'templates')
     if not path.isdir(cache):
         os.mkdir(cache)
 
@@ -72,6 +73,7 @@ def main(base_dir=path.curdir, settings=None):
         'modules': modules,
         'basedir': dest,
         'cachedir': cache,
+        'templatedir': templates,
         'path': []
     }
 

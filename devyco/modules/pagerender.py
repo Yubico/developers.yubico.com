@@ -6,7 +6,6 @@ navigation.
 
 import os
 from os import path
-from jinja2 import Environment, FileSystemLoader
 from devyco.module import Module, noext
 
 
@@ -50,10 +49,6 @@ class PageRenderModule(Module):
         self._site = {'id': '', 'children': [], 'url': ''}
 
     def _run(self):
-        if not hasattr(self, '_env'):
-            self._env = Environment(
-                loader=FileSystemLoader(self._context['basedir']))
-
         current = self._get_current()
         dirs = filter(path.isdir, self.list_files())
         documents = self.list_files(['*.partial', '*.html'])
@@ -106,7 +101,7 @@ class PageRenderModule(Module):
 
     def _render_partial(self, fname):
         out_name = path.basename(fname).replace('.partial', '.html')
-        tplt = self._env.get_template('site.template')
+        tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
         with open(path.join(self._target, out_name), 'w') as outfile:
@@ -119,7 +114,7 @@ class PageRenderModule(Module):
         index_html = path.join(self._target, 'index.html')
         if index_partial not in documents and index_html not in documents:
             documents.append(index_partial)
-            tplt = self._env.get_template('index.template')
+            tplt = self.get_template('index')
             with open(index_partial, 'w') as f:
                 f.write(tplt.render(**self._context).encode('utf-8'))
             self._render_partial(index_partial)
