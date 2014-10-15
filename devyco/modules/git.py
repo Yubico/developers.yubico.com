@@ -43,10 +43,10 @@ class GitModule(Module):
                     print "NOGIT set, skip update"
                     return repo_dir
                 print "Update:", url
-                os.system('(cd "%s" && git pull)' % repo_dir)
+                os.system('(cd "%s" && git pull 2>&1)' % repo_dir)
             else:
                 print "clone:", url
-                os.system('git clone "%s" "%s"' % (url, repo_dir))
+                os.system('git clone "%s" "%s" 2>&1' % (url, repo_dir))
             self._updated.append(url)
         else:
             print "Already updated:", url
