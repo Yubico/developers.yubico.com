@@ -21,17 +21,18 @@ def traverse(context):
     if path.isfile(config_file):
         with open(config_file, 'r') as f:
             try:
-                context['dirconfig'] = json.load(f)
+                dirconfig = json.load(f)
             except ValueError:
                 sys.stderr.write('Error parsing JSON: %s\n' % config_file)
                 raise
     else:
-        context['dirconfig'] = {}
+        dirconfig = {}
 
+    context['dirconfig'] = dirconfig
     for module in context['modules']:
         module.run(context)
 
-    excluded = context['dirconfig'].get('exclude', [])
+    excluded = dirconfig.get('exclude', [])
 
     for item in os.listdir(target):
         abs_item = path.join(target, item)
@@ -41,6 +42,7 @@ def traverse(context):
             traverse(context)
             context['path'].pop()
 
+    context['dirconfig'] = dirconfig
     for module in context['modules']:
         module.post_run(context)
 

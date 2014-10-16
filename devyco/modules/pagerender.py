@@ -101,13 +101,18 @@ class PageRenderModule(Module):
                 self._context['current'] = current['id']
                 self._render_partial(partial)
 
-    def _render_partial(self, fname):
-        basename = path.basename(fname).replace('.partial', '')
-        out_name = basename + '.html'
+    def _get_links(self, basename):
         links = []
         for pattern, new_links in self.get_conf('links', {}).items():
             if fnmatch(basename, pattern):
                 links.extend(new_links)
+        return links
+
+    def _render_partial(self, fname):
+        basename = path.basename(fname).replace('.partial', '')
+        out_name = basename + '.html'
+        links = self._get_links(basename)
+        print "LINKS: %s, %r" % (fname, links)
         tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
