@@ -5,6 +5,7 @@ navigation.
 """
 
 from os import path
+from fnmatch import fnmatch
 from devyco.module import Module, noext
 import json
 import os
@@ -101,16 +102,15 @@ class PageRenderModule(Module):
                 self._render_partial(partial)
 
     def _render_partial(self, fname):
-        out_name = path.basename(fname).replace('.partial', '.html')
-        links_name = fname.replace('.partial', '.links')
+        basename = path.basename(fname).replace('.partial', '')
+        out_name = basename + '.html'
+        links = []
+        for pattern, new_links in self.get_conf('links', {}).items():
+            if fnmatch(basename, pattern):
+                links.extend(new_links)
         tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
-        if path.isfile(links_name):
-            with open(links_name, 'r') as linksfile:
-                links = json.load(linksfile)
-        else:
-            links = []
         with open(path.join(self._target, out_name), 'w') as outfile:
             outfile.write(tplt.render(content=content, sidelinks=links,
                                       **self._context).encode('utf-8'))

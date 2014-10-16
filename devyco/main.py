@@ -1,6 +1,7 @@
 import os
 import shutil
 import json
+import sys
 from os import path
 from importlib import import_module
 
@@ -19,7 +20,11 @@ def traverse(context):
     config_file = path.join(target, '.conf.json')
     if path.isfile(config_file):
         with open(config_file, 'r') as f:
-            context['dirconfig'] = json.load(f)
+            try:
+                context['dirconfig'] = json.load(f)
+            except ValueError:
+                sys.stderr.write('Error parsing JSON: %s\n' % config_file)
+                raise
     else:
         context['dirconfig'] = {}
 
