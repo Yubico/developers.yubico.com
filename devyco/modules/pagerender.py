@@ -2,12 +2,12 @@
 Wraps .partial HTML files in a template and outputs full .html files.
 Files listed in a "hidden" entry of the .conf.json will not be shown in the
 navigation.
+Entries in the "links" entry of the .conf.json will be shown on the page.
 """
 
 from os import path
 from fnmatch import fnmatch
 from devyco.module import Module, noext
-import json
 import os
 
 
