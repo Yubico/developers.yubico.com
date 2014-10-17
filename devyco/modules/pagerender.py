@@ -112,7 +112,6 @@ class PageRenderModule(Module):
         basename = path.basename(fname).replace('.partial', '')
         out_name = basename + '.html'
         links = self._get_links(basename)
-        print "LINKS: %s, %r" % (fname, links)
         tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
