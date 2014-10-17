@@ -11,30 +11,24 @@ license, etc.).
 
 import shutil
 from os import path
-from glob import glob
 from devyco.module import Module
 
 
 class ProjectModule(Module):
 
     def _run(self):
-        conf = self.get_conf('project')
-        if conf is None:
+        project_dir = self.get_conf('project')
+        if project_dir is None:
             return
+        hidden = self._context['dirconfig'].get('hidden', [])
 
-        self._move_index(conf)
-        self._move_docs(conf)
+        for project in self.list_files('*', project_dir):
+            project_name = path.basename(project)
+            shutil.move(project, path.join(self._target, project_name))
+            hidden.append(project_name)
 
-    def _move_index(self, conf):
-        source = path.join(self._target, conf.get('index', 'README'))
-        target = path.join(self._target, 'index.adoc')
-        shutil.move(source, target)
-
-    def _move_docs(self, conf):
-        documents = conf.get('documents', 'doc/*')
-        for doc in glob(path.join(self._target, documents)):
-            target = path.join(self._target, path.basename(doc))
-            shutil.move(doc, target)
+        self._context['dirconfig']['hidden'] = hidden
+        shutil.rmtree(path.join(self._target, project_dir))
 
 
 module = ProjectModule()

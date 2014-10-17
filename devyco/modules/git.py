@@ -69,11 +69,11 @@ class GitModule(Module):
                 dest_dir = path.dirname(target)
             else:
                 target = path.join(self._target, dest)
-                dest_dir = target
+                dest_dir = path.dirname(target)
             if not path.isdir(dest_dir):
                 os.makedirs(dest_dir)
             if path.isdir(match):
-                shutil.copytree(match, target)
+                shutil.copytree(match, path.join(target, path.basename(match)))
             else:
                 shutil.copy(match, target)
 
