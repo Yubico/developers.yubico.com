@@ -10,6 +10,8 @@ license, etc.).
 """
 
 import shutil
+import os
+import json
 from os import path
 from devyco.module import Module
 
@@ -24,8 +26,17 @@ class ProjectModule(Module):
 
         for project in self.list_files('*', project_dir):
             project_name = path.basename(project)
-            shutil.move(project, path.join(self._target, project_name))
+            new_target = path.join(self._target, project_name)
+            shutil.move(project, new_target)
             hidden.append(project_name)
+
+            # Create Releases dir if it doesn't exist.
+            releases_conf = path.join(new_target, 'Releases', '.conf.json')
+            if not path.isfile(releases_conf):
+                releases_dir = path.dirname(releases_conf)
+                if path.isdir(releases_dir):
+                    with open(releases_conf, 'w') as f:
+                        json.dump({'releases':{}}, f)
 
         self._context['dirconfig']['hidden'] = hidden
         shutil.rmtree(path.join(self._target, project_dir))
