@@ -17,7 +17,7 @@ class AsciiDocModule(Module):
         self._asciidoc.options('--no-header-footer')
 
     def _run(self):
-        for item in self.list_files(['*.adoc', '*.asciidoc']):
+        for item in self.list_files(['*.adoc', '*.asciidoc', '*.txt']):
             try:
                 self._asciidoc.execute(item, noext(item) + '.partial')
                 os.remove(item)
