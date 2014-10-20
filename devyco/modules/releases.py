@@ -1,17 +1,17 @@
 """
-Generates data from a project directory.
-Activated by a "project" entry in a .conf.json file, containing the following
+Generates a releases page based on release artifacts in a directory.
+Activated by a "releases" entry in a .conf.json file, containing the following
 settings:
-    index: File to use as index page (optional, defaults to "README")
-    documents: File pattern of documents (optional, defaults to "doc/*")
-
-TODO: Read BLURB file and add additional stuff to index page (GitHub, TravisCI,
-license, etc.).
+    dir: Location of the release artifacts and resulting index page (defaults
+    to the current directory).
+    abortIfEmpty: True to abort the page creation if there are no releases
+    present.
 """
 
 from os import path
 from distutils.version import LooseVersion
 from devyco.module import Module
+import os
 
 
 SUFFIXES = ['tar', 'gz', 'sig', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
@@ -48,7 +48,9 @@ class ReleasesModule(Module):
         if conf is None:
             return
 
-        files = map(path.basename, self.list_files())
+        target = conf.get('dir', '.')
+
+        files = map(path.basename, self.list_files(relative=target))
         files = [file for file in files if file.endswith('.sig') and
                  file[:-4] in files]
         files.sort(key=lambda s: LooseVersion(version(s)))
@@ -63,9 +65,15 @@ class ReleasesModule(Module):
 
         #artifacts = extract_artifacts(versions, files)
 
+        if not files and conf.get('abortIfEmpty', False):
+            return
+
         tplt = self.get_template('releases')
 
-        with open(path.join(self._target, 'index.partial'), 'w') as outfile:
+        outpath = path.join(self._target, target, 'index.partial')
+        if not path.isdir(path.dirname(outpath)):
+            os.makedirs(path.dirname(outpath))
+        with open(outpath, 'w') as outfile:
             outfile.write(tplt.render(releases=entries).encode('utf-8'))
 
 

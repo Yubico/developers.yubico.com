@@ -7,7 +7,7 @@ import os
 from devyco.module import Module, noext
 
 sys.path.append('/usr/share/asciidoc/')
-from asciidocapi import AsciiDocAPI
+from asciidocapi import AsciiDocAPI, AsciiDocError
 
 
 class AsciiDocModule(Module):
@@ -18,8 +18,11 @@ class AsciiDocModule(Module):
 
     def _run(self):
         for item in self.list_files(['*.adoc', '*.asciidoc']):
-            self._asciidoc.execute(item, noext(item) + '.partial')
-            os.remove(item)
+            try:
+                self._asciidoc.execute(item, noext(item) + '.partial')
+                os.remove(item)
+            except AsciiDocError:
+                sys.stderr.write("Error parsing AsciiDoc in file: %s\n" % item)
 
 
 module = AsciiDocModule()
