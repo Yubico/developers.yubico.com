@@ -14,7 +14,8 @@ from devyco.module import Module
 import os
 
 
-SUFFIXES = ['tar', 'gz', 'sig', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
+SIG_SUFFIXES = ['sig', 'asc']
+SUFFIXES = SIG_SUFFIXES + ['tar', 'gz', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
 CLASSIFIERS = ['win', 'win32', 'win64', 'mac']
 
 
@@ -36,9 +37,53 @@ def version(filename):
     part = remove_suffixes(filename)
     part, classifier = remove_classifier(part)
     version = part.rsplit('-', 1)[1]
+    return version, classifier
+
+
+def version_with_classifier(filename):
+    vers, classifier = version(filename)
     if classifier:
-        return '%s-%s' % (version, classifier)
-    return version
+        return '%s-%s' % (vers, classifier)
+    return vers
+
+
+def extract_versions(files):
+    versions = []
+    for fname in files:
+        v, classifier = version(fname)
+        if v not in versions:
+            versions.append(v)
+    versions.sort(key=LooseVersion, reverse=True)
+    return versions
+
+
+def is_sig(fname):
+    for suffix in SIG_SUFFIXES:
+        if fname.endswith('.' + suffix):
+            return True
+    return False
+
+
+def get_sig(fname, files):
+    for suffix in SIG_SUFFIXES:
+        sig = '%s.%s' % (fname, suffix)
+        if sig in files:
+            return sig
+        else:
+            print sig, "not in", files
+    return None
+
+
+def extract_files(v, files):
+    matches = []
+    for fname in files:
+        if version(fname)[0] == v and not is_sig(fname):
+            matches.append({
+                "filename": fname,
+                "sig": get_sig(fname, files)
+            })
+    matches.sort(key=lambda x: LooseVersion(version_with_classifier(x['filename'])))
+    return matches
 
 
 class ReleasesModule(Module):
@@ -50,23 +95,18 @@ class ReleasesModule(Module):
 
         target = conf.get('dir', '.')
 
-        files = map(path.basename, self.list_files(relative=target))
-        files = [file for file in files if file.endswith('.sig') and
-                 file[:-4] in files]
-        files.sort(key=lambda s: LooseVersion(version(s)))
-        files.reverse()
+        all_files = map(path.basename, self.list_files(relative=target))
+        if not all_files and conf.get('abortIfEmpty', False):
+            return
+
+        versions = extract_versions(all_files)
 
         entries = []
-        for fname in files:
+        for v in versions:
             entries.append({
-                'name': remove_suffixes(fname),
-                'filename': fname[:-4]
+                "version": v,
+                "files": extract_files(v, all_files)
             })
-
-        #artifacts = extract_artifacts(versions, files)
-
-        if not files and conf.get('abortIfEmpty', False):
-            return
 
         tplt = self.get_template('releases')
 
