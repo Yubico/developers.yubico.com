@@ -11,22 +11,25 @@ from asciidocapi import AsciiDocAPI, AsciiDocError
 
 
 class AsciiDocModule(Module):
-    def __init__(self):
-        super(AsciiDocModule, self).__init__()
+
+    def _configure(self):
         self._asciidoc = AsciiDocAPI()
+        self._asciidoc.attributes['root'] = self._conf['destdir']
+        conf_file = os.path.join(self._conf['maindir'], 'asciidoc-devyco.conf')
+        self._asciidoc.options('--conf-file', conf_file)
         self._asciidoc.options('--no-header-footer')
         self.processed_files = []
 
     def _run(self):
         for item in self.list_files(['*.adoc', '*.asciidoc', '*.txt']):
             try:
-                self._asciidoc.attributes['root'] = self._context['basedir']
-                self._asciidoc.execute(item, noext(item) + '.partial', backend='html5')
+                self._asciidoc.execute(item, noext(item) + '.partial')
                 for message in self._asciidoc.messages:
                     sys.stderr.write('Error parsing Asciidoc file %s: %s\n' % (item, message))
                 self.processed_files.append(item)
-            except AsciiDocError:
+            except AsciiDocError as e:
                 sys.stderr.write("Error parsing AsciiDoc in file: %s\n" % item)
+                sys.stderr.write("%s\n" % e.message)
 
     def cleanup(self, context):
         for f in self.processed_files:

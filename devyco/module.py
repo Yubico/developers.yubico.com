@@ -28,6 +28,15 @@ class Module(object):
 
     def configure(self, conf):
         self._conf.update(conf)
+        cachedir = path.join(conf['maindir'], '.cache')
+        self._conf['cachedir'] = cachedir
+        if not path.isdir(cachedir):
+            os.mkdir(cachedir)
+        self._conf['templatedir'] = path.join(conf['maindir'], 'templates')
+        self._configure()
+
+    def _configure(self):
+        pass
 
     def run(self, context):
         self._context = context
@@ -52,8 +61,7 @@ class Module(object):
         return self._context['dirconfig'].get(name, default)
 
     def get_template(self, name):
-        templatedir = self._context['templatedir']
-        env = Environment(loader=FileSystemLoader(templatedir))
+        env = Environment(loader=FileSystemLoader(self._conf['templatedir']))
         return env.get_template('%s.template' % name)
 
     def list_files(self, name_filters='*', relative=''):
@@ -95,7 +103,7 @@ class Module(object):
 
     def cache_dir(self, key, create=True):
         digest = hash('%s:%s' % (self.__module__, key))
-        target = path.join(self._context['cachedir'], digest)
+        target = path.join(self._conf['cachedir'], digest)
         if not path.isdir(target) and create:
             os.mkdir(target)
         return target

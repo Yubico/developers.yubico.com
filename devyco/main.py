@@ -53,11 +53,14 @@ def copy_static(source, dest):
     os.system('cp -r %s/* %s/' % (source, dest))
 
 
-def load_modules(settings):
+def load_modules(settings, base_dir, dest_dir):
     modules = []
     for name in settings.get('modules', []):
         module = import_module('devyco.modules.%s' % name).module
-        module.configure(settings.get(name, {}))
+        conf = settings.get(name, {})
+        conf['maindir'] = base_dir
+        conf['destdir'] = dest_dir
+        module.configure(conf)
         modules.append(module)
     return modules
 
@@ -66,21 +69,15 @@ def main(base_dir=path.curdir, settings=None):
     if settings is None:
         settings = {}
 
-    modules = load_modules(settings)
-
     source = path.join(base_dir, 'content')
     dest = path.join(base_dir, 'dist')
     clean(source, dest)
-    cache = path.join(base_dir, '.cache')
-    templates = path.join(base_dir, 'templates')
-    if not path.isdir(cache):
-        os.mkdir(cache)
+
+    modules = load_modules(settings, base_dir, dest)
 
     context = {
         'modules': modules,
         'basedir': dest,
-        'cachedir': cache,
-        'templatedir': templates,
         'path': []
     }
 
