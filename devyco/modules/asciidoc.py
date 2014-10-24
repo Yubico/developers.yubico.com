@@ -21,7 +21,7 @@ class AsciiDocModule(Module):
         for item in self.list_files(['*.adoc', '*.asciidoc', '*.txt']):
             try:
                 self._asciidoc.attributes['root'] = self._context['basedir']
-                self._asciidoc.execute(item, noext(item) + '.partial')
+                self._asciidoc.execute(item, noext(item) + '.partial', backend='html5')
                 for message in self._asciidoc.messages:
                     sys.stderr.write('Error parsing Asciidoc file %s: %s\n' % (item, message))
                 self.processed_files.append(item)
