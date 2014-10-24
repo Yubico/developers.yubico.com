@@ -15,7 +15,8 @@ import os
 
 
 SIG_SUFFIXES = ['sig', 'asc']
-SUFFIXES = SIG_SUFFIXES + ['tar', 'gz', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
+SUFFIXES = SIG_SUFFIXES + \
+    ['tar', 'gz', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
 CLASSIFIERS = ['win', 'win32', 'win64', 'mac']
 
 
@@ -82,7 +83,8 @@ def extract_files(v, files):
                 "filename": fname,
                 "sig": get_sig(fname, files)
             })
-    matches.sort(key=lambda x: LooseVersion(version_with_classifier(x['filename'])))
+    matches.sort(key=lambda x: LooseVersion(
+        version_with_classifier(x['filename'])))
     return matches
 
 
