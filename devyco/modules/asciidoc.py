@@ -19,7 +19,7 @@ class AsciiDocModule(Module):
     def _run(self):
         for item in self.list_files(['*.adoc', '*.asciidoc', '*.txt']):
             try:
-                self._asciidoc.execute(item, noext(item) + '.partial')
+                self._asciidoc.execute(item, noext(item) + '.partial', backend='html5')
                 os.remove(item)
             except AsciiDocError:
                 sys.stderr.write("Error parsing AsciiDoc in file: %s\n" % item)
