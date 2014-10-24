@@ -69,8 +69,6 @@ def get_sig(fname, files):
         sig = '%s.%s' % (fname, suffix)
         if sig in files:
             return sig
-        else:
-            print sig, "not in", files
     return None
 
 

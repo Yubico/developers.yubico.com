@@ -45,6 +45,9 @@ class Module(object):
     def _post_run(self):
         pass
 
+    def cleanup(self, context):
+        pass
+
     def get_conf(self, name, default=None):
         return self._context['dirconfig'].get(name, default)
 

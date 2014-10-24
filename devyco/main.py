@@ -86,5 +86,8 @@ def main(base_dir=path.curdir, settings=None):
 
     traverse(context)
 
+    for module in modules:
+        module.cleanup(context)
+
     static = path.join(base_dir, 'static')
     copy_static(static, dest)

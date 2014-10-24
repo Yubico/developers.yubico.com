@@ -15,15 +15,22 @@ class AsciiDocModule(Module):
         super(AsciiDocModule, self).__init__()
         self._asciidoc = AsciiDocAPI()
         self._asciidoc.options('--no-header-footer')
+        self.processed_files = []
 
     def _run(self):
         for item in self.list_files(['*.adoc', '*.asciidoc', '*.txt']):
             try:
+                self._asciidoc.attributes['root'] = self._context['basedir']
                 self._asciidoc.execute(item, noext(item) + '.partial')
-                os.remove(item)
+                for message in self._asciidoc.messages:
+                    sys.stderr.write('Error parsing Asciidoc file %s: %s\n' % (item, message))
+                self.processed_files.append(item)
             except AsciiDocError:
                 sys.stderr.write("Error parsing AsciiDoc in file: %s\n" % item)
 
+    def cleanup(self, context):
+        for f in self.processed_files:
+            os.remove(f)
 
 module = AsciiDocModule()
 
