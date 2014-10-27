@@ -16,7 +16,7 @@ import os
 
 SIG_SUFFIXES = ['sig', 'asc']
 SUFFIXES = SIG_SUFFIXES + \
-    ['tar', 'gz', 'tgz', 'zip', 'exe', 'pkg', 'cap', 'apk']
+    ['tar', 'gz', 'tgz', 'xz', 'zip', 'exe', 'pkg', 'cap', 'apk']
 CLASSIFIERS = ['win', 'win32', 'win64', 'mac']
 
 
