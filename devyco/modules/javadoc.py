@@ -6,10 +6,9 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
 """
 
 import os
-import shutil
-import urllib2
-from os import path
-from glob import glob
+from urllib2 import urlopen
+from StringIO import StringIO
+from zipfile import ZipFile
 from devyco.module import Module
 
 JAVADOC_URL = ('http://repository.sonatype.org/service/local/artifact/maven/'
@@ -42,7 +41,7 @@ def _get_last_seen_hash():
 
 
 def _get_remote_hash(group, artifact):
-    return urllib2.urlopen(HASH_URL.format(group=group.replace('.', '/'),
+    return urlopen(HASH_URL.format(group=group.replace('.', '/'),
                                            artifact=artifact)).read()
 
 
@@ -67,6 +66,9 @@ class JavaDocModule(Module):
             return
 
         url = JAVADOC_URL.format(group=group, artifact=artifact)
+        jarfile = url.read(urlopen(url))
+        zipfile = ZipFile(StringIO(jarfile))
+        zipfile.extractall('JavaDoc')
 
 
 module = JavaDocModule()
