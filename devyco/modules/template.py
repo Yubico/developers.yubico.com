@@ -22,6 +22,8 @@ def merge_data(base, added):
                     base_value.extend(value)
                 else:
                     base[key] = [base_value] + value
+            else:  # Can't merge, just overwrite
+                base[key] = value
 
 
 class TemplateModule(Module):
@@ -45,9 +47,11 @@ class TemplateModule(Module):
         self._templates[name] = json.dumps(template)
 
     def _inherit(self, inherit):
-        conf = self._context['dirconfig']
+        conf = {}
         for (name, data) in inherit.items():
             merge_data(conf, json.loads(self._templates[name] % data))
+        merge_data(conf, self._context['dirconfig'])
+        self._context['dirconfig'] = conf
 
 
 module = TemplateModule()
