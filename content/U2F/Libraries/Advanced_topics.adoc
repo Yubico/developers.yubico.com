@@ -6,20 +6,27 @@ You can (optionally) use the attestation certificate to assert certain device ty
 
 For example, you can verify that a device is produced by Yubico by verifying that the
 attestation certificate is signed by
-link:https://developers.yubico.com/u2f/yubico-u2f-ca-certs.txt[Yubico's CA].
- 
+link:https://developers.yubico.com/u2f/yubico-u2f-ca-certs.txt[Yubico's CA]. In Python,
+it would look like this:
+
+[source, python]
+----
+attestation_cert.verify(yubico_ca_cert.get_pubkey())
+----
 
 === Challenge Expiration
 It is good practice to treat challenges older than _X_ minutes as expired.
 
-
 === Device counters
 U2F devices sends an incrementing counter to the server upon authentication.
 The U2F library uses this counter to prevent the use of cloned devices.
-
-For protection to work, you have to persist the device info after each authentication.
+For this protection to work, you have to persist the device info after each authentication.
 However, all U2F compatible devices by Yubico uses tamper-resistant Secure Elements designed
-to not being cloneable.
+to be impossible to clone.
+
+==== Handling counter errors ====
+If a the counter ever decrements, the device has been cloned. The best way to handle
+this depends on the application. You might want to alert the user and/or lock their account.
 
 
 === Multiple devices per user
@@ -44,17 +51,17 @@ This could for example result in the following JSON:
   {
     "version": "U2F_V2",
     "challenge": "b7ma_N3pzL7zVCQCTpuUr55t8HQqXEDEdPapNzx6_IE",
-    "keyHandle": "UuYvIIg9fpAC6AkbWT9Pe0T3iIkRsYcz7N5p3EeGleC4k8e8P75BVHnlm0cpXIHL8Pq7ERhslI9GX4oj0uB"
+    "keyHandle": "UuYvIIg9fpAC6AkbWT9Pe0T3iIkRsYczGleC4k8e8P75BVHnlm0cpXIHL8Pq7ERhslI9GX4oj0uB"
   },
   {
     "version": "U2F_V2",
     "challenge": "JCxNJtapiNnia0P9RaWTAVO1gObWifWV5vPVKIjw6lo",
-    "keyHandle": "EUryGFjTgMnSqiuEGbxiaBRaVGmilz62gKsBz56HV9o90tDBBvdPfV3vrIV_1oKhu8DSIPHol3rarGymRcA"
+    "keyHandle": "EUryGFjTgMnSqiuEGbxiaBRaVGmilz62V9o90tDBBvdPfV3vrIV_1oKhu8DSIPHol3rarGymRcA"
   },
   {
     "version": "U2F_V2",
     "challenge": "FhG8tCCizpX5uGPMXUdkw8O3giwA8id0rbQA4FJS6kE",
-    "keyHandle": "tveAECT7LBjvHQ1BxUuUB13EVFLR0iPoQtSFZM7DmiGVObvHD85IYTH5G8ekqQrgpZaJhUnGKyVaegIopJT"
+    "keyHandle": "tveAECT7LBjvHQ1BxUuUB13EVFLR0iPomiGVObvHD85IYTH5G8ekqQrgpZaJhUnGKyVaegIopJT"
   }
 ]
 ----
