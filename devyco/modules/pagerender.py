@@ -7,8 +7,13 @@ Entries in the "links" entry of the .conf.json will be shown on the page.
 
 from os import path
 from fnmatch import fnmatch
+from bs4 import BeautifulSoup
 from devyco.module import Module, noext
 import os
+import re
+
+
+EXTERNAL_LINK = re.compile('^(https?:)?//')
 
 
 def display_name(name):
@@ -115,10 +120,19 @@ class PageRenderModule(Module):
         tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
+        rendered = tplt.render(content=content, sidelinks=links,
+                               **self._context)
+        rendered = self._post_process(rendered)
         with open(path.join(self._target, out_name), 'w') as outfile:
-            outfile.write(tplt.render(content=content, sidelinks=links,
-                                      **self._context).encode('utf-8'))
+            outfile.write(rendered.encode('utf-8'))
         os.remove(fname)
+
+    def _post_process(self, content):
+        soup = BeautifulSoup(content)
+        for link in soup.find_all('a', href=EXTERNAL_LINK):
+            link['target'] = '_blank'
+
+        return soup.prettify()
 
     def _ensure_index(self, documents):
         index_partial = path.join(self._target, 'index.partial')
