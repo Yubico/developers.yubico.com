@@ -107,11 +107,8 @@ class PageRenderModule(Module):
                 self._render_partial(partial)
 
     def _get_links(self, basename):
-        links = []
-        for pattern, new_links in self.get_conf('links', {}).items():
-            if fnmatch(basename, pattern):
-                links.extend(new_links)
-        return links
+        return [link for link in self.get_conf('links', [])
+                if fnmatch(basename, link.get('filter', '*'))]
 
     def _render_partial(self, fname):
         basename = path.basename(fname).replace('.partial', '')
