@@ -13,7 +13,7 @@ import os
 import re
 
 
-EXTERNAL_LINK = re.compile('^(https?:)?//')
+EXTERNAL_LINK = re.compile(r'^(https?:)?//(?!developers\.yubico\.com)')
 
 
 def display_name(name):
