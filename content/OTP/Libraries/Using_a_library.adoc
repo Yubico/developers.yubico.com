@@ -24,7 +24,8 @@ Note over Server: ask library to\nvalidate OTP
 ++++
 
 === Validating OTPs ===
-For example, the _ask library to validate OTP_ step in the diagram above could be implemented like this:
+
+The _ask library to validate OTP_ step in the diagram above could be implemented like this:
 
 [source, python]
 ----
@@ -41,10 +42,34 @@ yubikey_belongs_to_user = otp[:12] == user.yubikey_id
 
 === Provisioning YubiKeys ===
 Provisioning is simply a matter of associating the first 12 characters of an OTP with a user in your user database.
-This means that you can allow users to self-provision YubiKeys if you want to.
 
+.Associating a user with a YubiKey ID
 [source, python]
-user.yubikey_id = otp[:12] 
+user.yubikey_id = otp[:12]
+
+Then, if you are using a SQL database, you might want to store it like this:
+
+.SQL table example
+[options="header"]
+|=======================
+|YubiKeyID    |   UserId
+|ccfucnlcrrne |     1890
+|ccnnloposxxc |     4371
+|cccilddkfopf |     2285
+|=======================
+
+==== Self-provisioning ====
+You can allow users to provision YubiKeys themselves. This is called
+_self-provisioning_ and works like this:
+
+1. On your website, provide the
+option for users to associate a YubiKey with their account. When a user
+registers, verify the OTP to make sure that the key is valid.
+
+2. Later the user comes back to your site. Since the user has an 
+associated YubiKey, ask for an OTP (that you verify) before logging
+her/him in.
+
 
 === Client-side ===
 The client-side (browser-side) is not handled by libraries. Luckily, you just have to add another text field to your existing login form. From a user point of view, _press Enter_ is replaced with _touch the YubiKey button_.
