@@ -81,7 +81,8 @@ class PageRenderModule(Module):
             if child_id == 'index.html':
                 continue  # Exclude index pages from being listed
             child_name = child_id.replace('.html', '')
-            hide = child_name in hidden or path.isdir(child) and not os.listdir(child)
+            hide = child_name in hidden or path.isdir(child) \
+                and not os.listdir(child)
             current['children'].append({
                 'id': child_id,
                 'url': current['url'] + '/' + child_id,
@@ -129,7 +130,7 @@ class PageRenderModule(Module):
         for link in soup.find_all('a', href=EXTERNAL_LINK):
             link['target'] = '_blank'
 
-        return soup.prettify()
+        return soup
 
     def _ensure_index(self, documents):
         index_partial = path.join(self._target, 'index.partial')

@@ -48,7 +48,7 @@ class AsciiDocModule(Module):
             link['href'] = noext(link['href']) + '.html'
 
         with open(target, 'w') as f:
-            f.write(soup.prettify().encode('utf-8'))
+            f.write(soup.encode('utf-8'))
 
     def cleanup(self, context):
         for f in self.processed_files:
