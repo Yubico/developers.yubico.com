@@ -30,7 +30,7 @@ class SuggestedEditsModule(Module):
                                     + [basename]))
                     )
                 ),
-                'name': '<i class=\"fa fa-pencil-square-o fa-lg\"></i>Suggest Edits'
+                'name': '<i class=\"fa fa-pencil-square-o fa-lg\"></i> Suggest Edits'
             })
 
 
