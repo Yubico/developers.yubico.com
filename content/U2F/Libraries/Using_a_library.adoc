@@ -19,7 +19,7 @@ Note over Server: verify response
 
 === Server-side ===
 
-A server-side U2F library has 4 basic functions: _Start registration, Finish registration, Start authentication_ and _Finish authentication_.
+A server-side U2F library has 4 basic functions: _Start registration, Finish registration, Start signing_ and _Finish signing_.
 Below is an example of how these functions can be used in a web server:
 
 ==== Registration ====
@@ -29,7 +29,7 @@ Below is an example of how these functions can be used in a web server:
 # handles HTTP requests to /start_registration
 def start_registration(username, password):
   verify_user_pass(username, password)
-  challenge = u2f.start_registration(APP_ID) # generate challenge
+  challenge = u2f_lib.start_registration(APP_ID) # generate challenge
   challenge_store.set(username, challenge)
   return challenge
 ----
@@ -37,33 +37,33 @@ def start_registration(username, password):
 [source, python]
 ----
 # handles HTTP requests to /finish_registration
-def finish_registration(username, password, deviceResponse):
+def finish_registration(username, password, device_response):
   challenge = challenge_store.get(username)
-  registered_device = u2f.finish_registration(challenge, deviceResponse) # verify response
+  registered_device = u2f_lib.finish_registration(challenge, device_response) # verify response
   device_store.set(username, registered_device)
   challenge_store.delete(username)
   return "Success!"
 ----
 
-==== Authentication ====
+==== Signing ====
 
 [source, python]
 ----
-# handles HTTP requests to /start_authentication
-def start_authentication(username, password):
+# handles HTTP requests to /start_signing
+def start_signing(username, password):
   verify_user_pass(username, password)
   registered_device = device_store.get(username)
-  challenge = u2f.start_authentication(registered_device, APP_ID) # generate challenge
+  challenge = u2f_lib.start_signing(registered_device, APP_ID) # generate challenge
   challenge_store.set(username, challenge)
   return challenge
 ----
 
 [source, python]
 ----
-# handles HTTP requests to /finish_authentication
-def finish_authentication(username, password, deviceResponse):
+# handles HTTP requests to /finish_signing
+def finish_signing(username, password, device_response):
   challenge = challenge_store.get(username)
-  u2f.finish_authentication(challenge, deviceResponse, registered_device) # verify response
+  u2f_lib.finish_signing(challenge, device_response, registered_device) # verify response
   challenge_store.delete(username)
   return "Success!"
 ----
