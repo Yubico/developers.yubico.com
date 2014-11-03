@@ -25,21 +25,26 @@ Apart from the general advantages of 2-factor authentication, U2F has the follow
 
 This diagram explains the basic process flow of U2F:
 
-++++
-<div class="diagram">
-participant Token
-participant Browser
-Browser->Server: username and\npassword
-Note over Server: verify username\nand password
-Note over Server: generate U2F\nchallenge
-Server->Browser: challenge (e.g. embedded\nin a HTML page)
-Browser->Token: challenge
-Note over Token: user touches\nbutton
-Token-->Browser: response
-Browser-->Server: response
-Note over Server: verify response
-</div>
-++++
+[mscgen]
+----
+msc {
+
+   # Entities
+   d [label = "Device"], b [label="Browser"], s [label="Server"];
+
+   # Arcs
+   |||;
+   b -> s [label = "username and password"];
+   s rbox s [label="verify password"];
+   s rbox s [label="generate challenge"];
+   s -> b [label = "challenge"];
+   b => d [label = "challenge"];
+   d rbox d [label="user touches button"];
+   d >> b [label = "response"];
+   b -> s [label = "response"];
+   s rbox s [label="verify response"];
+}
+----
 
 
 == Implementing ==
@@ -52,8 +57,6 @@ We provide three alternatives:
  * *link:Libraries[Libraries for programming languages]*. With these, you have the 
    flexibility/burden to store and access U2F artifacts yourself.
    This is ideal if you don't want to deploy a standalone validation server.
-
-pass::[<script src="jquery-1.11.1.min.js"></script><script src="raphael-min.js"></script><script src="underscore-min.js"></script><script src="sequence-diagram-min.js"></script><script>$(".diagram").sequenceDiagram({theme: 'simple'});</script>]
 
 
 == Useful Links ==

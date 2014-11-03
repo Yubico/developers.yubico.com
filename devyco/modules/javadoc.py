@@ -5,6 +5,7 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
     artifactId: The Maven artifactId for the project
 """
 
+import os
 import shutil
 from os import path
 from urllib2 import urlopen
@@ -37,6 +38,10 @@ class JavaDocModule(Module):
         super(JavaDocModule, self).__init__()
 
     def _run(self):
+        if os.environ.get('OFFLINE'):
+            print "OFFLINE set, skip javadoc"
+            return
+
         conf = self.get_conf('javadoc')
         if conf is None:
             return

@@ -20,7 +20,8 @@ class AsciiDocModule(Module):
     def _configure(self):
         self._asciidoc = AsciiDocAPI()
         self._asciidoc.attributes['root'] = self._conf['destdir']
-        conf_file = os.path.join(self._conf['maindir'], 'asciidoc-devyco.conf')
+        self._asciidoc.attributes['confdir'] = os.path.join(self._conf['maindir'], 'asciidoc')
+        conf_file = os.path.join(self._asciidoc.attributes['confdir'], 'asciidoc-devyco.conf')
         self._asciidoc.options('--conf-file', conf_file)
         self._asciidoc.options('--no-header-footer')
         self.processed_files = []

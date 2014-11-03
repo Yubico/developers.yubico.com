@@ -39,8 +39,8 @@ class GitModule(Module):
 
         if url not in self._updated:
             if path.isdir(repo_dir):
-                if os.environ.get('NOGIT'):
-                    print "NOGIT set, skip update"
+                if os.environ.get('OFFLINE'):
+                    print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
                 os.system('(cd "%s" && git pull 2>&1)' % repo_dir)
