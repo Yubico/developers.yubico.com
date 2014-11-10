@@ -1,21 +1,27 @@
 == Implementing U2F using a library ==
 Let us have a look at the U2F sequence diagram:
 
-++++
-<div class="diagram">
-participant Token
-participant Browser
-Browser->Server: username and\npassword
-Note over Server: verify username\nand password
-Note over Server: generate U2F\nchallenge
-Server->Browser: challenge (e.g. embedded\nin a HTML page)
-Browser->Token: challenge
-Note over Token: user touches\nbutton
-Token-->Browser: response
-Browser-->Server: response
-Note over Server: verify response
-</div>
-++++
+[mscgen]
+----
+msc {
+
+   # Entities
+   d [label = "Device"], b [label="Browser"], s [label="Server"];
+
+   # Arcs
+   |||;
+   b -> s [label = "username and password"];
+   s rbox s [label="verify password"];
+   s rbox s [label="generate challenge", linecolor="#00AA00", textcolor="#00AA00"];
+   s -> b [label = "challenge"];
+   b rbox b [label = "u2f.sign(challenge)"];
+   b => d [label = "challenge", linecolor="#0000AA", textcolor="#0000AA"];
+   d rbox d [label="user touches button", linecolor="#0000AA", textcolor="#0000AA"];
+   d >> b [label = "response", linecolor="#0000AA", textcolor="#0000AA"];
+   b -> s [label = "response"];
+   s rbox s [label="verify response", linecolor="#00AA00", textcolor="#00AA00"];
+}
+----
 
 === Server-side ===
 
@@ -118,7 +124,4 @@ https://github.com/Yubico/java-u2flib-server/blob/master/u2flib-server-demo/src/
 
 === Complete example code
 For complete example code (both server and client) in various languages, have a look at link:List_of_libraries.html[respective U2F library]'s accompanied demo server.
-
-
-pass::[<script src="jquery-1.11.1.min.js"></script><script src="raphael-min.js"></script><script src="underscore-min.js"></script><script src="sequence-diagram-min.js"></script><script>$(".diagram").sequenceDiagram({theme: 'simple'});</script>]
 
