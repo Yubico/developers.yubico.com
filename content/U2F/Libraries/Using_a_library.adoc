@@ -23,6 +23,9 @@ msc {
 }
 ----
 
+The blue part is handled by the U2F client (e.g. the web browser) and the green parts are handled by the U2F server library.
+
+
 === Server-side ===
 
 A server-side U2F library has 4 basic functions: _Start registration, Finish registration, Start authentication_ and _Finish authentication_.
@@ -33,8 +36,7 @@ Below is an example of how these functions can be used in a web server:
 [source, python]
 ----
 # handles HTTP requests to /start_registration
-def start_registration(username, password):
-  verify_user_pass(username, password)
+def start_registration(username):
   challenge = u2f_lib.start_registration(APP_ID) # generate challenge
   challenge_store.set(username, challenge)
   return challenge
@@ -43,7 +45,7 @@ def start_registration(username, password):
 [source, python]
 ----
 # handles HTTP requests to /finish_registration
-def finish_registration(username, password, device_response):
+def finish_registration(username, device_response):
   challenge = challenge_store.get(username)
   registered_device = u2f_lib.finish_registration(challenge, device_response) # verify response
   device_store.set(username, registered_device)
