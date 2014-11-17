@@ -66,13 +66,18 @@ class Module(object):
         env = Environment(loader=FileSystemLoader(self._conf['templatedir']))
         return env.get_template('%s.template' % name)
 
-    def list_files(self, name_filters='*', relative=''):
+    def list_dirs(self, target):
+        return filter(os.path.isdir, glob(path.join(target, '*')))
+
+    def list_files(self, name_filters='*', relative='', include_dirs=False):
         target = path.join(self._target, relative)
         if not isinstance(name_filters, list):
             name_filters = [name_filters]
         target_files = []
         for name_filter in name_filters:
             target_files.extend(glob(path.join(target, name_filter)))
+        if include_dirs:
+            target_files.extend(self.list_dirs(target))
         return self._sort(target, self._exclude(target, target_files))
 
     def read_files_list(self, basedir, fname):

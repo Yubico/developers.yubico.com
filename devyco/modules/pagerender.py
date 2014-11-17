@@ -57,9 +57,8 @@ class PageRenderModule(Module):
 
     def _run(self):
         current = self._get_current()
-        dirs = filter(path.isdir, self.list_files())
         documents = self.list_files(['*.partial', '*.html'])
-        children = dirs + documents
+        children = self.list_files(['*.partial', '*.html'], include_dirs=True)
         self._populate_children(current, children)
         self._context['nav'] = self._site['children']
         self._render_children(current, filter(lambda x: x.endswith('.partial'),
