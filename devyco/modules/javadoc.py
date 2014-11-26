@@ -12,25 +12,26 @@ from urllib2 import urlopen
 from StringIO import StringIO
 from zipfile import ZipFile
 from devyco.module import Module
+from xml.dom import minidom
 
-LAST_SEEN_HASH = 'last_seen_hash'
+LOCAL_VERSION = 'local_version'
 
-JAVADOC_ARCHIVE_URL = ('http://repository.sonatype.org/service/local/artifact/maven/'
-               'redirect?r=central-proxy'
-               '&g={group}'
-               '&a={artifact}'
-               '&v=LATEST&c=javadoc')
+JAVADOC_ARCHIVE_URL = (
+    'http://search.maven.org/remotecontent?'
+    'filepath={group_url}/'
+    '{artifact}/{version}/'
+    '{artifact}-{version}-javadoc.jar')
 
 HASH_URL = ('https://repo1.maven.org/maven2/'
             '{group_url}/{artifact}/'
-            'maven-metadata.xml.md5')
+            'maven-metadata.xml')
 
 
-def _get_last_seen_hash(hash_path):
-    if not path.exists(hash_path):
+def _get_local_version(version_path):
+    if not path.exists(version_path):
         return None
-    with open(hash_path, 'r') as hash_file:
-        return hash_file.read()
+    with open(version_path, 'r') as version_file:
+        return version_file.read()
 
 
 class JavaDocModule(Module):
@@ -46,33 +47,42 @@ class JavaDocModule(Module):
         if conf is None:
             return
 
-        self.group = conf['groupId']
+        self.group_url = conf['groupId'].replace('.', '/')
         self.artifact = conf['artifactId']
-        self.cache_root = self.cache_dir(self.group + self.artifact, True)
+        self.cache_root = self.cache_dir(self.group_url + self.artifact, True)
 
         javadoc_cache_path = path.join(self.cache_root, 'JavaDoc')
+        version_path = path.join(self.cache_root, LOCAL_VERSION)
 
-        if not self._up_to_date() or not path.exists(javadoc_cache_path):
-            url = JAVADOC_ARCHIVE_URL.format(group=self.group,
-                                             artifact=self.artifact)
+        if not self._up_to_date(version_path) or not path.exists(
+                javadoc_cache_path):
+            url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
+                                             artifact=self.artifact,
+                                             version=self.remote_version)
+            print 'JavaDoc URL: ' + url
             jarfile = urlopen(url).read()
             zipfile = ZipFile(StringIO(jarfile))
             zipfile.extractall(javadoc_cache_path)
+            with open(version_path, 'w') as version_file:
+                version_file.write(self.remote_version)
+        else:
+            print 'JavaDoc is up-to-date'
 
         shutil.copytree(javadoc_cache_path, path.join(self._target, 'JavaDoc'))
 
-    def _up_to_date(self):
-        hash_path = path.join(self.cache_root, LAST_SEEN_HASH)
-        last_seen_hash = _get_last_seen_hash(hash_path)
-        remote_hash = self._get_remote_hash()
-        with open(hash_path, 'w') as hash_file:
-            hash_file.write(remote_hash)
-        return remote_hash == last_seen_hash
+    def _up_to_date(self, version_path):
+        self._get_remote_version()
+        return self.remote_version == _get_local_version(version_path)
 
-    def _get_remote_hash(self):
-        url = HASH_URL.format(group_url=self.group.replace('.', '/'),
+    def _get_remote_version(self):
+        url = HASH_URL.format(group_url=self.group_url,
                               artifact=self.artifact)
-        return urlopen(url).read()
+        xml = urlopen(url).read()
+        print 'URL:' + url
+        print 'XML: ' + xml
+        xmldoc = minidom.parseString(xml)
+        self.remote_version = xmldoc.getElementsByTagName('latest')[
+            0].firstChild.nodeValue
 
 
 module = JavaDocModule()
