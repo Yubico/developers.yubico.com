@@ -59,14 +59,11 @@ class JavaDocModule(Module):
             url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
                                              artifact=self.artifact,
                                              version=self.remote_version)
-            print 'JavaDoc URL: ' + url
             jarfile = urlopen(url).read()
             zipfile = ZipFile(StringIO(jarfile))
             zipfile.extractall(javadoc_cache_path)
             with open(version_path, 'w') as version_file:
                 version_file.write(self.remote_version)
-        else:
-            print 'JavaDoc is up-to-date'
 
         shutil.copytree(javadoc_cache_path, path.join(self._target, 'JavaDoc'))
 
@@ -78,8 +75,6 @@ class JavaDocModule(Module):
         url = HASH_URL.format(group_url=self.group_url,
                               artifact=self.artifact)
         xml = urlopen(url).read()
-        print 'URL:' + url
-        print 'XML: ' + xml
         xmldoc = minidom.parseString(xml)
         self.remote_version = xmldoc.getElementsByTagName('latest')[
             0].firstChild.nodeValue
