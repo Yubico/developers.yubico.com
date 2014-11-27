@@ -12,18 +12,18 @@ msc {
    |||;
    b -> s [label = "username and password"];
    s rbox s [label="verify password"];
-   s rbox s [label="generate challenge", linecolor="#00AA00", textcolor="#00AA00"];
+   s rbox s [label="generate challenge", linecolor="#44B724", textcolor="#44B724"];
    s -> b [label = "challenge"];
    b rbox b [label = "u2f.sign(challenge)"];
-   b => d [label = "challenge", linecolor="#0000AA", textcolor="#0000AA"];
-   d rbox d [label="user touches button", linecolor="#0000AA", textcolor="#0000AA"];
-   d >> b [label = "response", linecolor="#0000AA", textcolor="#0000AA"];
+   b => d [label = "challenge", linecolor="#2156a5", textcolor="#2156a5"];
+   d rbox d [label="user touches button", linecolor="#2156a5", textcolor="#2156a5"];
+   d >> b [label = "response", linecolor="#2156a5", textcolor="#2156a5"];
    b -> s [label = "response"];
-   s rbox s [label="verify response", linecolor="#00AA00", textcolor="#00AA00"];
+   s rbox s [label="verify response", linecolor="#44B724", textcolor="#44B724"];
 }
 ----
 
-The blue part is handled by the U2F client (e.g. the web browser) and the green parts are handled by the U2F server library.
+The blue part is handled by the U2F client (e.g. the web browser) and the red parts are handled by the U2F server library.
 
 
 === Server-side ===
@@ -37,21 +37,24 @@ Below is an example of how these functions can be used in a web server:
 ----
 # handles HTTP requests to /start_registration
 def start_registration(username):
-  challenge = u2f_lib.start_registration(APP_ID) # generate challenge
-  challenge_store.set(username, challenge)
+  challenge = u2f_lib.start_registration(APP_ID) # (1)
+  challenge_store.set(username, challenge) # (2)
   return challenge
 ----
+<1> Generate challenge for device.
+<2> Store the challenge for future reference.
 
 [source, python]
 ----
 # handles HTTP requests to /finish_registration
 def finish_registration(username, device_response):
   challenge = challenge_store.get(username)
-  registered_device = u2f_lib.finish_registration(challenge, device_response) # verify response
+  registered_device = u2f_lib.finish_registration(challenge, device_response) # (1)
   device_store.set(username, registered_device)
   challenge_store.delete(username)
   return "Success!"
 ----
+<1> Ablaba.
 
 ==== Authentication ====
 
@@ -61,7 +64,7 @@ def finish_registration(username, device_response):
 def start_authentication(username, password):
   verify_user_pass(username, password)
   registered_device = device_store.get(username)
-  challenge = u2f_lib.start_authentication(registered_device, APP_ID) # generate challenge
+  challenge = u2f_lib.start_authentication(registered_device, APP_ID)
   challenge_store.set(username, challenge)
   return challenge
 ----
@@ -71,7 +74,7 @@ def start_authentication(username, password):
 # handles HTTP requests to /finish_authentication
 def finish_authentication(username, password, device_response):
   challenge = challenge_store.get(username)
-  u2f_lib.finish_authentication(challenge, device_response, registered_device) # verify response
+  u2f_lib.finish_authentication(challenge, device_response, registered_device)
   challenge_store.delete(username)
   return "Success!"
 ----
@@ -98,11 +101,11 @@ communicate with the device (exposed via the `u2f` object).
 [source, javascript]
 ----
 /* u2f-login.html */
-var challenge = ... // <1>
+var challenge = ... // (1)
 u2f.sign([challenge], [],
   function(deviceResponse) {
 	document.getElementById('response-input').value = JSON.stringify(deviceResponse)
-	document.getElementById('login-form').submit() // <2>
+	document.getElementById('login-form').submit() // (2)
   }
 );
 ----
