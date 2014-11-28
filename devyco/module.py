@@ -58,9 +58,9 @@ class Module(object):
         pass
 
     def get_conf(self, name, default=None):
-        if name not in self._context['dirconfig']:
+        if self._context['dirconfig'].get(name) is None and default is not None:
             self._context['dirconfig'][name] = default
-        return self._context['dirconfig'][name]
+        return self._context['dirconfig'].get(name)
 
     def get_template(self, name):
         env = Environment(loader=FileSystemLoader(self._conf['templatedir']))
