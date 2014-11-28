@@ -21,6 +21,7 @@ class AsciiDocModule(Module):
         self._asciidoc = AsciiDocAPI()
         self._asciidoc.attributes['root'] = self._conf['destdir']
         self._asciidoc.attributes['source-highlighter'] = 'pygments'
+        self._asciidoc.attributes['iconsdir'] = '/usr/share/asciidoc/icons/'
         self._asciidoc.attributes['confdir'] = os.path.join(self._conf['maindir'], 'asciidoc')
         conf_file = os.path.join(self._asciidoc.attributes['confdir'], 'asciidoc-devyco.conf')
         self._asciidoc.options('--conf-file', conf_file)

@@ -39,12 +39,12 @@ class JavaDocModule(Module):
         super(JavaDocModule, self).__init__()
 
     def _run(self):
-        if os.environ.get('OFFLINE'):
-            print "OFFLINE set, skip javadoc"
-            return
-
         conf = self.get_conf('javadoc')
         if conf is None:
+            return
+
+        if os.environ.get('OFFLINE'):
+            print "OFFLINE set, skip javadoc"
             return
 
         self.group_url = conf['groupId'].replace('.', '/')

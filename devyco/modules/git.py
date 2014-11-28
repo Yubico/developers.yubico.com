@@ -22,6 +22,9 @@ class GitModule(Module):
         self._updated = []
 
     def _run(self):
+        if os.environ.get('NOPROJECTS'):
+            self._context['dirconfig']['git'] = None
+
         confs = self.get_conf('git')
         if confs is None:
             return
