@@ -130,8 +130,11 @@ class PageRenderModule(Module):
         elem = content.find(lambda x: x.string)
         while elem.name not in ['h1', 'h2']:
             if elem == content:
-                content.insert(0, BeautifulSoup('<h2>%s</h2>' %
-                                                display_name(basename)))
+                if basename == 'index':
+                    title = display_name(self._context['current'])
+                else:
+                    title = display_name(basename)
+                content.insert(0, BeautifulSoup('<h2>%s</h2>' % title))
                 break
             elem = elem.parent
 
