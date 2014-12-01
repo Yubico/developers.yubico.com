@@ -119,13 +119,22 @@ class PageRenderModule(Module):
             content = infile.read().decode('utf-8')
         rendered = tplt.render(content=content, sidelinks=links,
                                **self._context)
-        rendered = self._post_process(rendered)
+        rendered = self._post_process(rendered, basename)
         with open(path.join(self._target, out_name), 'w') as outfile:
             outfile.write(rendered.encode('utf-8'))
         os.remove(fname)
 
-    def _post_process(self, content):
+    def _post_process(self, content, basename):
         soup = BeautifulSoup(content)
+        content = soup.body.find(id='page-content')
+        elem = content.find(lambda x: x.string)
+        while elem.name not in ['h1', 'h2']:
+            if elem == content:
+                content.insert(0, BeautifulSoup('<h2>%s</h2>' %
+                                                display_name(basename)))
+                break
+            elem = elem.parent
+
         for link in soup.find_all('a', href=EXTERNAL_LINK):
             link['target'] = '_blank'
 
