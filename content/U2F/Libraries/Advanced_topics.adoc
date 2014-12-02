@@ -26,11 +26,13 @@ to be impossible to clone.
 
 ==== Handling counter errors ====
 If a the counter ever decrements, the device has been cloned. The best way to handle
-this depends on the application. You might want to alert the user and/or lock their account.
+this depends on the application. You might want to alert the user or lock their account.
 
 
 === Multiple devices per user
-To support multiple devices per user, generate
+Some U2F server libraries has a high-level API for multiple devices. If the library that
+you are using does not, you want to do something like this when authenticating a user with
+multiple devices registered:
 
 [source, python]
 ----
@@ -38,30 +40,31 @@ To support multiple devices per user, generate
 def start_authentication(username, password):
   verify_user_pass(username, password)
   registered_devices = device_store.get(username)
-  challenges = [u2f.start_authentication(device, APP_ID) for device in registered_devices]
+  challenges = [u2f.start_authentication(device, APP_ID) for device
+                in registered_devices]
   challenge_store.set(username, challenge)
   return toJsonList(challenges)
 ----
 
-This could for example result in the following JSON:
+This should result in a JSON list of authentication requests, for example:
 
-[source, javascript]
+[source, json]
 ----
 [
   {
     "version": "U2F_V2",
     "challenge": "b7ma_N3pzL7zVCQCTpuUr55t8HQqXEDEdPapNzx6_IE",
-    "keyHandle": "UuYvIIg9fpAC6AkbWT9Pe0T3iIkRsYczGleC4k8e8P75BVHnlm0cpXIHL8Pq7ERhslI9GX4oj0uB"
+    "keyHandle": "UuYvIIg9fpAC6AkbWT9Pe0T3iIkRsYczGleC4k8e8P75BVHnPq7ERhslI9GX4oj0uB"
   },
   {
     "version": "U2F_V2",
     "challenge": "JCxNJtapiNnia0P9RaWTAVO1gObWifWV5vPVKIjw6lo",
-    "keyHandle": "EUryGFjTgMnSqiuEGbxiaBRaVGmilz62V9o90tDBBvdPfV3vrIV_1oKhu8DSIPHol3rarGymRcA"
+    "keyHandle": "EUryGFjTgMnSqiuEGbxiaBRaVGmilz62V9o90tDBBvdPfV3vrIIPHol3rarGymRcA"
   },
   {
     "version": "U2F_V2",
     "challenge": "FhG8tCCizpX5uGPMXUdkw8O3giwA8id0rbQA4FJS6kE",
-    "keyHandle": "tveAECT7LBjvHQ1BxUuUB13EVFLR0iPomiGVObvHD85IYTH5G8ekqQrgpZaJhUnGKyVaegIopJT"
+    "keyHandle": "tveAECT7LBjvHQ1BxUuUB13EVFLR0iPomiGVObvHD85IYTH5G8eUnGKyVaegIopJT"
   }
 ]
 ----
