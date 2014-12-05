@@ -1,4 +1,4 @@
-== Implementing U2F using a library ==
+== Using a U2F library ==
 Let us have a look at the U2F sequence diagram:
 
 [mscgen]
@@ -47,10 +47,9 @@ def start_registration(username):
 ----
 # handles HTTP requests to /finish_registration
 def finish_registration(username, device_response):
-  challenge = challenge_store.get(username)
+  challenge = challenge_store.pop(username)
   registered_device = u2f_lib.finish_registration(challenge, device_response)
   device_store.set(username, registered_device)
-  challenge_store.delete(username)
   return "Success!"
 ----
 
@@ -72,9 +71,8 @@ def start_authentication(username, password):
 ----
 # handles HTTP requests to /finish_authentication
 def finish_authentication(username, password, device_response):
-  challenge = challenge_store.get(username)
+  challenge = challenge_store.pop(username)
   u2f_lib.finish_authentication(challenge, device_response, registered_device)
-  challenge_store.delete(username)
   return "Success!"
 ----
 
