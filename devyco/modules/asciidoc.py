@@ -7,6 +7,7 @@ import os
 import re
 from devyco.module import Module, noext
 from bs4 import BeautifulSoup
+import codecs
 
 sys.path.append('/usr/share/asciidoc/')
 from asciidocapi import AsciiDocAPI, AsciiDocError
@@ -46,7 +47,8 @@ class AsciiDocModule(Module):
             sys.stderr.write("%s\n" % e.message)
 
     def _post_process(self, target):
-        soup = BeautifulSoup(open(target, 'r'))
+        with codecs.open(target,'r',encoding='utf8') as f:
+            soup = BeautifulSoup(f)
         for link in soup.find_all('a', href=ADOC_LINK):
             link['href'] = noext(link['href']) + '.html'
 
