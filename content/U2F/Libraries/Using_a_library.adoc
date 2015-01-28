@@ -61,8 +61,8 @@ def finish_registration(username, device_response):
 # handles HTTP requests to /start_authentication
 def start_authentication(username, password):
   verify_user_pass(username, password)
-  registered_device = device_store.get(username)
-  challenge = u2f_lib.start_authentication(registered_device, APP_ID)
+  registered_devices = device_store.get(username)
+  challenge = u2f_lib.start_authentication(registered_devices, APP_ID)
   challenge_store.set(username, challenge)
   return challenge
 ----
@@ -72,7 +72,7 @@ def start_authentication(username, password):
 # handles HTTP requests to /finish_authentication
 def finish_authentication(username, password, device_response):
   challenge = challenge_store.pop(username)
-  u2f_lib.finish_authentication(challenge, device_response, registered_device)
+  u2f_lib.finish_authentication(challenge, device_response, registered_devices)
   return "Success!"
 ----
 
