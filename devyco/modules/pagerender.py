@@ -99,11 +99,13 @@ class PageRenderModule(Module):
                         .replace('.partial', '.html') == child['id']:
                     child['active'] = True
                     self._context['current'] = child['id']
+                    self._context['title'] = child['name']
                     self._render_partial(partial)
                     child['active'] = False
                     break
             else:
                 self._context['current'] = current['id']
+                self._context['title'] = display_name(current['id'])
                 self._render_partial(partial)
 
     def _get_links(self, basename):
@@ -130,10 +132,8 @@ class PageRenderModule(Module):
         elem = content.find(lambda x: x.string)
         while elem.name not in ['h1', 'h2']:
             if elem == content:
-                if basename == 'index':
-                    title = display_name(self._context['current'])
-                else:
-                    title = display_name(basename)
+                title = self._context.get('title') or \
+                    display_name(self._context['current'])
                 content.insert(0, BeautifulSoup('<h2>%s</h2>' % title))
                 break
             elem = elem.parent
@@ -147,6 +147,7 @@ class PageRenderModule(Module):
         index_partial = path.join(self._target, 'index.partial')
         index_html = path.join(self._target, 'index.html')
         if index_partial not in documents and index_html not in documents:
+            self._context['title'] = display_name(self._context['path'][-1])
             documents.append(index_partial)
             tplt = self.get_template('index')
             with open(index_partial, 'w') as f:
