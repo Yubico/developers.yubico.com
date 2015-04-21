@@ -130,7 +130,7 @@ class PageRenderModule(Module):
         soup = BeautifulSoup(content)
         content = soup.body.find(id='page-content')
         elem = content.find(lambda x: x.string)
-        while elem.name not in ['h1', 'h2']:
+        while elem and elem.name not in ['h1', 'h2']:
             if elem == content:
                 title = self._context.get('title') or \
                     display_name(self._context['current'])
