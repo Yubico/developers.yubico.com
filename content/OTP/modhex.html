@@ -1,0 +1,202 @@
+<html>
+<body>
+<head>
+<script src="http://knockoutjs.com/downloads/knockout-3.2.0.js"></script>
+</head>
+<form>
+<p>
+<label for="input">Input</label>
+<input id="input" data-bind="textInput: input"></input>
+</p>
+<p>
+<label for="format">Format</label>
+<select id="format" data-bind="options: opts, value: format"></select>
+</p>
+<p>
+<label>Modhex</label>
+<input data-bind="value: modhex"></input>
+</p>
+<p>
+<label>Hexadecimal</label>
+<input data-bind="value: hex"></input>
+</p>
+<p>
+<label>Decimal</label>
+<input data-bind="value: decimal"></input>
+</p>
+</form>
+<script type="text/javascript">
+/**
+ * A function for converting hex <-> dec w/o loss of precision.
+ *
+ * The problem is that parseInt("0x12345...") isn't precise enough to convert
+ * 64-bit integers correctly.
+ *
+ * Internally, this uses arrays to encode decimal digits starting with the least
+ * significant:
+ * 8 = [8]
+ * 16 = [6, 1]
+ * 1024 = [4, 2, 0, 1]
+ */
+
+// Adds two arrays for the given base (10 or 16), returning the result.
+// This turns out to be the only "primitive" operation we need.
+function add(x, y, base) {
+  var z = [];
+  var n = Math.max(x.length, y.length);
+  var carry = 0;
+  var i = 0;
+  while (i < n || carry) {
+    var xi = i < x.length ? x[i] : 0;
+    var yi = i < y.length ? y[i] : 0;
+    var zi = carry + xi + yi;
+    z.push(zi % base);
+    carry = Math.floor(zi / base);
+    i++;
+  }
+  return z;
+}
+
+// Returns a*x, where x is an array of decimal digits and a is an ordinary
+// JavaScript number. base is the number base of the array x.
+function multiplyByNumber(num, x, base) {
+  if (num < 0) return null;
+  if (num == 0) return [];
+
+  var result = [];
+  var power = x;
+  while (true) {
+    if (num & 1) {
+      result = add(result, power, base);
+    }
+    num = num >> 1;
+    if (num === 0) break;
+    power = add(power, power, base);
+  }
+
+  return result;
+}
+
+function parseToDigitsArray(str, base) {
+  var digits = str.split('');
+  var ary = [];
+  for (var i = digits.length - 1; i >= 0; i--) {
+    var n = parseInt(digits[i], base);
+    if (isNaN(n)) return null;
+    ary.push(n);
+  }
+  return ary;
+}
+
+function convertBase(str, fromBase, toBase) {
+  var digits = parseToDigitsArray(str, fromBase);
+  if (digits === null) return null;
+
+  var outArray = [];
+  var power = [1];
+  for (var i = 0; i < digits.length; i++) {
+    // invariant: at this point, fromBase^i = power
+    if (digits[i]) {
+      outArray = add(outArray, multiplyByNumber(digits[i], power, toBase), toBase);
+    }
+    power = multiplyByNumber(fromBase, power, toBase);
+  }
+
+  var out = '';
+  for (var i = outArray.length - 1; i >= 0; i--) {
+    out += outArray[i].toString(toBase);
+  }
+  return out;
+}
+
+function decToHex(decStr) {
+  var hex = convertBase(decStr, 10, 16);
+  return hex ? hex : null;
+}
+
+function hexToDec(hexStr) {
+  if (hexStr.substring(0, 2) === '0x') hexStr = hexStr.substring(2);
+  hexStr = hexStr.toLowerCase();
+  return convertBase(hexStr, 16, 10);
+}
+
+</script>
+<script>
+var ALPHABET = 'cbdefghijklnrtuv';
+var trans = ALPHABET.split("");
+
+/*** Modhex ***/
+function fromModhex(s) {
+	bytes = [];  
+	toggle = false;
+	keep = 0;
+
+	for (i = 0; i < s.length; i++) {
+		ch = s.substring(i, i+1);
+		n = ALPHABET.indexOf(ch);
+		if (n == -1) {
+			throw s + " is not properly encoded";
+		}
+		toggle = !toggle;
+		if (toggle) {
+			keep = n;
+		} else {
+			bytes.push((keep << 4) | n);
+		}
+	}
+	return bytes;
+}
+
+function toModhex(data) {
+	result = "";
+	for (i = 0; i < data.length; i++) {
+		result += trans[(data[i] >> 4) & 0xf];
+		result += trans[data[i] & 0xf];
+	}
+	return result;
+}
+
+/*** Hex ***/
+function fromHex(hex) {
+	if(hex.length % 2) {
+		hex = "0" + hex
+	}
+	for (var bytes = [], c = 0; c < hex.length; c += 2) {
+		bytes.push(parseInt(hex.substr(c, 2), 16));
+	}
+	return bytes;
+}
+
+function toHex(bytes) {
+	for (var hex = [], i = 0; i < bytes.length; i++) {
+		hex.push((bytes[i] >>> 4).toString(16));
+		hex.push((bytes[i] & 0xF).toString(16));
+	}
+	return hex.join("");
+}
+
+var ViewModel = function() {
+    this.input = ko.observable();
+    this.format = ko.observable();
+	this.opts = self.myOpts = ko.observableArray(["Modhex", "Hexadecimal", "Decimal"]);
+ 
+    this.bytes = ko.computed(function() {
+		if(!this.input()) { return [] }
+		switch(this.format()) {
+			case "Decimal":
+				return fromHex(decToHex(this.input()));
+			case "Hexadecimal":
+				return fromHex(this.input());
+			default:
+				return fromModhex(this.input());
+		}
+    }, this); 
+	this.hex = ko.computed(function() { return toHex(this.bytes()) }, this);
+	this.decimal = ko.computed(function() { return hexToDec(this.hex()) }, this);
+	this.modhex = ko.computed(function() { return toModhex(this.bytes()) }, this);
+};
+
+ko.applyBindings(new ViewModel());
+</script>
+</body>
+</html>
