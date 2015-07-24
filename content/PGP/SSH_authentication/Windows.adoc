@@ -1,0 +1,53 @@
+== SSH authentication using a YubiKey on Windows
+The YubiKey NEO has an OpenPGP applet which can be used with GPG4Win as well as SSH authentication. These in turn can be used by several other useful tools, like Git, pass, etc. This guide will help you set up the required software for getting things to work.
+
+=== GPG4Win
+First things first. The core of everything is http://www.gpg4win.org/[GPG4Win]. Install the latest version. You will also need to autostart gpg-connect-agent.exe (which comes with GPG4Win) when your computer starts. You can do this by creating a shortcut to `"C:\Program Files (x86)\GNU\GnuPG\gpg-connect-agent.exe" /bye` and placing it in your _Startup_ program group in your Start menu. Changing the _Run:_ setting from _Normal window_ to _Minimized_ makes it slightly less obtrusive at login.
+
+If you haven’t already, you will need to setup a PGP key on your NEO.
+
+GPG4Win's smart card support is not rock solid; occasionally you might get error messages when trying to access the YubiKey. This can be resolved by restarting gpg-agent using the following commands:
+
+ gpg-connect-agent killagent /bye
+ gpg-connect-agent /bye
+
+You might want to put these commands in a BAT-file for quick access.
+
+
+=== PuTTY
+For SSH we will be using PuTTY, which supports using gpg-agent out of the box.
+After having http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html[installed PuTTY], you need to enable putty support for gpg-agent, which is done by creating (or editing) the gpg-agent.conf file and adding the following line to it:
+
+ enable-putty-support
+
+The file is found in the gnupg directory: `%APPDATA%\Roaming\gnupg\` (at least on Windows 8). The gpg-agent will need to be restarted for this change to take effect.
+
+
+=== Git
+For Git there are two options. Either install Cygwin and use Git from within that shell, or install http://git-scm.com/download/win[Git for Windows]. The first approach might be desirable if you’re planning on using Cygwin anyway. If so, just add Git to the packages to install when installing Cygwin.
+During the installation you will be asked if you prefer to use OpenSSH (recommended) or PuTTY. As we wish to use the NEO for SSH authentication you need to select PuTTY.
+
+
+=== Cygwin
+https://cygwin.com/install.html[Cygwin] provides a Unix-like terminal with several useful tools.
+It is recommended to keep the installer handy, as it can be re-run to add or remove packages from Cygwin. During installation, you will be asked which packages to install. Make sure to not install gpg, as we wish to use the already installed GPG4Win. Do make sure to install ssh-pageant to allow the included ssh client to use the NEO for authentication. Lastly, edit the ~/.bashrc file adding the following to the bottom:
+
+ # ssh-pageant
+ eval $(/usr/bin/ssh-pageant -r -a "/tmp/.ssh-pageant-$USERNAME")
+
+Cygwin provides several useful tools, like Git, SSH, and so on.
+
+
+=== Pass
+Pass is a lightweight command-line password manager that uses GPG for encrypting data, and Git for version control and distribution. It requires Cygwin to run on Windows, as well as the following packages for Cygwin (re-run the installer to select these if they are not already installed): make and tree. With those additional packages installed, download the source distribution (tarball) of the latest release of pass from http://www.passwordstore.org/[here].
+Using a Cygwin terminal, extract the archive using the command: `tar xfa <filename>.tar.xz`
+Change into the extracted directory and run: make install
+If the installation didn’t install the bash-completion file, do so manually by running: `cp src/completion/pass.bash-completion /etc/bash_completion.d/pass`
+
+
+=== Misc
+Bash completion for gpg might be broken under cygwin due to GPG4Win outputting carriage returns in its --dump-options command (which shows up as ^M after each completed command). This can be fixed by editing `/etc/bash_completion.d/gpg` and adding 
+ 
+  | sed "s/\r$//"
+
+after the gpg --dump-options command.
