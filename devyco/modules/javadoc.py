@@ -43,8 +43,8 @@ class FileStore(object):
             return f.read()
 
     def write(self, value):
-        with open(self.file_path, 'w') as version_file:
-            version_file.write(str(value))
+        with open(self.file_path, 'w') as f:
+            f.write(str(value))
 
 
 class JavaDocModule(Module):
