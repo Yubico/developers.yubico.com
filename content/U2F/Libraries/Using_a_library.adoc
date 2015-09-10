@@ -35,7 +35,7 @@ Below is an example of how these functions can be used in a web server:
 
 [source, python]
 ----
-# handles HTTP requests to /start_registration
+# handles HTTPS requests to /start_registration
 def start_registration(username):
   challenge = u2f_lib.start_registration(APP_ID)
   challenge_store.set(username, challenge)
@@ -45,7 +45,7 @@ def start_registration(username):
 
 [source, python]
 ----
-# handles HTTP requests to /finish_registration
+# handles HTTPS requests to /finish_registration
 def finish_registration(username, device_response):
   challenge = challenge_store.pop(username)
   registered_device = u2f_lib.finish_registration(challenge, device_response)
@@ -58,7 +58,7 @@ def finish_registration(username, device_response):
 
 [source, python]
 ----
-# handles HTTP requests to /start_authentication
+# handles HTTPS requests to /start_authentication
 def start_authentication(username, password):
   verify_user_pass(username, password)
   registered_devices = device_store.get(username)
@@ -69,7 +69,7 @@ def start_authentication(username, password):
 
 [source, python]
 ----
-# handles HTTP requests to /finish_authentication
+# handles HTTPS requests to /finish_authentication
 def finish_authentication(username, password, device_response):
   challenge = challenge_store.pop(username)
   u2f_lib.finish_authentication(challenge, device_response, registered_devices)
@@ -87,6 +87,8 @@ APP_ID = "https://login.example.com"
 
 [source, python]
 APP_ID = "https://localhost:8080"
+
+NOTE: U2F only works on HTTPS webpages.
 
 === Client-side  ===
 This section assumes that you are building a web site. If this is not the case,
@@ -128,3 +130,5 @@ https://github.com/Yubico/java-u2flib-server/blob/master/u2flib-server-demo/src/
 === Complete example code
 For complete example code (both server and client) in various languages, have a look at link:List_of_libraries.html[respective U2F library]'s accompanied demo server.
 
+=== U2F error codes
+If you get an error, check out the link:Client_error_codes.html[client error codes].
