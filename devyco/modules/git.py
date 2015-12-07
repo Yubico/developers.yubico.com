@@ -46,7 +46,7 @@ class GitModule(Module):
                     print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
-                os.system('(cd "%s" && git pull 2>&1)' % repo_dir)
+                os.system('(cd "%s" && git fetch 2>&1 && git reset origin/master --hard)' % repo_dir)
             else:
                 print "clone:", url
                 os.system('git clone "%s" "%s" 2>&1' % (url, repo_dir))
