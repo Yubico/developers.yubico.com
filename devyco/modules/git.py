@@ -117,9 +117,13 @@ class GitModule(Module):
     def _substitutions(self, names, subs):
         if isinstance(subs, basestring):
             subs = [subs]
+        new_names = []
         for sub in subs:
-            names = [re.sub(sub['pattern'], sub['repl'], name) for name in names]
-        return names
+            for name in names:
+                new_name = re.sub(sub['pattern'], sub['repl'], name)
+                if new_name not in new_names:
+                    new_names.append(new_name)
+        return new_names
 
     def _redirects_for(self, names):
         if len(names) < 2:
