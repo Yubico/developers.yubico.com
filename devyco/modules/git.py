@@ -49,10 +49,13 @@ class GitModule(Module):
                     print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
-                os.system('(cd "%s" && git fetch 2>&1 && git reset origin/master --hard)' % repo_dir)
+                subprocess.call(['git', 'fetch'], cwd=repo_dir)
+                subprocess.call(['git', 'reset', 'origin/master', '--hard'],
+                                cwd=repo_dir)
             else:
                 print "clone:", url
-                os.system('git clone "%s" "%s" 2>&1' % (url, repo_dir))
+                subprocess.call(['git', 'clone', url, repo_dir])
+
             self._updated.append(url)
         else:
             print "Already updated:", url
@@ -85,23 +88,25 @@ class GitModule(Module):
 
     def _create_redirects(self, repo_dir, entries):
         redirects = []
-        if isinstance(entries, basestring):
+        if not isinstance(entries, list):
             entries = [entries]
         for entry in entries:
+            subs = entry.get('sub', [])
+            if not isinstance(subs, list):
+                subs = [subs]
             directory = entry.get('dir', '')
             prefix = path.join(repo_dir, directory)
             for fpattern in entry.get('files', ['*']):
                 for match in glob(path.join(prefix, fpattern)):
                     match = match[len(prefix)+1:]
-                    names = self._get_old_names(repo_dir, directory, match)
-                    names = self._substitutions(names, entry.get('sub'))
+                    names = self._get_old_names(repo_dir, directory, match, subs)
                     redirects += self._redirects_for(names)
         if redirects:
             htaccess = path.join(self._target, '.htaccess')
             with open(htaccess, 'w') as f:
                 f.writelines(redirects)
 
-    def _get_old_names(self, repo_dir, directory, fname):
+    def _get_old_names(self, repo_dir, directory, fname, subs):
         p = subprocess.Popen(['git', 'log', '--name-only', '--oneline', '--follow', fname],
                              stdout=subprocess.PIPE,
                              cwd=path.join(repo_dir, directory))
@@ -111,19 +116,13 @@ class GitModule(Module):
         lines = [line[len(prefix):] for line in out.splitlines()
                  if line.startswith(directory)]
         seen = set()
-        lines = [x for x in lines if x not in seen and not seen.add(x)]
-        return filter(None, lines)
-
-    def _substitutions(self, names, subs):
-        if isinstance(subs, basestring):
-            subs = [subs]
-        new_names = []
-        for sub in subs:
-            for name in names:
-                new_name = re.sub(sub['pattern'], sub['repl'], name)
-                if new_name not in new_names:
-                    new_names.append(new_name)
-        return new_names
+        uniques = []
+        for line in lines:
+            for sub in subs:
+                line = re.sub(sub['pattern'], sub['repl'], line)
+            if line and seen.add(line):
+                uniques.append(line)
+        return uniques
 
     def _redirects_for(self, names):
         if len(names) < 2:
