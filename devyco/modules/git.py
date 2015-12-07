@@ -97,12 +97,9 @@ class GitModule(Module):
                     names = self._substitutions(names, entry.get('sub'))
                     redirects += self._redirects_for(names)
         if redirects:
-            print "\n\n\n\n!!!!!!!!REDIRECTS:", redirects
             htaccess = path.join(self._target, '.htaccess')
-            print "DEST:", htaccess
             with open(htaccess, 'w') as f:
                 f.writelines(redirects)
-            print "\n\n\n\n"
 
     def _get_old_names(self, repo_dir, directory, fname):
         p = subprocess.Popen(['git', 'log', '--name-only', '--oneline', '--follow', fname],
