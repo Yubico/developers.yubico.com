@@ -132,7 +132,7 @@ class GitModule(Module):
         basepath = path.join(*self._context['path'])
         new_path = path.join(basepath, names[0])
         for old_name in names[1:]:
-            redirects.add("Redirect 301 /%s /%s\n" % (
+            redirects.add('Redirect 301 "/%s" "/%s"\n' % (
                 path.join(basepath, old_name), new_path))
         return list(redirects)
 
