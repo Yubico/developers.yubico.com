@@ -10,6 +10,7 @@ multiple repositories should be clones.
 
 import os
 import re
+import sys
 import shutil
 import subprocess
 from os import path
@@ -49,12 +50,14 @@ class GitModule(Module):
                     print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
-                subprocess.call(['git', 'fetch'], cwd=repo_dir)
+                subprocess.call(['git', 'fetch'], cwd=repo_dir,
+                                stderr=sys.stdout.fileno())
                 subprocess.call(['git', 'reset', 'origin/master', '--hard'],
-                                cwd=repo_dir)
+                                cwd=repo_dir, stderr=sys.stdout.fileno())
             else:
                 print "clone:", url
-                subprocess.call(['git', 'clone', url, repo_dir])
+                subprocess.call(['git', 'clone', url, repo_dir],
+                                stderr=sys.stdout.fileno())
 
             self._updated.append(url)
         else:
@@ -117,10 +120,11 @@ class GitModule(Module):
                  if line.startswith(directory)]
         seen = set()
         uniques = []
-        for line in lines:
+        for line in [l for l in lines if l]:
             for sub in subs:
                 line = re.sub(sub['pattern'], sub['repl'], line)
-            if line and seen.add(line):
+            if line not in seen:
+                seen.add(line)
                 uniques.append(line)
         return uniques
 
