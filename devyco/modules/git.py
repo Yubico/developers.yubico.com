@@ -87,7 +87,7 @@ class GitModule(Module):
             if path.isdir(match):
                 shutil.copytree(match, path.join(target, path.basename(match)))
             else:
-                shutil.copy(match, target)
+                shutil.copy2(match, target)
 
     def _create_redirects(self, repo_dir, entries):
         redirects = []
