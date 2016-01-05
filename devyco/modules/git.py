@@ -18,6 +18,13 @@ from glob import glob
 from devyco.module import Module
 
 
+def _try_startswith(line, prefix):
+    try:
+        return line.startswith(prefix)
+    except:
+        return False
+
+
 class GitModule(Module):
 
     def __init__(self):
@@ -117,7 +124,7 @@ class GitModule(Module):
 
         prefix = path.join(directory, '')
         lines = [line[len(prefix):] for line in out.splitlines()
-                 if line.startswith(directory)]
+                 if _try_startswith(line, directory)]
         seen = set()
         uniques = []
         for line in [l for l in lines if l]:
