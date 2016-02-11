@@ -13,6 +13,7 @@ from distutils.version import LooseVersion
 from devyco.module import Module
 import os
 
+from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 
 SIG_SUFFIXES = ['sig', 'asc']
 SUFFIXES = SIG_SUFFIXES + \
@@ -115,6 +116,35 @@ class ReleasesModule(Module):
             os.makedirs(path.dirname(outpath))
         with open(outpath, 'w') as outfile:
             outfile.write(tplt.render(releases=entries).encode('utf-8'))
+
+        self.create_feed(entries, path.dirname(outpath), target)
+
+    def create_feed(self, entries, outdir, target):
+        name = self._context['path'][0]
+        xmldoc, feed = new_xmldoc_feed()
+        feed.id = "https://developers.yubico.com/%s/Releases/" % (name)
+        feed.title = name + " Releases"
+        link = Link("https://developers.yubico.com/%s/Releases/atom.xml" % (name))
+        link.attrs["rel"] = "self"
+        feed.links.append(link)
+        mtimes = []
+        for entry in entries:
+            for file in entry['files']:
+                e = Entry()
+                e.id = "https://developers.yubico.com/%s/Releases/%s" % (name, file['filename'])
+                e.title = file['filename']
+                e.author = Author("Yubico")
+                e.updated = path.getmtime(path.join(self._target, target, file['filename']))
+                mtimes.append(e.updated)
+                e.summary = "Release %s of %s" % (entry['version'], name)
+                link = Link("https://developers.yubico.com/%s/Releases/%s" % (name, file['filename']))
+                e.links.append(link)
+                feed.entries.append(e)
+
+        feed.updated = max(mtimes)
+
+        with open(outdir + "/atom.xml", 'w') as outfile:
+            outfile.write(str(xmldoc))
 
 
 module = ReleasesModule()
