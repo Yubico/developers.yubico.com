@@ -17,6 +17,26 @@ def noext(fname):
     return fname
 
 
+def merge_data(base, added):
+    for (key, value) in added.items():
+        if key not in base:
+            base[key] = value
+        else:
+            base_value = base[key]
+            if isinstance(value, dict):
+                if not isinstance(base_value, dict):
+                    raise ValueError('Cannot merge data: %r with %r' %
+                                     (value, base_value))
+                merge_data(base_value, value)
+            elif isinstance(value, list):
+                if isinstance(base_value, list):
+                    base_value.extend(value)
+                else:
+                    base[key] = [base_value] + value
+            else:  # Can't merge, just overwrite
+                base[key] = value
+
+
 class Module(object):
 
     """
@@ -58,9 +78,7 @@ class Module(object):
         pass
 
     def get_conf(self, name, default=None):
-        if self._context['dirconfig'].get(name) is None and default is not None:
-            self._context['dirconfig'][name] = default
-        return self._context['dirconfig'].get(name)
+        return self._context['dirconfig'].setdefault(name, default)
 
     def get_template(self, name):
         env = Environment(loader=FileSystemLoader(self._conf['templatedir']))

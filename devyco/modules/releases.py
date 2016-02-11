@@ -12,6 +12,7 @@ from os import path
 from distutils.version import LooseVersion
 from devyco.module import Module
 import os
+import json
 
 from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 
@@ -118,6 +119,24 @@ class ReleasesModule(Module):
             outfile.write(tplt.render(releases=entries).encode('utf-8'))
 
         self.create_feed(entries, path.dirname(outpath), target)
+
+        # Add feed link to main page.
+        mainvars = self.get_conf('vars', [])
+        mainvars.append({'filter': 'index', 'values': {'release_feed': target + '/atom.xml'}})
+
+        # Add feed link to releases page.
+        confpath = path.join(self._target, target, '.conf.json')
+        if not path.isfile(confpath):
+            conf = {}
+        else:
+            with open(confpath, 'r') as f:
+                conf = json.load(f)
+
+        variables = conf.setdefault('vars', [])
+        variables.append({'filter': 'index', 'values': {'release_feed': 'atom.xml'}})
+
+        with open(confpath, 'w') as f:
+            json.dump(conf, f)
 
     def create_feed(self, entries, outdir, target):
         name = self._context['path'][0]

@@ -8,7 +8,7 @@ Entries in the "links" entry of the .conf.json will be shown on the page.
 from os import path
 from fnmatch import fnmatch
 from bs4 import BeautifulSoup
-from devyco.module import Module, noext
+from devyco.module import Module, noext, merge_data
 import os
 import re
 
@@ -108,19 +108,20 @@ class PageRenderModule(Module):
                 self._context['title'] = display_name(current['id'])
                 self._render_partial(partial)
 
-    def _get_links(self, basename):
-        return [link for link in self.get_conf('links', [])
-                if fnmatch(basename, link.get('filter', '*'))]
+    def _get_vars(self, basename, values):
+        for entry in self.get_conf('vars', []):
+            if fnmatch(basename, entry.get('filter', '*')):
+                merge_data(values, entry.get('values'))
 
     def _render_partial(self, fname):
         basename = path.basename(fname).replace('.partial', '')
         out_name = basename + '.html'
-        links = self._get_links(basename)
+        tpltvars = dict(self._context)
+        self._get_vars(basename, tpltvars)
         tplt = self.get_template('site')
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
-        rendered = tplt.render(content=content, sidelinks=links,
-                               **self._context)
+        rendered = tplt.render(content=content, **tpltvars)
         rendered = self._post_process(rendered, basename)
         with open(path.join(self._target, out_name), 'w') as outfile:
             outfile.write(rendered.encode('utf-8'))

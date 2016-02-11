@@ -16,21 +16,27 @@ class SuggestedEditsModule(Module):
     def _run(self):
         suggest_edits = self.get_conf('suggest-edits')
         if suggest_edits is not None:
-            links = self.get_conf('links', [])
-            self._add_suggest_edits_link(links)
+            variables = self.get_conf('vars', [])
+            self._add_suggest_edits_link(variables)
 
-    def _add_suggest_edits_link(self, links):
+    def _add_suggest_edits_link(self, variables):
         for f in self.list_files('*.partial'):
             basename = noext(path.basename(f))
-            links.append({
+            variables.append({
                 'filter': basename,
-                'url': CREATE_GITHUB_ISSUE_URL.format(
-                    urllib.quote(
-                        path.join(*(self._context['path']
-                                    + [basename]))
-                    )
-                ),
-                'name': '<i class=\"fa fa-pencil-square-o fa-lg\"></i> Suggest Edits'
+                'values': {
+                    'sidelinks': [
+                        {
+                            'url': CREATE_GITHUB_ISSUE_URL.format(
+                                urllib.quote(
+                                    path.join(*(self._context['path']
+                                                + [basename]))
+                                )
+                            ),
+                            'name': '<i class=\"fa fa-pencil-square-o fa-lg\"></i> Suggest Edits'
+                        }
+                    ]
+                }
             })
 
 
