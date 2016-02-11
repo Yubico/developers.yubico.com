@@ -1,11 +1,15 @@
 """
 Generates a releases page based on release artifacts in a directory.
+Also generates an atom feed of releases, as atom.xml.
 Activated by a "releases" entry in a .conf.json file, containing the following
 settings:
     dir: Location of the release artifacts and resulting index page (defaults
     to the current directory).
     abortIfEmpty: True to abort the page creation if there are no releases
     present.
+
+A separate "releases_aggregate_feed" entry in a .conf.json file will create
+an aggregate feed containing the latest 50 releases among all projects.
 """
 
 from os import path
@@ -13,6 +17,7 @@ from distutils.version import LooseVersion
 from devyco.module import Module
 import os
 import json
+import heapq
 
 from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 
@@ -90,6 +95,11 @@ def extract_files(v, files):
 
 class ReleasesModule(Module):
 
+    def __init__(self):
+        super(ReleasesModule, self).__init__()
+
+        self._all_entries = [(0, None)] * 50  # Max items in aggregate feed
+
     def _run(self):
         conf = self.get_conf('releases')
         if conf is None:
@@ -138,6 +148,30 @@ class ReleasesModule(Module):
         with open(confpath, 'w') as f:
             json.dump(conf, f)
 
+    def _post_run(self):
+        aggregate = self.get_conf('releases_aggregate_feed')
+        if not aggregate or not self._all_entries:
+            return
+
+        xmldoc, feed = new_xmldoc_feed()
+        feed.id = "https://developers.yubico.com/Software_Projects/"
+        feed.title = "Yubico software releases"
+        link = Link("https://developers.yubico.com/" + aggregate)
+        link.attrs["rel"] = "self"
+        feed.links.append(link)
+        entries = sorted(self._all_entries, reverse=True)
+        feed.updated = entries[0][0]
+        for (t, e) in entries:
+            feed.entries.append(e)
+            if e is None:
+                break
+
+        outpath = path.join(self._target, aggregate)
+        if not path.isdir(path.dirname(outpath)):
+            os.makedirs(path.dirname(outpath))
+        with open(outpath, 'w') as outfile:
+            outfile.write(str(xmldoc))
+
     def create_feed(self, entries, outdir, target):
         name = self._context['path'][0]
         xmldoc, feed = new_xmldoc_feed()
@@ -159,6 +193,9 @@ class ReleasesModule(Module):
                 link = Link("https://developers.yubico.com/%s/Releases/%s" % (name, file['filename']))
                 e.links.append(link)
                 feed.entries.append(e)
+
+                if self._all_entries[0][0] < e.updated:
+                    heapq.heapreplace(self._all_entries, (e.updated, e))
 
         feed.updated = max(mtimes)
 
