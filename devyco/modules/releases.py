@@ -146,6 +146,7 @@ class ReleasesModule(Module):
         with open(outdir + "/atom.xml", 'w') as outfile:
             outfile.write(str(xmldoc))
 
+        self._context['release_feed'] = True
 
 module = ReleasesModule()
 
