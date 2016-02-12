@@ -3,6 +3,7 @@ Clones a git repo and extracts data.
 Activated by a "git" entry in .conf.json, containing the following settings:
     url: Git repository URL (required).
     files: List of filepatterns to copy from the repository (default: all)
+    preserve_mtimes: If true, set mtimes based on commit times (default: false)
 
 The "git" entry can also be a list of objects containing the settings above if
 multiple repositories should be clones.
@@ -47,6 +48,24 @@ class GitModule(Module):
             self._copy_files(repo_dir, conf.get('files', '*'))
             self._create_redirects(repo_dir, conf.get('redirect_renamed', []))
 
+    def _fix_mtimes(self, repo_dir):
+        print "Preserving mtimes for:", repo_dir
+        proc = subprocess.Popen(['git', 'log', '--pretty=%at', '--name-status'],
+                                cwd=repo_dir, stdout=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+
+        mtime = 0
+        added = set([''])
+        for line in stdout.splitlines():
+            try:
+                mtime = int(line)
+            except:
+                if line not in added and line[0] in ['A', 'M']:
+                    added.add(line)
+                    fname = os.path.join(repo_dir, line[2:])
+                    if os.path.isfile(fname):
+                        os.utime(fname, (mtime, mtime))
+
     def _clone(self, conf):
         url = conf['url']
         repo_dir = self.cache_dir(url, False)
@@ -65,6 +84,9 @@ class GitModule(Module):
                 print "clone:", url
                 subprocess.call(['git', 'clone', url, repo_dir],
                                 stderr=sys.stdout.fileno())
+
+            if conf.get('preserve_mtimes'):
+                self._fix_mtimes(repo_dir)
 
             self._updated.append(url)
         else:
