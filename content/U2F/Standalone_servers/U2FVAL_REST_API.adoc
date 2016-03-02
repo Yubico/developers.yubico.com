@@ -55,11 +55,19 @@ device was registered (+created+) and last successfully used (+lastUsed+).
 When available, metadata about the device will be present in the +metadata+
 field, containing vendor and device information. This field will be omitted if
 no such metadata exists. A dictionary of key-value +properties+ is available,
-which can be used by the client to store arbitrary data. Lastly, a boolean
-shows if the device has been marked as compromised. A compromised device cannot
-be used for authentication. The system will mark a device as compromised if it
-detects something which may indicate this, and a compromised device should be
-replaced.
+which can be used by the client to store arbitrary data. A boolean shows if the
+device has been marked as compromised. A compromised device cannot be used for
+authentication. The system will mark a device as compromised if it detects
+something which may indicate this, and a compromised device should be replaced.
+Lastly, there may be an integer indicating the available transports a device
+has. As this is an optional field, and the data is provided by the device
+itself, this should not be fully trustedi, but rather treated as a hint about
+what is available. While it is unlikely that a device specifies support for a
+transport which it does not actually support, it may happen. More likely is
+that a device supports additional transports which are not listed in this
+field. For a description on how to interpret the value of this field, see the
+transport bit definitions
+link:/U2F/Attestation_and_Metadata/JSON_Format.html#_transports[here].
 
 [source,javascript]
 ----
@@ -70,6 +78,7 @@ dictionary DeviceDescriptor {
   DeviceMetadata metadata;
   dictionary properties;
   boolean compromised;
+  optional int transports;
 };
 ----
 
@@ -90,12 +99,16 @@ dictionary DeviceMetadata {
 
 ==== RegisterRequestData
 The RegisterRequestData contains the parameters needed to invoke the _register_
-function of a FIDO client.
+function of a FIDO client, as well as an array of +DeviceDescriptors+ to
+provide more information about the devices that are already registered. Each
+descriptor in the authenticateDescriptors array matches the request in
+authenticateRequests with the same index.
 
 [source,javascript]
 ----
 dictionary RegisterRequestData {
   AuthenticateRequest[] authenticateRequests;
+  DeviceDescriptor[] authenticateDescriptors;
   RegisterRequest[] registerRequests;
 };
 ----
@@ -129,13 +142,17 @@ dictionary RegisterResponseData {
   validation of the RegisterResponse.
 
 ==== AuthenticationRequestData
-The AuthenticationRequestData contains the parameters needed to invoke the
-_authenticate_ function of a FIDO client.
+The +AuthenticationRequestData+ contains the parameters needed to invoke the
+_authenticate_ function of a FIDO client, as well as an array of
++DeviceDescriptors+ to provide more information about the devices that are
+eligible for authentication. Each descriptor in the authenticateDescriptors
+array matches the request in authenticateRequests with the same index.
 
 [source,javascript]
 ----
 dictionaty AuthenticateRequestData {
   AuthenticateRequest[] authenticateRequests;
+  DeviceDescriptor[] authenticateDescriptors;
 }
 ----
 
