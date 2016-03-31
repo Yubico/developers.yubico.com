@@ -1,0 +1,169 @@
+== Commit Signing
+
+The most common abbr:VCS[Version Control System] being used nowadays is https://git-scm.com/[Git]. From a security standpoint, by default, Git doesn't provide any assurance. Although every Git "blob" is hashed using SHA-1, this is only useful as an integrity check, i.e., to guarantee that the files and the commits that you are working with, are the exact same things they were when they were first created.
+
+A less used feature of Git is its ability to sign your work. This allows users to verify that data is coming from a trusted source.
+
+== Setup
+
+The default program used to sign objects with Git is GPG. This means that Git is not aware (nor does it care) where the signing keys reside. Specifically, if you have imported a signature key onto your YubiKey, you will be able to sign commits and tags with it.
+
+The first thing you have to do is to instruct Git about how to use your key. If you have only one set of keys, GPG will probably pick the correct one for you. If you have multiple signature keys, and as a good practice in general, is better to explicitly specify which GPG key you want to use. This can be achieved with
+
+....
+$ git config --global user.signkey AABBCCDD
+....
+
+Where `AABBCCDD` is your GPG key ID. By removing the `--global` switch it is possible make this setting repository-specific.
+
+=== Signing Tags
+
+Tags are one of the things that can be signed with Git. To do so you can use the `-s` switch
+
+....
+$ git tag foo-1.0 -s -m 'Release 1.0 of Foo'
+....
+
+After issuing the command, you will be prompted for your GPG User PIN and and a signed tag will be created. You can check the result of this operation by running the following command
+
+....
+$ git show foo-1.0
+
+tag foo-1.0
+Tagger: Committer Name <committer@yubico.com>
+Date:   Sat Feb 22 10:30:00 2014 +0200
+
+Release 1.0 of Foo
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQEcBAABCAAGBQJW/OhLAAoJEJDLBFvTmUcBKXAH/0i3O/F+YjD8xMknsMZGSa2/
+/uGNnF5SUCxQjztWCJecHmp88GdyagT9rcgv/q6eniElwp3M3dQXBTdJ+tPH+m7G
+yZdrmuLqrn/NTzZKj3E5xMT9IXJ+jg4RsfhALGqnrG5XFtsB5VVucURbEsrqNM+Y
+k5PJPQD4jroT/jOOWBysQMlJRNVZGYhtCC2DkRPQo8lII8/KW5mGu/GJzpQepW4K
+vnqd6h9vwhTddzQ+EosNGscQvQBM4+CtLznK3iCYEnDe111wCtMm/ukxd7378/tj
+O+mdC0Q+mxTOgIHcgZKBFzVosxiSHVXo7cvmGgk8kuONdaGo2D0k0PqceZPOjRw=
+=4ZAu
+-----END PGP SIGNATURE-----
+....
+
+A similar output can also be achieved with the command
+
+....
+$ git cat-file -p foo-1.0
+....
+
+or with the command
+
+....
+$ git verify-tag foo-1.0
+....
+
+=== Verifying Tags
+
+Once a tag has been signed, it is possible to ask Git to verify a signature for us. This is done by using the `-v` switch on the tag we want to verify
+
+....
+$ git tag -v foo-1.0
+
+object 3fe8b3b4b9394678aeadfa4113e8982802f759f8
+type commit
+tag foo-1.0
+tagger Committer Name <committer@yubico.com> 1393230600 +0200
+
+Release 1.0 of Foo
+gpg: Signature made Sat Feb 22 10:30:00 2014 CEST using RSA key ID AABBCCDD
+gpg: Good signature from "Committer Name <committer@yubico.com>"
+....
+
+Keep in mind that, behind the scenes, this is invoking GPG which, in order to verify the signature for you, should be informed of who is the owner of key ID `AABBCCDD` by importing their public key. If this information is missing, you will receive an error message.
+
+=== Signing Commits
+
+The other kind of object that you can sign with Git are commits. The procedure is very similar to what you have to do for tags. The command needed is the following
+
+....
+$ git commit -S -m 'Fixed a small undocumented feature that made foo crash'
+....
+
+Just like before you will be prompted for your User PIN and the signed commit will be created. Note that the command shown above uses the capital letter `S` (the extended form would be `--gpg-sign`). Using the lowercase letter `s`  will only include the text 'Signed-off-by: Committer Name <committer@yubico.com>' in your commit message and *not* actually sign the commit.
+
+To display the signature of the last commit you can use
+
+....
+$ git cat-file -p HEAD
+tree c09dec94a1b2f8c4792fd0faef35623e0463fc73
+parent 3fe8b3b4b9394678aeadfa4113e8982802f759f8
+author Committer Name <committer@yubico.com> 1393232400 +0200
+gpgsig -----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v1
+
+ iQEcBAABCAAGBQJW/PEoAAoJEJDLBFvTmUcBo58H/1hb+uhqVCRRFnQDJ7gHM+v1
+ 6vgWxtaEpf86foJe+V/8r2dij2fKAPcbMQbeakfO0PplSRUY6+XnvXY+2uFHs2TB
+ BxsAz1HYLnl6jXRKpLqduqJLmnwnkwaMCr1Bx/rZ1CWAsKtwBf4AGpW7ws9Dv6zh
+ Y7EPcVeO4dvftTqCsoOu6ZBmw9U24DA5XCl7ZG2nDiW9spS8CTlznGA3/LJ56mWF
+ Rm+xaJbfFwr2KS5wdyZkzdEh0sIcbmAYVhnKkj4HiBegrK+wCcayOfc0YMzOUPL9
+ uJ4pB32g0jLJbpNHRXqhQ/OU9eCRG3B55UBpimvLOLok3si6d/fYd3zTmB9bJaE=
+ =Bh19
+ -----END PGP SIGNATURE-----
+ ....
+
+=== Verifying Commits
+
+Signed commits can be verified in many different places. One way is to manually display the commit
+
+....
+$ git show HEAD --show-signature
+
+commit 552b36ec86790bfdac679ab23e6d61133ff0b383
+gpg: Signature made Sat 22 Feb 2014 11:00:00 CEST using RSA key ID AABBCCDD
+gpg: Good signature from "Committer Name <committer@yubico.com>"
+Author: Committer Name <committer@yubico.com>
+Date:   Sat Feb 22 11:00:00 2014 +0200
+
+    Fixed a small undocumented feature that made foo crash
+....
+
+As before, GPG has to have the public key of the signer to successuflly verify the signature.
+
+The previous command assumes that the commit of interest was the very last one. To verify a generic commit replace `HEAD` with the commit ID (`552b36ec86790bfdac679ab23e6d61133ff0b383` in this case).
+
+Alternative commands to verify commit signatures are
+
+....
+$ git log --show-signature # Displays all commits and verify signed ones
+
+$ git verify-commit HEAD # Displays and verify the latest commit
+....
+
+=== Merging and Pushing
+
+When merging branches or tags, it is possible to ask Git to verify the signature of the commits being merged. This is done with
+
+....
+$ git merge --verify-signatures other_branch
+....
+
+If the signatures can not be verified, the merge will be aborted.
+
+Similarly, the `-s` switch can be used to sign the commit resulting from a merge.
+
+Also, if you created _annotated_ tags, when you merge them Git will create a new commit for you. During this process it will also verify the invovled signatures and include the verification output in the comment of the commit message.
+
+Since Git version 2.2.0 it is also possible to sign git _pushes_ by doing `git push --signed`. This is used to prove the intention the author had of pushing a specific set of commits and have them become the new tip of some branch.
+
+== Git Variables
+
+There are a few Git variables that are useful and related to signing. Here is a short list taken from `git config --help`. More details can be found there.
+
+commit.gpgSign::
+    Allows to always sign commit. Useful for when a large number of commits must be signed;
+
+format.signOff::
+    Enables --signoff by default in format-patch;
+
+gpg.program::
+    Specify which program to use for signatures and verification. Its command line must be GPG-compliant. Useful for choosing specific GPG version (e.g., gpg2 vs gpg) or a using a custom program;
+
+receive.certNonceSeed::
+    Tells Git to verify a signed push using a nonce.
