@@ -1,0 +1,29 @@
+= PIV Attestation
+
+== Introduction
+This document describes the attestation feature added to the PIV module in YubiKey 4.3.
+
+== Purpose
+The concept of attestation is used to show that a certain asymmetric key has been generated on device, and not imported from somewhere else or being used from something else. Typically this would be used before creating a certificate.
+
+== Implementation
+Attestation is implemented by creating a X.509 certificate for the key that is to be attested, this is only done if the key has been generated on device. This certificate should only be used for the purpose of verifying that the key was generated in device, not for any other purposes.
+
+Some features of the generated certificate:
+
+* Serial will be a random 16 byte integer
+* Issuer will be the subject of the attesting certificate
+* Dates will be copied from the attesting certificate
+* Subject will be the string "YubiKey PIV Attestation " with the attested slot appended
+* If the attesting key is RSA the signature will be SHA256-PKCS#1v1.5
+* If the attesting key is EC the signature will be ECDSA-SHA256
+
+Extensions in the generated certificate:
+
+* +1.3.6.1.4.1.41482.3.3+: Firmware version, encoded as 3 bytes, like: 040300 for 4.3.0
+* +1.3.6.1.4.1.41482.3.7+: Serial number, encoded as an integer.
+* +1.3.6.1.4.1.41482.3.8+: Two bytes, the first encoding pin policy and the second touch policy
+** Pin policy: 01 - never, 02 - once per session, 03 - always
+** Touch policy: 01 - never, 02 - always, 03 - cached for 15s
+
+The attestation key and certificate can be overwritten like any other slots of the YubiKey, though they will not be cleared out after a reset.
