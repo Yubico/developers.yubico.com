@@ -18,6 +18,7 @@ from devyco.module import Module
 import os
 import json
 import heapq
+import time
 
 from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 
@@ -80,18 +81,22 @@ def get_sig(fname, files):
     return None
 
 
-def extract_files(v, files):
+def extract_files(v, files, target):
     matches = []
     for fname in files:
         if version(fname)[0] == v and not is_sig(fname):
             matches.append({
                 "filename": fname,
-                "sig": get_sig(fname, files)
+                "sig": get_sig(fname, files),
+                "date": get_date(fname, target)
             })
     matches.sort(key=lambda x: LooseVersion(
         version_with_classifier(x['filename'])))
     return matches
 
+def get_date(fname, target):
+    date = path.getmtime(path.join(target, fname))
+    return time.strftime("%Y-%m-%d", time.gmtime(date))
 
 class ReleasesModule(Module):
 
@@ -117,7 +122,7 @@ class ReleasesModule(Module):
         for v in versions:
             entries.append({
                 "version": v,
-                "files": extract_files(v, all_files)
+                "files": extract_files(v, all_files, path.join(self._target, target))
             })
 
         tplt = self.get_template('releases')
