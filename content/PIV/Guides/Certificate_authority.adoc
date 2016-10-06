@@ -1,13 +1,9 @@
-Certificate Authority with a YubiKey
-------------------------------------
-
+== Certificate Authority with a YubiKey
 This document explains how to set up a Certificate Authority (CA) with
 Sub-CA private keys stored on YubiKeys.  Typical use for this is
 to generate HTTPS certificates for internal servers.
 
-Considerations
---------------
-
+=== Considerations
 For our example, we have chosen to use one root CA with a private key
 stored in an offline machine, that signs sub-CAs with private keys
 stored on YubiKeys, which signs end-entity (EE) certs.  We'll
@@ -31,9 +27,7 @@ We also set a expiry date far away in the future on the root CA
 date for the CA, to avoid leaking the time of CA creation which would
 leak some bits if information going into the randomness generation.
 
-Preparations
-------------
-
+=== Preparations
 We use OpenSSL to generate keys and certificates.  This is done on an
 offline machine, booted from a LiveCD.  Some additional packages may
 be required (pcscd, etc, see below) and will have to be transferred on
@@ -50,9 +44,7 @@ or if you are on a connected machine, more simpler:
 
   sudo apt-get install libengine-pkcs11-openssl
 
-Creating a Root CA
--------------------
-
+=== Creating a Root CA
 Generate the private key as follows:
 
   openssl genrsa -out yubico-internal-https-ca-key.pem 3744
@@ -89,9 +81,7 @@ You may inspect the newly generated root CA with:
 
   openssl x509 -text < yubico-internal-https-ca-crt.pem
 
-Preparing a Sub-CA
-----------------------
-
+=== Preparing a Sub-CA
 We need to change the management key, PIN and PUK code following the
 YubiKey-PIV-Introduction.txt document.  We also want to save a
 copy of these values.  Here are the steps that are needed to be done
@@ -114,9 +104,7 @@ Configure a fresh YubiKey with these parameters as follows:
   yubico-piv-tool -k $key -a change-pin -P 123456 -N $pin
   yubico-piv-tool -k $key -a change-puk -P 12345678 -N $puk
 
-Creating a Sub-CA
------------------
-
+=== Creating a Sub-CA
 This step is parametrized with the name of the YubiKey user.  This
 means we will have one Sub-CA for every person authorized to sign
 certificates in our CA.
@@ -165,9 +153,7 @@ Import Sub-CA cert to the YubiKey:
 
   yubico-piv-tool -k $key -a import-certificate -s 9c < yubico-internal-https-subca-$user-crt.pem 
 
-Creating End-Entity Certificates
---------------------------------
-
+=== Creating End-Entity Certificates
 This step is parametrized with the hostname, and the name of the
 Sub-CA used to sign the EE, so set it first:
 
