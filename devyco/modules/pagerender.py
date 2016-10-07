@@ -156,8 +156,8 @@ class PageRenderModule(Module):
                         modified = True
                         line = line.replace(
                             ': $;',
-                            '<span class=".hidden-text">: </span>$'
-                            '<span class=".hidden-text">;</span>',
+                            '<span class="hidden-text">: </span>$'
+                            '<span class="hidden-text">;</span>',
                             1)
                     fixed.append(line)
                 if modified:
