@@ -14,6 +14,7 @@ import re
 
 
 EXTERNAL_LINK = re.compile(r'^(https?:)?//(?!developers\.yubico\.com)')
+SHELL_PROMPT_LINE = re.compile(r'^\s*: \$;')
 
 
 def display_name(name):
@@ -129,6 +130,7 @@ class PageRenderModule(Module):
 
     def _post_process(self, content, basename):
         soup = BeautifulSoup(content)
+        # Ensure we have a title
         content = soup.body.find(id='page-content')
         elem = content.find(lambda x: x.string)
         while elem and elem.name not in ['h1', 'h2']:
@@ -139,8 +141,28 @@ class PageRenderModule(Module):
                 break
             elem = elem.parent
 
+        # Open external links in new window
         for link in soup.find_all('a', href=EXTERNAL_LINK):
             link['target'] = '_blank'
+            link['rel'] = 'noopener noreferrer'
+
+        # Make ": $;" in code look nicer
+        for pre in soup.find_all('pre'):
+            for ns in pre.contents:
+                fixed = []
+                modified = False
+                for line in unicode(ns).splitlines():
+                    if SHELL_PROMPT_LINE.search(line):
+                        print "FOUND ONE: ", line
+                        modified = True
+                        line = line.replace(
+                            ': $;',
+                            '<span class=".hidden-text">: </span>$'
+                            '<span class=".hidden-text">;</span>',
+                            1)
+                    fixed.append(line)
+                if modified:
+                    ns.replaceWith(BeautifulSoup('\n'.join(fixed)))
 
         return soup
 
