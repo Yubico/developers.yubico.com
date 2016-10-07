@@ -14,7 +14,8 @@ import re
 
 
 EXTERNAL_LINK = re.compile(r'^(https?:)?//(?!developers\.yubico\.com)')
-SHELL_PROMPT_LINE = re.compile(r'^\s*\$')
+SHELL_DOLLAR_LINE = re.compile(r'^\s*\$ ')
+SHELL_HASH_LINE = re.compile(r'^\s*# .*[^#]\s*$')
 
 
 def display_name(name):
@@ -152,11 +153,17 @@ class PageRenderModule(Module):
                 fixed = []
                 modified = False
                 for line in unicode(ns).splitlines():
-                    if SHELL_PROMPT_LINE.search(line):
+                    if SHELL_DOLLAR_LINE.search(line):
                         modified = True
                         line = line.replace(
                             '$ ',
-                            '<span class="dollar"></span>',
+                            '<span class="sh-dollar"></span>',
+                            1)
+                    elif SHELL_HASH_LINE.search(line):
+                        modified = True
+                        line = line.replace(
+                            '# ',
+                            '<span class="sh-hash"></span>',
                             1)
                     fixed.append(line)
                 if modified:
