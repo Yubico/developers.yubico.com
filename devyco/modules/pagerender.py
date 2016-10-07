@@ -147,12 +147,14 @@ class PageRenderModule(Module):
             link['target'] = '_blank'
             link['rel'] = 'noopener noreferrer'
 
-        # Make ": $;" in code look nicer
+        # Prevent $ and # in shell code non-selectable.
         for pre in soup.find_all('pre'):
-            for ns in pre.contents:
-                fixed = []
+            pre_str = unicode(pre)
+            if pre_str.startswith('<pre>') and pre_str.endswith('</pre>'):
+                pre_str = pre_str[5:-6]
+                fixed = ['<pre>']
                 modified = False
-                for line in unicode(ns).splitlines():
+                for line in pre_str.splitlines():
                     if SHELL_DOLLAR_LINE.search(line):
                         modified = True
                         line = line.replace(
@@ -167,7 +169,8 @@ class PageRenderModule(Module):
                             1)
                     fixed.append(line)
                 if modified:
-                    ns.replaceWith(BeautifulSoup('\n'.join(fixed)))
+                    fixed.append('</pre>')
+                    pre.replaceWith(BeautifulSoup('\n'.join(fixed)))
 
         return soup
 
