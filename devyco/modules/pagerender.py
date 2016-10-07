@@ -14,7 +14,7 @@ import re
 
 
 EXTERNAL_LINK = re.compile(r'^(https?:)?//(?!developers\.yubico\.com)')
-SHELL_PROMPT_LINE = re.compile(r'^\s*: \$;')
+SHELL_PROMPT_LINE = re.compile(r'^\s*\$')
 
 
 def display_name(name):
@@ -155,9 +155,8 @@ class PageRenderModule(Module):
                     if SHELL_PROMPT_LINE.search(line):
                         modified = True
                         line = line.replace(
-                            ': $;',
-                            '<span class="hidden-text">: </span>$'
-                            '<span class="hidden-text">;</span>',
+                            '$',
+                            '<span class="dollar"></span>',
                             1)
                     fixed.append(line)
                 if modified:
