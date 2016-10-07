@@ -155,7 +155,7 @@ class PageRenderModule(Module):
                     if SHELL_PROMPT_LINE.search(line):
                         modified = True
                         line = line.replace(
-                            '$',
+                            '$ ',
                             '<span class="dollar"></span>',
                             1)
                     fixed.append(line)
