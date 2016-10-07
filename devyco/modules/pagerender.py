@@ -153,7 +153,6 @@ class PageRenderModule(Module):
                 modified = False
                 for line in unicode(ns).splitlines():
                     if SHELL_PROMPT_LINE.search(line):
-                        print "FOUND ONE: ", line
                         modified = True
                         line = line.replace(
                             ': $;',
