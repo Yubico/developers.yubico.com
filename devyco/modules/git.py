@@ -135,7 +135,7 @@ class GitModule(Module):
                     redirects += self._redirects_for(names)
         if redirects:
             htaccess = path.join(self._target, '.htaccess')
-            with open(htaccess, 'w') as f:
+            with open(htaccess, 'a') as f:
                 f.writelines(redirects)
 
     def _get_old_names(self, repo_dir, directory, fname, subs):
