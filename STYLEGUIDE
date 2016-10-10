@@ -1,0 +1,85 @@
+== Style guide for developers.yubico.com
+This file documents some common styles and techniques used for content on the
+developers website. These are guidelines and not hard rules. In general, they
+are available to ensure that the content on the Developers site is as
+consistent as possible, and to be a "cookbook" for things the system can do.
+
+=== Developers-only content VS Developers and Github content
+The developers site pulls in a lot of content from various Yubico projects on
+Github, generating HTML from their README's and any files located in doc/*.
+Such content should be formatted in a way which enabled rendering on both
+Github and Developers, whereas content that is only displayed on Developers may
+freely use Developers-specific formatting.
+
+=== Headers
+Each document should have a main title at the start of the document. In
+AsciiDoc, this should be using a level 1 title (note that AsciiDoc titles are
+zero-indexed, but level 0 is not used for the "article" type). Sections of the
+document should be using level 2 titles, and sub-sections may use additional
+levels of titles. This document is an example of this structure.
+
+=== Code blocks
+Code blocks should be syntax highlighted when possible, and AsciiDoc provides a
+method to specify the language rules used for this:
+
+.Example snippet
+[source, python]
+----
+# handles HTTPS requests to /start_registration
+def start_registration(username):
+  challenge = u2f_lib.start_registration(APP_ID)
+  challenge_store.set(username, challenge)
+  return challenge
+----
+
+=== Command-line examples
+Command-line examples should be indented using two spaces:
+
+  $ echo "This is a command."
+  $ echo "...and here is a second line!"
+
+When empty lines are needed, the block should instead be surrounded by "....".
+Note that indentation in this case is omitted:
+
+....
+$ echo "This is another example..."
+
+$ echo "...with a blank line!"
+....
+
+Commands should be prefaced with either "$ " or "# " to indicate a prompt
+(where # denotes that the command should be run as root). To differentiate a
+root prompt from a comment, the commend should en in a # as well:
+
+  # This is a comment #
+  # echo "This is a command run as root"
+  $ echo "This is a normal command"
+
+On the Developers site these blocks will be rendered in a way where the initial
+$ or # symbols for commands won't be selected when selecting a block, to make
+copy-paste work better.
+
+=== Sequence charts
+If you need to create sequence charts for use on the Developers page, you can
+use mscgen and inline the markup for the chart. More information about the
+format is available here: http://www.mcternan.me.uk/mscgen/ Note that this will
+not be rendered on Github, so it is not recommended for project-level
+documents. An example:
+
+[mscgen]
+----
+msc {
+   # Entities
+   b [label="Browser"], s [label="Server"], y [label="YubiCloud"];
+
+   # Arcs
+   |||;
+   b -> s [label = "OTP (and password)"];
+   s rbox s [label="Verify password"];
+   s -> y [label = "OTP", linecolor="#0000AA", textcolor="#0000AA"];
+   y rbox y [label = "Verify OTP", linecolor="#0000AA", textcolor="#0000AA"];
+   y -> s [label = "response", linecolor="#0000AA", textcolor="#0000AA"];
+}
+----
+
+
