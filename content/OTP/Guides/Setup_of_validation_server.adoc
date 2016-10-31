@@ -1,0 +1,265 @@
+== Setup of a Yubico OTP validation server
+This document will guide you through setting up a validation server for
+validating OTPs from YubiKeys. If you're not interested in running your own
+server, you can use the YubiCloud service instead.
+
+=== Introduction
+There are two main components in a Yubico OTP validation server, the Key
+Storage Module (KSM), and the Validation Server. Both of these are required for
+OTP validation, and either one can be replicated for redundancy. You could have
+a single server running both of these, multiple servers each running both KSM
+and Validation Server, or separate servers for each instance of KSM, and for
+each instance of Validation Server, all depending on your needs and network
+topology.
+
+==== Key Storage Module (KSM)
+The KSM is the keeper of the individual YubiKey secrets. For each Yubico OTP
+credential in use by the system, there exists an AES key, as well as a private
+identity. These are associated with the public ID of the credential, and must
+be kept secret. Using these secret values an OTP can be decrypted and
+validated, which ensures the authenticity of the OTP. More precicely, that a
+given OTP was generated on a specific YubiKey. Once decrypted and validated,
+the KSM extracts the counters and timer data from the OTP.
+
+Any time a new Yubico OTP credential is added to the system, the secret values
+need to be added to the KSM.
+
+==== Validation Server
+While the KSM decrypts and validates the authenticity of OTPs, it does not keep
+a record of which authentic OTPs are invalid due to previous use. To ensure
+that each OTP can only be used once, and that older OTPs are invalidated once a
+later OTP is used, we have a Validation Server. The Validation server keeps
+track of the last seen counter values for each YubiKey credential, and enforces
+that these continue to increment for each new OTP. The purpose of this is to
+prevent replay attacks from being possible.
+
+=== Pre-requisites
+For this guide we start with a fresh installation of Ubuntu Server 16.04 (TLS).
+Because we will be using the lastest versions available of Yubico software, we
+add the Yubico PPA:
+
+  $ sudo apt-get install software-properties-common
+
+  $ sudo add-apt-repository ppa:yubico/stable
+  $ sudo apt-get update
+
+For testing purposes we will be using `curl`, which we also need to install:
+
+  $ sudo apt-get install curl
+
+Lastly, we will be programming a YubiKey for testing purposes, and for that we
+will need `ykpersonalize`:
+
+  $ sudo apt-get install yubikey-personalization
+
+=== Installing the KSM
+For the Key Storage Module we will use the python-pyhsm project, which can be
+used with or without a YubiHSM device. First, we install the required packages:
+
+  $ sudo apt-get install yhsm-yubikey-ksm
+
+Now, as we will not be using a YubiHSM for in this guide, we need to create a
+master key for encrypting Now we need to create a master key for decrypting
+Yubico OTP secrets with, and since we will not be using a YubiHSM in this
+guide, we do so by creating a plaintext file:
+
+  $ sudo mkdir -p /etc/yubico/yhsm
+  $ sudo nano /etc/yubico/yhsm/keys.json
+
+The file should contain a JSON object with key handles mapped to AES keys in
+hex format, we will use this example:
+
+....
+{
+  "1": "000102030405060708090a0b0c0d0e0f"
+}
+....
+
+We save and close the file, and we now have a keyhandle "1" set up to use a
+dummy AES key. You will want to replace the value used in this example with a
+randomly generated key. While you can have multiple key handles, we will stick
+to using this single one in this guide. Because we want to limit the access to
+this file, we change ownership and permissions of the file to be readable only
+by the `yhsm-ksmsrv` user, which was created during the installation of the
+software:
+
+  $ sudo chown yhsm-ksmsrv /etc/yubico/yhsm/keys.json
+  $ sudo chmod 400 /etc/yubico/yhsm/keys.json
+
+Now, we need to configure the yhsm-yubikey-ksm server to use this file, and to
+start automatically on boot. Start by editing the configuration file:
+
+  $ sudo nano /etc/default/yhsm-yubikey-ksm
+
+Change the following values:
+
+  YHSM_KSM_ENABLE="true"
+  YHSM_KSM_DEVICE="/etc/yubico/yhsm/keys.json"
+  YHSM_KSM_KEYHANDLES="1"
+
+Then save and close the file.
+
+[NOTE]
+====
+By default the yhsm-yubikey-ksm damon will listen on port 8002 on the loopback
+interface only. This means that you will be able to access the service from the
+local machine, but not remotely. We recommend keeping this setting this way,
+and exposing the port only to the Validation Server(s) which will be using it.
+Remote Validation Servers can access the port by proxying it through another
+web server (with authentication) or tunneled through SSH, etc. Opening this
+port to the Internet without authentication will expose the server to DoS
+attacks (denial of service).
+====
+
+Now let's start the service, and verify that it is running:
+
+  $ sudo service yhsm-yubikey-ksm restart
+  $ curl http://localhost:8002/wsapi/decrypt?otp=
+  ERR Invalid OTP
+
+The `ERR` line tells us that the server is running, and the Invalid OTP message
+is expected, since we didn't actually send an OTP. 
+
+==== Adding credentials to the KSM
+The KSM isn't very useful until we've added some credentials to it. We'll now
+do just that, as well as program a YubiKey with one of those credentials. We'll
+use the yhsm-generate-keys command for this, which takes several parameters.
+First off, we need to give it the keys.json file from earlier, as it needs
+access to the master AES key for encrypting the secrets. Second, we tell it
+which key-handle to use (we'll use 1, since that's the only one we've defined.
+Next we'll give it an ofset of where to start in the public ID namespace, and
+how many credentials to generate. It's important to note that each credential
+must have a unique ID in the system, and if we generate more keys in the future
+we should take care not to generate any ID collisions. For example, if we
+choose our starting ID to be 1 and generate 10 credentials, the next invocation
+we should start at 11. The initial ID can be chosen arbitrarily (but avoid
+using 0, as it has some compatibility issues), and can be given as a decimal
+number, or a modhex value.
+
+Now, let's generate 10 new credentials:
+
+  $ sudo yhsm-generate-keys -D /etc/yubico/yhsm/keys.json --key-handle 1 --start-public-id interncccccc -c 10
+
+We now have 10 randomly generated credentials which are encrypted and stored in
+/var/cache/yubikey-ksm/aeads/1/. Let's decrypt one of them and program a
+YubiKey with it:
+
+  $ sudo yhsm-decrypt-aead --aes-key 000102030405060708090a0b0c0d0e0f --key-handle 1 --format yubikey-csv /var/cache/yubikey-ksm/aeads/
+
+The output lists all 10 of our YubiKey credentials in decrypted form. We pick
+one of the credentials and program a YubiKey with it. In my case, one of the
+credentials looked like this:
+
+  8,interncccccc,9949741dc5c7,60d82797fbcab4c0ef08e79cfdc54a94,000000000000,,,,,,
+
+The relevant parts are:
+
+  Public ID: interncccccc
+  Private ID: 9949741dc5c7
+  Secret AES Key: 60d82797fbcab4c0ef08e79cfdc54a94
+
+We can now use `ykpersonalize` to program a YubiKey with the credential:
+
+  ykpersonalize -1 -ofixed=interncccccc -ouid=9949741dc5c7 -a60d82797fbcab4c0ef08e79cfdc54a94
+
+After confirming, we can run the previous curl command again, but this time
+we'll end with an OTP from our newly programmed YubiKey:
+
+  $ curl http://localhost:8002/wsapi/decrypt?otp=interncccccctkbngftibfuvvbihrdjguvnrcdihejut
+  OK counter=0001 low=5d6e high=cb use=00
+
+Success! The KSM is correctly decrypting OTPs from the YubiKey.
+
+=== Installing the Validation Server
+The YubiKey Validation Server is a PHP application which requires a HTTP server
+to run, as well as a database to store data in. In this guide we will be using
+Apache and MySQL.
+
+We start by installing the package with dependencies:
+
+  $ sudo apt-get install yubikey-val libapache2-mod-php
+
+The installation will pull in and configure MySQL, prompting us to set a root
+password. It will also set up the necessary database tables for us and prompt
+us for a password for the ykval_verifier user. When everything is set up we
+will have Apache running on the default port (80), serving the YubiKey
+Validation Server API, which we again can verify using curl:
+
+  $ curl http://localhost/wsapi/2.0/verify
+  h=mUQ4lXMqhwKkJmkeySdm17RxWDY=
+  t=2016-10-31T15:00:12Z0074
+  status=MISSING_PARAMETER
+
+En error, but expected as we didn't pass any parameters.
+
+==== Testing the Validation server
+The default configuration of the YubiKey Validation Server should pick up our
+KSM already, which is already configured for our previously programmed YubiKey,
+so the Validation Server should be able to validate OTPs immediately. The
+validation protocol requires a few parameters be sent, so let's try it out:
+
+  $ curl "http://localhost/wsapi/2.0/verify?id=1&nonce=0123456789abcdef&otp=internccccccvunvcnjucfjefvfkbbjunhutdhucbclt"
+  h=WLaajHlUqayhltxLgT8uIy/Wza0=
+  t=2016-10-31T15:07:44Z0785
+  otp=internccccccvunvcnjucfjefvfkbbjunhutdhucbclt
+  nonce=0123456789abcdef
+  sl=0
+  status=OK
+
+Success! The required parameters were a client ID (we used 1), a nonce (needs
+to be 16-40 characters long), and an OTP from our YubiKey.
+
+Now, let's verify that the very same OTP isn't accepted again (that would be a
+replay attack). We'll pick a new nonce, but other than that send the same
+request again, using the same OTP:
+
+  $ curl "http://localhost/wsapi/2.0/verify?id=1&nonce=abababababababab&otp=internccccccvunvcnjucfjefvfkbbjunhutdhucbclt"
+  h=uiWxzfRHJz+5QZSN7KNov3CNkzM=
+  t=2016-10-31T15:11:43Z0142
+  otp=interncccccclifeelkcgebfgbdjikbuubbljvhhudln
+  nonce=abababababababab
+  status=REPLAYED_OTP
+
+As the response clearly shows, the Validation Server correctly identified that
+this was a replayed OTP.
+
+===== Using a YubiCloud Connector library
+Crafting requirest by hand is great for testing and learning about how the
+system works, but not very practical. There are several libraries and plugins
+available to validate Yubico OTPs, and to use one of these you will need to
+provide the URL of your Validation Server, but also a client ID and secret.
+When we installed the yubikey-val package a single client ID was automatically
+generated for us, with and ID of 1. We can generate more client ID's using the
+`ykval-gen-clients` command:
+
+  $ sudo ykval-gen-clients --urandom 5
+  2,a9gs00XkgfNUlOhnsmKiu4ydkcU=
+  3,NqvbePhHUdZEC5y4b33esf3v57w=
+  4,3SxiJalPf/8sZ8GhyD0GLEz8XvI=
+  5,yS/rLvRUCyj25iYyLMHoJ8kw4Lg=
+  6,+EgcKkiLtq4RbMkyN05ypT7tbuw=
+
+We've now generated 5 additional clients, and their IDs and secrets are shown
+on screen. We can also export existing clients by using the
+ykval-export-clients command:
+
+  $ sudo ykval-export-clients
+
+...which will print out the entire list of clients, with their respective
+secrets.
+
+To use a YubiCloud connector library, configure it using the URL for your
+Validation Server, and a client ID and secret pair. For example, you can use
+the python yubico-client library like so:
+
+[source,python]
+----
+>>> from yubico_client import Yubico
+>>> client = Yubico('2', 'a9gs00XkgfNUlOhnsmKiu4ydkcU=', api_urls=('http://yourserverhere.com/wsapi/2.0/verify',))
+>>> client.verify('internccccccfknfujreehclgcduninhvrcjrbkiglne')
+True
+----
+
+There are several YubiCloud connector libraries for different languages to
+choose from, some can be found
+link:/OTP/Libraries/List_of_libraries.html[here].
