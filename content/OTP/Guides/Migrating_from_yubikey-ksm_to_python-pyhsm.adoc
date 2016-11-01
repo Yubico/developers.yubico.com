@@ -1,0 +1,173 @@
+== Migrating from yubikey-ksm to python-pyshm
+This guide will take you through the steps needed to migrate from using the
+PHP-based yubikey-ksm to using python-pyhsm. Benefits of using python-pyhsm
+include the ability of using a YubiHSM to protect Yubico OTP secrets. We will
+assume you have a functioning yubikey-ksm installation with some credentials
+which need to be migrated. These instructions are for systems running Ubuntu
+Linux. Most of this guide will apply to other distributions as well, but the
+commands to install the software may be different.
+
+[IMPORTANT]
+----
+If you are migrating from yubikey-ksm for the purpose of using a YubiHSM to
+protect secrets, it is important that you securely wipe the old plaintext
+secrets used by yubikey-ksm. It's strongly recommended that you set up a new
+server for yhsm-yubikey-ksm using a YubiHSM in production, and never expose any
+plaintext secrets to that machine. Plaintext secrets should only be handled on
+a secure computer that is not (and will not be) connected to the Internet.
+----
+
+=== Installing python-pyhsm
+First we'll install the python based KSM (Key Storage Module). By default it
+will run on a different port than the existing yubikey-ksm, so there is no
+issue in having both at the same time:
+
+  $ sudo apt-get install yhsm-yubikey-ksm
+
+==== Option 1: Using a YubiHSM
+If you have the ability to use a YubiHSM to protect the Yubico OTP secrets then
+it is recommended that you do so. You will first have to configure the YubiHSM
+with at least 1 key handle with the proper permissions. For detailed
+instructions on how to set up a YubiHSM, see the YubiHSM Reference Manual which
+is available link:https://www.yubico.com/products/yubihsm/[here]. For this
+guide we will assume key handle 1 will be used, and is configured for at least
+OTP decryption (the YSM_AEAD_YUBIKEY_OTP_DECODE permission).
+
+Now, we need to configure the yhsm-yubikey-ksm server to use the YubiHSM, and
+to start automatically on boot. Start by editing the configuration file:
+
+  $ sudo nano /etc/default/yhsm-yubikey-ksm
+
+Change the following values (if you've set an unlock passphrase you can
+configure that as well):
+
+  YHSM_KSM_ENABLE="true"
+  YHSM_KSM_KEYHANDLES="1"
+
+Then save and close the file.
+
+==== Option 2: Storing the master key on disk
+If you're not going to be using a YubiHSM to protect the secrets then you will
+have to store a master key in plaintext on disk. This file will be used in lieu
+of the YubiHSM device. This is one example of setting up such a file:
+
+  $ sudo mkdir -p /etc/yubico/yhsm
+  $ sudo nano /etc/yubico/yhsm/keys.json
+
+The file should contain a JSON object with key handles mapped to AES keys in
+hex format, we will use this example:
+
+....
+{
+  "1": "000102030405060708090a0b0c0d0e0f"
+}
+....
+
+We save and close the file, and we now have a keyhandle "1" set up to use a
+dummy AES key. You will want to replace the value used in this example with a
+randomly generated key. While you can have multiple key handles, we will stick
+to using this single one in this guide. Because we want to limit the access to
+this file, we change ownership and permissions of the file to be readable only
+by the `yhsm-ksmsrv` user, which was created during the installation of the
+software:
+
+  $ sudo chown yhsm-ksmsrv /etc/yubico/yhsm/keys.json
+  $ sudo chmod 400 /etc/yubico/yhsm/keys.json
+
+Now, we need to configure the yhsm-yubikey-ksm server to use this file, and to
+start automatically on boot. Start by editing the configuration file:
+
+  $ sudo nano /etc/default/yhsm-yubikey-ksm
+
+Change the following values:
+
+  YHSM_KSM_ENABLE="true"
+  YHSM_KSM_DEVICE="/etc/yubico/yhsm/keys.json"
+  YHSM_KSM_KEYHANDLES="1"
+
+Then save and close the file.
+
+==== Verifying that yhsm-yubikey-ksm is configured correctly
+Regardless of if you are using a YubiHSM or not, you have made configuration
+changes and now need to restart the yhsm-yubikey-ksm daemon:
+
+  $ sudo service yhsm-yubikey-val restart
+
+=== Migrating existing data
+We will now migrate the existing data from yubikey-ksm to yhsm-yubikey-ksm. In
+yubikey-ksm the data is stored in an SQL database, and can be exported using
+the `ykksm-export` command. In yhsm-yubikey-ksm the data is stored encrypted on
+the disk, in an AEAD format. You can create these AEAD files using the included
+yhsm-import-keys command:
+
+  $ sudo su
+  # printf "# ykksm 1\n`ykksm-export`" | yhsm-import-keys --key-handles 1 --aes-key 000102030405060708090a0b0c0d0e0f
+
+This will encrypt the plaintext secrets using the given AES key (which should
+correspond to key handle 1 in your YubiHSM or keys.json file). The resulting
+AEAD files will be created under /var/cache/yubikey-ksm/aeads/, where
+yhsm-yubikey-ksm will automatically find them.
+
+==== Verification of migrated data
+We can verify the newly created AEADs by attempting to use them to decrypt an
+OTP. For this we need a YubiKey that contains a credential that was alrady in
+the yubikey-ksm database. Using curl, we first attempt to decrypt an OTP using
+the existing yubikey-ksm installation:
+
+  $ curl http://localhost/wsapi/decrypt?otp=internccccccfclhvbdbhudbjhvkidevcnbnblldhjfb
+  OK counter=0004 low=421d high=52 use=01
+
+Now, we try the same OTP using yhsm-yubikey-ksm instead, which (by default)
+runs on port 8002:
+
+  $ curl http://localhost:8002/wsapi/decrypt?otp=internccccccfclhvbdbhudbjhvkidevcnbnblldhjfb
+  OK counter=0004 low=421d high=52 use=01
+
+We got the same result, so the migration was successful.
+
+=== Updating yubikey-val configuration
+Any instance of yubikey-val which was using our earlier yubikey-ksm
+installation should be re-configured to use the new yhsm-yubikey-ksm
+installation instead. On all server running yubikey-val, edit the following
+file:
+
+  $ sudo nano /etc/yubico/val/ykval-config.php
+
+Locate the otp2ksmurls function near the bottom of the file and make sure any
+URL listed there which is pointing to the older yubikey-ksm installation is
+updated with the new port. Close the file, and reload the configuration:
+
+  $ sudo service apache2 reload
+
+Verify that this new setup works (this assumes yubikey-val is running on the
+same machine):
+
+  $ curl "http://localhost/wsapi/2.0/verify?id=1&nonce=12345678901234567890&otp=internccccccfclhvbdbhudbjhvkidevcnbnblldhjfb"
+  h=YD17lqu4gUJO7kqAYXHBekieoyk=
+  t=2016-11-01T13:05:05Z0392
+  otp=internccccccfclhvbdbhudbjhvkidevcnbnblldhjfb
+  nonce=12345678901234567890
+  sl=0
+  status=OK
+
+[NOTE]
+----
+While yubikey-ksm by default listens on any network interface (0.0.0.0),
+yhsm-yubikey-ksm only listens to the loopback interface (127.0.0.1) by default.
+This means that if yubikey-val is running on a different host than
+yhsm-yubikey-val it will not be able to access the KSM without further
+configuration. While it is possible to configure yhsm-yubikey-ksm to listen on
+any interface, the recommended approach is to not expose it to the Internet to
+prevent possible denial of service attacks. Instead, the recommended approach
+is to whitelist only your own validation servers to connect to the KSM, using
+for example SSH tunnels or firewall rules.
+----
+
+=== Removing yubikey-ksm
+Now that we've got the old data migrated to yhsm-yubikey-ksm, as well as
+verified it, we can remove the old data and yubikey-ksm installation:
+
+  $ sudo apt-get purge yubikey-ksm
+
+During removal, we are prompted to confirm that we want to deconfigure and
+delete the yubikey-ksm database tables, which we do. This completes the guide.
