@@ -138,9 +138,12 @@ class PageRenderModule(Module):
             if elem == content:
                 title = self._context.get('title') or \
                     display_name(self._context['current'])
-                content.insert(0, BeautifulSoup('<h2>%s</h2>' % title))
+                content.insert(0, BeautifulSoup('<h1>%s</h1>' % title))
                 break
             elem = elem.parent
+        # Ensure first title is a h1
+        if not soup.find('h1'):
+            soup.find('h2').name = 'h1'
 
         # Open external links in new window
         for link in soup.find_all('a', href=EXTERNAL_LINK):
