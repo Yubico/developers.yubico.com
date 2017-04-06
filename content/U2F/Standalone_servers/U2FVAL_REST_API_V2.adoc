@@ -1,9 +1,18 @@
-== REST API
+== U2FVAL REST API V2
 U2FVAL exposes its functionality over a REST API, which is made accessible to
 authenticated clients. Clients are responsible for supplying a unique-per-user
 persistent identifier for each user in its system in the form of a string no
 more than 32 characters long. Usernames should only be used if they are
 immutable. This user identification string is denoted userId in the API below.
+
+=== Notable changes from V1
+* The return types for register and sign operations have changed to be in line
+  with the FIDO U2F JavaScript API v1.1.
+* The `/:userId/authenticate` endpoint has been renamed to `/:userId/sign` to
+  better map to the FIDO JavaScript API.
+* Properties can be given during creation of register/sign challenges, to be
+  set on successful device creation/authentication.
+* More control is available in the creation of register/sign requests.
 
 === JavaScript object type definitions
 The following JavaScript objects are used when interacting with the REST API.
@@ -119,8 +128,8 @@ dictionary DeviceMetadata {
 The RegisterRequestData contains the parameters needed to invoke the _register_
 function of a FIDO client, as well as an array of +DeviceDescriptors+ to
 provide more information about the devices that are already registered. Each
-descriptor in the authenticateDescriptors array matches the request in
-authenticateRequests with the same index.
+descriptor in the descriptors array matches the +RegisteredKey+ in
+registeredKeys with the same index.
 
 [source,javascript]
 ----
@@ -165,12 +174,12 @@ dictionary RegisterResponseData {
   A Dictionary of properties to set for the Device created upon successful
   validation of the RegisterResponse.
 
-==== AuthenticationRequestData
-The +AuthenticationRequestData+ contains the parameters needed to invoke the
-_authenticate_ function of a FIDO client, as well as an array of
-+DeviceDescriptors+ to provide more information about the devices that are
-eligible for authentication. Each descriptor in the authenticateDescriptors
-array matches the request in authenticateRequests with the same index.
+==== SignRequestData
+The +SignRequestData+ contains the parameters needed to invoke the _sign_
+function of a FIDO client, as well as an array of +DeviceDescriptors+ to
+provide more information about the devices that are eligible for
+authentication. Each descriptor in the descriptors array matches the
++RegisteredKey+ in registeredKeys with the same index.
 
 [source,javascript]
 ----
@@ -196,7 +205,7 @@ dictionaty SignRequestData {
 
 ==== SignResponseData
 The SignResponseData contains the SignResponse returned by a successful call to
-the _authenticate_ function of a FIDO client, as well as any properties to set,
+the _sign_ function of a FIDO client, as well as any properties to set,
 and names of properties to return, if the authentication succeeds.
 
 [source,javascript]
@@ -208,15 +217,15 @@ dictionary SignResponseData {
 ----
 
 ===== Members
-*authenticateResponse* of type +SignResponse+::
+*signResponse* of type +SignResponse+::
   The SignResponse to return to the server for validation.
 *properties* of type +Dictionary+::
   A Dictionary of properties to set for the Device for which authentication is
-  perfomed, if authentication succeeds.
+  performed, if authentication succeeds.
 
 === HTTP resources
 
-==== /:userId
+==== Endpoint: /:userId
 *Example*::
 _https://example.com/johndoe_
 
@@ -230,7 +239,7 @@ Returns a list of device handles, with their properties.
 Deletes all data associated with the user.
 
 
-==== /:userId/register
+==== Endpoint: /:userId/register
 *Example*::
 _https://example.com/johndoe/register_
 
@@ -250,9 +259,11 @@ Completes the registration, storing a new device associated with the user.
 +DeviceDescriptor+
 
 
-==== /:userId/authenticate
+==== Endpoint: /:userId/sign
 *Example*::
-_https://example.com/johndoe/authenticate_
+_https://example.com/johndoe/sign
+
+NOTE: This has been renamed from `/:userId/authenticate`.
 
 ==== +HTTP GET+
 Initializes authentication for the given user (all registered devices).
@@ -271,14 +282,14 @@ which signed the challenge.
 +DeviceDescriptor+
 
 
-==== /:uid/:handle
+==== Endpoint: /:uid/:handle
 *Example*::
 _https://example.com/johndoe/0f0f0f0f0f...0f_
 
 ==== +HTTP GET+
 Returns properties for the device.
 
-===== Server Response
+===== Server response
 +DeviceDescriptor+
 
 ==== +HTTP POST+
@@ -295,3 +306,15 @@ Removes the device registration.
 
 ===== Server Response
 HTTP 204 No Content
+
+==== Endpoint: /:uid/:handle/certificate
+*Example*::
+_https://example.com/johndoe/0f0f0f0f0f...0f/certificate_
+
+==== +HTTP GET+
+Returns the attestation certificate for the device.
+
+===== Server Response
+_<PEM encoded X509 certificate>_
+
+
