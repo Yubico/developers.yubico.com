@@ -21,11 +21,11 @@ link:https://fidoalliance.org/specs/fido-u2f-v1.1-id-20160915/fido-u2f-javascrip
 U2F JavaScript API v1.1] specification are used.
 
 ==== Error
-Whenever an API call results in an error, an +Error+ object is returned. The
+Whenever an API call results in an error, an `Error` object is returned. The
 errorCode determines the type of error, and the errorMessage gives a textual
 description of the error. If applicable to the specific error, additional data
 will be available in the errorData field. The HTTP status code for an error is
-always a 4XX status code, such as +400 (Bad Request)+ or +404 (Not Found)+.
+always a 4XX status code, such as `400 (Bad Request)` or `404 (Not Found)`.
 
 [source,javascript]
 ----
@@ -46,30 +46,30 @@ The arguments passed to the function are invalid.
 
 |NoEligibleDevices|11  |
 The user has no eligible devices capable of performing the requested action.
-A +DeviceDescriptor[]+ containing the users devices will be passed along with
+A `DeviceDescriptor[]` containing the users devices will be passed along with
 this error, as it is often desirable to handle a user with no registered
 devices differently from a user with devices that have been marked conpromised
 and therefore been disabled.
 
 |DeviceCompromised|12  |
 The requested action caused the server to determine that one of the users
-devices may be compromised, and has been disabled. The +DeviceDescriptor+ in
+devices may be compromised, and has been disabled. The `DeviceDescriptor` in
 question is returned with the error.
 |=================================
 
 ==== Properties
-The +Properties+ dictionary is simply a regular JSON object with values being
+The `Properties` dictionary is simply a regular JSON object with values being
 either strings or `null`. When sending *Properties*, a `null` value denotes
 unsetting the property, ie. deleting it. When getting *Properties* all values
 will be strings. Keys have a 40 character limit.
 
 ==== Device Descriptor
-The +DeviceDescriptor+ describes a registered U2F device. Each Device has a
+The `DeviceDescriptor` describes a registered U2F device. Each Device has a
 unique handle used to identify the device, as well as fields showing when the
-device was registered (+created+) and last successfully used (+lastUsed+).
-When available, metadata about the device will be present in the +metadata+
+device was registered (`created`) and last successfully used (`lastUsed`).
+When available, metadata about the device will be present in the `metadata`
 field, containing vendor and device information. This field will be omitted if
-no such metadata exists. A dictionary of key-value +properties+ is available,
+no such metadata exists. A dictionary of key-value `properties` is available,
 which can be used by the client to store arbitrary data. A boolean shows if the
 device has been marked as compromised. A compromised device cannot be used for
 authentication. The system will mark a device as compromised if it detects
@@ -99,26 +99,26 @@ dictionary DeviceDescriptor {
 ----
 
 ===== Members
-*handle* of type +DOMString+::
+`handle` of type `DOMString`::
   A U2FVAL specific identifier for the credential.
-*created* of type +DOMString+::
+`created` of type `DOMString`::
   The time and date of registration of the credential.
-*lastUsed* of type +DOMString+::
+`lastUsed` of type `DOMString`::
   The time and date of the last successful use of the credential.
-*metadata* of type +DeviceMetadata+::
+`metadata` of type `DeviceMetadata`::
   Metadata for the device.
-*properties* of type +Properties+::
+`properties` of type `Properties`::
   Client-settable key-value pairs.
-*compromised* of type +boolean+::
+`compromised` of type `boolean`::
   Flag indicating if the credential is considered to be compromised or not.
-*transports* of type +array+ of +DOMString+::
+`transports` of type `array` of `DOMString`::
   An optional list of transports supported by the credential.
 
 
 ==== DeviceMetadata
-The metadata provided in the +DeviceDescriptor+ contains metadata about the
+The metadata provided in the `DeviceDescriptor` contains metadata about the
 device vendor as well as the device itself. The two contained fields
-(+VendorInfo+ and +DeviceInfo+) are described link:/U2F/Attestation_and_Metadata/JSON_Format.html[here].
+(`VendorInfo` and `DeviceInfo`) are described link:/U2F/Attestation_and_Metadata/JSON_Format.html[here].
 If no metadata exists for either (or both) of these fields the fields will be
 omitted.
 
@@ -132,9 +132,9 @@ dictionary DeviceMetadata {
 
 ==== RegisterRequestData
 The RegisterRequestData contains the parameters needed to invoke the _register_
-function of a FIDO client, as well as an array of +DeviceDescriptors+ to
+function of a FIDO client, as well as an array of `DeviceDescriptors` to
 provide more information about the devices that are already registered. Each
-descriptor in the descriptors array matches the +RegisteredKey+ in
+descriptor in the descriptors array matches the `RegisteredKey` in
 registeredKeys with the same index.
 
 [source,javascript]
@@ -148,20 +148,20 @@ dictionary RegisterRequestData {
 ----
 
 ===== Members
-*appId* of type +DOMString+::
+`appId` of type `DOMString`::
   The AppID for the request.
-*registeredKeys* of type +array+ of +RegisteredKey+::
+`registeredKeys` of type `array` of `RegisteredKey`::
   A list of RegisteredKey dictionaries, one for each U2F device already
   registered by the user.
-*registerRequests* of type +array+ of +RegisterRequest+::
+`registerRequests` of type `array` of `RegisterRequest`::
   A list of RegisterRequest dictionaries, one for each protocol version that
   the server is willing to support.
-*descriptors* of type +array+ of +DeviceDescriptor+::
-  A list of DeviceDescriptors matching the +registeredKeys+ list, with device
+`descriptors` of type `array` of `DeviceDescriptor`::
+  A list of DeviceDescriptors matching the `registeredKeys` list, with device
   information.
 
 ==== RegisterResponseData
-The +RegisterResponseData+ contains the +RegisterResponse+ returned by a successful
+The `RegisterResponseData` contains the `RegisterResponse` returned by a successful
 call to the _register_ function of a FIDO client, as well as any properties to
 set, and names of properties to return, if the registration succeeds.
 
@@ -174,18 +174,18 @@ dictionary RegisterResponseData {
 ----
 
 ===== Members
-*registerResponse* of type +RegisterResponse+::
+`registerResponse` of type `RegisterResponse`::
   The RegisterResponse to return to the server for validation.
-*properties* of type +Properties+::
+`properties` of type `Properties`::
   A Dictionary of properties to set for the Device created upon successful
   validation of the RegisterResponse.
 
 ==== SignRequestData
-The +SignRequestData+ contains the parameters needed to invoke the _sign_
-function of a FIDO client, as well as an array of +DeviceDescriptors+ to
+The `SignRequestData` contains the parameters needed to invoke the _sign_
+function of a FIDO client, as well as an array of `DeviceDescriptors` to
 provide more information about the devices that are eligible for
 authentication. Each descriptor in the descriptors array matches the
-+RegisteredKey+ in registeredKeys with the same index.
+`RegisteredKey` in registeredKeys with the same index.
 
 [source,javascript]
 ----
@@ -198,15 +198,15 @@ dictionaty SignRequestData {
 ----
 
 ===== Members
-*appId* of type +DOMString+::
+`appId` of type `DOMString`::
   The AppID for the request.
-*challenge* of type +DOMString+::
+`challenge` of type `DOMString`::
   The challenge for the request.
-*registeredKeys* of type +array+ of +RegisteredKey+::
+`registeredKeys` of type `array` of `RegisteredKey`::
   A list of RegisteredKey dictionaries, one for each U2F device available for
   authentication.
-*descriptors* of type +array+ of +DeviceDescriptor+::
-  A list of DeviceDescriptors matching the +registeredKeys+ list, with device
+`descriptors` of type `array` of `DeviceDescriptor`::
+  A list of DeviceDescriptors matching the `registeredKeys` list, with device
   information.
 
 ==== SignResponseData
@@ -223,9 +223,9 @@ dictionary SignResponseData {
 ----
 
 ===== Members
-*signResponse* of type +SignResponse+::
+`signResponse` of type `SignResponse`::
   The SignResponse to return to the server for validation.
-*properties* of type +Properties+::
+`properties` of type `Properties`::
   A Dictionary of properties to set for the Device for which authentication is
   performed, if authentication succeeds.
 
@@ -235,13 +235,13 @@ dictionary SignResponseData {
 *Example*::
 _https://example.com/johndoe_
 
-==== +HTTP GET+
+==== `HTTP GET`
 Returns a list of device handles, with their properties.
 
 ===== Server response
 +DeviceDescriptor[]+
 
-==== +HTTP DELETE+
+==== `HTTP DELETE`
 Deletes all data associated with the user.
 
 
@@ -249,26 +249,26 @@ Deletes all data associated with the user.
 *Example*::
 _https://example.com/johndoe/register_
 
-==== +HTTP GET+
+==== `HTTP GET`
 Initializes registration for the given user (all registered devices).
 
 ===== Query parameters
-*challenge* of type +DOMString+::
+`challenge` of type `DOMString`::
   An optional challenge as urlsafe base64 string.
-*properties* of type +Properties+::
+`properties` of type `Properties`::
   Optional Properties to set upon successful completion of device registration.
 
 ===== Server response
-+RegisterRequestData+
+`RegisterRequestData`
 
-==== +HTTP POST+
+==== `HTTP POST`
 Completes the registration, storing a new device associated with the user.
 
 ===== Client request body
-+RegisterResponseData+
+`RegisterResponseData`
 
 ===== Server response
-+DeviceDescriptor+
+`DeviceDescriptor`
 
 
 ==== Endpoint: /:userId/sign
@@ -277,53 +277,53 @@ _https://example.com/johndoe/sign
 
 NOTE: This has been renamed from `/:userId/authenticate`.
 
-==== +HTTP GET+
+==== `HTTP GET`
 Initializes authentication for the given user (all registered devices).
 
 ===== Query parameters
-*challenge* of type +DOMString+::
+`challenge` of type `DOMString`::
   An optional challenge as urlsafe base64 string.
-*properties* of type +Properties+::
+`properties` of type `Properties`::
   Optional Properties to set upon successful completion of device registration.
-*handle* of type +DOMString+::
+`handle` of type `DOMString`::
   Optional device handle to specify which of the users devices to generate the
   sign challenge for. Can be provided multiple times. If omitted, all eligible
   devices are used.
 
 ===== Server response
-+SignRequestData+
+`SignRequestData`
 
-==== +HTTP POST+
+==== `HTTP POST`
 Completes the authentication, updating and returning properties for the device
 which signed the challenge.
 
 ===== Client request
-+SignResponseData+
+`SignResponseData`
 
 ===== Server response
-+DeviceDescriptor+
+`DeviceDescriptor`
 
 
 ==== Endpoint: /:uid/:handle
 *Example*::
 _https://example.com/johndoe/0f0f0f0f0f...0f_
 
-==== +HTTP GET+
+==== `HTTP GET`
 Returns properties for the device.
 
 ===== Server response
-+DeviceDescriptor+
+`DeviceDescriptor`
 
-==== +HTTP POST+
+==== `HTTP POST`
 Sets properties for the device, then returns the devices (updated) properties.
 
 ===== Client Request
-+Dictionary+
+`Dictionary`
 
 ===== Server Response
-+DeviceDescriptor+
+`DeviceDescriptor`
 
-==== +HTTP DELETE+
+==== `HTTP DELETE`
 Removes the device registration.
 
 ===== Server Response
@@ -333,7 +333,7 @@ HTTP 204 No Content
 *Example*::
 _https://example.com/johndoe/0f0f0f0f0f...0f/certificate_
 
-==== +HTTP GET+
+==== `HTTP GET`
 Returns the attestation certificate for the device.
 
 ===== Server Response
