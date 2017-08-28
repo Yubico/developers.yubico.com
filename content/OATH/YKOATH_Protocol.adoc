@@ -1,12 +1,12 @@
-== YK-OATH Protocol Specification
+== YKOATH Protocol Specification
 The YKOATH protocol is used to manage and use OATH credentials with a YubiKey
-NEO or 4. It can be accessed over USB (when the CCID transport is enabled) or
+NEO or a YubiKey 4. It can be accessed over USB (when the CCID transport is enabled) or
 over NFC, using ISO 7816-4 commands as defined in this document.
 
 == General Definitions
 === Instructions
-Instructions marked as 'Require Auth' require a successful VALIDATE to be
-performed before they're available if a code is set.
+Instructions marked as 'Require Auth' require a successful VALIDATE command to be
+performed before they are available, if a code is set.
 [options="header"]
 |========================
 |Name           |Code | Require Auth
@@ -44,7 +44,7 @@ NOTE: HMAC-SHA512 requires YubiKey 4.3.1 or later.
 NOTE: Require touch requires YubiKey 4.2.4 or later.
 
 == SELECT INSTRUCTION
-Selects the applet for usage and returns, version, ID and a challenge if
+Selects the application for use and returns version, ID and a challenge if
 authentication is configured (see the validate instruction below).
 
 === Request Syntax
@@ -58,8 +58,8 @@ authentication is configured (see the validate instruction below).
 |=========
 
 === Response Syntax
-Challenge is returned if the authentication object is set. In that case
-authentication is required for all commands except validate and reset.
+A challenge is returned if the authentication object is set. In that case
+an authentication is required for all commands except VALIDATE and RESET.
 |=======================
 |Version tag      | 0x79
 |Version length   | Length of version
@@ -143,12 +143,12 @@ Deletes an existing code.
 
 == SET CODE INSTRUCTION
 Configures Authentication.
-If length 0 is sent authentication is removed.
+If length 0 is sent, authentication is removed.
 The key to be set is expected to be a user-supplied UTF-8 encoded password
 passed through 1000 rounds of PBKDF2 with the ID from select used as salt. 16
-bytes of that is used. When configuring authentication you're required to send
-a challenge and one authentication-response with that key as well to confirm
-that the applet and the host software calculate the same response for that key.
+bytes of that are used. When configuring authentication you are required to send
+a challenge and one authentication-response with that key, in order to confirm
+that the application and the host software can calculate the same response for that key.
 
 === Request Syntax
 |=========
@@ -183,7 +183,7 @@ that the applet and the host software calculate the same response for that key.
 |===============================
 
 == RESET INSTRUCTION
-Reset the applet to just-installed state.
+Resets the application to just-installed state.
 
 === Request Syntax
 |=========
@@ -199,7 +199,7 @@ Reset the applet to just-installed state.
 |================
 
 == LIST INSTRUCTION
-List configured codes.
+Lists configured codes.
 
 === Request Syntax
 |=========
@@ -227,7 +227,7 @@ Response will be a continual list of objects looking like:
 |===========================
 
 == CALCULATE INSTRUCTION
-Do calculate for one named code.
+Performs CALCULATE for one named code.
 
 === Request Syntax
 |=========
@@ -267,11 +267,12 @@ Do calculate for one named code.
 |======================
 
 == VALIDATE INSTRUCTION
-Validate authentication (mutually).
-The challenge for this comes from the select command, perform the correct HMAC
-function over that challenge with the correct key. Then send a new challenge to
-the applet together with the response, the applet will then respond with a
-calculation of that that the host software can verify.
+Validates authentication (mutually).
+The challenge for this comes from the SELECT command. The response if computed by
+performing the correct HMAC function of that challenge with the correct key.
+A new challenge is then sent to the application, together with the response.
+The application will then respond with a similar calculation that the host
+software can verify.
 
 === Request Syntax
 |=========
@@ -309,7 +310,7 @@ calculation of that that the host software can verify.
 |========================
 
 == CALCULATE ALL INSTRUCTION
-Do calculation for all available codes, returns name + response for TOTP and
+Performs CALCULATE for all available codes, returns name + response for TOTP and
 just name for HOTP.
 
 === Request Syntax
@@ -353,7 +354,7 @@ The response will be a list of the following objects:
 |===========================
 
 == SEND REMAINING INSTRUCTION
-Get remaining data if everything didn't fit in previous response (response
+Gets remaining data if everything didn't fit in previous response (response
 code was 61xx).
 
 === Request Syntax
