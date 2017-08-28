@@ -6,7 +6,7 @@ over NFC, using ISO 7816-4 commands as defined in this document.
 == General Definitions
 === Instructions
 Instructions marked as 'Require Auth' require a successful VALIDATE to be
-performed before they're available if a code is set.
+performed before they're available if a validation code is set.
 [options="header"]
 |========================
 |Name           |Code | Require Auth
@@ -39,7 +39,7 @@ NOTE: HMAC-SHA512 requires YubiKey 4.3.1 or later.
 === PROPERTIES
 |========================
 |Only increasing | 0x01 | Enforces that a challenge is always higher than the previous
-|Require touch   | 0x02 | Require button press to generate codes
+|Require touch   | 0x02 | Require button press to generate OATH codes
 |========================
 NOTE: Require touch requires YubiKey 4.2.4 or later.
 
@@ -76,7 +76,7 @@ authentication is required for all commands except validate and reset.
 |=======================
 
 == PUT INSTRUCTION
-Adds a new (or overwrites) OATH code.
+Adds a new (or overwrites) OATH credential.
 
 === Request Syntax
 |====================
@@ -96,7 +96,7 @@ Adds a new (or overwrites) OATH code.
 |Key tag        |0x73
 |Key length     |Length of key data + 2
 |Key algorithm  |High 4 bits is type, low 4 bits is algorithm
-|Digits         |Number of digits in code
+|Digits         |Number of digits in OATH code
 |Key data       |Key
 |Property tag(o)|0x78
 |Property(o)    |Property byte
@@ -114,7 +114,7 @@ Adds a new (or overwrites) OATH code.
 |=====================
 
 == DELETE INSTRUCTION
-Deletes an existing code.
+Deletes an existing credential.
 
 === Request Syntax
 |=========
@@ -199,7 +199,7 @@ Reset the applet to just-installed state.
 |================
 
 == LIST INSTRUCTION
-List configured codes.
+List configured credentials.
 
 === Request Syntax
 |=========
@@ -227,7 +227,7 @@ Response will be a continual list of objects looking like:
 |===========================
 
 == CALCULATE INSTRUCTION
-Do calculate for one named code.
+Do calculate for one named credential.
 
 === Request Syntax
 |=========
@@ -253,7 +253,7 @@ Do calculate for one named code.
 |======================
 |Response tag    | 0x75 for full response, 0x76 for truncated
 |Response length | Length of response + 1
-|Digits          | Number of digits in the code
+|Digits          | Number of digits in the OATH code
 |Response data   | Response
 |======================
 
@@ -309,8 +309,8 @@ calculation of that that the host software can verify.
 |========================
 
 == CALCULATE ALL INSTRUCTION
-Do calculation for all available codes, returns name + response for TOTP and
-just name for HOTP.
+Do calculation for all available credentials, returns name + response for TOTP and
+just name for HOTP and credentials requiring touch.
 
 === Request Syntax
 |=========
@@ -339,7 +339,7 @@ The response will be a list of the following objects:
 |Name data    | Name
 |Response tag | 0x77 for HOTP, 0x7c for touch, 0x75 for full response or 0x76 for truncated response
 |Response len | Length of response + 1
-|Digits       | Number of digits in the code
+|Digits       | Number of digits in the OATH code
 |Response data| Response
 |===================
 
