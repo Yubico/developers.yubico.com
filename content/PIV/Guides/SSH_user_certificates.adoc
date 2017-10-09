@@ -21,8 +21,13 @@ host
   $ ssh-keygen -N '' -C user-ca -f ~/.ssh/ca
   $ sed 's/^/cert-authority /' ~/.ssh/ca.pub > ~/.ssh/authorized_keys
 
-2. Generate a key in PIV slot 9c that requires touch. (Note the second
-operation will require touch)
+2. Generate or import a key in PIV slot 9c that requires touch.
+a. Import key and certificate:
+
+  $ yubico-piv-tool -s 9c -a import-key -i key.pem --pin-policy=never --touch-policy=always
+  $ yubico-piv-tool -s 9c -a import-certificate -i cert.pem
+
+b. Generate a key and sign a certificate. (Note the second operation will require touch)
 
   $ yubico-piv-tool -a generate -s 9c -A RSA2048 --pin-policy=never --touch-policy=always -o public.pem
   $ yubico-piv-tool -a selfsign-certificate -s 9c -S "/CN=SSH key/" -i public.pem -o cert.pem
