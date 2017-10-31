@@ -43,11 +43,11 @@ Connect to YubiHSM2
 
 Set keepalive active to facilitate usability during first time use. Remember that this will consume one session
 
- yubihsm> keepalive 25
+  yubihsm> keepalive 25
 
 Enable debug
 
- yubihsm> debug all
+  yubihsm> debug all
 
 === Sessions
 
@@ -82,15 +82,15 @@ Note how the command above has two distinct sets of Capabilities. This is becaus
 
 List all object to see the newly created object
 
- yubishm> list objects 0 2 any 0 0 any
+  yubishm> list objects 0 2 any 0 0 any
 
 Next, let's start using our newly created Authkey
 
- yubihsm> session open 2 password
+  yubihsm> session open 2 password
 
 === Generate a Key for Signing
 
-We now proceed to genrate a new key type, Asymmetric. In our example we will use this key to sign some data and we will also export this key _under wrap_ to another HSM for backup purposes.
+We now proceed to generate a new key type, Asymmetric. In our example we will use this key to sign some data and we will also export this key _under wrap_ to another HSM for backup purposes.
 
   yubihsm> generate asymmetric 2 100 label_ecdsa_sign 1,2,3 export_under_wrap,asymmetric_sign_ecdsa ecp256
 
@@ -101,12 +101,6 @@ If successful you will see this message: "_Generated Asymmetric key 0x0064_".
 We are going to create a binary digest of the data to be signed, in our example we use OpenSSL.
 
  $ openssl dgst -sha256 -binary yubihsm-connector > yubihsm-connector.sha
-
-////
-don't remember if we had to switch to auth key 1 to sign, key 2 could not
-#close session and move back to your main key with all capabilities, default id:1
-session open 1 password
-////
 
 and sign the data with our newly generated Asymmetric key. In this example we sign the yubihsm-connector binary
 
@@ -139,11 +133,12 @@ Verify the signature with OpenSSL
 Time to export the key under wrap to a second YubiHSM 2 (in this example, we will export to the same HSM for convenience)
 
 Reconnect to our new key
- yubishm> session open 2
+
+  yubishm> session open 2
 
 Let's make sure we have the right Capabilities. We check the Capabilities of the Object we want to wrap first
 
- yubihsm> get objectinfo 0 100 authkey
+  yubihsm> get objectinfo 0 100 authkey
 
 Now we proceed in adding the Wrapkey.
 
@@ -154,7 +149,7 @@ First we generate our key. For example, we use the YubiHSM 2 to generate 16 rand
 
 CAUTION: Add a Wrapkey to the device with Capabilities of the target Object. Notice the *Delegated Capabilities* associated with the Object need to be the same as the Object we want to import under wrap.
 
- yubihsm> put wrapkey 0 200 label_wrapkey 1,2,3 import_wrapped,export_wrapped asymmetric_sign_ecdsa 9207653411df91fd36c12faa6886d5c4
+  yubihsm> put wrapkey 0 200 label_wrapkey 1,2,3 import_wrapped,export_wrapped asymmetric_sign_ecdsa 9207653411df91fd36c12faa6886d5c4
 
 Wrap the Asymmetric key with our Wrapkey with ID `200` and save it to a file
 
@@ -162,8 +157,8 @@ Wrap the Asymmetric key with our Wrapkey with ID `200` and save it to a file
 
 Delete the Asymmetric key from the YubiHSM 2. We are going to re-import the key on the same device so we need to first delete the existing object
 
- yubihsm> delete 1 200 asymmetric
+  yubihsm> delete 1 200 asymmetric
 
 We import the wrapped ECDSA key back into the YubiHSM 2
 
- yubihsm> put wrapped 1 200 wrapped_ecdsa.key
+  yubihsm> put wrapped 1 200 wrapped_ecdsa.key
