@@ -1,0 +1,43 @@
+== EXPORT WRAPPED
+
+Get an object in encrypted form.
+
+== Description
+
+Retrieves an object under wrap from the device. The object is encrypted using
+AES-CCM with 16 byte mac and 13 byte nonce.
+
+== Shell example
+
+Fetch the asymmetric key 0x997e encrypted with wrapkey 0xcf94 and store the
+result in the file key.enc:
+
+  yubihsm> get wrapped 0 0xcf94 asymmetric 0x997e key.enc
+
+== Protocol details
+
+=== Command
+
+|======================
+|T~c~ = 0x4a
+|L~c~ = 2 + 1 + 2
+|V~c~ = K \|\| T \|\| I
+|======================
+
+K := ID of wrapping key to use (2 bytes)
+
+T := link:../Concepts/Object.html[Type] of object to use (1 byte)
+
+I := Object ID of wrapped object (2 bytes)
+
+=== Response
+
+|================
+|T~r~ = 0xca
+|L~r~ = 13 + L~R~
+|V~r~ = N \|\| R
+|================
+
+N := Nonce used for this wrap (13 bytes)
+
+R := Wrapped data

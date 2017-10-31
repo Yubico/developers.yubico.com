@@ -1,0 +1,67 @@
+== PUT ASYMMETRIC
+
+Import an asymmetric key.
+
+== Description
+
+Import an asymmetric key into the device.
+
+== Shell example
+
+Store an RSA key from key.pem into the device:
+
+  yubihsm> put asymmetric 0 0 rsakey 1 asymmetric_sign_pkcs key.pem 
+  Stored Asymmetric key 0x1e15
+
+== Protocol details
+
+=== Command
+
+|=================================================
+|T~c~ = 0x45
+|L~c~ = 2 + 40 + 2 + 8 + 1 + L~P1~ { + L~P2~ }
+|V~c~ = K \|\| L \|\| D \|\| C \|\| A \|\| P~1~ { \|\| P~2~ }
+|=================================================
+
+The key parameters vary according to the chosen algorithm. Each parameter has
+a fixed length and the order is compulsory.
+
+K := Key ID (2 bytes)
+
+L := Label (40 bytes)
+
+D := Domains (2 bytes)
+
+C := link:../Concepts/Capability.html[Capabilities] (8 bytes)
+
+A := link:../Concepts/Algorithm.html[Algorithm] (1 byte)
+
+P~1~ :=
+
+________________________________________________________________________
+For RSA: secret prime p (0x0080 | 0x00C0 | 0x0100 bytes)
+
+For ECC: private key integer d (0x0020 | 0x0030 | 0x0040 | 0x0042 bytes)
+
+For EDC: private key integer k (0x0020 bytes)
+________________________________________________________________________
+
+P~2~ :=
+
+________________________________________________________
+For RSA: secret prime q (0x0080 | 0x00C0 | 0x0100 bytes)
+
+For ECC: NOT DEFINED
+
+For EDC: NOT DEFINED
+________________________________________________________
+
+=== Response
+
+|===========
+|T~r~ = 0xc5
+|L~r~ = 2
+|V~r~ = I
+|===========
+
+I := ID of created object (2 bytes)

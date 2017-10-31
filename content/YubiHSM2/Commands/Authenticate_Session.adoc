@@ -1,0 +1,46 @@
+== AUTHENTICATE SESSION
+
+Complete the mutual authentication process started with
+link:Create_Session.html[Create Session].
+
+== Description
+
+Finish the session negotiation and authenticate the session to the device.
+After this command completes successfully the session is authenticated and
+can be used.
+
+== Shell example
+
+Create a new session with authkey 1 using the password "password", this does
+both the session creation and authentication steps:
+
+  yubihsm> session open 1 password
+  Created session 0
+
+== Protocol details
+
+=== Command
+
+|==================
+|T~c~ = 0x04
+|L~c~ = 17
+|V~c~ = S \|\| B \|\| M
+|==================
+
+S := Session ID (1 byte)
+
+B := Host Cryptogram (8 bytes)
+
+M := CMAC(S-MAC, 0^16^ || T || L~c~ + 8 || S || B) (8 bytes)
+
+This is the first authenticated message in the chain.
+
+The card verifies M and B, both using S-MAC.
+
+=== Response
+
+|===========
+|T~r~ = 0x84
+|L~r~ = 0
+|V~r~ = Ø
+|===========

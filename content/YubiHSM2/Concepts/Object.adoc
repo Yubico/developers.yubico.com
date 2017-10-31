@@ -1,0 +1,51 @@
+== Objects
+
+The first concept that we will present are Objects. Any persistently-stored and self-contained piece of information present in a YubiHSM 2, is an Object. This is intentionally a very generic and broad definition, which can be easily rephrased as _everything is an Object_. Objects have associated properties that characterize them and give them different meanings. Regardless of the kind and specific properties, any YubiHSM 2 device can store up to `256` Objects, and their combined size can not exceed `126 KiB`.
+
+== Object Type
+
+As said before, an Object is almost anything stored on the device. To identify what an Object can and can not do, we define an attribute called Object Type, or simply Type. A Type is not enough to _uniquely_ identify and Object, but it defines the set of operations that can be performed with or on it. The following types are defined:
+
+=== Authkey
+
+An `Authkey` or Authentication Key, is one of the most fundamental Objects there is. Authentication Keys can be used to establish link:Session.adoc[Sessions] with a device.
+
+=== Asymmetric
+
+An `Asymmetric` Object, is what the YubiHSM 2 uses to represent a private key that can be used to perform cryptographic operations. It is important to note that, conceptually, an Asymmetric Object only represents the private part of a key-pair and that the public key is not stored on the device, but rather it is recalculated on-demand whenever the user requires it.
+
+=== Hmackey
+
+An `Hmackey` is a secret key used when computing HMAC values.
+
+=== Opaque
+
+An `Opaque` Object is an unchecked kind of Object, normally used to store raw data in the device. No specific restrictions (besides size limitations) are imposed to this type of Object.
+
+=== Otpaeadkey
+
+An `Otpaeadkey` Object is a secret key used to decrypt Yubico OTP values for further verification by a validation process.
+
+=== Template
+
+A `Template` Object is a binary template used to validate SSH certificate requests.
+
+=== Wrapkey
+
+A `Wrapkey` Object is a secret key used to wrap and unwrap Objects during the export and import process.
+
+== Protocol Details
+
+Object Types are encoded as an 8-bit value.
+
+[options="header"]
+|=======================
+|Type Name | Hex Value
+|Opaque | 0x01
+|Authkey | 0x02
+|Asymmetric | 0x03
+|Wrapkey | 0x04
+|Hmackey | 0x05
+|Template | 0x06
+|Otpaeadkey | 0x07
+|=======================

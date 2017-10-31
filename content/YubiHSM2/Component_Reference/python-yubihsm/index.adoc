@@ -1,0 +1,49 @@
+== Python library
+
+The Python library allows you to interface with a YubiHSM 2 through
+the Connector service using the Python programming language. It supports both Python 2 and 3.
+
+The recommended way to install the library is by using `pip` inside a
+virtualenv. To create and activate a virtualenv, just run:
+
+....
+$ virtualenv yubihsm
+Running virtualenv with interpreter /usr/bin/python2
+New python executable in /home/user/yubihsm/bin/python2
+Also creating executable in /home/user/yubihsm/bin/python
+Installing setuptools, pkg_resources, pip, wheel...done.
+
+$ source yubihsm/bin/activate
+(yubihsm) $ pip install yubihsm-1.0.0.tar.gz
+Processing ./yubihsm-1.0.0.tar.gz
+...
+Successfully installed asn1crypto-0.22.0 cffi-1.10.0 cryptography-1.8.1 enum34-1.1.6 idna-2.5 ipaddress-1.0.18 pycparser-2.17 requests-2.13.0 yubihsm-1.0.0
+(yubihsm) $
+....
+
+NOTE: The `cryptography` dependency uses C extensions, and therfore has some build
+dependencies. For detailed instructions on getting building, see:
+https://cryptography.io/en/latest/installation/
+
+....
+from yubihsm.yubihsm import HttpBackend, Session, AsymKey
+from yubihsm.defs import ALGO, CAPABILITY
+
+# Connect to the Connector and establish a session using the default auth key:
+backend = HttpBackend("http://localhost:12345/connector/api")
+session = Session(backend, 1, "password")
+
+# Create a new EC key for signing:
+key = AsymKey.generate(session, 0, "EC Key", 1, CAPABILITY.ASYMMETRIC_SIGN_ECDSA, ALGO.EC_P256)
+
+# Sign a message
+data = b'Hello world!'
+signature = key.sign_ecdsa(data)
+
+# Delete the key from the YubiHSM 2.
+key.delete()
+
+# Close session and connection:
+session.close()
+backend.close()
+....

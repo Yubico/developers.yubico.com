@@ -1,0 +1,53 @@
+== CREATE SESSION
+
+Begin the mutual authentication process for establishing a session.
+
+== Description
+
+Start negotiating a session with the device, this command tells the device
+which authkey to use and sends the host challenge part. The response will
+contain the device challenge and device authentication part. To establish
+the session continue with link:Authenticate_Session.html[Authenticate Session].
+
+== Shell example
+
+Create a new session with authkey 1 using the password "password", this does
+both the session creation and authentication steps:
+
+  yubihsm> session open 1 password
+  Created session 0
+
+== Protocol details
+
+=== Command
+
+|=============
+|T~c~ = 0x03
+|L~c~ = 10
+|V~c~ = I \|\| H
+|=============
+
+I := Key set ID (2 bytes)
+
+H := Host Challenge (8 bytes)
+
+The card generates a random Card Challenge C (8 bytes).
+
+The card derives three session keys (S-ENC, S-MAC and S-RMAC) starting
+from the set of two static keys identified by I (K-ENC and K-MAC) and
+the two challenges H and C, using the same procedure described in SCP03.
+
+The card uses S-MAC together with H and C to compute the Card Cryptogram
+A. The host will compute the Host Cryptogram B after having received C
+and derived S-MAC.
+
+On success the card generates a Session ID S (1 byte) and sets the
+message counter for the current session to 1.
+
+=== Response
+
+|==================
+|T~r~ = 0x83
+|L~r~ = 17
+|V~r~ = S \|\| C \|\| A
+|==================

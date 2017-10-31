@@ -1,0 +1,46 @@
+== PUT OPAQUE
+
+Store an opaque object.
+
+== Description
+
+Stores opaque data (like an X.509 certificate) in the device.
+
+== Shell example
+
+Store the certificate cert.der in device:
+
+  yubihsm> put opaque 0 0 certificate 1 none x509-cert cert.der
+  Stored Opaque object 0xe255
+
+== Protocol details
+
+=== Command
+
+|=============================
+|T~c~ = 0x42
+|L~c~ = 2 + 40 + 2 + 8 + 1 + L~D~
+|V~c~ = K \|\| L \|\| D \|\| C \|\| A \|\| D
+|=============================
+
+K := Key ID (2 bytes)
+
+L := Label (40 bytes)
+
+D := Domains (2 bytes)
+
+C := link:../Concepts/Capability.html[Capabilities] (8 bytes)
+
+A := link:../Concepts/Algorithm.html[Algorithm] (1 byte)
+
+D := Opaque data
+
+=== Response
+
+|===========
+|T~r~ = 0xc2
+|L~r~ = 2
+|V~r~ = I
+|===========
+
+I := ID of created object (2 bytes)

@@ -1,0 +1,61 @@
+== GET LOGS
+
+Fetch device audit log.
+
+== Description
+
+Fetch all current entries from the device audit log.
+
+== Shell example
+
+  yubihsm> audit get 0
+  0 unlogged boots found
+  0 unlogged authentications found
+  Found 6 items
+  item:    46 -- cmd: 0x4b -- length:  234 -- session key: 0x0001 -- target key: 0xcf94 -- second key: 0x997e -- result: 0xcb -- tick: 335725 -- hash: 415f51f1f035a1b713e730e4464e4033
+  item:    47 -- cmd: 0x4c -- length:   77 -- session key: 0x0001 -- target key: 0xaff7 -- second key: 0xffff -- result: 0xcc -- tick: 351714 -- hash: 5496a60d478c2b9c801d8d32ca66b554
+  item:    48 -- cmd: 0x00 -- length:    0 -- session key: 0xffff -- target key: 0x0000 -- second key: 0x0000 -- result: 0x00 -- tick: 0 -- hash: 14ac7747ba9bbb243cfc70befeb5349b
+  item:    49 -- cmd: 0x03 -- length:   10 -- session key: 0xffff -- target key: 0x0001 -- second key: 0xffff -- result: 0x83 -- tick: 139 -- hash: b20a8f25c025e693a8e869b433294a20
+  item:    50 -- cmd: 0x04 -- length:   17 -- session key: 0xffff -- target key: 0x0001 -- second key: 0xffff -- result: 0x84 -- tick: 139 -- hash: ebfae425c319ac7a0afbb8b92597de7c
+  item:    51 -- cmd: 0x67 -- length:    2 -- session key: 0x0001 -- target key: 0xffff -- second key: 0xffff -- result: 0xe7 -- tick: 697 -- hash: 2e395d1b706668737e1d2215813db47e
+
+== Protocol details
+
+=== Command
+
+|============
+|T~c~ = 0x4d
+|L~c~ = 0
+|V~c~ = Ø
+|============
+
+=== Response
+
+|==========================================
+|T~r~ = 0xcd
+|L~r~ = 2 + 2 + 1 + (N * 32)
+|V~r~ = B \|\| O \|\| N \|\| E~1~ \|\| E~2~ \|\| … \|\| E~N~
+|==========================================
+
+B := Number of unlogged boots (if the log buffer is full and audit enforce
+is set) (2 bytes)
+
+O := Number of unlogged authentications (if the log buffer is full and
+audit enforce is set) (2 bytes)
+
+N := Number of elements in the list (1 byte)
+
+E~i~ := Generic log entry composed of the command number, command id,
+command length, the session originating the command, the target key affected
+by the command, a secondary key if the command affected more than one key,
+the result byte, the systick when the command came in and a digest. If the
+command was unsuccessful, the result byte will instead contain the error code.
+
+The digest is computed as trunc(16, SHA256(E~i~ || trunc(16, SHA256(E~i-1~)))).
+For the initial log entry, a random string of 32 bytes is used, instead of the
+digest of the previous message.
+
+When the device initializes after a reset a log entry with all fields set to
+0xff is logged.
+
+When the device boots a log entry with all fields set to 0x00 is logged.

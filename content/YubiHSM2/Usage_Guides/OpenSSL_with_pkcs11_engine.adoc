@@ -1,0 +1,237 @@
+== OpenSSL with YubiHSM 2 via engine_pkcs11 and yubihsm_pkcs11
+
+Install `engine_pkcs11` and `pkcs11-tool` from OpenSC before proceeding.
+
+OpenSSL requires engine settings in the `openssl.conf` file.
+Some OpenSSL commands allow specifying `-conf ossl.conf` and some don't.
+Setting the environment variable `OPENSSL_CONF` always works, but be aware that
+sometimes the default `openssl.conf` contains entries that are needed by
+commands like `openssl req`.
+
+In other words, you may have to add the engine entries to your default OpenSSL
+config file (`openssl.conf` in the directory shown by `openssl version -d`) or
+add other requirements for your OpenSSL command into the config file.
+
+Here is an example of generating a key in the device, creating a self-signed
+certificate and then signing a CSR with it:
+
+....
+$ pkcs11-tool --module /path/to/yubihsm_pkcs11.so --login --pin 0001password \
+    --keypairgen --key-type rsa:2048 --label "my_key" --usage-sign
+Using slot 0 with a present token (0x0)
+Logging in to "YubiHSM".
+Please enter User PIN:
+Key pair generated:
+Private Key Object; RSA
+  label:      my_key
+  ID:         04ec
+  Usage:      sign
+Public Key Object; RSA 2048 bits
+  label:      my_key
+  ID:         04ec
+  Usage:      none
+
+$ openssl req -new -x509 -days 365 -subj '/CN=my key/' -sha256 -config \
+    engine.conf -engine pkcs11 -keyform engine -key slot_0-label_my_key \
+    -out cert.pem
+engine "pkcs11" set.
+PKCS#11 token PIN:
+
+$ OPENSSL_CONF=engine.conf openssl x509 -req -CAkeyform engine -engine pkcs11 \
+    -in req.csr -CA cert.pem -CAkey slot_0-label_my_key -set_serial 1 -sha256
+engine "pkcs11" set.
+Signature ok
+subject=/CN=test
+Getting CA Private Key
+PKCS#11 token PIN:
+-----BEGIN CERTIFICATE-----
+MIICkzCCAXsCAQEwDQYJKoZIhvcNAQELBQAwETEPMA0GA1UEAwwGbXkga2V5MB4X
+DTE3MDQyNDA3Mzc1MFoXDTE3MDUyNDA3Mzc1MFowDjEMMAoGA1UEAwwDZm9vMIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqBARJLAIjSqKk2OuRWrs91EC
+MYjjZhxJE8IAMIiDDM2wSuQhB7A2CVW+/d1SG0k5cTEiasDBHbH9Bc2w+xn0l3Dh
+8cXafvcFkjcNabHesrbcwRgItugw7PWBtyopWDtDhVWKS1zkpDO8iKjwiYciweaP
+96nEHlQPPRUp7bf3IE7RTXENAqJai6QIYBZOrzHM9NrIz/6YaR2ua7SY7V/B3xaJ
+7KsiQ8oHWuf+RDNkJOhbD+1fgeMtN8x+W4XYnCPQPjJ/MfjuHJ2n5EM3Vb/plh9H
+uT+D56ozIk41FeXgC4gNu8fIv2KE1XBMuJCGRbyh5xk0dkQdvKxtVEfiDcwxBwID
+AQABMA0GCSqGSIb3DQEBCwUAA4IBAQCHyskEU84T/YGhcjlpsdmobtyNhWc2ae/x
+fmQpY/XGzQkSmUZJA+Z04JMUbli7UKEOItmqSlU6j0BPy03UjavNHdDPYcUZIS28
+fPtzTkU3FdEBM/zkPXStBCo9+N34l4qSdir9hFWM1/CpkfP8PhteUQAqImXjbDVh
+qhrfOg+kY3dAz91kLLXuA4YfuC+eEJh0JGuXCivhGre5LL9njrajHnJ+HSt6HHjC
+R4U27/hzoK3r12XE5NjznjcaKk1AKFXZE92nqG/WYliyLpNNSrN+AmEKrPOHb8My
+ZJlaGAfm3K9vLEjwrLQSAIKpMdpUcNE7Ay+EsEYTQpy43VvwI8vL
+-----END CERTIFICATE-----
+....
+
+For these examples, we assume you have all defaults and the engine config
+below in `engine.conf`, and provide an example of how to do the latter in
+the certificate request example below.
+
+....
+$ cat > engine.conf <<EOF
+    openssl_conf = openssl_init
+
+    [openssl_init]
+    engines = engine_section
+
+    [engine_section]
+    pkcs11 = pkcs11_section
+
+    [pkcs11_section]
+    engine_id = pkcs11
+    dynamic_path = /path/to/engine_pkcs11.so
+    MODULE_PATH = /path/to/yubihsm_pkcs11.so
+    init = 0
+EOF
+
+$ OPENSSL_CONF=engine.conf openssl engine -t -c pkcs11
+(pkcs11) pkcs11 engine
+ [RSA, DSA, DH, RAND]
+     [ available ]
+....
+
+Here is an example of using the YubiHSM 2 PRNG via OpenSSL to retrieve 64 bytes
+of data:
+
+....
+$ OPENSSL_CONF=engine.conf openssl rand -engine pkcs11 64 -hex
+engine "pkcs11" set.
+2aae245fc6d1c0419684ee8968ce26fba2dc3bb48a91bae912c8a82b11db818649325800e6e984fedfa1940a24731dc2721431979a287252a214ebb87624dcf1
+....
+
+The following two examples will fail if you are only using the config above
+because it doesn't have the req entries in `openssl.conf`.
+You can integrate the `engine.conf` entries into the system's `openssl.conf`, or add
+the following to the end of the above `engine.conf`:
+
+....
+[ req ]
+distinguished_name = req_dn
+string_mask = utf8only
+utf8 = yes
+[ req_dn ]
+commonName = Common Name (eg, your name)
+....
+
+Here is an example of requesting a certificate for an existing an RSA key with
+ID 3:
+
+....
+$ openssl req -new -subj '/CN=test/' -sha256 -config engine.conf \
+    -engine pkcs11 -keyform engine -key 0:0003
+engine "pkcs11" set.
+PKCS#11 token PIN:
+-----BEGIN CERTIFICATE REQUEST-----
+MIICVDCCATwCAQAwDzENMAsGA1UEAwwEdGVzdDCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBAJoTtK9p5XNDBaqy65IBDSj3mP9cpM0cw/sF/GZai6cx8Skf
+DjAhqOkloN+Jdc2OsnaBVSqCbsSjVTXfc83oB2q4M3U/tl/nfzTGHGCA48dbKUiz
+M807KoyYzFds9b7ZnGrwCmeXWjt2sAEGiJYEQt9gS9twabnCwxY4KySa9aNSNeHt
+AwnfP5V60C73xA7ATOPjuWXq4TWgMWzRD0IwA3h7MIgtevJio2MTPWlspdGbYrxr
+KsVfl/AocrSqYb44pMaRbAJAgOpJ8hsPjc9gkJnnrhmbkfV0v0AqjgwqxZa+BCWn
+gdGl5HwKVFLu+X3lsBw7xHHJtOYgeFpp8twfvT0CAwEAAaAAMA0GCSqGSIb3DQEB
+CwUAA4IBAQAcyImLuv7CrZJ1RPOf5d6u5LfYUadPXSGnozf3Ebgue12B51etKjYK
+3cY8m9rRP3jRU5yWk3qoquZ7vCF7RNPf0N+7/blXHfoawx+ffEl/ToUZ5xr7IL0V
+Qz9qzEumdNmm6MoQPxPOgrb1oCAz103gkf+S4HZGntO83/D31znsEhCSakoAa44s
+3I+7vmzhjwUZsvMUg3sg2NCjRYRX2RPIPmtkDgufqsdAkNyWHlzitjfVMZxf8BcY
+9DBrpQe1O6UbE1K9kYj2YBJ9h/FxfNJUk8t+rCcSOcQjmcRtgbHwhk2q77rapmg2
+YliaYEU1/e5kl+v+0WEg7rvXgh/VkY2h
+-----END CERTIFICATE REQUEST-----
+....
+
+Or alternatively a self signed certificate for the same existing RSA key
+with ID 3:
+....
+$ openssl req -new -x509 -days 365 -subj '/CN=test/' -sha256 \
+    -config engine.conf -engine pkcs11 -keyform engine -key 0:0003
+engine "pkcs11" set.
+PKCS#11 token PIN:
+-----BEGIN CERTIFICATE-----
+MIICmjCCAYICCQDX5mJwg+YmMjANBgkqhkiG9w0BAQsFADAPMQ0wCwYDVQQDDAR0
+ZXN0MB4XDTE3MDMxNTIwMDkzOVoXDTE4MDMxNTIwMDkzOVowDzENMAsGA1UEAwwE
+dGVzdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJoTtK9p5XNDBaqy
+65IBDSj3mP9cpM0cw/sF/GZai6cx8SkfDjAhqOkloN+Jdc2OsnaBVSqCbsSjVTXf
+c83oB2q4M3U/tl/nfzTGHGCA48dbKUizM807KoyYzFds9b7ZnGrwCmeXWjt2sAEG
+iJYEQt9gS9twabnCwxY4KySa9aNSNeHtAwnfP5V60C73xA7ATOPjuWXq4TWgMWzR
+D0IwA3h7MIgtevJio2MTPWlspdGbYrxrKsVfl/AocrSqYb44pMaRbAJAgOpJ8hsP
+jc9gkJnnrhmbkfV0v0AqjgwqxZa+BCWngdGl5HwKVFLu+X3lsBw7xHHJtOYgeFpp
+8twfvT0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAHeSL6Qwqr8ST4SqnC1T2jjME
+cjAT5eK4MqK3ayAy/Y/vYGtzARGIi9tGatyV6AFjs/0Me3/8du4bBVdC2DaP1hTf
+m4m1HShHKFdUlwUGcwYoVNquCz8d6hDu3nL0XvtFKX77aHHQZeB3t0uD8evYZdTS
+8oAduJpkAdJV7CtCLbGhLlLD3siYkd5fD35lhHlg8T2n5F4srDafQVdrDb/myYmI
+2UmrZWvKDWZ3UvzKt1XVS8omIx7aTrUAPqv/SEdpPmJvg0pgWTKvzAtsnsxlRQdd
+tdtJ/6nqhwXVSNXlDbyhFVo6J2u8BMEss2iausoSZBzf+YDOw2H+4GH6E11TmA==
+-----END CERTIFICATE-----
+....
+
+Here is an example of using OpenSSL s_server with an RSA key and cert
+with ID 3.
+
+By default this command listens on port 4433 for HTTPS connections.
+....
+$ env OPENSSL_CONF=engine.conf openssl s_server -engine pkcs11 \
+    -keyform engine -key 0:0003 -cert rsa.crt -www
+engine "pkcs11" set.
+PKCS#11 token PIN:
+Using default temp DH parameters
+ACCEPT
+ACCEPT
+....
+
+Here is an example of using OpenSSL s_server with an ECDSA key and cert
+with ID 2:
+....
+$ env OPENSSL_CONF=engine.conf openssl s_server -engine pkcs11 -keyform engine \
+    -key 0:0002 -cert ecdsa.crt -www
+....
+
+Here is an example of generating a key in the device, creating a self signed
+with it and then signing a CSR with it:
+....
+$ pkcs11-tool --module /path/to/yubihsm_pkcs11.so --login --pin 0001password \
+    --keypairgen --key-type rsa:2048 --label "my_key" --usage-sign
+Using slot 0 with a present token (0x0)
+Logging in to "YubiHSM".
+Please enter User PIN:
+Key pair generated:
+Private Key Object; RSA
+  label:      my_key
+  ID:         04ec
+  Usage:      sign
+Public Key Object; RSA 2048 bits
+  label:      my_key
+  ID:         04ec
+  Usage:      none
+
+$ openssl req -new -x509 -days 365 -subj '/CN=my key/' -sha256 -config \
+    engine.conf -engine pkcs11 -keyform engine -key slot_0-label_my_key \
+    -out cert.pem
+engine "pkcs11" set.
+PKCS#11 token PIN:
+
+$ OPENSSL_CONF=engine.conf openssl x509 -req -CAkeyform engine -engine pkcs11 \
+    -in req.csr -CA cert.pem -CAkey slot_0-label_my_key -set_serial 1 -sha256
+engine "pkcs11" set.
+Signature ok
+subject=/CN=test
+Getting CA Private Key
+PKCS#11 token PIN:
+-----BEGIN CERTIFICATE-----
+MIICkzCCAXsCAQEwDQYJKoZIhvcNAQELBQAwETEPMA0GA1UEAwwGbXkga2V5MB4X
+DTE3MDQyNDA3Mzc1MFoXDTE3MDUyNDA3Mzc1MFowDjEMMAoGA1UEAwwDZm9vMIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqBARJLAIjSqKk2OuRWrs91EC
+MYjjZhxJE8IAMIiDDM2wSuQhB7A2CVW+/d1SG0k5cTEiasDBHbH9Bc2w+xn0l3Dh
+8cXafvcFkjcNabHesrbcwRgItugw7PWBtyopWDtDhVWKS1zkpDO8iKjwiYciweaP
+96nEHlQPPRUp7bf3IE7RTXENAqJai6QIYBZOrzHM9NrIz/6YaR2ua7SY7V/B3xaJ
+7KsiQ8oHWuf+RDNkJOhbD+1fgeMtN8x+W4XYnCPQPjJ/MfjuHJ2n5EM3Vb/plh9H
+uT+D56ozIk41FeXgC4gNu8fIv2KE1XBMuJCGRbyh5xk0dkQdvKxtVEfiDcwxBwID
+AQABMA0GCSqGSIb3DQEBCwUAA4IBAQCHyskEU84T/YGhcjlpsdmobtyNhWc2ae/x
+fmQpY/XGzQkSmUZJA+Z04JMUbli7UKEOItmqSlU6j0BPy03UjavNHdDPYcUZIS28
+fPtzTkU3FdEBM/zkPXStBCo9+N34l4qSdir9hFWM1/CpkfP8PhteUQAqImXjbDVh
+qhrfOg+kY3dAz91kLLXuA4YfuC+eEJh0JGuXCivhGre5LL9njrajHnJ+HSt6HHjC
+R4U27/hzoK3r12XE5NjznjcaKk1AKFXZE92nqG/WYliyLpNNSrN+AmEKrPOHb8My
+ZJlaGAfm3K9vLEjwrLQSAIKpMdpUcNE7Ay+EsEYTQpy43VvwI8vL
+-----END CERTIFICATE-----
+....
+
+== Acknowledgements
+
+We would like to thank Uri Blumenthal (uri@mit.edu) for contributing to this document.

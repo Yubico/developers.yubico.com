@@ -1,0 +1,47 @@
+== Move Software Keys to Key Storage Provider
+
+If the target private key is managed by the Microsoft Software Key Storage Provider, another software provider, or any other Key Storage Provider that allows export via PKCS#12 PFX, it is possible to move your key to the YubiHSM 2, but results may vary.
+
+This process relies on using the `-repairstore` functionality of the `certutil` command, so the private key *must* only be present via the YubiHSM Key Storage Provider when performing this step.  Please refer to the source storage provider documentation for how to cleanly and completely delete a private key.
+
+Because Key Storage Provider implementations differ, we recommend testing this procedure using your existing provider before affecting a live system.
+
+=== Export your Existing Private Key and Certificate
+
+Refer to your current Key Storage Provider documentation for how to obtain a PKCS#12 PFX export of your certificate and private key.
+
+Once you have obtained your PFX file, split the certificate from the PFX file using certutil:
+
+  PS1> certutil -split -dump <pfx file>
+
+This will create a file named `<Cert Hash>.crt`.
+
+If you are moving the key to the YubiHSM 2 on the same machine, you must delete the original private key in your current provider.
+
+=== Import the Target Private Key
+
+Using the instructions for importing a PFX private key via `yubihsm-shell`, import the target private key file to your YubiHSM 2.
+
+Identify the `label` property of your imported key.
+
+=== Restore the Target Certificate
+
+Move the target certificate file (`<Cert Hash>.crt`) to the target machine.
+
+Import the certificate to the LocalMachine "My" store via your favorite method.  At this point, the certificate will not have an associated private key.  We'll use the `-repairstore` functionality of `certutil` to re-associate the certificate to the private key.
+
+Make sure that the target private key is visible via the YubiHSM KSP, using
+
+  PS1> certutil -key -csp "YubiHSM Key Storage Provider"
+
+This command will list all private keys (and their corresponding container names -- which are equal to the label property in the YubiHSM 2) visible to the current Authkey.
+
+Open an elevated prompt and execute the command
+
+  PS1> certutil -repairstore MY <Cert Hash>
+
+Verify that the certificate has been associated with the YubiHSM Key Storage Provider and has the correct `Key Container` property value, by running
+
+  PS1> certutil -store My
+
+and inspecting the `Key Container` and `Provider` properties.

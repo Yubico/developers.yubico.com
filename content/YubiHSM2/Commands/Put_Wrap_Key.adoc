@@ -1,0 +1,54 @@
+== PUT WRAP KEY
+
+Import a wrap key.
+
+== Description
+
+Ímport a key for wrapping into the device.
+
+== Shell example
+
+Import an aes-128 wrap key able to export and import with all delegated
+capabilities:
+
+  yubihsm> put wrapkey 0 0 wrapkey 1 export_wrapped,import_wrapped all 000102030405060708090a0b0c0d0e0f
+  Stored Wrap key 0xaff7
+
+== Protocol details
+
+=== Command
+
+|====================================
+|T~c~ = 0x4c
+|L~c~ = 2 + 40 + 2 + 8 + 1 + 8 + L~W~
+|V~c~ = K \|\| L \|\| D \|\| C \|\| A \|\| DC \|\| W
+|====================================
+
+K := Key ID (2 bytes)
+
+L := Label (40 bytes)
+
+D := Domains (2 bytes)
+
+C := link:../Concepts/Capability.html[Capabilities] (8 bytes)
+
+A := link:../Concepts/Algorithm.html[Algorithms] (1 byte)
+
+DC := Delegated link:../Concepts/Capability.html[Capabilities] (8 bytes)
+
+W := Wrap key (16, 24 or 32 bytes)
+________________________________________________________________________
+For AES128_CCM_WRAP: 16 bytes
+For AES192_CCM_WRAP: 24 bytes
+For AES256_CCM_WRAP: 32 bytes
+________________________________________________________________________
+
+=== Response
+
+|============
+|T~c~ = 0xcc
+|L~c~ = 2
+|V~c~ = I
+|============
+
+I := ID of created object (2 bytes)

@@ -1,0 +1,71 @@
+== Connector
+
+The Connector, `yubihsm-connector`, performs the communciation between
+the YubiHSM 2 and applications that use it.
+
+The Connector must have permissions to access the USB device, and different
+operating systems behave differently in this regard.
+The easiest way to get started is to run the Connector with Administrator privileges
+(e.g. with `sudo`), but the safest way to run the Connector is to use your
+operating system's configuration to only give it the privileges necessary to
+access the YubiHSM 2 USB device.
+
+The connector is not a trusted component. Sessions are established
+cryptographically between the application and the YubiHSM 2 using a
+symmetric mutual authentication scheme that is both encrypted and
+Authenticated.
+
+The connector is not required to run on the same host as the
+applications which access it. In that case the Connector should be
+configured to be listening on a different address and port rather than
+the default `localhost:12345`, making sure that the client has access.
+
+The protocol is tunneled over HTTP, but it is *not* a RESTful API or similar.
+It is however possible to get information regarding the Connector by issuing a
+GET request on the `/connector/status` URI.
+
+=== HTTPS Connections
+
+As mentioned earlier, the Connector is not meant to be a trusted
+component. For this reason it defaults to HTTP connections. It is
+possible to use HTTPS, however this requires providing a key and a
+certificate to the connector.
+
+Another option is to use a reverse proxy such as nginx before the
+Connector and have that handle TLS.
+
+=== Configuration
+
+Sample configuration for the connector; `yubihsm-connector-config.yaml`
+
+....
+# Certificate (X.509)
+cert: ""
+
+# Certificate key
+key: ""
+
+# Listening address. Defaults to "127.0.0.1:12345".
+listen: "127.0.0.1:12345"
+
+# enable secure computing mode. Defaults to "false".
+seccomp: "false"
+
+# Device serial in case of multiple devices
+serial: ""
+
+# Log to syslog/eventlog. Defaults to "false".
+syslog: "false"
+....
+
+Sample udev rule:
+
+....
+# This udev file should be used with udev 188 and newer
+ACTION!="add|change", GOTO="yubihsm2_connector_end"
+
+# Yubico YubiHSM2
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0030", TAG+="uaccess"
+
+LABEL="yubihsm2_connector_end"
+....

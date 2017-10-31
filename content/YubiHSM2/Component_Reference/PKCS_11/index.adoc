@@ -1,0 +1,212 @@
+== PKCS#11 with YubiHSM 2
+
+=== Configuration
+
+The PKCS#11 module requires a configuration file, default location for this
+file is current directory and default name is `yubihsm_pkcs11.conf` using the
+environment variable `YUBIHSM_PKCS11_CONF` one can point to a custom location
+and name.
+
+Accepted configuration options:
+
+- *connector*: URL pointing at the connector to contact, mandatory
+- *debug*: Turn on PKCS#11 debugging, default off
+- *dinout*: Turn on call tracing, default off
+- *libdebug*: Turn on debug of libyubihsm, default off
+- *debug-file*: File to write debug information to, default stderr
+- *cacert*: File with cacert to verify connector https cert with (Not available on windows)
+- *proxy*: Proxy server for reaching the connector (Not available on windows)
+
+A sample configuration file can be found below.
+
+=== Logging In
+
+All interesting operations through the PKCS#11 interface require a login
+session, and one peculiarity of the PKCS#11 interface is that the user
+pin *MUST* be prefixed by the ID (16 bits, in hexidecimal, zero padded if
+required) of the corresponding Authkey.
+
+Assuming the default Authkey with ID `1` and password `password`, the user
+pin would then be `0001password`.
+
+Note that the concept of a Security Officer (SO) is not supported by the device,
+and the PIN management functions are not implemented for both user and the SO.
+
+It is recommended that PIN (Authkey) management is performed via the
+`yubihsm-shell` utility or the `libyubihsm` functions.
+
+=== In Software Operations
+
+`C_Encrypt` and `C_Verify` for asymmetric keys are performed in software,
+as well as all of the `C_Digest` operations.
+
+== PKCS#11 Attributes
+
+There are a number of attributes defined in PKCS#11 that do not
+translate to Capabilities of the YubiHSM 2 device, and are therefore
+treated as always having a fixed value.
+
+[options="header"]
+|==============================================================================
+| PKCS#11 | YubiHSM 2 | Rationale
+| CKA_TOKEN | CK_TRUE | Session Objects are not supported
+| CKA_PRIVATE | CK_TRUE | Login is always required
+| CKA_DESTROYABLE | CK_TRUE | Objects can always be deleted from the device
+| CKA_MODIFIABLE | CK_FALSE | Objects are immutable on the device
+| CKA_COPYABLE | CK_FALSE | Objects are immutable on the device
+| CKA_SENSITIVE | CK_TRUE | All objects are sensitive
+| CKA_ALWAYS_SENSITIVE | CK_TRUE | Objects are immutable on the device
+|==============================================================================
+
+=== Capabilities and Domains
+
+Objects created via the PKCS#11 module inherit the Domains of the Authkey
+used to establish the session.
+The Domains can not be changed, or modified via the module.
+
+Object Capabilities are set on creation, depending on their Type, e.g. an
+RSA signing key (`CKK_RSA`) created via `C_CreateObject` will have the
+following Capabilities set `asymmetric_sign_pkcs,asymmetric_sign_pss`.
+
+Similarly for EC (`CKK_EC`), the key would have
+`asymmetric_sign_ecdsa` set.
+
+See the following tables for mappings:
+
+[options="header"]
+|==============================================================================
+| PKCS#11 | RSA (CKK_RSA) | EC (CKK_EC) | Wrap (CKK_YUBICO_AES*_CCM_WRAP) | HMAC (CKK_SHA*_HMAC)
+| CKA_SIGN | asymmetric_sign_pkcs,asymmetric_sign_pss | asymmetric_sign_ecdsa | N/A | hmac_data
+| CKA_VERIFY | N/A | N/A | N/A | hmac_verify
+| CKA_ENCRYPT | N/A | N/A | wrap_data | N/A
+| CKA_DECRYPT | asymmetric_decrypt_pkcs,asymmetric_decrypt_oaep | N/A | unwrap_data | N/A
+| CKA_WRAP | N/A | N/A | export_wrapped | N/A
+| CKA_UNWRAP | N/A | N/A | import_wrapped | N/A
+| CKA_EXTRACTABLE | export_under_wrap | export_under_wrap | export_under_wrap | export_under_wrap
+|==============================================================================
+
+== PKCS#11 Objects
+
+Not all PKCS#11 Object types are implemented, this is a list of what is
+implemented and how it maps.
+
+[options="header"]
+|==============================================================================
+| PKCS#11 | valid CKK | comment
+| CKO_PRIVATE_KEY | CKK_RSA, CKK_EC | RSA 2048, 3072 & 4096 with e=0x10001, EC with secp224r1, secp256r1, secp384r1, secp521r1, secp256k1, brainpool256r1, brainpool384r1, brainpool512r1
+| CKO_PUBLIC_KEY | | does not exist in device, only as a property of a private key
+| CKO_SECRET_KEY | CKK_SHA_1_HMAC, CKK_SHA256_HMAC, CKK_SHA384_HMAC, CKK_SHA512_HMAC, CKK_YUBICO_AES128_CCM_WRAP, CKK_YUBICO_AES192_CCM_WRAP, CKK_YUBICO_AES256_CCM_WRAP
+| CKO_CERTIFICATE | | Opaque object with algorithm YH_ALGO_OPAQUE_X509_CERT
+| CKO_DATA | | Opaque object with algorithm YH_ALGO_OPAQUE_DATA
+|==============================================================================
+
+
+== PKCS#11 Functions
+
+Not all functions in PKCS#11 are implemented in the module, this is a list of
+what is implemented with comments where warranted.
+
+[options="header"]
+|==============================================================================
+| PKCS#11 | comment
+| C_Initialize |
+| C_Finalize |
+| C_GetInfo |
+| C_GetFunctionList |
+| C_GetSlotList |
+| C_GetSlotInfo |
+| C_GetTokenInfo |
+| C_GetMechanismList |
+| C_GetMechanismInfo |
+| C_OpenSession |
+| C_CloseSession |
+| C_CloseAllSessions |
+| C_GetSessionInfo |
+| C_Login |
+| C_Logout |
+| C_CreateObject | with CKO_PRIVATE_KEY, CKO_SECRET_KEY, CKO_CERTIFICATE or CKO_DATA
+| C_DestroyObject |
+| C_GetObjectSize |
+| C_GetAttributeValue |
+| C_FindObjectsInit |
+| C_FindObjects |
+| C_FindObjectsFinal |
+| C_EncryptInit | Encrypt with wrap key or do software encryption for rsa key
+| C_Encrypt |
+| C_EncryptUpdate |
+| C_EncryptFinal |
+| C_DecryptInit | Decrypt with wrap key or RSA key
+| C_Decrypt |
+| C_DecryptUpdate |
+| C_DecryptFinal |
+| C_DigestInit | Do software digest with CKM_SHA_1, CKM_SHA256, CKM_SHA384 or CKM_SHA512
+| C_Digest |
+| C_DigestUpdate |
+| C_DigestFinal |
+| C_SignInit | Sign with HMAC or asymmetric key
+| C_Sign |
+| C_SignUpdate |
+| C_SignFinal |
+| C_VerifyInit | Verify HMAC or software verify asymmetric
+| C_Verify |
+| C_VerifyUpdate |
+| C_VerifyFinal |
+| C_GenerateKey | Generate HMAC or wrap key
+| C_GenerateKeyPair | Generate asymmetric key
+| C_WrapKey | Wrap an object with wrap key
+| C_UnwrapKey | Unwrap an object with wrap key
+| C_GenerateRandom | Generate up to 2021 bytes of random
+|==============================================================================
+
+== PKCS#11 Vendor Definitions
+
+Working with the device Wrapkeys requires using vendor-specific definitions, these
+listed are in the table below. The Wrapkeys can be used with C_WrapKey, C_Unwrapkey,
+C_Encrypt & C_Decrypt.
+
+|==============================================================================
+| CKM_YUBICO_AES_CCM_WRAP | 0xd9554204
+| CKK_YUBICO_AES128_CCM_WRAP | 0xd955421d
+| CKK_YUBICO_AES192_CCM_WRAP | 0xd9554229
+| CKK_YUBICO_AES256_CCM_WRAP | 0xd955422a
+|==============================================================================
+
+== PKCS#11 Configuration
+
+As needed, add a configuration file `yubihsm_pkcs11.conf`. Below is a sample.
+
+....
+# This is a sample configuration file for the YubiHSM PKCS#11 module
+# Uncomment the various options as needed
+
+# URL of the connector to use. This can be a comma-separated list
+connector = http://127.0.0.1:12345
+
+# Enables general debug output in the module
+#
+# debug
+
+# Enables function tracing (ingress/egress) debug output in the module
+#
+# dinout
+
+# Enables libyubihsm debug output in the module
+#
+# libdebug
+
+# Redirects the debug output to a specific file. The file is created
+# if it does not exist. The content is appended
+#
+# debug-file = /tmp/yubihsm_pkcs11_debug
+
+# CA certificate to use for HTTPS validation. Point this variable to
+# a file containing one or more certificates to use when verifying
+# a peer. Currently not supported on Windows
+#
+# cacert = /tmp/cacert.pem
+
+# Proxy server to use for the connector
+# Currently not supported on Windows
+#
+# proxy = http://proxyserver.local.com:8080
+....
