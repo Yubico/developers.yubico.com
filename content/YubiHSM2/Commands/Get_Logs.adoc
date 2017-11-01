@@ -4,7 +4,7 @@ Fetch device audit log.
 
 == Description
 
-Fetch all current entries from the device audit log.
+Fetch all current entries from the device Log Store.
 
 == Shell example
 
@@ -37,25 +37,25 @@ Fetch all current entries from the device audit log.
 |V~r~ = B \|\| O \|\| N \|\| E~1~ \|\| E~2~ \|\| … \|\| E~N~
 |==========================================
 
-B := Number of unlogged boots (if the log buffer is full and audit enforce
+B := Number of unlogged boot events (if the log buffer is full and audit enforce
 is set) (2 bytes)
 
-O := Number of unlogged authentications (if the log buffer is full and
+O := Number of unlogged authentication evnets (if the log buffer is full and
 audit enforce is set) (2 bytes)
 
 N := Number of elements in the list (1 byte)
 
-E~i~ := Generic log entry composed of the command number, command id,
-command length, the session originating the command, the target key affected
+E~i~ := Generic log entry composed of the command number, command ID,
+command length, the Session originating the command, the target key affected
 by the command, a secondary key if the command affected more than one key,
-the result byte, the systick when the command came in and a digest. If the
+the result byte, the systick when the command was processed and a digest. If the
 command was unsuccessful, the result byte will instead contain the error code.
 
 The digest is computed as trunc(16, SHA256(E~i~ || trunc(16, SHA256(E~i-1~)))).
 For the initial log entry, a random string of 32 bytes is used, instead of the
 digest of the previous message.
 
-When the device initializes after a reset a log entry with all fields set to
-0xff is logged.
+When the device initializes after a reset, a log entry with all fields set to
+`0xff` is logged.
 
-When the device boots a log entry with all fields set to 0x00 is logged.
+When the device boots up, a log entry with all fields set to `0x00` is logged.
