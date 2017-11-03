@@ -99,7 +99,7 @@ If at any time the Session is closed or expires because of inactivity, open a ne
 
 We now proceed to generate a new key Type: Asymmetric. In our example we will use this key to sign some data. We will also export the key _under wrap_ to another HSM, for backup purposes.
 
-Specifically we will ask the device to generate an Asymmetric key with ID `100` and a given set of Domains and Capabilities. We will also specify the king of Asymmetric Object that we would like to generate, an EC key using the NIST P-256 curve in this case.
+Specifically we will ask the device to generate an Asymmetric key with ID `100` and a given set of Domains and Capabilities. We will also specify the kind of Asymmetric Object that we would like to generate, an EC key using the NIST P-256 curve in this case.
 
 The command is
 
@@ -129,7 +129,7 @@ This behavior can be changed by using the `set outformat` and `set informat` com
 
 For now we will store the signature as it is in a temporary file so that we will be able to verify it later
 
-  $ echo MEUCIQDrBqS04LN5YdyWGiD4iaEjfl1dn+W4cl97uMMXDpoaiQIgEBe/G/FgP4cumnO3K2XWToAnPvnuVDOnqHPiuUS0q5g= > signature.b64
+  $ echo MEUCIQDrBqS04LN5YdyWGiD4iaEjfl1dn+W4cl97uMMXDpoaiQIgEBe/G/FgP4cumnO3K2XWToAnPvnuVDOnqHPiuUS0q5g= >signature.b64
 
 Next, we will extract the public key from the Asymmetric key on the device and write it to the file `asymmetric_key.pub`, so that we can use it to verify the signature we just created
 
@@ -148,18 +148,18 @@ It is now possible to verify the signature with OpenSSL
 
 Time to export the Asymmetric key under wrap to a second YubiHSM 2 (in this example, we will export to the same HSM for convenience)
 
-To do that we need a Wrapkey which fundamentally is an AES key. We will use the random number generation built into the YubiHSM 2 to generate the 16 bytes needed for an AES-128 key
+To do that we need a Wrapkey, which fundamentally is an AES key. We will use the random number generator built into the YubiHSM 2 to generate the 16 bytes needed for an AES-128 key
 
   yubihsm> get random 1 16
   9207653411df91fd36c12faa6886d5c4
 
-*The result of this command (the bytes) are considered sensitive data and should be store safely*.
+*The result of this command (the bytes) is considered sensitive data and should be stored safely*.
 
 We can now store the Wrapkey on the device with ID `200` by doing
 
   yubihsm> put wrapkey 1 200 label_wrapkey 1,2,3 import_wrapped,export_wrapped asymmetric_sign_ecdsa,export_under_wrap 9207653411df91fd36c12faa6886d5c4
 
-Note that for the upcoming export command to be successful, the Delegated Capabilities of the Wrapkey (`asymmetric_sign_ecda` in this case` have to include the Capabilities of the Object being exported. Similarly for the import command to succeed the Delegated Capabilities of the Wrapkey have to include the Capabilities of the Object being imported.
+Note that for the upcoming export command to be successful, the Delegated Capabilities of the Wrapkey have to include the Capabilities of the Object being exported. Similarly for the import command to succeed the Delegated Capabilities of the Wrapkey have to include the Capabilities of the Object being imported.
 
 We can now export the Asymmetric key with ID `100` using the Wrapkey with ID `200` and save it to a file called `wrapped_asymmetric.key`
 
