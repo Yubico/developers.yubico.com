@@ -106,6 +106,9 @@ class ReleasesModule(Module):
         self._all_entries = [(0, None)] * 50  # Max items in aggregate feed
 
     def _run(self):
+        if os.environ.get('NORELEASES'):
+            return
+
         conf = self.get_conf('releases')
         if conf is None:
             return
@@ -154,6 +157,8 @@ class ReleasesModule(Module):
             json.dump(conf, f)
 
     def _post_run(self):
+        if os.environ.get('NORELEASES'):
+            return
         aggregate = self.get_conf('releases_aggregate_feed')
         if not aggregate or not self._all_entries:
             return

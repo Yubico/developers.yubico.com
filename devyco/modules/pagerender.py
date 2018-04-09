@@ -130,7 +130,7 @@ class PageRenderModule(Module):
         os.remove(fname)
 
     def _post_process(self, content, basename):
-        soup = BeautifulSoup(content)
+        soup = BeautifulSoup(content, 'html.parser')
         # Ensure we have a title
         content = soup.body.find(id='page-content')
         elem = content.find(lambda x: x.string)
@@ -138,12 +138,15 @@ class PageRenderModule(Module):
             if elem == content:
                 title = self._context.get('title') or \
                     display_name(self._context['current'])
-                content.insert(0, BeautifulSoup('<h1>%s</h1>' % title))
+                content.insert(0, BeautifulSoup('<h1>%s</h1>' % title,
+                                                'html.parser'))
                 break
             elem = elem.parent
         # Ensure first title is a h1
         if not soup.find('h1'):
-            soup.find('h2').name = 'h1'
+            h2 = soup.find('h2')
+            if h2:
+                h2.name = 'h1'
 
         # Open external links in new window
         for link in soup.find_all('a', href=EXTERNAL_LINK):
@@ -173,7 +176,8 @@ class PageRenderModule(Module):
                     fixed.append(line)
                 if modified:
                     fixed.append('</pre>')
-                    pre.replaceWith(BeautifulSoup('\n'.join(fixed)))
+                    pre.replaceWith(BeautifulSoup('\n'.join(fixed),
+                                                  'html.parser'))
 
         return soup
 

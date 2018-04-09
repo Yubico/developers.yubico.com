@@ -49,7 +49,7 @@ class AsciiDocModule(Module):
 
     def _post_process(self, target):
         with codecs.open(target,'r',encoding='utf8') as f:
-            soup = BeautifulSoup(f)
+            soup = BeautifulSoup(f, 'html.parser')
         for link in soup.find_all('a', href=ADOC_LINK):
             link['href'] = noext(link['href']) + '.html'
 
