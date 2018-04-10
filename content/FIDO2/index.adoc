@@ -17,8 +17,55 @@ Layered approach:: For organizations requiring a higher level of authentication 
 === How it works
 These diagrams explain the basic process flow of FIDO2 (registration, authentication):
 
-image:basic_FIDO2_registration_sequence_diagram.png[]
-image:basic_FIDO2_authentication_sequence_diagram.png[]
+==== Basic FIDO2 registration sequence diagram
+[mscgen]
+----
+msc {
+  # Options
+  hscale = "1.4";
+
+  # Entities
+  a [label="Authenticator"],
+  c [label="Client/Platform"],
+  s [label="Server"];
+
+  # Arcs
+  |||;
+  s => c [label="1. publicKeyCredentialCreationOptions\n(challenge, user info, relying party info)\n\n\n"];
+  c => a [label="2. authenticatorMakeCredential\n(challenge, user info, replying party info,\nclientDataHash)\n\n\n\n"];
+  a rbox a [label="\n3. Create new Key Pair and Attestation\n"];
+  |||;
+  a => c [label="4. attestationObject\n(new public key, credential id, attestation)\n\n\n"];
+  c => s [label="5. authenticatorAttestationResponse\n(clientData, attestationObject)\n\n\n"];
+  s rbox s [label="\n6. Sever validation\n"];
+  |||;
+}
+----
+
+==== Basic FIDO2 authentication sequence diagram
+[mscgen]
+----
+msc {
+  # Options
+  hscale = "1.4";
+
+  # Entities
+  a [label="Authenticator"],
+  c [label="Client/Platform"],
+  s [label="Server"];
+
+  # Arcs
+  |||;
+  s => c [label="1. publicKeyCredentialCreationOptions\n(challenge)\n\n\n"];
+  c => a [label="2. authenticatorGetAssertion\n(replying party id, clientDataHash)\n\n\n"];
+  a rbox a [label="\n3. User verification, create assertion\n"];
+  |||;
+  a => c [label="4. authenticatorGetAssertionResponse\n(credential, authData, signature)\n\n\n"];
+  c => s [label="5. authenticatorAssertionResponse\n(clientData, authData, signature)\n\n\n"];
+  s rbox s [label="\n6. Sever validation\n"];
+  |||;
+}
+----
 
 == Implementing
 
