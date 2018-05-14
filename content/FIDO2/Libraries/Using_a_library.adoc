@@ -1,0 +1,303 @@
+== Using a FIDO2 library ==
+Let us have a look at the FIDO2 sequence diagram:
+
+[mscgen]
+----
+msc {
+
+   # Entities
+   d [label = "Device"], b [label="Browser"], s [label="Server"];
+
+   # Arcs
+   |||;
+   b -> s [label = "request registration"];
+   s rbox s [label="generate challenge", linecolor="#44B724", textcolor="#44B724"];
+   s -> b [label = "challenge"];
+   b rbox b [label = "navigator.credentials.create(challenge,userInfo,rpInfo)"];
+   b => d [label = "authenticatorMakeCredential(challenge,userInfo,rpInfo)", linecolor="#2156a5", textcolor="#2156a5"];
+   d rbox d [label="user touches button", linecolor="#2156a5", textcolor="#2156a5"];
+   d >> b [label = "authenticatorAttestationResponse {newpublicKey, credentialId, clientData}", linecolor="#2156a5", textcolor="#2156a5"];
+   b -> s [label = "authenticatorAttestationResponse {newpublicKey, credentialId, clientData}"];
+   s rbox s [label="verify response", linecolor="#44B724", textcolor="#44B724"];
+}
+----
+
+The blue part is handled by the WebAuthn client (e.g. the web browser) and the green parts are handled by the FIDO2 server library.
+
+
+=== Server-side ===
+
+A server-side FIDO2 library has 4 basic functions: _Start registration, Finish registration, Start authentication_ and _Finish authentication_.
+Below is an example of how these functions can be used in a web server:
+
+==== Registration ====
+
+[source, java]
+----
+# handles HTTPS requests to /register
+public Either<String, RegistrationRequest> startRegistration(String username, String displayName, String credentialNickname) {
+  ...
+
+  if (userStorage.getRegistrationsByUsername(username).isEmpty()) {
+      byte[] userId = challengeGenerator.generateChallenge();
+
+      RegistrationRequest request = new RegistrationRequest(
+          username,
+          credentialNickname,
+          U2fB64Encoding.encode(challengeGenerator.generateChallenge()),
+          rp.startRegistration(
+              new UserIdentity(username, displayName, userId, Optional.empty()),
+              Optional.of(userStorage.getCredentialIdsForUsername(username)),
+              Optional.empty()
+          )
+      );
+      registerRequestStorage.put(request.getRequestId(), request);
+      return new Right(request);
+  } else {
+      return new Left("The username \"" + username + "\" is already registered.");
+  }
+}
+----
+
+
+[source, java]
+----
+# handles HTTPS requests to /register/finish
+public Either<List<String>, SuccessfulRegistrationResult> finishRegistration(String responseJson) {
+  ...
+  RegistrationResponse response = null;
+  ...
+      response = jsonMapper.readValue(responseJson, RegistrationResponse.class);
+  ...
+
+  RegistrationRequest request = registerRequestStorage.getIfPresent(response.getRequestId());
+  registerRequestStorage.invalidate(response.getRequestId());
+
+  ...
+      Try<RegistrationResult> registrationTry = rp.finishRegistration(
+          request.getPublicKeyCredentialCreationOptions(),
+          response.getCredential(),
+          Optional.empty()
+      );
+
+      if (registrationTry.isSuccess()) {
+          return Right.apply(
+              new SuccessfulRegistrationResult(
+                  request,
+                  response,
+                  addRegistration(
+                      request.getUsername(),
+                      request.getPublicKeyCredentialCreationOptions().user(),
+                      request.getCredentialNickname(),
+                      response,
+                      registrationTry.get()
+                  ),
+                  registrationTry.get().attestationTrusted()
+              )
+          );
+      } else {
+          ...
+          return Left.apply(Arrays.asList("Registration failed!", registrationTry.failed().get().getMessage()));
+      }
+
+  ...
+}
+----
+
+
+==== Authentication ====
+
+[source, java]
+----
+# handles HTTPS requests to /authenticate
+public AssertionRequest startAuthentication(Optional<String> username) {
+    ...
+    AssertionRequest request = new AssertionRequest(
+        username,
+        U2fB64Encoding.encode(challengeGenerator.generateChallenge()),
+        rp.startAssertion(
+            username.map(userStorage::getCredentialIdsForUsername),
+            Optional.empty()
+        )
+    );
+
+    assertRequestStorage.put(request.getRequestId(), request);
+
+    return request;
+}
+----
+
+[source, java]
+----
+# handles HTTPS requests to /authenticate/finish
+public Either<List<String>, SuccessfulAuthenticationResult> finishAuthentication(String responseJson) {
+    ...
+
+    final AssertionResponse response;
+    ...
+        response = jsonMapper.readValue(responseJson, AssertionResponse.class);
+    ...
+
+    AssertionRequest request = assertRequestStorage.getIfPresent(response.getRequestId());
+    assertRequestStorage.invalidate(response.getRequestId());
+
+    ...
+        Optional<String> returnedUserHandle = Optional.ofNullable(response.getCredential().response().userHandleBase64());
+
+        final String username;
+        if (request.getUsername().isPresent()) {
+            username = request.getUsername().get();
+        } else {
+            username = userStorage.getUsername(returnedUserHandle.get()).orElse(null);
+        }
+
+        final String userHandle = returnedUserHandle.orElseGet(() ->
+            username == null
+                ? null
+                : userStorage.getUserHandle(username)
+                    .map(BinaryUtil::toBase64)
+                    .orElse(null)
+        );
+
+        ...
+            Try<AssertionResult> assertionTry = rp.finishAssertion(
+                request.getPublicKeyCredentialRequestOptions(),
+                response.getCredential(),
+                () -> userHandle,
+                Optional.empty()
+            );
+
+            if (assertionTry.isSuccess()) {
+                final AssertionResult result = assertionTry.get();
+
+                if (result.success()) {
+                    ...
+                        userStorage.updateSignatureCountForUsername(
+                            username,
+                            response.getCredential().id(),
+                            result.signatureCount()
+                        );
+                    ...
+
+                    return Right.apply(
+                        new SuccessfulAuthenticationResult(
+                            request,
+                            response,
+                            userStorage.getRegistrationsByUsername(username)
+                        )
+                    );
+                ...
+                }
+
+            } else {
+                ...
+                return Left.apply(Arrays.asList("Assertion failed!", assertionTry.failed().get().getMessage()));
+            }
+    ...
+}
+----
+
+In the example above `assertRequestStorage` and `registerRequestStorage` are a link:https://en.wikipedia.org/wiki/Data_access_object[DAO] that stores
+challenges temporarily. The other DAO, `userStorage`, persists data permanently. 
+
+NOTE: FIDO2 only works on HTTPS webpages.
+
+=== Client-side  ===
+This section assumes that you are building a web site. If this is not the case,
+have a look at our link:/Software_Projects/FIDO2/FIDO2_Host_Libraries/[FIDO2 host libraries] instead.
+
+The main part of the client is to
+be a middle-man between the server and the FIDO2 compliant device.
+
+The straightforward way to use FIDO2 in a supported browser is to use the Web Authentication API, which exposes two functions:
+
+`navigator.credentials.create`:: Register using a FIDO2 device.
+`navigator.credentials.get`:: Authenticate using a FIDO2 device.
+
+.Registration
+[source, html]
+----
+<script>
+if (!window.PublicKeyCredential) { /* Platform not capable. Handle error. */ }
+
+var publicKey = {
+  challenge: {challenge}, // The challenge must be produced by the server
+
+  // Relying Party:
+  rp: {
+    name: "Demo server"
+  },
+
+  // User:
+  user: {
+    id: {user_id}, // id may be generated by the server
+    name: "a.user@example.com",
+    displayName: "A User",
+    icon: "https://example.com/image.png"
+  },
+
+  // This Relying Party will accept either an ES256 or RS256 credential, but
+  // prefers an ES256 credential.
+  pubKeyCredParams: [
+    {
+      type: "public-key",
+      alg: -7 // "ES256" as registered in the IANA COSE Algorithms registry
+    },
+    {
+      type: "public-key",
+      alg: -257 // Value registered by this specification for "RS256"
+    }
+  ],
+
+  excludeCredentials: [], 
+  attestation: 'direct',
+  timeout: 60000,  
+  extensions: {"loc": true}  // Include location information in attestation
+};
+
+// Note: The following call will cause the authenticator to display UI.
+navigator.credentials.create({ publicKey })
+  .then(function (attestation) {
+    // Send new credential info to server for verification and registration.
+  }).catch(function (err) {
+    // No acceptable authenticator or user refused consent. Handle appropriately.
+  });
+</script>
+----
+
+.Authentication
+[source, html]
+----
+<script>
+if (!window.PublicKeyCredential) { /* Platform not capable. Handle error. */ }
+
+  navigator.credentials.get({{
+    publicKey: {{
+      rpId: document.domain,
+      challenge: {challenge},
+      allowCredentials: [
+        {{
+          type: 'public-key',
+          id: {credential_id}
+        }}
+      ],
+      timeout: 60000
+    }}
+  }}).then(function (assertion) {
+    // Send new credential info to server for verification and registration.
+  }).catch(function (err) {
+    // No acceptable authenticator or user refused consent. Handle appropriately.
+  });
+</script>
+----
+
+The complete U2F JavaScript API can
+be found link:/U2F/Protocol_details/Specification.html[here].
+
+For a complete example, see
+https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo[this demo server].
+
+=== Complete example code
+For complete example code (both server and client) in various languages, have a look at link:List_of_libraries.html[respective FIDO2 library]'s accompanied demo server.
+
+
