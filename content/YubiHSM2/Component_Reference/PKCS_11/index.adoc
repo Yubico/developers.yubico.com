@@ -7,6 +7,11 @@ file is current directory and default name is `yubihsm_pkcs11.conf` using the
 environment variable `YUBIHSM_PKCS11_CONF` one can point to a custom location
 and name.
 
+Configuration options can also be passed as a string in the pReserved field of
+C_Initialize(), using the openssl PKCS11 engine this can be set in the
+INIT_ARGS configuration value. This is technically a violation of the PKCS11
+specification and is not supported by all applications.
+
 Accepted configuration options:
 
 - *connector*: URL pointing at the connector to contact, mandatory
@@ -174,6 +179,8 @@ C_Encrypt & C_Decrypt.
 
 == PKCS#11 Configuration
 
+=== Configuration file sample
+
 As needed, add a configuration file `yubihsm_pkcs11.conf`. Below is a sample.
 
 ....
@@ -213,4 +220,25 @@ connector = http://127.0.0.1:12345
 
 # Timeout in seconds to use for the initial connection to the connector
 # timeout = 5
+....
+
+=== INIT_ARGS sample
+
+Below is a sample of using the INIT_ARGS configuration with an openssl.cnf file.
+
+....
+openssl_conf = openssl_init
+
+[openssl_init]
+engines = engine_section
+
+[engine_section]
+pkcs11 = pkcs11_section
+
+[pkcs11_section]
+engine_id = pkcs11
+dynamic_path = /path/to/engine_pkcs11.so
+MODULE_PATH = /path/to/yubihsm_pkcs11.so
+INIT_ARGS = connector=http://127.0.0.1:12345 debug
+init = 0
 ....
