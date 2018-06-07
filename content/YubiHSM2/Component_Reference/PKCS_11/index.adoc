@@ -7,18 +7,24 @@ file is current directory and default name is `yubihsm_pkcs11.conf` using the
 environment variable `YUBIHSM_PKCS11_CONF` one can point to a custom location
 and name.
 
+Configuration options can also be passed as a string in the `pReserved` field of
+`C_Initialize`, using the OpenSSL PKCS#11 engine this can be set in the
+`INIT_ARGS` configuration value. This is technically a violation of the PKCS#11
+specification (which mandates `pReserved` to be set to `NULL`) and is not supported
+by all applications.
+
 Accepted configuration options:
 
 - *connector*: URL pointing at the connector to contact, mandatory
-- *debug*: Turn on PKCS#11 debugging, default off
-- *dinout*: Turn on call tracing, default off
-- *libdebug*: Turn on debug of libyubihsm, default off
-- *debug-file*: File to write debug information to, default stderr
-- *cacert*: File with cacert to verify connector https cert with (Not available on windows)
-- *proxy*: Proxy server for reaching the connector (Not available on windows)
-- *timeout*: Timeout to use for initial connection to connector (in seconds), default=5
+- *debug*: Turn on PKCS#11 debugging, default `off`
+- *dinout*: Turn on call tracing, default `off`
+- *libdebug*: Turn on debug of libyubihsm, default `off`
+- *debug-file*: File to write debug information to, default `stderr`
+- *cacert*: File with cacert to verify connector https cert with (not available on Windows)
+- *proxy*: Proxy server for reaching the connector (not available on Windows)
+- *timeout*: Timeout to use for initial connection to the connector (in seconds), default `5`
 
-A sample configuration file can be found below.
+A sample configuration file can be found further below.
 
 === Logging In
 
@@ -174,6 +180,8 @@ C_Encrypt & C_Decrypt.
 
 == PKCS#11 Configuration
 
+=== Configuration file sample
+
 As needed, add a configuration file `yubihsm_pkcs11.conf`. Below is a sample.
 
 ....
@@ -213,4 +221,25 @@ connector = http://127.0.0.1:12345
 
 # Timeout in seconds to use for the initial connection to the connector
 # timeout = 5
+....
+
+=== INIT_ARGS sample
+
+Below is a sample of using the INIT_ARGS configuration with an `openssl.cnf` file.
+
+....
+openssl_conf = openssl_init
+
+[openssl_init]
+engines = engine_section
+
+[engine_section]
+pkcs11 = pkcs11_section
+
+[pkcs11_section]
+engine_id = pkcs11
+dynamic_path = /path/to/engine_pkcs11.so
+MODULE_PATH = /path/to/yubihsm_pkcs11.so
+INIT_ARGS = connector=http://127.0.0.1:12345 debug
+init = 0
 ....
