@@ -1,0 +1,31 @@
+== YubiKit Changelog
+
+=== 1.1.0 [1.0.0 -&gt; 1.1.0]
+
+This version has a few improvements on the NFC APIs and to the demo application:
+
+* The check for NFC capabilities does a pre-check for devices with NFC chip or newer devices before interrogating the OS for the NFC capabilities to avoid a very rare CoreNFC crash on devices which do not have a NFC reader.
+* The OTP token interface was updated and the `payload` property was removed because it can be inferred from the other properties of the token and it's not essential in the context of YubiKit.
+* The `uri` and `text` properties from the `YKFOTPToken` provide now the full parsed URI/Text from the device (including the prepended protocol for URIs).
+* The demo application has a few UI updates and fixes a few layout issues on small screen devices (iPhone 5/5c/5s/SE)
+* The demo application can now run on iOS 10.
+
+
+=== 1.0.0 [1.0.0 RC2 -&gt; 1.0.0]
+
+This version does a few changes to the library interface. The provided interface should provide from now on a final API for capabilities check, NFC and QR code scanning:
+
+* Renamed the `YKFDeviceCapabilities` as `YubiKitDeviceCapabilities`, as the capabilities type becomes a top level library interface object, on par with `YubiKitManager`, `YubiKitConfiguration` and `YubiKitExternalLocalization`.
+* The capabilities change allows a direct check without retrieving them from the shared instance of the YubiKitManager as in RC2: `YubiKitDeviceCapabilities.supportsNFCScanning` and `YubiKitDeviceCapabilities.supportsQRCodeScanning`. For a complete example read the documentation (README.md file) for v1.0.0 and consult the code of the demo application.
+* The `YubiKitManager` type provides from now several types of _sessions_, each one of them being responsible to only one type of communication. This change allows for future extensibility and consistency of the APIs without transforming `YubiKitManager` into a mixed responsibility type, responsible for various types of requests. v1.0.0 provides two sessions: `nfcReaderSession` and `qrReaderSession`. The previous calls on the managers are now part of these sessions so `YubiKitManager.shared.[method]` becomes `YubiKitManager.shared.[nfcReaderSession/qrReaderSession].[method]`. For a complete example read the documentation (README.md file) for v1.0.0 and consult the code of the demo application.
+
+=== 1.0.0 RC2 [1.0.0 RC1 -&gt; 1.0.0 RC2]
+
+* Exposing the cancel user action from the NFC OS action sheet which is returned as an error by CoreNFC APIs: `NFCReaderError.readerSessionInvalidationErrorUserCanceled`
+
+=== 1.0.0 RC1
+
+Initial release with support for: 
+
+* Reading OTPs (YubicoOTP and HOTP) from NFC enabled YubiKeys
+* Raw QR code scanning
