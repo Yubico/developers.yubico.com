@@ -1,0 +1,182 @@
+== YubiKey 5 Series Configuration Reference Guide ==
+This document describes how the YubiKey Capabilities work and the commands that can be used to set and read the current state. The format described below is only available on YubiKey 5 Series and above, and the Security Key by Yubico.
+
+== Concepts ==
+=== Interfaces ===
+The physical interfaces available on a device: USB and NFC.
+
+=== Applications ===
+The individual Applications available on a YubiKey device: OTP, U2F, FIDO2, OpenPGP, PIV, and OATH.
+
+=== Capabilities ===
+Capabilities^[1]^ is the collective name used to describe which Applications are and are not enabled on a specific Interface. There are two types of Capabilities: Supported Capabilities and Enabled Capabilities.
+
+[1] _Note: YubiHSM2 has the concept of a link:https://developers.yubico.com/YubiHSM2/Concepts/Capability.html[Capability] which differs from this definition._
+
+==== Supported Capabilities ====
+Supported Capabilities are set during manufacturing. They determine the functionalities of a device. Supported Capabilities cannot be modified.
+
+==== Enabled Capabilities ====
+Enabled Capabilities are those that are currently available on the device. They are user-configurable and supersede the concept of mode-switching. Modifying Enabled Capabilities can be prevented by setting a Configuration Lock (described below).
+
+==== List of Capabilities ====
+Each Application is defined as a single bit and is enabled if the bit is set and disabled if not. The list of Capabilities is the following:
+
+[cols="1,1,1", options="header"]
+|===
+|Denomination |Value |Description
+|YK_CAPA_OTP |0x0001 |Application bit for OTP
+|YK_CAPA_U2F |0x0002 |Application bit for U2F
+|YK_CAPA_CCID |0x0004 |Application bit for CCID interface (not settable)
+|YK_CAPA_OPGP |0x0008 |Application bit for OpenPGP
+|YK_CAPA_PIV |0x0010 |Application bit for PIV
+|YK_CAPA_OATH |0x0020 |Application bit for OATH
+|UNUSED |0x0040 |Unused bit
+|UNUSED |0x0080 |Unused bit
+|UNUSED |0x0100 |Unused bit
+|YK_CAPA_CTAP2 |0x0200  |Application bit for CTAP 2
+|===
+
+The Enabled Capabilities are always masked with the Supported Capabilities. For example, this means that even if a user sets the bit corresponding to NFC, this won’t take effect if NFC is not supported in the device.
+
+=== Configuration Lock ===
+The Configuration Lock is a 16 Byte value that can be set by the user or an administrator/crypto officer. If set, changing any user-configurable device information described in this document will not be allowed. The Configuration Lock has to be supplied when sending the SET DEVICE INFORMATION command. By default, the Configuration Lock is disabled with a default value of 00000000000000000000000000000000 (Byte 00, 16 times).
+
+=== Form Factor ===
+Form factor is set during manufacturing  and returned as a one-Byte value.
+Currently defined values for this are:
+
+[cols="1,1", options="header"]
+|===
+|Denomination |Value
+|UNDEFINED |0
+|USB_A_KEYCHAIN |1
+|USB_A_NANO |2
+|USB_C_KEYCHAIN |3
+|USB_C_NANO |4
+|===
+
+=== Auto-Eject Timeout ===
+Auto-Eject Timeout controls the period of inactivity (in seconds) after which the CCID card should be considered ejected.  This is only meaningful if the Device Flag, MODE_FLAG_EJECT, is set.
+
+=== Challenge-Response Timeout ===
+Challenge-Response Timeout controls the period of time (in seconds) after which the OTP module Challenge-Response should timeout. The default is 15 seconds.
+
+=== Device Flags ===
+Device Flags control device-global behavior:
+
+[cols="1,1,1", options="header"]
+|===
+|Denomination |Value |Description
+|MODE_FLAG_EJECT |0x80 |In pure CCID mode eject/inject the card with button
+|MODE_REMOTE_WAKEUP |0x40 |Enable remote wakeup
+|===
+
+== Reading Information ==
+=== Device Information ===
+In order to obtain the current Device Information, a GET DEVICE INFORMATION command can be sent. The way the command is specified depends on the interface: 
+
+[cols="1,1", options="header"]
+|===
+|Interface |Method
+|CCID |Sent as instruction 0x1d to the Management applet
+|OTP |Sent as SLOT 0x13
+|FIDO |Sent as HID command 0xc2 (2nd vendor command with INIT set)
+|===
+
+The format described above is compatible with the Capabilities interface available in YubiKey 4 and expands upon it.
+
+The data returned by the GET DEVICE INFORMATION command always has the same format, regardless of the interface used to obtain it.
+
+The format is:
+
+TOTAL-LENGTH (1 Byte)
+TAG (1 Byte)
+LENGTH (1 Byte)
+VALUE (LENGTH Bytes)
+
+The triplet TAG-LENGTH-VALUE is repeated several times, once for each TAG in the table below. All fields are always present, with the exception of Serial, which is present only if a serial number is set, and the NFC related Capabilities, which are only present if NFC has been enabled during the manufacturing process.
+
+[cols="1,1,1", options="header"]
+|===
+|TAG |Name |Description
+|0x01 |Supported USB Capabilities |Supported USB Applications
+|0x03 |Enabled USB Capabilities |Currently enabled USB Applications
+|0x02 |Serial |Only present if serial is set, 4 Bytes big-endian
+|0x04 |Formfactor |
+|0x05 |Firmware version |Encoded as three Bytes, major-minor-build 
+|0x06 |Auto-eject timeout |2 Bytes big-endian
+|0x07 |Challenge-response timeout |
+|0x08 |Device flags |
+|0x0d |Supported NFC Capabilities |Supported NFC Applications, can be none
+|0x0e |Enabled NFC Capabilities |Currently enabled NFC Applications
+|0x0a |Device is locked |1 if Configuration Lock is set, 0 otherwise
+|===
+
+== Writing Information ==
+All interfaces support writing information using one of the following commands:
+
+[cols="1,1", options="header"]
+|===
+|Interface |Method
+|CCID |Sent as instruction 0x1c to the Management applet
+|OTP |Sent as SLOT 0x15
+|FIDO |Sent as HID command 0xc3 (3rd vendor command with INIT set)
+|===
+
+The format for providing the data to be written is a one Byte total length followed by a list of TAG-LENGTH-VALUE (TLV) triplets as the payload of the interface-specific command shown in the previous table. Multiple information can be set as part of the same interface command simply by concatenating several TLVs.
+
+=== Enabled USB Capabilities ===
+TAG = 0x03
+
+Enabled USB Capabilities are set by supplying the complete list of packed bits. A set bit means that the related Application is enabled, a cleared bit means that the related Application is not available through the interface.
+
+=== Enabled NFC Capabilities ===
+TAG = 0x0c
+
+Enabled USB Capabilities are set by supplying the complete list of packed bits. A set bit means that the related Application is enabled, a cleared bit means that the related Application is not available through the interface.
+
+=== Set Configuration Lock ===
+TAG = 0x0a
+
+This is used to set the Configuration Lock. The payload is a 16 Byte value and, depending on the value, one of the following operations is performed:
+
+* If the payload is the Byte 00 repeated 16 times, the Configuration Lock is disabled
+* If the payload is anything other than Byte 00 repeated 16 times, the value is stored as the Configuration Lock
+
+=== Unlock Configuration Lock ===
+TAG = 0x0b
+
+This is used to provide the Configuration Lock and to allow changing user-configurable values. The payload has to be the correct 16 Byte Configuration Lock. If the Configuration Lock is disabled, this TAG-LENGTH-VALUE (TLV) has no effect.
+The Unlock Configuration Lock TLV can be present anywhere in the list of TLVs sent as part of the interface command, but it can not be part of a separate command. All interface commands requiring the Configuration Lock must contain an Unlock Configuration Lock TLV.
+
+=== Auto-Eject Timeout ===
+TAG = 0x06
+
+Auto-Eject Timeout is set by supplying a 2 Bytes Big-Endian value.
+
+=== Challenge-Response Timeout ===
+TAG = 0x07
+
+Challenge-Response Timeout is set by supplying a 1 Byte value.
+
+=== Device Flags ===
+TAG = 0x08
+
+Device Flags is set by supplying a 1 Byte value.
+
+=== Reset ===
+TAG = 0x0c
+
+This TLV doesn’t require a payload (its length can be zero). If present as part of a list of TLVs forces the device to reboot if all the other TLVs have been correctly parsed. This is useful when enabling or disabling interface. Reboot is determined by the Configuration Lock (missing/wrong Configuration Lock will produce an error and not reboot).
+
+== Device Configuration Concepts ==
+Ykman represents a YubiKey as a YubiKey object. The YubiKey class is defined in the link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/device.py[device module]. Each instance of a YubiKey object has an associated link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/driver.py[driver]. The driver module defines the interface for communication with an Application on the device. It specifies the read_config() and write_config() methods. Under the covers, these methods use the TAG-LENGTH-VALUE format, defined in the Capabilities reference, to build the payload that is sent to the device to read and write configuration.
+
+There is a driver implementation for each Application on the device, e.g. link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/fido.py[FIDO], link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/oath.py[OATH], link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/opgp.py[OpenPGP], link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/otp.py[OTP],  and link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/piv.py[PIV]. These drivers can communicate with the device over the various interfaces such as link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/driver_ccid.py[CCID], link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/driver_fido.py[HID], or in the case of link:https://github.com/Yubico/yubikey-manager/blob/master/ykman/driver_otp.py[OTP], wrap a native c library for reading and writing.
+
+When creating a custom YubiKey configuration software in the python language, use the ykman source code as a guide for reading and writing configurations. If you’d rather integrate with c libraries:
+
+* link:https://github.com/Yubico/libfido2[Libfido2] communicates with the FIDO2 and U2F Applications
+* link:https://github.com/Yubico/yubico-piv-tool/blob/master/lib/ykpiv.h[Ykpiv] communicates with the PIV and OpenPGP Applications
+* link:https://github.com/Yubico/yubikey-personalization[Ykpers] communicates with the OTP and OATH Applications
