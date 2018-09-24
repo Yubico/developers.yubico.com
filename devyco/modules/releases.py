@@ -24,8 +24,8 @@ from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 
 SIG_SUFFIXES = ['sig', 'asc']
 SUFFIXES = SIG_SUFFIXES + \
-    ['tar', 'gz', 'tgz', 'xz', 'zip', 'exe', 'pkg', 'cap', 'apk', 'msi', 'pdf']
-CLASSIFIERS = ['win', 'win32', 'win64', 'mac']
+    ['tar', 'gz', 'tgz', 'xz', 'zip', 'exe', 'pkg', 'cap', 'apk', 'msi', 'pdf', 'AppImage']
+CLASSIFIERS = ['win', 'win32', 'win64', 'mac', 'linux']
 
 
 def remove_suffixes(part):
