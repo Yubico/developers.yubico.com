@@ -1,0 +1,189 @@
+== Registration
+Lets begin with a new service that will use the https://github.com/Yubico/java-webauthn-server[java-webauthn-server] library and a hypothetical new user who is ready to sign up with a new device.
+
+The first step is for the JavaScript app to verify that the browser is able to support WebAuthn. If the user’s browser does not support WebAuthn then you will want to gracefully handle that use case.
+
+[source, javascript]
+----
+if (!window.PublicKeyCredential) { /* Platform not capable. Handle error. */ }
+----
+
+The next step is to ask the user for information to sign up with your service. You may choose to ask the user for their first name, last name, and email address. Once the user signs up, give the option to register a device. You should allow the user to give the device a friendly name, e.g. ‘My YubiKey’.
+
+The JavaScript app makes the initial registration request to the java-webauthn-server API.  
+
+.https://github.com/Yubico/java-webauthn-server/blob/80d1198ca5534be8fbbe1cd25d147421edc6bc2a/webauthn-server-demo/src/main/webapp/index.html#L114[Make a registration request to WebAuthn Server]
+[source, javascript]
+----
+function getRegisterRequest(urls, username, displayName, credentialNickname, requireResidentKey = false) {
+  return fetch(urls.register, {
+    body: new URLSearchParams({
+      username,
+      displayName,
+      credentialNickname,
+      requireResidentKey,
+    }),
+    method: 'POST',
+  })
+    .then(response => response.json())
+    .then(rejectIfNotSuccess);
+}
+----
+
+The WebAuthn server's REST API layer handles the https request to /register. The parameters of the registration request are passed to the Service Layer which calls startRegistration() of the java-webauthn-server core library. This method verifies the request is for a new user and then returns a RegistrationRequest object. 
+
+.https://github.com/Yubico/java-webauthn-server/blob/01f5295ee2522ad70b9a6199997a0cad7bffdad2/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java#L140[Check username and return registraiton request]
+[source, java]
+----
+public Either<String, RegistrationRequest> startRegistration(
+    @NonNull String username,
+    @NonNull String displayName,
+    Optional<String> credentialNickname,
+    boolean requireResidentKey
+) {
+    logger.trace("startRegistration username: {}, credentialNickname: {}", username, credentialNickname);
+
+    if (userStorage.getRegistrationsByUsername(username).isEmpty()) {
+        RegistrationRequest request = new RegistrationRequest(
+            username,
+            credentialNickname,
+            challengeGenerator.generateChallenge(),
+            rp.startRegistration(
+                StartRegistrationOptions.builder()
+                    .user(UserIdentity.builder()
+                        .name(username)
+                        .displayName(displayName)
+                        .id(challengeGenerator.generateChallenge())
+                        .build()
+                    )
+                    .authenticatorSelection(Optional.of(AuthenticatorSelectionCriteria.builder()
+                        .requireResidentKey(requireResidentKey)
+                        .build()
+                    ))
+                    .build()
+            )
+        );
+        registerRequestStorage.put(request.getRequestId(), request);
+        return Either.right(request);
+    } else {
+        return Either.left("The username \"" + username + "\" is already registered.");
+    }
+}
+----
+
+The RegistrationRequest object contains a challenge, user information, and relying party information which are used to populate the parameters of the WebAuthn PublicKeyCredentialCreationOptions data structure.
+
+.Public Key Credential Creation Options
+[source, javascript]
+----
+var publicKey = {
+  rp: {
+    name: "Yubico Web Authentication demo",     // required field
+    id: "demo.yubico.com"                       // [Optional] If left out, then origin's effective domain is used
+  },
+  user: {
+    name: "a.user",                             // required field 
+    displayName: "A User",                      // required field
+    id: "Ad9ROab-zeQyXtsOgQKUCN1nKgcdP..."      // required field, also known as the userHandle
+  },
+  "challenge": "I8bVx0SdxsVxHL9QBl_dEs...",
+  pubKeyCredParams: [                           // desired properties of credential to be created
+    {
+      type: "public-key",                       // only one type "public-key"
+      alg: -7                                   // Relying Party prefers "ES256" crypto signature algorithm as registered in the IANA COSE Algorithms registry
+    }
+  ],
+  excludeCredentials: [
+      {
+      type: "public-key",                       
+      id: "XyzROab-zeQyXtsOgQKUCN1nKgaoz..."
+    }
+  ], 
+  "authenticatorSelection": {
+    "requireResidentKey": false,                // When 'true', the authenticator must create a client side resident private key.
+    "userVerification": "discouraged"           // Can be "required", "preferred", or "discouraged"
+  },
+  "attestation": "direct",                      // Default is "none". "direct" indicates the rp wants to receive the attestation statement. "indirect" indicates the rp prefers an attestation statement.
+  "extensions": {
+    "extensionIds": []
+  }
+};
+----
+
+The PublicKeyCredentialCreationOptions parameters received from the server are passed to the create() call defined by the PublicKeyCredentialCreationOptons data structure. The call returns a Promise a that will resolve to a PublicKeyCredential containing an AuthenticatorAttestationResponse.
+
+[source, javascript]
+----
+navigator.credentials.create({ publicKey })
+  .then(function (newCredentialInfo) {
+    // Send new credential info to server for verification and registration.
+  }).catch(function (err) {
+    // No acceptable authenticator or user refused consent. Handle appropriately.
+  });
+----
+
+Diving deeper, we can see what happens when the JavaScript app calls create(). The browser validates the rpId against the origin, hashes the clientData, and calls authenticatorMakeCredential().
+
+image::fido2_registration.png[] 
+
+Before proceeding, the authenticator will ask for some form of user verification. After verification, the authenticator will create a new asymmetric key pair and safely store the private key. The public key becomes part of the attestation, which the authenticator signs over with the private key. The manufacturer’s attestation certificate chain may also be returned so that the relying party can validate the device back to a root of trust.
+
+Next, the new public key, a credential id, and other attestation data are returned to the browser where they become the attestationObject. The create() Promise resolves to a PublicKeyCredential. The app calls the /register/finish REST API and passes in the response to complete the registration.
+
+.https://github.com/Yubico/java-webauthn-server/blob/01f5295ee2522ad70b9a6199997a0cad7bffdad2/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java#L277[Finish registration]
+[source, java]
+----
+public Either<List<String>, SuccessfulRegistrationResult> finishRegistration(String responseJson) {
+    logger.trace("finishRegistration responseJson: {}", responseJson);
+    RegistrationResponse response = null;
+    try {
+        response = jsonMapper.readValue(responseJson, RegistrationResponse.class);
+    } catch (IOException e) {
+        logger.error("JSON error in finishRegistration; responseJson: {}", responseJson, e);
+        return Either.left(Arrays.asList("Registration failed!", "Failed to decode response object.", e.getMessage()));
+    }
+
+    RegistrationRequest request = registerRequestStorage.getIfPresent(response.getRequestId());
+    registerRequestStorage.invalidate(response.getRequestId());
+
+    if (request == null) {
+        logger.debug("fail finishRegistration responseJson: {}", responseJson);
+        return Either.left(Arrays.asList("Registration failed!", "No such registration in progress."));
+    } else {
+        try {
+            RegistrationResult registration = rp.finishRegistration(
+                FinishRegistrationOptions.builder()
+                    .request(request.getPublicKeyCredentialCreationOptions())
+                    .response(response.getCredential())
+                    .build()
+            );
+
+            return Either.right(
+                new SuccessfulRegistrationResult(
+                    request,
+                    response,
+                    addRegistration(
+                        request.getPublicKeyCredentialCreationOptions().getUser(),
+                        request.getCredentialNickname(),
+                        response,
+                        registration
+                    ),
+                    registration.isAttestationTrusted()
+                )
+            );
+        } catch (RegistrationFailedException e) {
+            logger.debug("fail finishRegistration responseJson: {}", responseJson, e);
+            return Either.left(Arrays.asList("Registration failed!", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("fail finishRegistration responseJson: {}", responseJson, e);
+            return Either.left(Arrays.asList("Registration failed unexpectedly; this is likely a bug.", e.getMessage()));
+        }
+    }
+}
+----
+
+Finally, the server performs a series of checks to ensure the registration was complete and not tampered with. Including:
+Verifying the challenge is the same as the challenge that was sent
+Ensuring the origin was the origin expected
+Validating that the signature over the clientDataHash and the attestation using the certificate chain for that specific model of the authenticator.
+The full list of validation steps can be found in the WebAuthn specification.
