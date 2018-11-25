@@ -1,0 +1,39 @@
+FROM ubuntu:16.04 AS build
+
+# drop multiverse, restricted, backports
+RUN echo "deb http://archive.ubuntu.com/ubuntu/ xenial main universe" >/etc/apt/sources.list \
+	&& echo "deb http://archive.ubuntu.com/ubuntu/ xenial-updates main universe" >>/etc/apt/sources.list \
+	&& echo "deb http://archive.ubuntu.com/ubuntu/ xenial-security main universe" >>/etc/apt/sources.list
+
+RUN apt-get -y update && apt-get -y dist-upgrade
+
+RUN apt-get install --no-install-recommends -y \
+	git \
+	# for binaries repo
+	openssh-client \
+	python-pip \
+	python-setuptools \
+	asciidoc \
+	mscgen \
+	libffi-dev \
+	libssl-dev \
+	source-highlight
+
+COPY requirements.txt /
+RUN pip install --upgrade pip
+RUN pip install -r /requirements.txt
+
+ARG uid
+ARG gid
+
+RUN addgroup --gid $gid build
+RUN adduser --home /home/build --shell /bin/bash --disabled-login --gecos '' \
+    --uid $uid --gid $gid \
+    build
+
+USER build
+
+VOLUME /developers
+WORKDIR /developers
+
+CMD ["./build"]
