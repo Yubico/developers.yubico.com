@@ -1,0 +1,68 @@
+== Creating a Code-Signing Certificate using the Key Storage Provider
+
+This example will show you how to create a code-signing certificate request using a key generated and stored in the YubiHSM 2 via the Key Storage Provider.  This type of code-signing certificate is appropriate for use with the Microsoft `signtool` utility for digitially signing Windows binaries.
+
+In this example, we will use the command line `certreq` utility.  All procedures documented here are available in the Certificate Manager (`certmgr.msc`) MMC snap-in if you prefer a UI experience.
+
+=== Create the Certificate Request Configuration File
+
+The `certreq` utility requires a _.inf_ file as input which defines your request.  An example file is supplied here:
+
+*sign.inf*
+----
+[Version]
+Signature="$Windows NT$"
+
+[NewRequest]
+Subject = "CN=My Publisher"         ; Entity name (dns name/upn for other cert types)
+Exportable = FALSE                  ; Private key is not exportable
+KeyLength = 2048                    ; YubiHSM KSP key sizes: 2048, 3072, 4096
+KeySpec = 2                         ; 1 = AT_KEYEXCHANGE, 2 = AT_SIGNATURE
+KeyUsage = 0x80                     ; 80 = Digital Signature, 20 = Key Encipherment (bitmask)
+MachineKeySet = False               ; True: cert belongs the local computer, False: current user
+ProviderName = "YubiHSM Key Storage Provider"
+ProviderType = 1
+SMIME = FALSE
+RequestType = CMC                   ; Can be CMC, PKCS10, PKCS7 or Cert (self-signed)
+
+[Strings]
+szOID_ENHANCED_KEY_USAGE = "2.5.29.37"
+szOID_CODE_SIGN = "1.3.6.1.5.5.7.3.3"
+szOID_BASIC_CONSTRAINTS = "2.5.29.19"
+
+[Extensions]
+%szOID_ENHANCED_KEY_USAGE% = "{text}%szOID_CODE_SIGN%"
+%szOID_BASIC_CONSTRAINTS% = "{text}ca=0&pathlength=0"
+
+; If you are using ADCS with certificate templates, you may add
+; a specific template under [RequestAttributes]
+;[RequestAttributes]
+;CertificateTemplate= CodeSigning
+----
+
+=== Create the Certificate Request
+
+Once you've created the certificate request configuration file, pass it to `certreq` as the input file argument, e.g:
+
+  certreq -new sign.inf sign.req
+
+=== Sign the Certificate Request
+
+In the above example, the certificate request was written to _sign.req_.  Take this file and submit its contents to your CA for
+signature.  Once signed, open the resulting file (e.g., sign.crt) and install the certificate to your personal store.
+
+=== Sign using Signtool
+
+Open a prompt with `signtool` in the path and use the following command to sign your binary.
+
+  > signtool sign <binary name>
+
+If you have multiple certificates available for code signing, it may be necessary to identify your signing certificate by hash.  If this occurs, `signtool` will show you a list of valid certificates.  Simply re-run sign tool with the sha1 hash of the certificate:
+
+  > signtool sign /sha1 <certificate hash> <binary name>
+
+=== More Information
+
+For a detailed explanation of all options available in the request _inf_ file, please see the documentation for the link:https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certreq_1[certreq] utility.
+
+To generate a simliar request using the Certificate Manager, open the Certificate Manager snap-in, select the Personal/Certificates store, right click and select _All Tasks->Advanced Operations->Create Custom Request_.

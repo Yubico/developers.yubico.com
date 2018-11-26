@@ -1,0 +1,46 @@
+== CHANGE AUTHENTICATION KEY
+
+Change an Authentication Key.
+
+== Description
+
+Replace the Authentication Key used to establish the current Session. It is not possible to modify any of the metadata connected to the Object such as Domains or Capabilities. Only the payload data of the Object (i.e., the long-lived symmetric keys) will be modified.
+
+The same `PBKDF2` derivation scheme described in link:../Concepts/Session.adoc[Session] is available.
+
+== Shell Example
+
+Change the current Authentication Key deriving it from the password `newpassword`:
+
+  yubihsm> change authkey 0 1 newpassword
+  Changed Authentication key 0x0001
+
+== Protocol Details
+
+=== Command
+
+|=======================
+|T~c~ = 0x6c
+|L~c~ = 2 + 1 + 16 + 16
+|V~c~ = I \|\| A \|\| K~e~ \|\| K~m~
+|=======================
+
+Replace the currently used Authentication Key with a new set of keys.
+
+I := link:../Concepts/Object_ID.adoc[Object ID] of the Authentication Key (2 bytes)
+
+A := link:../Concepts/Algorithm.adoc[Algorithm] (1 byte)
+
+K~e~ := Encryption Key (16 bytes)
+
+K~m~ := Mac Key (16 bytes)
+
+=== Response
+
+|===========
+|T~r~ = 0xec
+|L~r~ = 2
+|V~r~ = I
+|===========
+
+I := link:../Concepts/Object_ID.adoc[Object ID] of the changed Object (2 bytes)

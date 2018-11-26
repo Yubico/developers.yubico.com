@@ -1,0 +1,47 @@
+== SIGN SSH CERTIFICATE
+
+Sign an SSH Certificate request.
+
+== Description
+
+Produce an SSH Certificate signature. The certificate can then be used to login to hosts.
+
+== Shell Example
+
+Produce a new SSH Certificate.
+
+  yubihsm> certify 0 0xabcd 0x1234 rsa-pkcs-sha256 req.dat cert.dat
+
+== Protocol Details
+
+=== Command
+
+|=======================
+|T~c~ = 0x5d
+|L~c~ = 2 + 2 + 1 + 4 + 256 + L~R~
+|V~c~ = I \|\| T \|\| A \|\| N \|\| S \|\| R
+|=======================
+
+Sign and SSH Certificate by using the given Asymmetric Key and SSH Template.
+
+I := link:../Concepts/Object_ID.adoc[Object ID] of the Asymmetric Key (2 bytes)
+
+T := link:../Concepts/SSH_Template.adoc[Object ID] of the SSH Template (2 bytes)
+
+A := link:../Concepts/Algorithm.adoc[Algorithm] (1 byte)
+
+N := Timestamp with the definition of `Now` (4 bytes)
+
+S := Signature over the request and timestamp (256 bytes)
+
+R := Request (L~R~ bytes)
+
+=== Response
+
+|===========
+|T~r~ = 0xd6
+|L~r~ = L~S~
+|V~r~ = S
+|===========
+
+S := Certificate Signature (L~S~ bytes)

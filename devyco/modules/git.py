@@ -49,6 +49,7 @@ class GitModule(Module):
             repo_dir = self._clone(conf)
             self._copy_files(repo_dir, conf.get('files', '*'))
             self._create_redirects(repo_dir, conf.get('redirect_renamed', []))
+            self._more_redirects(repo_dir, conf.get('redirects', []))
 
     def _fix_mtimes(self, repo_dir):
         print "Preserving mtimes for:", repo_dir
@@ -119,6 +120,17 @@ class GitModule(Module):
                 shutil.copytree(match, path.join(target, path.basename(match)))
             else:
                 shutil.copy2(match, target)
+
+    def _more_redirects(self, repo_dir, entries):
+        redirects = []
+        if not isinstance(entries, list):
+            entries = [entries]
+        for entry in entries:
+            redirects += self._redirects_for(entry)
+        if redirects:
+            htaccess = path.join(self._target, '.htaccess')
+            with open(htaccess, 'a') as f:
+                f.writelines(redirects)
 
     def _create_redirects(self, repo_dir, entries):
         redirects = []

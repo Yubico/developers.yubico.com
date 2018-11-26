@@ -4,35 +4,35 @@
 
 The YubiHSM 2 supports encrypted export and import of objects using a symmetric AES-CCM based scheme.
 
-=== Backup using yubihsm-shell
+=== Backup Using YubiHSM Shell
 
-Make sure you have a Wrapkey with the Capabilities `export_wrapped`, `import_wrapped` and applicable Delegated Capabilities set:
+Make sure you have a Wrap Key with the Capabilities `export-wrapped`, `import-wrapped` and applicable Delegated Capabilities set:
 
 [source, bash]
 ----
 $ yubihsm-shell -a get-random --count=32 --out=wrap.key
 ...
-$ yubihsm-shell -a put-wrapkey -c export_wrapped,import_wrapped --delegated=asymmetric_sign_pkcs,asymmetric_decrypt_pkcs,export_under_wrap --in=wrap.key
+$ yubihsm-shell -a put-wrap-key -c export-wrapped,import-wrapped --delegated=sign-pkcs,decrypt-pkcs,exportable-under-wrap --in=wrap.key
 ...
 Stored Wrap key 0xd581
 ----
 
-When this Wrapkey is present, any Object in the same Domain and with the Capability `export_under_wrap` and Capabilities matching the Wrapkey's Delegated Capabilities can be exported:
+When this Wrap Key is present, any Object in the same Domain and with the Capability `exportable-under-wrap` and Capabilities matching the Wrap Key's Delegated Capabilities can be exported:
 
 [source, bash]
 ----
-$ yubihsm-shell -a generate-asymmetric -A rsa2048 -c export_under_wrap,asymmetric_sign_pkcs,asymmetric_decrypt_pkcs
+$ yubihsm-shell -a generate-asymmetric-key -A rsa2048 -c exportable-under-wrap,sign-pkcs,decrypt-pkcs
 ...
 Generated Asymmetric key 0x6e77
 $ yubihsm-shell -a get-wrapped --wrap-id=0x6e77 --object-id=0xd581 -t asymmetric --out=key_6e77.yhw
 ...
 ----
 
-You now have an encrypted backup of the Asymmetric Object 0x6e77 in the file key_6e77.yhw. *The file wrap.key here contains the cleartext version of the Wrapkey loaded into your YubiHSM and should be considered sensitive*.
+You now have an encrypted backup of the Asymmetric Key `0x6e77` in the file key_6e77.yhw. *The file wrap.key here contains the cleartext version of the Wrap Key loaded into your YubiHSM and should be considered sensitive*.
 
-=== Backup using yubihsm-setup
+=== Backup Using YubiHSM Setup
 
-The tool yubihsm-setup can be used to backup all exportable objects at once:
+The tool `yubihsm-setup` can be used to backup all exportable objects at once:
 
 [source, bash]
 ----
@@ -43,23 +43,23 @@ Successfully exported object Asymmetric with ID 0x6e77 to ./0x6e77.yhw
 All done
 ----
 
-=== Restore using yubihsm-shell
+=== Restore Using YubiHSM Shell
 
-Considering a fresh device where you want to restore the previously backed up key 0x6e77
+Considering a fresh device where you want to restore the previously backed up key `0x6e77`
 
 [source, bash]
 ----
-$ yubihsm-shell -a put-wrapkey -A aes256-ccm-wrap -c export_wrapped,import_wrapped --delegated=asymmetric_sign_pkcs,asymmetric_decrypt_pkcs,export_under_wrap --in=wrap.key -i 0xd581
+$ yubihsm-shell -a put-wrap-key -A aes256-ccm-wrap -c export-wrapped,import-wrapped --delegated=sign-pkcs,decrypt-pkcs,exportable-under-wrap --in=wrap.key -i 0xd581
 ...
 Stored Wrap key 0xd581
 $ yubihsm-shell -a put-wrapped -i 0xd581 --in=key_6e77.yhw
 ...
-Object imported as 0x6e77 of type asymmetric
+Object imported as 0x6e77 of type asymmetric-key
 ----
 
 == Backup and Restore of Keys Managed via YubiHSM Key Storage Provider
 
-ADCS does not set the `NCRYPT_ALLOW_EXPORT_FLAG` when generating a key neither through the setup UI, nor the `Install-ADCSCertificationAuthority` PowerShell module.  When creating an ADCS root CA key via the YubiHSM 2, we add the `export_under_wrap´ Capability by default, so that backup and restore functionality is available through the following manual process:
+ADCS does not set the `NCRYPT_ALLOW_EXPORT_FLAG` when generating a key neither through the setup UI, nor the `Install-ADCSCertificationAuthority` PowerShell module.  When creating an ADCS root CA key via the YubiHSM 2, we add the `exportable-under-wrap´ Capability by default, so that backup and restore functionality is available through the following manual process:
 
 === Identify Your Private Key Container Name
 
@@ -76,13 +76,13 @@ to view the currently installed certificates in the Local Machine "My" store.
 
 Find the target certificate in the list.
 
-Find the `Key Container` property of the target certificate.  The Provider property should be equal to `YubiHSM Key Storage Provider`.
+Find the `Key Container` property of the target certificate. The Provider property should be equal to `YubiHSM Key Storage Provider`.
 
 Record the `Cert Hash` property to identify the certificate.
 
 === Backup the Target Certificate
 
-Using any available means (certmgr.msc, PowerShell, certutil), export the target certificate, but without the private key in DER format. The YubiHSM 2 does not provide a mechanism for returning the raw private key to Windows, so generating a PKCS#12 container is not currently possible. For example:
+Using any available means (certmgr.msc, PowerShell, certutil), export the target certificate, but without the private key in DER format. The YubiHSM does not provide a mechanism for returning the raw private key to Windows, so generating a PKCS#12 container is not currently possible. For example:
 
 [source, powershell]
 ----
@@ -94,15 +94,15 @@ will export the certificate in .crt format to a file named `<Cert Hash>.crt`.
 === Backup the Target Private Key
 
 Using the instructions for exporting a private key under wrap via `yubihsm-shell` (see above), export the target private key with the `label` property equal to the `Key Container` property.
-The Authkey that performs this operation must have the `export_wrapped` capability.
+The Authentication Key that performs this operation must have the `export-wrapped` capability set.
 
 === Restore the Target Private Key
 
-Using the instructions for importing a private key under wrap via `yubihsm-shell` (see above), import the target private key file to your backup YubiHSM 2. The Authkey that performs this operation must have the `import_wrapped` capability.
+Using the instructions for importing a private key under wrap via `yubihsm-shell` (see above), import the target private key file to your backup YubiHSM. The Authentication Key that performs this operation must have the `import-wrapped` capability set.
 
-The imported key object should have the same `label` property as the original object.
+The imported key object should have the same Label property as the original object.
 
-=== Restore the target certificate
+=== Restore the Target Certificate
 
 Move the target certificate file generated above to the target machine.
 
@@ -114,7 +114,7 @@ Make sure that the target private key is visible via the YubiHSM KSP, using
 PS1> certutil -key -csp "YubiHSM Key Storage Provider"
 ----
 
-This command will list all private keys (and their corresponding container names -- which are equal to the label property in the YubiHSM 2 visible to the current Authkey).
+This command will list all private keys (and their corresponding container names -- which are equal to the Label property in the YubiHSM visible to the current Authentication Key).
 
 Open an elevated prompt and execute the command:
 

@@ -1,38 +1,44 @@
 == Objects
 
-The first concept that we will present are Objects. Any persistently-stored and self-contained piece of information present in a YubiHSM 2, is an Object. This is intentionally a very generic and broad definition, which can be easily rephrased as _everything is an Object_. Objects have associated properties that characterize them and give them different meanings. Regardless of the kind and specific properties, any YubiHSM 2 device can store up to `256` Objects, and their combined size can not exceed `126 KiB`.
+The first concept that we will present are Objects. Any persistently-stored and self-contained piece of information present in a YubiHSM 2, is an Object. This is intentionally a very generic and broad definition which can be easily rephrased as _everything is an Object_. Objects have associated properties that characterize them and give them different meanings. Regardless of the kind and the specific properties, any YubiHSM 2 device can store up to `256` Objects. Their combined size can not exceed `126 KB`.
 
 == Object Type
 
 As said before, an Object is almost anything stored on the device. To identify what an Object can and can not do, we define an attribute called Object Type, or simply Type. A Type is not enough to _uniquely_ identify an Object, but it defines the set of operations that can be performed with or on it. The following types are defined:
 
-=== Authkey
+=== Authentication Key
 
-An `Authkey` or Authentication Key, is one of the most fundamental Objects there is. Authentication Keys can be used to establish link:Session.adoc[Sessions] with a device.
+An Authentication Key is one of the most fundamental Objects there are. Authentication Keys can be used to establish link:Session.adoc[Sessions] with a device. An Authentication Key is basically two long-lived AES keys: an encryption key and a MAC key. When establishing a Session, the long-lived keys are used to generate three session keys:
 
-=== Asymmetric
+- An encryption key used to encrypt the messages exchanged with the device
+- A MAC key used to create an authentication tag for each message sent to the device
+- A response MAC key used to create an authentication tag for each response message sent by the device
 
-An `Asymmetric` Object, is what the YubiHSM 2 uses to represent a private key that can be used to perform cryptographic operations. It is important to note that, conceptually, an Asymmetric Object only represents the private part of a key-pair and that the public key is not stored on the device, but rather it is recalculated on-demand whenever the user requires it.
+The session keys are temporary and are destroyed when the Session is no longer in use.
 
-=== Hmackey
+=== Asymmetric Key
 
-An `Hmackey` is a secret key used when computing HMAC values.
+An Asymmetric Key Object, is what the YubiHSM 2 uses to represent an asymmetric key-pair where only the private key can be used to perform cryptographic operations.
+
+=== HMAC Key
+
+An HMAC Key is a secret key used when computing and verifying HMAC signatures.
 
 === Opaque
 
-An `Opaque` Object is an unchecked kind of Object, normally used to store raw data in the device. No specific restrictions (besides size limitations) are imposed to this type of Object.
+An Opaque Object is an unchecked kind of Object, normally used to store raw data in the device. No specific restrictions (besides size limitations) are imposed to this type of Object.
 
-=== Otpaeadkey
+=== OTP AEAD Key
 
-An `Otpaeadkey` Object is a secret key used to decrypt Yubico OTP values for further verification by a validation process.
+An OTP AEAD Key Object is a secret key used to decrypt Yubico OTP values for further verification by a validation process.
 
 === Template
 
-A `Template` Object is a binary template used to validate SSH certificate requests.
+A Template Object is a binary template used for example to validate SSH certificate requests.
 
-=== Wrapkey
+=== Wrap Key
 
-A `Wrapkey` Object is a secret key used to wrap and unwrap Objects during the export and import process.
+A Wrap Key Object is a secret key used to wrap and unwrap Objects during the export and import process.
 
 == Protocol Details
 
@@ -41,11 +47,11 @@ Object Types are encoded as an 8-bit value.
 [options="header"]
 |=======================
 |Type Name | Hex Value
-|Opaque | 0x01
-|Authkey | 0x02
-|Asymmetric | 0x03
-|Wrapkey | 0x04
-|Hmackey | 0x05
-|Template | 0x06
-|Otpaeadkey | 0x07
+|opaque | 0x01
+|authentication-key | 0x02
+|asymmetric-key | 0x03
+|wrap-key | 0x04
+|hmac-key | 0x05
+|template | 0x06
+|otp-aead-key | 0x07
 |=======================
