@@ -27,6 +27,11 @@ RUN pip install -r /requirements.txt
 ARG uid
 ARG gid
 
+# MacOS host GID defaults to 20.
+# Container 'dialout' group has GID 20.
+# Change container's 'dialout' GID to avoid conflict.
+RUN groupmod -g 9000 dialout
+
 RUN addgroup --gid $gid build
 RUN adduser --home /home/build --shell /bin/bash --disabled-login --gecos '' \
     --uid $uid --gid $gid \
