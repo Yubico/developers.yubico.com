@@ -22,7 +22,9 @@ If you are moving the key to the YubiHSM 2 on the same machine, you must delete 
 
 Using the instructions for importing a PFX private key via `yubihsm-shell`, import the target private key file to your YubiHSM 2.
 
-Identify the `label` property of your imported key.
+Record the link:../../Concepts/Label.adoc[Label] property of your imported key.
+
+IMPORTANT: The `certutil` utility doesn't provide an easy way to split a key exported from the Software KSP into an un-encrypted PEM file.  It may be necessary to use another tool like OpenSSL to convert the key file to an un-encrypted format for import into the HSM.
 
 === Restore the Target Certificate
 
@@ -34,7 +36,7 @@ Make sure that the target private key is visible via the YubiHSM KSP, using
 
   PS1> certutil -key -csp "YubiHSM Key Storage Provider"
 
-This command will list all private keys (and their corresponding container names -- which are equal to the label property in the YubiHSM 2) visible to the current Authkey.
+This command will list all private keys (and their corresponding container names -- which are equal to the link:../../Concepts/Label.adoc[Label] property in the YubiHSM 2) visible to the current Authentication Key.
 
 Open an elevated prompt and execute the command
 
@@ -45,3 +47,14 @@ Verify that the certificate has been associated with the YubiHSM Key Storage Pro
   PS1> certutil -store My
 
 and inspecting the `Key Container` and `Provider` properties.
+
+WARNING: If you are moving your CA key to the YubiHSM 2 on the same machine, Windows Certificate Services (CertSvc) on the local machine writes the name of the Key Storage Provider to its configuration section in the registry.  When signing requests, the certificate service will fail if the KSP name doesn't match the name in the registry.
+
+To update the KSP name for the local certificate service, open an elevated prompt and execute the commands:
+
+  PS1> certutil -setreg CA\CSP\Provider "YubiHSM Key Storage Provider"
+  PS1> certutil -setreg CA\EncryptionCSP\Provider "YubiHSM Key Storage Provider"
+
+If you have multiple CAs on the same machine, or prefer to edit the registry directly, these settings can be found under
+
+  HKLM\System\CurrentControlSet\Services\CertSVC\Configuration\<CA Name>\[CSP | EncryptionCSP]

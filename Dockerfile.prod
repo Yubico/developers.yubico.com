@@ -1,0 +1,47 @@
+FROM ubuntu:16.04 AS build
+
+# drop multiverse, restricted, backports
+RUN echo "deb http://archive.ubuntu.com/ubuntu/ xenial main universe" >/etc/apt/sources.list \
+	&& echo "deb http://archive.ubuntu.com/ubuntu/ xenial-updates main universe" >>/etc/apt/sources.list \
+	&& echo "deb http://archive.ubuntu.com/ubuntu/ xenial-security main universe" >>/etc/apt/sources.list
+
+RUN apt-get -y update && apt-get -y dist-upgrade
+
+RUN apt-get install --no-install-recommends -y \
+	git \
+	# for binaries repo
+	openssh-client \
+	python-pip \
+	python-setuptools \
+	asciidoc \
+	mscgen \
+	libffi-dev \
+	libssl-dev \
+	source-highlight
+
+COPY . /working
+WORKDIR /working
+
+# FIXME
+ENV NORELEASES=true
+
+COPY cache/*.gz ./
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+RUN ./build
+
+
+FROM alpine:3.8 AS httpd
+RUN apk --no-cache add apache2
+
+# dedicated user and group
+RUN addgroup -S www && adduser -S -G www www
+
+# required for pid file
+RUN mkdir -p /run/apache2 && chown www:www /run/apache2
+
+COPY httpd.conf /etc/apache2/
+COPY --from=build /working/dist /var/www/localhost/htdocs
+EXPOSE 8080
+USER www
+CMD ["httpd", "-DFOREGROUND", "-f/etc/apache2/httpd.conf"]

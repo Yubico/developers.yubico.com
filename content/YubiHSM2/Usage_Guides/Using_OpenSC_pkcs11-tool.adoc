@@ -23,6 +23,8 @@ and capabilities including `asymmetric_sign_pkcs:asymmetric_sign_pss`;
 and capabilities including `asymmetric_decrypt_pkcs:asymmetric_decrypt_oaep`;
 - ECDSA signing/verifying keypair has been generated with id `0x0203`
 and capabilities including `asymmetric_sign_ecdsa:asymmetric_sign_decdsa`
+- EC keypair for deriving ECDH keys has been generated with id `0x0204` 
+and capabilities including `derive-ecdh`; 
 
 the following commands illustrate the use of OpenSC `pkcs11-tool` with
 YubiHSM for cryptographic operations.
@@ -36,6 +38,7 @@ The following files are used as samples:
 - `t32.dat` is a binary file containing 32 bytes;
 - `t3200.dat` is a binary file containing 3200 bytes;
 - `t64.txt` is a text file containing 65 bytes (64 ASCII characters and <CR>).
+- `peer_key.der` is a file containing an EC public key in DER format
 
 == Creating digital signatures
 
@@ -96,7 +99,7 @@ Verified OK
 $
 ....
 
-== Performing decryption
+== Performing Decryption
 
 === RSA-PKCS#1 v1.5
 
@@ -138,7 +141,21 @@ OAEP parameters: hashAlg=SHA384, mgf=MGF1-SHA384, source_type=0, source_ptr=0x0,
 $
 ....
 
-== Obtaining random data
+== Derive ECDH Key
+
+Derive an ECDH key using a private key on the YubiHSM and a public key read from a file.
+
+....
+$ yhsm2-tool --derive --input-file peer_key.der --id 0204
+Logging in to "YubiHSM".
+Please enter User PIN:
+Using slot 0 with a present token (0x0)
+Using derive algorithm 0x00001050 ECDH1-DERIVE
+34a03079c38947a679a924f3e20657cd4f69dd36df395b7e759e727524da87dc
+$ 
+....
+
+== Obtaining Random Data
 
 ....
 $ yhsm2-tool --pin xxxxxxxx --generate-random 64 | xxd -c 64 -p

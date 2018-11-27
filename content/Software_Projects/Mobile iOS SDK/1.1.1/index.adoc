@@ -1,0 +1,347 @@
+== Mobile iOS SDK
+
+=== YubiKit 1.1.1
+
+**YubiKit** is an iOS library provided by Yubico to interact with YubiKeys. The library supports NFC-enabled YubiKeys, and provides APIs to request an OTP (Yubico OTP or HOTP) from the key using a NFC-enabled iOS [1]. The library provides also a built-in QR Code reader which can be used as an alternative enrolment mechanism for iOS devices which don't support NFC reading.
+
+The library comes with a demo application which shows a complete example of how to integrate and use the library in a project.
+
+1 _Due to some restrictions of the CoreNFC framework on iOS, the library doesn't have support for TOTP._
+
+== Prerequisites
+
+**YubiKit** requires access to NFC to interact with an NFC-enabled YubiKey. NFC reading is available as an API since iOS 11 on iPhone 7 and newer devices. The library provides capabilities check which can be used to detect if the device supports NFC reading or not.
+
+YubiKit is provided as a static library to maximise the compatibility with various projects written in Objective-C or Swift, using older or newer versions of Xcode. The library comes in two flavours, *debug_universal* and *release*. As the names suggest, the first one is intended for development use only, compatible with both the iOS simulator and real devices, while the release version must be used for release distributions, including AppStore/TestFlight, AdHoc and Enterprise.
+
+== Integration steps
+
+=== Step 1 - Prepare the project
+
+Before adding the library, the project needs to have access to NFC and Camera, when using the built-in QR Code reader.
+
+The NFC support requires to add a new entitlement to the project, called *Near Field Communication Tag Reading*. To turn it on, Xcode provides an automatic way of doing it by selecting the desired target (usually the app target) and turning on the associated switch in the *Capabilities* tab. If the project has already an entitlements file for other features (like iCloud, Notifications etc.), the new entitlement will be added to the existing file. If the project doesn't have an entitlements file, Xcode will create one and add it to the project. Additionally the new entitlement needs to be enabled on the AppId in the Developer portal. If possible, Xcode will do this automatically. 
+
+
+*Note:*
+If the entitlement is not enabled the iOS SDK will hang up the main thread on startup and eventually will fail after some time, when the application is trying to access the NFC APIs. 
+
+
+After enabling the entitlement, iOS requires from the application to provide a NFC usage description defined in the _info.plist_ file. To add it follow the standard way of adding a new key to the info.plist and search for *Privacy - NFC Scan Usage Description*. This property is a string describing the intent for using NFC.
+
+If the application is using the built-in QR Code reader, since iOS 10 the application needs to provide a reason for accessing the camera. Add it in the same way as setting the description for NFC access, using *Privacy - Camera Usage Description* key instead. This value will be shown during camera permission request dialog, displayed by the OS.
+
+
+*Note:*
+The iOS 11 SDK doesn't display a permission dialog before giving access to NFC, even it requires a NFC usage description in _info.plist_.
+
+
+=== Step 2 - Add the library
+
+The library is archived into a zip file named YubiKit[version] where version is the version number of the packed library. Follow the next steps to add the library to the project:
+
+* Unzip the library archive. After unzipping the result is a folder which contains two other folders *YubiKit*, the library folder, and *YubiKitDemo*, the demo app for the library.
+* Copy the *YubiKit* folder into the target project folder.
+* In the project select the app target and in the *General* tab look for *Linked Frameworks and Libraries*. Click + and select *Add Other*. Locate the *libYubiKit.a* in *YubiKit/debug_universal* folder and add it.
+* Select *Build Settings* tab for the target. Filter the settings by searching after *Library search paths* and expand the configuration to see both *debug* and *release*. Update the *release* path to point at the *YubiKit/release* folder of the library and the *debug* path to point at the *YubiKit/debug_universal* folder.
+* Filter the settings by *Header search paths*, add the path to the *YubiKit* folder, and make it recursive.
+* Filter the settings by *Other Linker flags* and add *-ObjC* to allow the linker to properly load categories from static libraries (Some projects have it by default).
+
+Now the application is able to link with libYubiKit.a and to properly select the right library flavour when building for debug or release.
+
+=== Step 3 - Use the library
+
+Before using the library in Swift, it needs to be bridged. Add #import <YubiKit/YubiKit.h>; to the bridging header. If the bridging header is not available add one by following this https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html[documentation].
+
+YubiKit provides the majority of its functionality through a single instance called YubiKitManager which is retrieved by accessing the YubiKitManager.shared property. YubiKitManager is a singleton and the library prevents an instance creation by the host application. YubiKitManager is structured to provide _sessions_, each one of them being dedicated to only one type of communication. For details look at the available properties on YubiKitManager.
+1
+
+To request a NFC scan for an OTP token call requestOTPToken: on the nfcReaderSession instance from YubiKitManager:
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+...
+[YubiKitManager.shared.nfcReaderSession requestOTPToken:^(id<YKFOTPTokenProtocol> token, NSError *error) {
+    NSString *tokenValue = token.value;
+    // Start using the token value
+    ...
+}];
+----
+
+==== Swift
+
+[source,objective-c]
+----
+YubiKitManager.shared.nfcReaderSession.requestOTPToken { [weak self] (token, error) in
+    if let value = token?.value {
+       // Start using the token value
+       ...                
+    }  
+}
+----
+
+The YKFOTPToken contains the details of the scanned OTP token. The detailed documentation of all the properties is available in the header files provided with the library.
+
+
+To request a QR Code scan call scanQrCodeWithPresenter:completion: on the qrReaderSession instance from YubiKitManager:
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+...
+// Here self is a view controller.
+[YubiKitManager.shared.qrReaderSession scanQrCodeWithPresenter:self completion:^(NSString *payload, NSError *error) {
+    // Start using the payload
+    // ...
+}];
+----
+
+==== Swift
+
+[source,objective-c]
+----
+// Here self is a view controller.
+YubiKitManager.shared.qrReaderSession.scanQrCode(withPresenter: self) { [weak self] (payload, error) in    
+    // Start using the payload
+    // ... 
+}
+----
+
+In the current version of YubiKit the library doesn't make any assumption about the format of the scanned QR code payload but this may change in future versions.
+
+
+Before calling the APIs for NFC or QR Code scanning it is recommended to check for the capabilities of the OS/Device. If the device or the OS does not support a capability *the library will fire an assertion* in debug builds when calling a method without having the required capability. YubiKit provides a handy utility class to check for these capabilities: YubiKitDeviceCapabilities:
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+...
+// 1. NFC scanning is available
+if (YubiKitDeviceCapabilities.supportsNFCScanning) {
+    // Provide additional setup when NFC is available
+} else {
+    // Handle missing NFC
+}
+
+// 2. QR Code scanning is available
+if (YubiKitDeviceCapabilities.supportsQRCodeScanning) {
+    // Provide additional setup when QR Code scanning is available 
+} else {
+    // Handle missing QR
+}
+----
+
+==== Swift
+
+[source,objective-c]
+----
+if YubiKitDeviceCapabilities.supportsNFCScanning {
+    // Provide additional setup when NFC is available            
+} else {
+    // Handle missing NFC 
+}
+
+if YubiKitDeviceCapabilities.supportsQRCodeScanning {
+    // Provide additional setup when QR Code scanning is available             
+} else {
+    // Handle missing QR            
+}
+----
+
+
+To allow the library to be linked with older projects, some of the APIs in YubiKit use availability annotations. One example is the presence of the NFC APIs available only from iOS 11. If the host application needs to run on older devices, by compiling the project for older versions of iOS, and still provide new features for users with newer devices, you can use @available/#available before calling the APIs which require iOS 11 and above.
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+...
+if (@available(iOS 11.0, *)) {
+    // Call the NFC APIs                
+}
+----
+
+==== Swift
+
+[source,objective-c]
+----
+if #available(iOS 11.0, *) {
+    // Call the NFC APIs   
+}
+----
+
+
+*Note:*
+To use _@available_ in Obj-C the project needs to be compiled with Xcode 9 or newer.
+
+
+=== Putting everything together
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+...
+- (void)requestOTPToken {
+    if (!YubiKitDeviceCapabilities.supportsNFCScanning) {
+       // The device does not support NFC reading
+       return;
+    }    
+    if (@available(iOS 11.0, *)) {
+       [YubiKitManager.shared.nfcReaderSession requestOTPToken:^(id<YKFOTPTokenProtocol> token, NSError *error) {
+         if (error != nil) {
+          // Process error
+          return;
+         }
+         // Process token
+       }];
+    }
+}
+
+- (void)requestQRCodeScan {
+    if (!YubiKitDeviceCapabilities.supportsQRCodeScanning) {
+       // The device does not support QR code scanning
+       return;
+    }    
+    [YubiKitManager.shared.qrReaderSession scanQrCodeWithPresenter:self completion:^(NSString *payload, NSError *error) {
+       if (error != nil) {
+         // Process error
+         return;
+       }
+       // Process payload
+    }];
+}
+----
+
+==== Swift
+
+[source,objective-c]
+----
+func requestOTPToken() {
+    guard YubiKitDeviceCapabilities.supportsNFCScanning else {
+        // The device does not support NFC reading
+        return
+    }
+
+    if #available(iOS 11.0, *) {
+        YubiKitManager.shared.nfcReaderSession.requestOTPToken { [weak self] (token, error) in
+            guard error == nil else {
+                // Process error
+                return
+            }
+            // Process token
+        }
+    }
+}
+
+func requestQRCodeScan() {
+    guard YubiKitDeviceCapabilities.supportsQRCodeScanning else {
+        // The device does not support QR code scanning
+        return
+    }
+    YubiKitManager.shared.qrReaderSession.scanQrCode(withPresenter: self) { [weak self] (payload, error) in
+        guard error == nil else {
+            // Process error
+            return
+        }
+        // Process payload
+    }
+}
+----
+
+=== Customising YubiKit
+
+YubiKit allows customising some of its behaviour by using YubiKitConfiguration and YubiKitExternalLocalization.
+
+For providing localised strings for the user facing messages shown by the library, YubiKit provides a collection of properties in YubiKitExternalLocalization.
+
+One example of a localised string is the message shown in the NFC scanning UI while the device waits for a YubiKey to be scanned. This message can be localised by setting the value of nfcScanAlertMessage:
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+...
+NSString *localizedAlertMessage = NSLocalizedString(@"NFC_SCAN_MESSAGE", @"Scan your YubiKey.");
+YubiKitExternalLocalization.nfcScanAlertMessage = localizedNfcScanAlertMessage;
+----
+
+==== Swift
+
+[source,objective-c]
+----
+let localizedAlertMessage = NSLocalizedString("NFC_SCAN_MESSAGE", comment: "Scan your YubiKey.")
+YubiKitExternalLocalization.nfcScanAlertMessage = localizedAlertMessage
+----
+
+For all the available properties and their use look at the code documentation for YubiKitExternalLocalization.
+
+
+*Note:*
+YubiKitExternalLocalization provides default values in English (en-US), which are useful only for debugging and prototyping. For production code always provide localised values.
+
+
+In some conditions the NDEF payload format from a YubiKey can be modified and may have a custom way of appending metadata (as Text or URI) to the OTP token. In such a scenario, when the payload has a complex or non-standard format, the library allows the host application to provide a custom parser for the payload. 
+
+The YubiKey can append two types of metadata to the OTP token: *Text* or *URI* (default one). To provide custom parsers the host application can use YKFOTPURIParserProtocol for a custom URI Parser and YKFOTPTextParserProtocol for a custom text parser. The code level documentation provides additional details on what the parsers should implement.
+
+Here is an example of how to set a custom URI parser:
+
+==== Objective-C
+
+[source,objective-c]
+----
+#import <YubiKit/YubiKit.h>
+... 
+@interface CustomURIParser: NSObject<YKFOTPURIParserProtocol>
+@end
+
+@implementation CustomURIParser
+    // Custom parser implementation
+@end    
+...
+YubiKitConfiguration.customOTPURIParser = [[CustomURIParser alloc] init];
+----
+
+==== Swift
+
+[source,objective-c]
+----
+class CustomURIParser: YKFOTPURIParserProtocol {    
+    // Custom parser implementation
+}
+...
+YubiKitConfiguration.customOTPURIParser = CustomURIParser()
+----
+
+== Using the demo application
+
+The library comes with a demo application named *YubiKitDemo*. The application is implemented in Swift 4 (Xcode 9) and it shows a complete example on how to use the library. Also the demo app shows how the library is linked to a project so it can be used as a side by side comparison when adding the library to another project.
+
+YubiKit headers are documented and the documentation is also available using the QuickHelp from Xcode (Option + Click symbol). Use this documentation for a more detailed explanation of all the methods, properties and parameters from the API.
+
+== Additional resources
+
+. Xcode Help http://help.apple.com/xcode/mac/current/#/dev88ff319e7[Add a capability to a target]
+. Xcode Help http://help.apple.com/xcode/mac/current/#/itcaec37c2a6[Build settings reference]
+. Technical Q&amp;A QA1490
+https://developer.apple.com/library/content/qa/qa1490/_index.html[Building Objective-C static libraries with categories]
+. Apple Developer https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html[Swift and Objective-C in the Same Project]
+. Yubico https://developers.yubico.com[Developers]
+. Yubico https://demo.yubico.com[Online Demo]
+
+== Sign up to get access to the Mobile iOS SDK
+
+To get access to the Mobile iOS SDK https://www.yubico.com/why-yubico/for-developers/mobile-sdk-ios-sign-up/[sign up here].
+
+

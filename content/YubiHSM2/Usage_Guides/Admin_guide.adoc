@@ -5,12 +5,12 @@ provisioning and deployment of YubiHSM 2 devices.
 
 Familiarity with the device, its features and capabilities is assumed.
 
-IMPORTANT: Note that the YubiHSM 2 ships with a default authentication key with a well-known password. It is imperative to remove it prior to production deployment.
+IMPORTANT: Note that the YubiHSM 2 ships with a default Authentication Key with a well-known password. It is imperative to remove it prior to production deployment.
 
 === Known usage cases
 
 When only a single application needs to be provisioned Yubico recommends that
-all Authkeys and material be provisioned only with Capabilities
+all Authentication Keys and material be provisioned only with Capabilities
 specific to that use case.
 
 Note, this type of deployment requires devices to be physically reset and
@@ -20,46 +20,46 @@ re-provisioned should a new use case arise.
 
 [source, bash]
 ----
-# Establish a session with the default Authkey
+# Establish a session with the default Authentication Key
 yubihsm> connect
 Session keepalive set up to run every 15 seconds
 yubihsm> session open 1 password
 Created session 0
 
-# Create an Authkey for Auditing
+# Create an Authentication Key for Auditing
 yubihsm> put authkey 0 0 "Audit auth key" all audit none $AUDIT_PASS
 Stored Authentication key 0xd054
 
-# Create a Wrapkey for importing application Authkeys and secrets
+# Create a Wrap Key for importing application Authentication Keys and secrets
 yubihsm> get random 0 16
 5b61e89468cc8f2a274715c78c3d4753
-yubihsm> put wrapkey 0 0 "HMAC wrap Key" all import_wrapped hmac_data:hmac_verify 5b61e89468cc8f2a274715c78c3d4753
+yubihsm> put wrapkey 0 0 "HMAC wrap Key" all import-wrapped sign-hmac:verify-hmac 5b61e89468cc8f2a274715c78c3d4753
 Stored Wrap key 0xf09a
 
-# Create an Authkey for use with the above Wrapkey
-yubihsm> put authkey 0 0 "Provisioning HMAC wrap auth key" all import_wrapped none $WRAP_PASS
+# Create an Authentication Key for use with the above Wrap Key
+yubihsm> put authkey 0 0 "Provisioning HMAC wrap auth key" all import-wrapped none $WRAP_PASS
 Stored Authentication key 0xf10f
 
-# Delete the default Authkey
-yubihsm> delete 0 1 authkey
+# Delete the default Authentication Key
+yubihsm> delete 0 1 authentication-key
 
-# Create a wrapped Authkey and Hmackey for the application
+# Create a wrapped Authentication Key and HMAC Key for the application
 $ echo -ne '\x5b\x61\xe8\x94\x68\xcc\x8f\x2a\x27\x47\x15\xc7\x8c\x3d\x47\x53' > wrap.key
-$ yhwrap -a yubico-aes-auth -c hmac_data,hmac_verify -d 1 -l "HMAC auth key" -k wrap.key --in - --out auth.out -e none
+$ echo $HMAC_PASS | yubihsm-wrap -a aes128-yubico-authentication -c sign-hmac,verify-hmac -d 1 -l "HMAC auth key" -k wrap.key --in - --out auth.out -e none
 $ echo -ne '\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b' > hmac.key
-$ yhwrap -a hmac-sha256 -c hmac_data,hmac_verify -d 1 -l "HMAC key" -k wrap.key --in hmac.key --out hmac.out
+$ yubihsm-wrap -a hmac-sha256 -c sign-hmac,verify-hmac -d 1 -l "HMAC key" -k wrap.key --in hmac.key --out hmac.out
 
-# Open a session with the wrap Authkey
+# Open a Session with the wrap Authentication Key
 yubihsm> session open 0xf10f $WRAP_PASS
 Created session 1
 
-# Import the two wrapped keys in the new session
+# Import the two wrapped keys in the new Session
 yubihsm> put wrapped 1 0xf09a auth.out
-Object imported as 0x2a74 of type authkey
+Object imported as 0x2a74 of type authentication-key
 yubihsm> put wrapped 1 0xf09a hmac.out
-Object imported as 0xd1a2 of type hmackey
+Object imported as 0xd1a2 of type hmac-key
 
-# Open a session with the new application Authkey
+# Open a session with the new application Authentication Key
 yubihsm> session open 0x2a74 $HMAC_PASS
 Created session 2
 
@@ -74,30 +74,31 @@ $ echo -ne '\x48\x69\x20\x54\x68\x65\x72\x65' | openssl dgst -hex -mac hmac -mac
 
 This example assumes that only RSA operations will be performed and
 that RSA keys will be generated on device over PKCS#11. For using the
-PKCS#11 module a `yubihsm\_pkcs11.conf` file will need to exist and point at
-the desired connector.
+link:../Component_Reference/PKCS_11/[PKCS#11 module] a
+`yubihsm\_pkcs11.conf` file will need to exist and point at the
+desired connector.
 
 [source, bash]
 ----
-# Establish a session with the default Authkey
+# Establish a Session with the default Authentication Key
 yubihsm> connect
 Session keepalive set up to run every 15 seconds
 yubihsm> session open 1 password
 Created session 0
 
-# Create an Authkey for Auditing
+# Create an Authentication Key for Auditing
 yubihsm> put authkey 0 0 "Audit auth key" all audit none $AUDIT_PASS
 Stored Authentication key 0xd054
 
 # Optionally enable forced audits
 yubihsm> put option 0 force_audit 01
 
-# Create an Authkey for usage with the PKCS11 module
-yubihsm> put authkey 0 0 "PKCS11 RSA" 1 delete_asymmetric:asymmetric_gen:asymmetric_sign_pkcs:asymmetric_sign_pss asymmetric_sign_pkcs:asymmetric_sign_pss $PKCS11_PASS
+# Create an Authentication Key for usage with the PKCS11 module
+yubihsm> put authkey 0 0 "PKCS11 RSA" 1 delete-asymmetric:generate-asymmetric-key:sign-pkcs:sign-pss sign-pkcs:sign-pss $PKCS11_PASS
 Stored Authentication key 0xf10f
 
-# Delete the default Authkey
-yubihsm> delete 0 1 authkey
+# Delete the default Authentication Key
+yubihsm> delete 0 1 authentication-key
 
 # Use pkcs11-tool to generate an RSA key
 $ pkcs11-tool --module /path/to/yubihsm_pkcs11.so -l --pin f10f${PKCS11_PASS} -k --key-type rsa:2048 --usage-sign --label "RSA key"
