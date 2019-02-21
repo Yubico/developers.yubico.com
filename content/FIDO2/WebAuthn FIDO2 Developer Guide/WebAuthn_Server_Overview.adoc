@@ -1,0 +1,33 @@
+== WebAuthn Server Overview
+Yubico offers [WebAuthn server libraries](/FIDO2/Libraries/List_of_libraries.html) in various languages, one of which is the [java webauthn-server-core library](/java-webauthn-server/). The library tries to place as few requirements on the overall application as possible. For this reason it is stateless, database agnostic, and thread safe. The following describes how to integrate the [webauthn-server-core library](https://github.com/Yubico/java-webauthn-server) into an application. For a more detailed example usage, see the [webauthn-server-demo](https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo) for a complete demo server.
+
+The main entry point is the RelyingParty class. It provides the inputs to the navigator.credentials.create() and navigator.credentials.get() methods and for processing their return values. In order to do this, the RelyingParty needs an instance of the CredentialRepository interface to use for looking up the credential IDs and public keys registered to each user.
+
+The library provides four core operations: 
+
+* Initiate a registration operation given a sure and some settings for the credential to be created
+* Finish a registration operation given the initiation request and the authenticator response
+* Initiate an authentication operation given a username
+* Finish an authentication operation given the initiation request and the authenticator response
+
+These operations perform all the verification logic specified by the W3C Web Authentication API, but it is the responsibility as the user of the library to store pending requests and act upon returned results, including enforcing policies and updating databases.
+
+=== What this library does not do
+This library has no concept of accounts, sessions, permissions or identity federation - it only deals with executing the Web Authentication authentication mechanism. Sessions, account management and other higher level concepts can make use of this authentication mechanism, but the authentication mechanism alone does not make a security system.
+
+=== Credential Repository
+The CredentialRepository interface is an abstraction of the database lookups. It is used by the RelyingParty to look up credentials, usernames and user handles from usernames, user handles and credential IDs.  Implement the [CredentialRepository](https://yubico.github.io/java-webauthn-server/webauthn-server-core/com/yubico/webauthn/CredentialRepository.html) interface with your database access logic. See [InMemoryRegistrationStorage](https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/InMemoryRegistrationStorage.java) for an example.
+
+Instantiate the [RelyingParty(https://yubico.github.io/java-webauthn-server/webauthn-server-core/com/yubico/webauthn/RelyingParty.html) class:
+[source,javascript]
+----
+RelyingPartyIdentity rpIdentity = RelyingPartyIdentity.builder()
+    .id("example.com")
+    .name("Example Application")
+    .build();
+
+RelyingParty rp = RelyingParty.builder()
+    .identity(rpIdentity)
+    .credentialRepository(new MyCredentialRepository())
+    .build();
+----
