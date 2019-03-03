@@ -5,7 +5,7 @@ Authentication works much like registration, except less complex because of the 
 
 To initiate an authentication operation, call the RelyingParty startAssertion method. The main parameter is the username of the user to authenticate, but even this is optional. If the username is not set, then the allowCredentials parameter will not be set. This means the user must use a client-side-resident credential to authenticate; also known as first-factor authentication.
 
-The startAssertion method returns an AssertionRequest containing the username, if any, and a PublicKeyCredentialRequestOptions instance which can be serialized to JSON and passed as the publicKey argument to navigator.credentials.get(). Again, store the AssertionRequest in temporary storage so it can be passed as an argument to the RelyingParty finishAssertion method.
+The startAssertion method returns an AssertionRequest containing the username, if any, and a PublicKeyCredentialRequestOptions instance which can be serialized to JSON, have its Base64 encoded byte arrays converted back into `Uint8Array`s, and passed as the publicKey argument to `navigator.credentials.get()`. Again, store the AssertionRequest in temporary storage so it can be passed as an argument to the RelyingParty finishAssertion method.
 
 [source,java]
 ----
@@ -17,7 +17,7 @@ return json;
 ----
 
 === Finish Authentication
-After receiving the response from the client, construct a PublicKeyCredential from the response and wrap that in a FinishAssertionOptions along with the AssertionRequest used to initiate the request. Pass that argument to the RelyingParty finishAssertion method, which will return an AssertionResult. Be sure to remove the AssertionRequest from the pending requests storage to prevent retries.
+After receiving the response from the client, construct a `PublicKeyCredential` from the response and wrap that in a FinishAssertionOptions along with the AssertionRequest used to initiate the request. Pass that argument to the RelyingParty finishAssertion method, which will return an AssertionResult. Be sure to remove the AssertionRequest from the pending requests storage to prevent retries.
 
 [source,java]
 ----
