@@ -46,6 +46,7 @@ PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensio
 Pass the PublicKeyCredential as the argument to the RelyingParty finishRegistration method to validate the response. Be sure to remove the PubicKeyCredentialCreationOptions from the pending requests storage to prevent retries. The library performs a series of checks to ensure the registration ceremony was not tampered with, including:
 
 * Verifying the signature over the `clientDataHash` and the attestation using the certificate chain in the attestation statement
+* Verifying that the origin was the origin expected
 * Optionally: verifying that the certificate chain is signed by a trusted certificate authority, as configured via the `metadataService` parameter of the `RelyingParty` class.
 
 The full list of validation steps can be found in the WebAuthn specification.
@@ -62,7 +63,7 @@ try {
 
 Finally, use the RegistrationResult to update any database(s) and take other action depending on your application’s needs. In particular:
 
-* Store the keyId and publicKeyCose as a new credential for the user. The CredentialRepository will need to look these up for authentication
+* Store the keyId and publicKeyCose as a new credential for the user. The CredentialRepository will need to look these up for authentication.
 * If you care about attestation, it is recommended to also store the raw attestation object as part of the credential. This enables you to retroactively inspect credential attestations in response to policy changes and/or compromised authenticators.
 * If you care about attestation, use the attestationTrusted, attestationType and attestationMetadata fields to enforce your attestation policy.
 
