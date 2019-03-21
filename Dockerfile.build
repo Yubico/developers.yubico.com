@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 AS build
+FROM ubuntu:16.04
 
 # drop multiverse, restricted, backports
 RUN echo "deb http://archive.ubuntu.com/ubuntu/ xenial main universe" >/etc/apt/sources.list \
@@ -9,7 +9,7 @@ RUN apt-get -y update && apt-get -y dist-upgrade
 
 RUN apt-get install --no-install-recommends -y \
 	git \
-	# for binaries repo
+	# for yubico-binaries repo
 	openssh-client \
 	python-pip \
 	python-setuptools \
@@ -20,7 +20,7 @@ RUN apt-get install --no-install-recommends -y \
 	source-highlight
 
 COPY requirements.txt /
-COPY cache/*.gz  /
+COPY pipcache/*.gz  /
 RUN pip install --upgrade pip
 RUN pip install -r /requirements.txt
 
@@ -44,8 +44,8 @@ ARG gid
 # NOTE: files owned by dialout group won't automatically be updated to GID=9000,
 #   meaning a new group with GID=20 will gain group ownership on such pre-existing files.
 #
-# This should be a problem since typically dialout is the group owner of /dev/tty*,
-#   and /dev/tty* are usually not available within a container.
+# This shouldn't be a problem as typically 'dialout' is the group owner of /dev/tty*,
+#   and TTY devices shouldn't be available within this container.
 RUN groupmod -g 9000 dialout
 
 RUN addgroup --gid $gid build

@@ -70,7 +70,7 @@ def main(base_dir=path.curdir, settings=None):
         settings = {}
 
     source = path.join(base_dir, 'content')
-    dest = path.join(base_dir, 'dist')
+    dest = path.join(base_dir, 'htdocs/dist')
     clean(source, dest)
 
     modules = load_modules(settings, base_dir, dest)
