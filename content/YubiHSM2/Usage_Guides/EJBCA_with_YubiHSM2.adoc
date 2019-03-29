@@ -1,0 +1,104 @@
+== EJBCA with YubiHSM2
+
+EJBCA and YubiHSM2 work well together once suitable asymmetric keys have
+been generated on the YubiHSM2. Even though the EJBCA Adminweb does provide
+functionality to generate keys on an HSM, this functionality cannot be
+used with YubiHSM2. Instead, keys need to be generated using the
+link:../Component_Reference/yubihsm-setup/index.adoc[YubiHSM2 Setup tool].
+Once the keys are generated, they can be used, tested and removed using
+the functionality provided by EJBCA.
+
+When generating new keys on the YubiHSM2 for use by an existing installation
+of EJBCA, the relevant crypto token must be reactivated before the new keys
+are accessible by EJBCA.
+
+Please note that a 'key alias' on EJBCA is equivalent to a 'key label'
+on the YubiHSM2.
+
+=== Prerequisites
+
+Download the installation package suitable for the operation system from the
+link:../Releases/index.adoc[Yubico Developers website]. The following packages should
+be installed:
+
+    * link:../Component_Reference/yubihsm-connector/index.adoc[YubiHSM Connector]
+    * link:../Component_Reference/yubihsm-shell/index.adoc[YubiHSM Shell]
+    * link:../Component_Reference/yubihsm-setup/index.adoc[YubiHSM Setup]
+    * link:../Component_Reference/PKCS_11/index.adoc[YubiHSM PKCS#11 Library]
+
+=== Configuring a New EJBCA Installation
+
+While following the installation instructions provided by EJBCA, the instructions
+bellow need to be executed before deploying EJBCA for the first time:
+
+1. Decide how many keys to generate and what aliases they should have.
+See the documentation in `EJBCA_HOME/conf/catoken.properties.sample` for
+recommendation on what keys should be generated.
+
+2. Use the link:../Component_Reference/yubihsm-setup/index.adoc[YubiHSM2 Setup Tool]
+to generate the keys on the YubiHSM2, one at a time.
+
+3. Set the environment variable `YUBIHSM_PKCS11_CONF` to the path of the
+`yubihsm_pkcs11.conf` file. See link:../Component_Reference/PKCS_11/index.adoc[PKCS#11 with YubiHSM2]
+for the content of that file
+
+4. When configuring EJBCA, make sure to configure the following properties files:
+
+	* `EJBCA_HOME/conf/catoken.properties`:
+
+		sharedLibrary=/path/to/yubihsm_pkcs11.so
+		slotLabelType=SLOT_NUMBER
+		slotLabelValue=0
+		#Keys and their aliases as were created in step 2
+
+	* `EJBCA_HOME/conf/install.properties`:
+
+		ca.tokentype=org.cesecore.keys.token.PKCS11CryptoToken
+		#ca.tokenpassword=null
+		ca.tokenproperties=<EJBCA_HOME>/conf/catoken.properties
+
+	* `EJBCA_HOME/conf/web.properties`:
+
+		cryptotoken.p11.lib.255.name=<label to identify the YubiHSM2>
+		cryptotoken.p11.lib.255.file=/path/to/yubihsm_pkcs11.so
+
+NOTE: The number `255` is just an example. It can be any "available" number.
+      See documentation in `EJBCA_HOME/conf/web.properties`
+
+=== Configuring an Existing EJBCA installation
+
+1. Set the environment variable `YUBIHSM_PKCS11_CONF` to the path of the
+`yubihsm_pkcs11.conf` file. See link:../Component_Reference/PKCS_11/index.adoc[PKCS#11 with YubiHSM2]
+for the content of that file
+
+2. Configure `EJBCA_HOME/conf/web.properties` as follows (`255` is just an example, read the
+documentation in the file for more details):
+
+	cryptotoken.p11.lib.255.name=<label to identify the YubiHSM2>
+	cryptotoken.p11.lib.255.file=/path/to/yubihsm_pkcs11.so
+
+
+3. Re-deploy EJBCA and restart the application server
+
+4. On EJBCA Adminweb, create a new CryptoToken:
+    a. Go to CA Functions -> Crypto Tokens
+    b. Click on "Create new..."
+    c. Configure the new CryptoToken as follows:
+		* Name: <name for this crypto token>
+		* Type: PKCS#11
+		* Authentication Code: <password to open a sessoin on the YubiHSM2.
+		  See link:../Component_Reference/PKCS_11/index.adoc[PKCS#11 with YubiHSM2] -> Logging In >
+		* PKCS#11 : Library: <from the drop down menu, choose the label you set in step 2>
+		* PKCS#11 : Reference Type: Slot ID
+		* PKCS#11 : Reference: 0
+		* PKCS#11 : Attribute File: Default
+
+	d. Click "Save". If there already are keys on the YubiHSM2, a list of them will be
+	displayed now (only keys created with the YubiHSM2 Setup tool will be displayed).
+
+5. On the command line, use the YubiHSM2 Setup tool to generate keys on the YubiHSM2, one at a time
+
+6. On EJBCA Adminweb, deactivate and then re-activate the Crypto Token created in step 4. The new
+keys on the YubiHSM2 are now ready to be used.
+
+IMPORTANT: The slot number of the shared PKCS#11 library has to be 0.
