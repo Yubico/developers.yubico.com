@@ -34,7 +34,7 @@ docker-httpd:
 
 httpd: docker-httpd
 	@docker run --rm \
-		-v $(shell pwd)/dist:/var/www/localhost/htdocs \
+		-v $(shell pwd)/htdocs/dist:/var/www/localhost/htdocs \
 		-p 8080:8080 \
 		yubico/developers/httpd
 

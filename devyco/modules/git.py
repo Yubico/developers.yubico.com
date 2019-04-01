@@ -79,7 +79,7 @@ class GitModule(Module):
                     print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
-                subprocess.call(['git', 'fetch'], cwd=repo_dir,
+                subprocess.call(['git', 'fetch', 'origin', 'master'], cwd=repo_dir,
                                 stderr=sys.stdout.fileno())
                 subprocess.call(['git', 'reset', 'origin/master', '--hard'],
                                 cwd=repo_dir, stderr=sys.stdout.fileno())
