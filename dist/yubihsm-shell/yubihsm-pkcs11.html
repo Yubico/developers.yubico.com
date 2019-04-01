@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>yubihsm-pkcs11</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/yubihsm-shell">yubihsm-shell</a></li>
+<li class="active">yubihsm-pkcs11</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/yubihsm-shell">yubihsm-shell</a><ul class="">
+<li><a href="/yubihsm-shell/Manuals">Manuals</a></li>
+<li><a href="/yubihsm-shell/API_Changes.html">API Changes</a></li>
+<li><a href="/yubihsm-shell/API_Documentation">API Documentation</a></li>
+<li><a href="/yubihsm-shell/libyubihsm.html">libyubihsm</a></li>
+<li class="active"><a href="/yubihsm-shell/yubihsm-pkcs11.html">yubihsm-pkcs11</a>
+<li><a href="/yubihsm-shell/yubihsm-shell.html">yubihsm-shell</a></li>
+<li><a href="/yubihsm-shell/yubihsm-wrap.html">yubihsm-wrap</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/yubihsm-shell" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_yubihsm_pkcs_11_module">YubiHSM PKCS#11 Module</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>The YubiHSM PKCS#11 Module is a native library to interact with a
+YubiHSM 2 device using the
+<a href="http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/pkcs11-base-v2.40.html" rel="noopener noreferrer" target="_blank">PKCS#11
+interface</a>.</p></div>
+<div class="paragraph"><p>This library works as a translation layer between <code>libyubihsm</code> and
+software using PKCS#11. For example, a function in this implementation
+takes the input as specified by PKCS#11, translates it into the input
+expected by the corresponding function in <code>libyubihsm</code>, calls that
+function and then translates the result into the return value expected
+by PKCS#11.</p></div>
+<div class="sect2">
+<h3 id="_connector_configuration">Connector Configuration</h3>
+<div class="paragraph"><p>The
+<a href="https://developers.yubico.com/YubiHSM2/Component_Reference/yubihsm-connector/">Connector</a>
+is a component required by a YubiHSM 2 device that performs the
+communication between the device and applications using it.</p></div>
+<div class="paragraph"><p>A connector can be either an external process communicating over HTTP
+(by default <code>http://localhost:12345</code>), or directly linked in by
+<code>libyubihsm</code> in the case of direct USB access.</p></div>
+<div class="paragraph"><p>The PKCS#11 module requires a configuration file containing the URL of
+the Connector and other configuration options. The default location
+for that file is the current directory and its default name is
+<code>yubihsm_pkcs11.conf</code>. However, using the environment variable
+<code>YUBIHSM_PKCS11_CONF</code>, one can point to a custom location and name.</p></div>
+<div class="paragraph"><p>Below is an example of a <code>yubihsm_pkcs11.conf</code> file:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="na">connector</span><span class="o">=</span><span class="s">http://localhost:12345</span>
+<span class="na">debug</span>
+<span class="na">libdebug</span>
+<span class="na">dinout</span>
+</pre></div></div></div>
+<div class="paragraph"><p>This file will turn on debug messages for the PKCS#11 module
+(<code>debug</code>), <code>libyubihsm</code> (<code>libdebug</code>) and functions call tracing
+(<code>dinout</code>)</p></div>
+<div class="paragraph"><p>A full list of the configuration options can be found on the
+<a href="https://developers.yubico.com/YubiHSM2/Component_Reference/PKCS_11/">developers
+website</a>.</p></div>
+<div class="sect3">
+<h4 id="_initialization_arguments">Initialization Arguments</h4>
+<div class="paragraph"><p>One of the possible parameters given to the PKCS#11 <code>C_Initialize</code>
+function, <code>pReserved</code>, can also be used to provide configuration
+options to the module. While this is technically in violation of the
+PKCS#11 specifications which requires that field to be set to <code>NULL</code>,
+some application such as OpenSSL support this behavior.</p></div>
+<div class="paragraph"><p>An example of using this technique can be found on the
+<a href="https://developers.yubico.com/YubiHSM2/Component_Reference/PKCS_11/">developers
+website</a>.</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_logging_in">Logging In</h3>
+<div class="paragraph"><p>All interesting operations available through the PKCS#11 interface
+require a logged-in session. One peculiarity of the YubiHSM PKCS#11
+module is that the user PIN <em>MUST</em> be prefixed with the ID (16 bits,
+in hexadecimal, zero padded if required) of the Authentication Key
+that should be used to perform the login operation.</p></div>
+<div class="paragraph"><p>For example, to use the default Authentication Key with ID <code>1</code> and password
+<code>password</code>, the user PIN would then be <code>0001password</code>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_pkcs_11_attributes">PKCS#11 Attributes</h3>
+<div class="paragraph"><p>There are a number of settable attributes defined by PKCS#11 that do
+not accurately translate to YubiHSM 2 Capabilities and are therefore
+treated as always having a fixed value. A list of those attributes and
+their values can be found on the
+<a href="https://developers.yubico.com/YubiHSM2/Component_Reference/PKCS_11/">developers
+website</a>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_capabilities_and_domains">Capabilities and Domains</h3>
+<div class="paragraph"><p>Objects created via the PKCS#11 module inherit the Domains of the
+Authentication Key used to establish the session. The Domains can not
+be changed or modified via the PKCS#11 module.</p></div>
+<div class="paragraph"><p>A table mapping PKCS#11 objects to YubiHSM 2 Capabilities can be found
+on the
+<a href="https://developers.yubico.com/YubiHSM2/Component_Reference/PKCS_11/">developers
+website</a>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_pkcs_11_objects">PKCS#11 Objects</h3>
+<div class="paragraph"><p>Not all PKCS#11 Object Types are implemented. A list of what is
+implemented is available
+<a href="https://developers.yubico.com/YubiHSM2/Component_Reference/PKCS_11/">here</a>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_examples">Examples</h3>
+<div class="sect3">
+<h4 id="_c_code_example">C Code Example</h4>
+<div class="paragraph"><p>Code examples of how to use the PKCS#11 module from C programs can be
+found in the test link:tests/ecdh_derive_test.c</p></div>
+</div>
+<div class="sect3">
+<h4 id="_pkcs11_tool_example">Pkcs11-tool Example</h4>
+<div class="paragraph"><p>To derive an ECDH key using a public key in the file <code>peer.key</code> and a
+private key in the YubiHSM 2 with OpenSC <code>pkcs11-tool</code>, the following
+command can be used:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span>pkcs11-tool -vvv --module yubihsm_pkcs11.so --derive -i peer.key --id <span class="m">64</span> --login --pin 0001password
+</pre></div></div></div>
+<div class="paragraph"><p>The private key in YubiHSM 2 has Object ID <code>0x0064</code> and the public key
+in <code>peer.key</code> is expected to be in DER format. By default, this
+command will expect to find a <code>yubihsm_pkcs11.conf</code> file in the
+current directory.</p></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

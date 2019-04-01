@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>Import Keys To KSM</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/yubikey-ksm">yubikey-ksm</a></li>
+<li class="active">Import Keys To KSM</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/yubikey-ksm">yubikey-ksm</a><ul class="">
+<li><a href="/yubikey-ksm/Release_Notes.html">Release Notes</a></li>
+<li><a href="/yubikey-ksm/Decryption_Protocol.html">Decryption Protocol</a></li>
+<li><a href="/yubikey-ksm/Design_Goals.html">Design Goals</a></li>
+<li><a href="/yubikey-ksm/Generate_KSM_Key.html">Generate KSM Key</a></li>
+<li><a href="/yubikey-ksm/Generate_Keys.html">Generate Keys</a></li>
+<li class="active"><a href="/yubikey-ksm/Import_Keys_To_KSM.html">Import Keys To KSM</a>
+<li><a href="/yubikey-ksm/Installation.html">Installation</a></li>
+<li><a href="/yubikey-ksm/Key_Provisioning_Format.html">Key Provisioning Format</a></li>
+<li><a href="/yubikey-ksm/Make_Release.html">Make Release</a></li>
+<li><a href="/yubikey-ksm/Server_Hardening.html">Server Hardening</a></li>
+<li><a href="/yubikey-ksm/Sync_Monitor.html">Sync Monitor</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/yubikey-ksm" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_import_keys_to_yubikey_ksm">Import Keys To Yubikey KSM</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>To import keys into the YK-KSM database from text files in the
+encrypted/signed KeyProvisioningFormat format, you can use the tool
+<em>ykksm-import</em>.  The tool reads the data on standard input, and will
+import the data to the database.  On any error, execution is aborted,
+so be careful about partial imports leaving the database in an
+intermediate state.</p></div>
+<div class="paragraph"><p>The tool requires that your system has a GnuPG private key, read
+<a href="Generate_KSM_Key.html">Generate KSM Key</a> on how to generate it.</p></div>
+<div class="paragraph"><p>For example, to import the file generated by the
+<a href="Generate_Keys.html">Generate Keys</a> document:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span>user@ksm:~$ ykksm-import --verbose --database <span class="s1">'DBI:Pg:dbname=ykksm;host=127.0.0.1'</span> --db-user ykksmimporter --db-passwd otherpassword &lt; ~/keys.txt
+
+You need a passphrase to unlock the secret key <span class="k">for</span>
+user: <span class="s2">"YK-KSM crater Import Key"</span>
+<span class="m">2048</span>-bit ELG-E key, ID 140A17F1, created <span class="m">2009</span>-12-14 <span class="o">(</span>main key ID 8B88A11B<span class="o">)</span>
+
+Verification output:
+<span class="o">[</span>GNUPG:<span class="o">]</span> ENC_TO 8C73EAF1140A17F1 <span class="m">16</span> <span class="m">0</span>
+<span class="o">[</span>GNUPG:<span class="o">]</span> USERID_HINT 8C73EAF1140A17F1 YK-KSM crater Import Key
+<span class="o">[</span>GNUPG:<span class="o">]</span> NEED_PASSPHRASE 8C73EAF1140A17F1 AE7279678B88A11B <span class="m">16</span> <span class="m">0</span>
+<span class="o">[</span>GNUPG:<span class="o">]</span> GOOD_PASSPHRASE
+gpg: encrypted with <span class="m">2048</span>-bit ELG-E key, ID 140A17F1, created <span class="m">2009</span>-12-14
+      <span class="s2">"YK-KSM crater Import Key"</span>
+<span class="o">[</span>GNUPG:<span class="o">]</span> BEGIN_DECRYPTION
+<span class="o">[</span>GNUPG:<span class="o">]</span> PLAINTEXT <span class="m">62</span> <span class="m">1260805257</span>
+gpg: Signature made Mon <span class="m">14</span> Dec <span class="m">2009</span> <span class="m">04</span>:40:57 PM CET using DSA key ID 8B88A11B
+<span class="o">[</span>GNUPG:<span class="o">]</span> SIG_ID YGplk8qkUkb75lY0aurb/iS1Oog <span class="m">2009</span>-12-14 <span class="m">1260805257</span>
+<span class="o">[</span>GNUPG:<span class="o">]</span> GOODSIG AE7279678B88A11B YK-KSM crater Import Key
+gpg: Good signature from <span class="s2">"YK-KSM crater Import Key"</span>
+<span class="o">[</span>GNUPG:<span class="o">]</span> VALIDSIG 9B1820A2F02E3C3B84E344F5AE7279678B88A11B <span class="m">2009</span>-12-14 <span class="m">1260805257</span> <span class="m">0</span> <span class="m">4</span> <span class="m">0</span> <span class="m">17</span> <span class="m">2</span> <span class="m">00</span> 9B1820A2F02E3C3B84E344F5AE7279678B88A11B
+<span class="o">[</span>GNUPG:<span class="o">]</span> TRUST_ULTIMATE
+<span class="o">[</span>GNUPG:<span class="o">]</span> DECRYPTION_OKAY
+<span class="o">[</span>GNUPG:<span class="o">]</span> GOODMDC
+<span class="o">[</span>GNUPG:<span class="o">]</span> END_DECRYPTION
+encrypted to: 8C73EAF1140A17F1
+signed by: 8B88A11B
+
+You need a passphrase to unlock the secret key <span class="k">for</span>
+user: <span class="s2">"YK-KSM crater Import Key"</span>
+<span class="m">2048</span>-bit ELG-E key, ID 140A17F1, created <span class="m">2009</span>-12-14 <span class="o">(</span>main key ID 8B88A11B<span class="o">)</span>
+
+line: <span class="m">1</span>,cccccccccccb,d74fbdf6a890,82211e0854e7369e83d941f24761a84e,881ae7bee927,2009-12-14T16:40:57,
+serialnr <span class="m">1</span> publicName cccccccccccb internalName d74fbdf6a890 aesKey 82211e0854e7369e83d941f24761a84e lockCode 881ae7bee927 created <span class="m">2009</span>-12-14T16:40:57 accessed  eol
+line: <span class="m">2</span>,cccccccccccd,7a5ad1886b70,3091a8048524ab8407ae816457d764e5,8e5ab609e346,2009-12-14T16:40:57,
+serialnr <span class="m">2</span> publicName cccccccccccd internalName 7a5ad1886b70 aesKey 3091a8048524ab8407ae816457d764e5 lockCode 8e5ab609e346 created <span class="m">2009</span>-12-14T16:40:57 accessed  eol
+line: <span class="m">3</span>,ccccccccccce,981abbbeafb8,91be4bfd2f40e24ebd39386868aa9619,037b6f6ae73c,2009-12-14T16:40:57,
+serialnr <span class="m">3</span> publicName ccccccccccce internalName 981abbbeafb8 aesKey 91be4bfd2f40e24ebd39386868aa9619 lockCode 037b6f6ae73c created <span class="m">2009</span>-12-14T16:40:57 accessed  eol
+line: <span class="m">4</span>,cccccccccccf,c1f33c17f77b,a2389839d7b80bfe4c80258184aff4ce,abf92cbbdab3,2009-12-14T16:40:57,
+serialnr <span class="m">4</span> publicName cccccccccccf internalName c1f33c17f77b aesKey a2389839d7b80bfe4c80258184aff4ce lockCode abf92cbbdab3 created <span class="m">2009</span>-12-14T16:40:57 accessed  eol
+line: <span class="m">5</span>,cccccccccccg,c55773192393,7387b5f6bede83f64a9cd75b2023826a,d70c937bbbff,2009-12-14T16:40:57,
+serialnr <span class="m">5</span> publicName cccccccccccg internalName c55773192393 aesKey 7387b5f6bede83f64a9cd75b2023826a lockCode d70c937bbbff created <span class="m">2009</span>-12-14T16:40:57 accessed  eol
+
+user@ksm:~$
+</pre></div></div></div>
+<div class="paragraph"><p>When importing large data sets it is recommended to avoid the
+<em>--verbose</em> flag to reduce noise.</p></div>
+<div class="paragraph"><p>To test the import, you can attempt to decrypt an (invalid) OTP for
+one of the AES keys.  Like this:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span>user@ksm:~$ curl <span class="s1">'http://localhost/wsapi/decrypt?otp=cccccccccccdvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'</span>
+ERR Corrupt OTP
+user@ksm:~$
+</pre></div></div></div>
+<div class="paragraph"><p>In the system log file /var/log/ykksm.log you should get this error:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span>Dec <span class="m">14</span> <span class="m">17</span>:20:08 crater ykksm<span class="o">[</span><span class="m">12693</span><span class="o">]</span>: UID error: cccccccccccdvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv a515841f249c5f4bb8e9007ab0f7ac2b: a515841f249c vs 7a5ad1886b70
+</pre></div></div></div>
+<div class="paragraph"><p>Note that the actual values may differ slightly because the AES key
+you generated was random.</p></div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

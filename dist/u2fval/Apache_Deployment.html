@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>Apache Deployment</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/u2fval">u2fval</a></li>
+<li class="active">Apache Deployment</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/u2fval">u2fval</a><ul class="">
+<li><a href="/u2fval/Release_Notes.html">Release Notes</a></li>
+<li><a href="/u2fval/Manuals">Manuals</a></li>
+<li><a href="/u2fval/REST_API.html">REST API</a></li>
+<li><a href="/u2fval/Database_Setup.html">Database Setup</a></li>
+<li class="active"><a href="/u2fval/Apache_Deployment.html">Apache Deployment</a>
+<li><a href="/u2fval/Using_Memcached.html">Using Memcached</a></li>
+<li><a href="/u2fval/Installation.html">Installation</a></li>
+<li><a href="/u2fval/Logging.html">Logging</a></li>
+<li><a href="/u2fval/Metadata_Format.html">Metadata Format</a></li>
+<li><a href="/u2fval/Migrating_From_Older_Versions.html">Migrating From Older Versions</a></li>
+<li><a href="/u2fval/Nginx_And_uWSGI_Deployment.html">Nginx And uWSGI Deployment</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/u2fval" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_apache_deployment">Apache Deployment</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>The Yubico U2F Validation Server is designed as a WSGI module, and should run
+under any WSGI capable web server. This document describes one possible setup
+for running it under the Apache2 Web Server, using mod_wsgi.</p></div>
+<div class="sect2">
+<h3 id="_prerequisites">Prerequisites</h3>
+<div class="paragraph"><p>Before starting, it is assumed that you have installed u2fval and configured it
+with a compatible SQL database (see <a href="Installation.html">Installation</a> and
+<a href="Database_Setup.html">Database Setup</a>). It is assumed that u2fval is
+installed in a virtualenv located at <code>/home/someuser/u2fval/venv</code>. Change the
+path in accordance to your setup.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_installation">Installation</h3>
+<div class="paragraph"><p>Refer to the <a href="http://httpd.apache.org" rel="noopener noreferrer" target="_blank">Apache Web Server documentation</a> for
+instructions on setting up the Apache Web Server on your platform. This
+document assumes you are running Ubuntu 14.04 or later, and some of the
+commands might be slightly different on other platforms. To install Apache and
+mod_wsgi (as well as some utilities that we will be using) on Ubuntu, run the
+following command:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>apt-get install apache2 apache2-utils libapache2-mod-wsgi
+</pre>
+</div></div>
+<div class="paragraph"><p>This should automatically enable mod_wsgi, which you can confirm bu running:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>a2query -m wsgi
+</pre>
+</div></div>
+<div class="paragraph"><p>…which should print something along the lines of:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>wsgi (enabled by maintainer script)</pre>
+</div></div>
+<div class="paragraph"><p>You will also need to enable mod_auth_digest, as we will be using
+<a href="http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html" rel="noopener noreferrer" target="_blank">HTTP Digest authentication</a>.
+To enable it, run:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>a2enmod auth_digest
+</pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_configuration">Configuration</h3>
+<div class="paragraph"><p>Create the file <code>/home/someuser/u2fval/u2fval.wsgi</code> and add the following content:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">u2fval</span> <span class="kn">import</span> <span class="n">app</span> <span class="k">as</span> <span class="n">application</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Create the file: <code>/etc/apache2/conf-available/u2fval.conf</code> and add the following
+content to it:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nt">&lt;IfModule</span> <span class="err">mod_wsgi.c</span><span class="nt">&gt;</span>
+        WSGIDaemonProcess u2fval python-home=/home/someuser/u2fval/venv
+        WSGIApplicationGroup %{GLOBAL}
+
+        WSGIScriptAlias /wsapi/u2fval /home/someuser/u2fval/u2fval.wsgi process-group=u2fval
+
+        <span class="nt">&lt;Directory</span> <span class="err">/home/someuser/u2fval</span><span class="nt">/&gt;</span>
+                Options None
+                AllowOverride None
+                AuthType Digest
+                AuthName "u2fval"
+                AuthUserFile /home/someuser/u2fval/clients.htdigest
+                Require valid-user
+        <span class="nt">&lt;/Directory&gt;</span>
+<span class="nt">&lt;/IfModule&gt;</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The above configuration points out an AuthUserFile which does not yet exist.
+This is where client credentials will be stored, so let’s create the file and
+add our first client now:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-dollar"></span>htdigest -c /home/someuser/u2fval/clients.htdigest "u2fval" testclient
+</pre>
+</div></div>
+<div class="paragraph"><p>You will now be prompted for a password for the client. Once entered, the
+client can be authenticated using the <em>testclient</em> username, with the password
+you just assigned. To add more users just run the same command as above, but
+without the -c argument (which is only needed to create the file).</p></div>
+<div class="paragraph"><p>For each created user you also need to create the corresponding client in the
+u2fval database. This is done by using the u2fval command line tool:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-dollar"></span>u2fval client create testclient http://example.com
+</pre>
+</div></div>
+<div class="paragraph"><p>The client name <em>testclient</em> above needs to match the name used for the
+htdigest command. The -a argument defines the application ID of the client, and
+the -f argument sets the valid facets for the client (for multiple facets,
+separate them with spaces). For more information about these parameters,
+<a href="https://developers.yubico.com/U2F/">click here</a>. If you need to change these
+settings later you can use the u2fval tool (run "u2fval -h" for usage).</p></div>
+<div class="paragraph"><p>Now all that remains is to activate the Apache configuration:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>a2enconf u2fval
+<span class="sh-hash"></span>service apache2 reload
+</pre>
+</div></div>
+<div class="paragraph"><p>You should now be all set! You can verify that the server works by running a
+request against it as the client you just created:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-dollar"></span>curl --digest -u'testclient:password' http://localhost/wsapi/u2fval/
+</pre>
+</div></div>
+<div class="paragraph"><p>Alter the above command to match the username and password you set for the
+client. If successful the output should contain some information about the
+client, such as the application ID and valid facets.</p></div>
+<div class="sect3">
+<h4 id="_logging">Logging</h4>
+<div class="paragraph"><p>You can customize logging by modifying the <code>u2fval.wsgi</code> file above. See
+<a href="Logging.html">Logging</a> for more details. Any changes to the file will
+require reloading the Apache configuration:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>service apache2 reload
+</pre>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

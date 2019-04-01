@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>Modhex Converter</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li class="active"><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/OTP">OTP</a></li>
+<li class="active">Modhex Converter</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/OTP">OTP</a><ul class="">
+<li><a href="/OTP/Plugins.html">Plugins</a></li>
+<li><a href="/OTP/Libraries">Libraries</a></li>
+<li><a href="/OTP/OTPs_Explained.html">OTPs Explained</a></li>
+<li><a href="/OTP/Guides">Guides</a></li>
+<li class="active"><a href="/OTP/Modhex_Converter.html">Modhex Converter</a>
+<li><a href="/OTP/Specifications">Specifications</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/developers.yubico.com/issues/new?title=Suggested%20edit%20for%20OTP/Modhex_Converter" rel="noopener noreferrer" target="_blank"><i class="fa fa-pencil-square-o fa-lg"></i> Suggest Edits</a></li>
+</ul>
+</div>
+<div id="page-content"><h1>Modhex Converter</h1>
+<div class="paragraph"><p>The Modified Hexadecimal encoding scheme was invented to cope with potential keyboard mapping ambiguities, namely the inconstant locations of keys between different keyboard layouts. Yubico OTP uses this special data encoding format known as <em>modhex</em> rather than normal hex encoding or base64 encoding. Modhex is similar to hex encoding but with a different encoding alphabet. The reason is to achieve a keyboard layout independent encoding.</p></div>
+<script src="knockout-3.2.0.js"></script>
+<style>
+.block label { display: inline-block; width: 90px; margin-right: 10px; text-align: right; font-weight: 700; }
+input.invalid:focus, input[type].invalid:focus {   
+    border-color: rgba(219, 63, 66, 0.8);
+    box-shadow: 0 1px 1px rgba(219, 63, 66, 0.075) inset, 0 0 8px rgba(219, 63, 66, 0.6);
+    outline: 0 none;
+}
+</style>
+<div class="block">
+<label for="input">Input</label>
+<input data-bind="textInput: input" id="input"/>
+</div>
+<div class="block">
+<label for="format">Format</label>
+<select data-bind="options: opts, value: format" id="format"></select>
+</div>
+<br>
+<div class="block">
+<label>Modhex</label>
+<span data-bind="text: modhex"></span>
+</div>
+<div class="block">
+<label>Hexadecimal</label>
+<span data-bind="text: hex"></span>
+</div>
+<div class="block">
+<label>Decimal</label>
+<span data-bind="text: decimal"></span>
+</div>
+<script type="text/javascript">
+// Written by Dan Vanderkam @ http://www.danvk.org/hex2dec.html
+/**
+ * A function for converting hex <-> dec w/o loss of precision.
+ *
+ * The problem is that parseInt("0x12345...") isn't precise enough to convert
+ * 64-bit integers correctly.
+ *
+ * Internally, this uses arrays to encode decimal digits starting with the least
+ * significant:
+ * 8 = [8]
+ * 16 = [6, 1]
+ * 1024 = [4, 2, 0, 1]
+ */
+
+// Adds two arrays for the given base (10 or 16), returning the result.
+// This turns out to be the only "primitive" operation we need.
+function add(x, y, base) {
+  var z = [];
+  var n = Math.max(x.length, y.length);
+  var carry = 0;
+  var i = 0;
+  while (i < n || carry) {
+    var xi = i < x.length ? x[i] : 0;
+    var yi = i < y.length ? y[i] : 0;
+    var zi = carry + xi + yi;
+    z.push(zi % base);
+    carry = Math.floor(zi / base);
+    i++;
+  }
+  return z;
+}
+
+// Returns a*x, where x is an array of decimal digits and a is an ordinary
+// JavaScript number. base is the number base of the array x.
+function multiplyByNumber(num, x, base) {
+  if (num < 0) return null;
+  if (num == 0) return [];
+
+  var result = [];
+  var power = x;
+  while (true) {
+    if (num & 1) {
+      result = add(result, power, base);
+    }
+    num = num >> 1;
+    if (num === 0) break;
+    power = add(power, power, base);
+  }
+
+  return result;
+}
+
+function parseToDigitsArray(str, base) {
+  var digits = str.split('');
+  var ary = [];
+  for (var i = digits.length - 1; i >= 0; i--) {
+    var n = parseInt(digits[i], base);
+    if (isNaN(n)) return null;
+    ary.push(n);
+  }
+  return ary;
+}
+
+function convertBase(str, fromBase, toBase) {
+  var digits = parseToDigitsArray(str, fromBase);
+  if (digits === null) return null;
+
+  var outArray = [];
+  var power = [1];
+  for (var i = 0; i < digits.length; i++) {
+    // invariant: at this point, fromBase^i = power
+    if (digits[i]) {
+      outArray = add(outArray, multiplyByNumber(digits[i], power, toBase), toBase);
+    }
+    power = multiplyByNumber(fromBase, power, toBase);
+  }
+
+  var out = '';
+  for (var i = outArray.length - 1; i >= 0; i--) {
+    out += outArray[i].toString(toBase);
+  }
+  return out;
+}
+
+function decToHex(decStr) {
+  var hex = convertBase(decStr, 10, 16);
+  return hex ? hex : null;
+}
+
+function hexToDec(hexStr) {
+  if (hexStr.substring(0, 2) === '0x') hexStr = hexStr.substring(2);
+  hexStr = hexStr.toLowerCase();
+  return convertBase(hexStr, 16, 10);
+}
+
+</script>
+<script>
+var ALPHABET = 'cbdefghijklnrtuv';
+var trans = ALPHABET.split("");
+
+/*** Modhex ***/
+function fromModhex(s) {
+	bytes = [];  
+	toggle = false;
+	keep = 0;
+
+	for (i = 0; i < s.length; i++) {
+		ch = s.substring(i, i+1);
+		n = ALPHABET.indexOf(ch);
+		if (n == -1) {
+			throw s + " is not properly encoded";
+		}
+		toggle = !toggle;
+		if (toggle) {
+			keep = n;
+		} else {
+			bytes.push((keep << 4) | n);
+		}
+	}
+	return bytes;
+}
+
+function toModhex(data) {
+	result = "";
+	for (i = 0; i < data.length; i++) {
+		result += trans[(data[i] >> 4) & 0xf];
+		result += trans[data[i] & 0xf];
+	}
+	return result;
+}
+
+/*** Hex ***/
+function fromHex(hex) {
+	if (! /^[a-fA-F0-9]+$/.test(hex)) {
+		throw "Invalid characters in hex input.";
+	}
+
+	if(hex.length % 2) {
+		hex = "0" + hex
+	}
+	for (var bytes = [], c = 0; c < hex.length; c += 2) {
+		bytes.push(parseInt(hex.substr(c, 2), 16));
+	}
+	return bytes;
+}
+
+function toHex(bytes) {
+	for (var hex = [], i = 0; i < bytes.length; i++) {
+		hex.push((bytes[i] >>> 4).toString(16));
+		hex.push((bytes[i] & 0xF).toString(16));
+	}
+	return hex.join("");
+}
+
+function toBytes(format, value) {
+	switch(format) {
+		case "Decimal":
+			return fromHex(decToHex(value));
+		case "Hexadecimal":
+			return fromHex(value);
+		default:
+			return fromModhex(value);
+	}
+}
+
+var ViewModel = function() {
+    this.input = ko.observable();
+    this.format = ko.observable();
+	this.opts = self.myOpts = ko.observableArray(["Modhex", "Hexadecimal", "Decimal"]);
+ 
+    this.bytes = ko.computed(function() {
+		if(!this.input()) { return [] }
+		try {
+			var bytes = toBytes(this.format(), this.input());
+			document.getElementById("input").classList.remove("invalid");
+			return bytes;
+		} catch (err) {
+			document.getElementById("input").classList.add("invalid");
+		}
+    }, this); 
+	this.hex = ko.computed(function() { return toHex(this.bytes()) }, this);
+	this.decimal = ko.computed(function() { return hexToDec(this.hex()) }, this);
+	this.modhex = ko.computed(function() { return toModhex(this.bytes()) }, this);
+};
+
+ko.applyBindings(new ViewModel());
+</script>
+</br></div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

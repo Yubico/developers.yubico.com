@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>Key Provisioning Format</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/yubikey-ksm">yubikey-ksm</a></li>
+<li class="active">Key Provisioning Format</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/yubikey-ksm">yubikey-ksm</a><ul class="">
+<li><a href="/yubikey-ksm/Release_Notes.html">Release Notes</a></li>
+<li><a href="/yubikey-ksm/Decryption_Protocol.html">Decryption Protocol</a></li>
+<li><a href="/yubikey-ksm/Design_Goals.html">Design Goals</a></li>
+<li><a href="/yubikey-ksm/Generate_KSM_Key.html">Generate KSM Key</a></li>
+<li><a href="/yubikey-ksm/Generate_Keys.html">Generate Keys</a></li>
+<li><a href="/yubikey-ksm/Import_Keys_To_KSM.html">Import Keys To KSM</a></li>
+<li><a href="/yubikey-ksm/Installation.html">Installation</a></li>
+<li class="active"><a href="/yubikey-ksm/Key_Provisioning_Format.html">Key Provisioning Format</a>
+<li><a href="/yubikey-ksm/Make_Release.html">Make Release</a></li>
+<li><a href="/yubikey-ksm/Server_Hardening.html">Server Hardening</a></li>
+<li><a href="/yubikey-ksm/Sync_Monitor.html">Sync Monitor</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/yubikey-ksm" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_key_provisioning_data_format">Key Provisioning Data Format</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>This file holds data used in the Yubikey personalization phase.</p></div>
+<div class="paragraph"><p>The file is an OpenPGP signed and encrypted text file.  Readers should
+support both CRLF and LF line endings.  The values are text and
+separated by comma ("," ASCII 0x2C).  The first line of the file MUST
+be as follows:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>ykksm 1
+</pre>
+</div></div>
+<div class="paragraph"><p>Each of the rest lines in the file follows the following format:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>serialNr,publicName,internalName,aesKey,lockCode,created,accessed[,progflags] # comment</pre>
+</div></div>
+<div class="paragraph"><p>Any data after a # is treated as a comment and is ignored.  Lines of
+the following format:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>
+<span class="sh-hash"></span>comment
+</pre>
+</div></div>
+<div class="paragraph"><p>are also treated as comments.</p></div>
+<div class="paragraph"><p>The meaning are as follows:</p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+serialNr
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ the serial number of the device used for the barcode, decimal integer
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+publicName
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ encoding of the "external" yubikey prefix, 0-16 modhex characters, typically 12
+ modhex encoded data
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+internalName
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ encoding of the "internal" yubikey identity, always 6 binary bytes = 12 hex,
+ hex encoded data
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+aesKey
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ an aes key used for the device, length decides whether it is a 128, 192, or 256 bit keys.
+ hex encoded data
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+lockCode
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ the locking code, always 6 binary bytes = 12 hex,
+ hex encoded data
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+created
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ timestamp of when the key was created
+ for example 2009-02-24T17:41:57 or empty
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+accessed
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ timestamp of when the key was last accessed
+ for example 2009-02-24T17:41:57 or empty
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+progflags
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ optional field, integer with flags used during personalization
+ to enable, e.g., static key mode or cr output
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p>Examples of valid data lines:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>4711,dlcfffckrcde,ca62baca62ba,ecde18dbe76fbd0c33330f1c354871db,be70aeca62ba,2009-01-22 00:25:11,
+4712,,ca62baca62ba,ecde18dbe76fbd0c33330f1c354871db,be70aeca62ba,2009-01-22 00:25:11,2009-02-13 00:05:40
+4713,dlcfffckrcdedlcf,ca62baca62ba,ecde18dbe76fbd0c33330f1c354871db,be70aeca62ba,2009-01-22 00:25:11,2009-02-13 00:05:40,0
+4714,dlcfffckrcdedlcf,ca62baca62ba,ecde18dbe76fbd0c33330f1c354871db,be70aeca62ba,2009-01-22 00:25:11,2009-02-13 00:05:40,4711</pre>
+</div></div>
+<div class="paragraph"><p>Example of actual data using the password <em>foobar</em> (normally it would
+be encrypted to a particular OpenPGP key id):</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+jA0EAwMClfljrWYVfm5gycDMIpZXLnzKtUfeEsqXRp63IdAghBzAfdIt4aeJ2kdV
+x8uvvHKeHfytjEo/U9Wg4NYqYoDnMeb4zXBmrRqWu558ldW75e5R2kPImuQnZIBQ
+3WKRbElrLpQTlbdyDDAzlOnVLvTrmekZ8ByUrED3tyZKJw7OW5YsHi3z5N+QNFbZ
+hpMWfDBiJRksQEXv3BbiWVojSS+ZlCBiDjqnbIGuk0nZlJSe3F3Jwdz22Y05aU2h
++2e6vWkqsbvZMVHnU6pauyaM1dh2owXsoHCPLM1fs7ztIh5dAnV9d0TuW4ufKEFQ
+FdH5c4dNgl36CNM8dDlM3c8YpfjxlQ11e6ub7QZC1Eu3gqvfPIvYpczlwjkYOkcH
+nu1Iq42VgUSJzBr36aL9lLySyT8WRizzmJLaGYX/YqKgBXt6RTSO984WsxE6cl80
+paFvFOjybJ2V5GYc7pfdZAM2ySEhnS6PaxYAQXfrEhhtTTCCg1eCqKh4Yamv3u0v
+DAkppMqXeprjpC4cNvrQsVOKGx7HissA5x4rECLC
+=d54w
+-----END PGP MESSAGE-----</pre>
+</div></div>
+<div class="sect2">
+<h3 id="_naming_scheme">Naming Scheme</h3>
+<div class="paragraph"><p>The files should use the standard GnuPG output extension <em>.asc</em>.</p></div>
+<div class="paragraph"><p>If you want to store many keys in a one-key per file approach, we
+suggest to create files named after the serial number.  For example:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>0.asc
+1.asc
+2.asc
+3.asc
+4.asc
+5.asc
+6.asc
+7.asc
+8.asc
+9.asc
+10.asc
+11.asc
+...</pre>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>pam-u2f</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li class="active">pam-u2f</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/pam-u2f">pam-u2f</a><ul class="">
+<li><a href="/pam-u2f/Release_Notes.html">Release Notes</a></li>
+<li><a href="/pam-u2f/Manuals">Manuals</a></li>
+</ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/pam-u2f" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content"><h1>pam-u2f</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><span class="image">
+<a class="image" href="https://travis-ci.org/Yubico/pam-u2f">
+<img alt="Build Status" src="https://travis-ci.org/Yubico/pam-u2f.svg?branch=master">
+</img></a>
+</span>
+<span class="image">
+<img alt="" coverity="" src="https://scan.coverity.com/projects/5711/badge.svg" status""="">
+</img></span></p></div>
+<div class="paragraph"><p>This module implements PAM over U2F, providing an easy way to integrate the
+YubiKey (or other U2F compliant authenticators) into your existing
+infrastructure.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="building">Building</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This project uses <em>autoconf</em>, <em>automake</em>, <em>pkg-config</em> and <em>libtool</em>
+to achieve portability and ease of use.</p></div>
+<div class="paragraph"><p>In addition, both the Yubico U2F <a href="https://developers.yubico.com/libu2f-host"><em>libu2f-host-dev</em></a> and
+<a href="https://developers.yubico.com/libu2f-server"><em>libu2f-server-dev</em></a> libaries are needed.</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>Debian:   apt-get install autoconf automake libtool pkg-config libu2f-host-dev libu2f-server-dev --no-install-recommends</pre>
+</div></div>
+<div class="paragraph"><p>If you downloaded a tarball, build it as follows.</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>  $ ./configure
+  $ make</pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_from_git">Building from Git</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>You may check out the sources using Git with the following command:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>  $ git clone git://github.com/Yubico/pam-u2f.git</pre>
+</div></div>
+<div class="paragraph"><p>This will create a directory <em>pam-u2f</em>. Enter the directory:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>  $ cd pam-u2f</pre>
+</div></div>
+<div class="paragraph"><p><em>Autoconf</em>, <em>automake</em>, <em>libtool</em>, and <em>libpam</em> must be installed. <em>AsciiDoc</em> and <em>xsltproc</em> are used to
+generate the manpages.</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>Debian:   apt-get install autoconf automake libtool libpam-dev libu2f-host-dev libu2f-server-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends</pre>
+</div></div>
+<div class="paragraph"><p>Generate the build system using:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>  $ autoreconf --install</pre>
+</div></div>
+<div class="paragraph"><p>Then build as usual, see above under <a href="#building">Building</a>.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installation">Installation</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Once the module is built copy the file <span class="monospaced">pam_u2f.so</span> to the correct
+directory for your system. Typically <span class="monospaced">/lib/security/</span> or
+<span class="monospaced">/lib/x86_64-linux-gnu/security/</span>. This is automated by <span class="monospaced">make install</span>
+assuming that the pam directory chosen by <span class="monospaced">configure</span> is correct.
+If that is not the case it can be specified with <span class="monospaced">./configure --with-pam-dir=</span>.</p></div>
+<div class="paragraph"><p>Create a file for a new service in <span class="monospaced">/etc/pam.d/</span> or edit an already
+existing one by adding a line similar to this:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>auth sufficient pam_u2f.so debug</pre>
+</div></div>
+<div class="paragraph"><p>Supported parameters for the module are:</p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+debug
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Enables debug output
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+debug_file
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Filename to write debug to, file must exist and be a regular file, or may be one of "stderr", "stdout", or "syslog". STDERR is the default.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+origin=origin
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set the origin for the U2F authentication procedure.
+If no value is specified, the origin "pam://$HOSTNAME" is used.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+appid=appid
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set the <a href="https://developers.yubico.com/U2F/App_ID.html">application ID</a> for the U2F authentication procedure.
+If no value is specified, the same value used for origin is taken
+("pam://$HOSTNAME" if also origin is not specified).
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+authfile=file
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set the location of the file that holds the mappings of user names
+to keyHandles and user keys.  The format is
+<span class="monospaced">username:first_keyHandle,first_public_key:
+second_keyHandle,second_public_key:…</span> the default location of the
+file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable
+is not set, $HOME/.config/Yubico/u2f_keys is used.
+(more on <a href="#files">Authorization Mapping Files</a>).
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+authpending_file=file
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set the location of the file that is used for touch request notifications.
+This file will be opened when pam-u2f starts waiting for a user to touch the device,
+and will be closed when it no longer waits for a touch.
+Use inotify to listen on these events, or a more high-level tool like <a href="https://github.com/maximbaz/yubikey-touch-detector">yubikey-touch-detector</a>.
+Set an empty value in order to disable this functionality, like so: <code>authpending_file=</code>.
+Default value: /var/run/user/$UID/pam-u2f-authpending
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+nouserok
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set to enable authentication attempts to succeed even if the user trying to
+authenticate is not found inside authfile or if authfile is missing/malformed.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+openasuser
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Setuid to the authenticating user when opening the authfile. Useful when the
+user’s home is stored on an NFS volume mounted with the root_squash option
+(which maps root to nobody which will not be able to read the file).
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+alwaysok
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set to enable all authentication attempts to succeed (aka presentation mode).
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+max_devices=n_devices
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Maximum number of devices allowed per user (default is 24). Devices specified
+in the authentication file that exceed this value will be ignored.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+interactive
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set to prompt a message and wait before testing the presence of a U2F device.
+Recommended if your device doesn’t have a tactile trigger.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+[prompt=your prompt here]
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set individual prompt message for interactive mode. Watch the square brackets
+around this parameter to get spaces correctly recognized by PAM.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+manual
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set to drop to a manual console where challenges are printed on screen
+and response read from standard input. Useful for debugging and SSH sessions
+without U2F-support from the SSH client/server.
+If enabled, interactive mode becomes redundant and has no effect.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+cue
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set to prompt a message to remind to touch the device.
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+nodetect
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Set to skip detecting if a suitable U2F token is inserted before performing
+the full tactile authentication. This detection was created to avoid
+emitting the "cue" message if no suitable token exists, because doing so
+leaks information about the authentication stack if a token is inserted but
+not configured for the authenticating user. However, it was found that
+versions of libu2f-user 1.1.5 or less has buggy iteration/sleep behavior
+which causes a 1-second delay to occur for this initial detection. For this
+reason, as well as the possibility of hypothetical tokens that do not
+tolerate this double authentication, the "nodetect" option was added.
+</p>
+</td>
+</tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="files">Authorization Mapping Files</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>A mapping must be made between the YubiKey token and the user name,
+see <a href="#registration">here</a> for details on how to perform the registration
+using the bundled tool.</p></div>
+<div class="paragraph"><p>There are two ways to do this, either centrally in one file, or
+individually, where users can create the mapping in their home directories.
+If the central authorization mapping file is being used, user home directory
+mappings will not be used and the opposite applies if user home directory
+mappings are being used, the central authorization mappings file will not
+be used.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">Using pam-u2f to secure the login to a computer while
+storing the mapping file in an encrypted home directory, will result
+in the impossibility of logging into the system. The partition is
+decrypted after login and the mapping file can not be accessed.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_central_authorization_mapping">Central authorization mapping</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Create a file e.g. <code>/etc/u2f_mappings</code>., The file must contain
+a user name, the number of registered Yubikeys and the information
+obtained during the registration procedure.</p></div>
+<div class="paragraph"><p>The mappings should look like this, one per line:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>&lt;username1&gt;:&lt;KeyHandle1&gt;,&lt;UserKey1&gt;:&lt;KeyHandle2&gt;,&lt;UserKey2&gt;:...
+&lt;username2&gt;:&lt;KeyHandle1&gt;,&lt;UserKey1&gt;:&lt;KeyHandle2&gt;,&lt;UserKey2&gt;:...</pre>
+</div></div>
+<div class="paragraph"><p>Now add <code>authfile=/etc/u2f_mappings</code> to your PAM configuration line, so it
+looks like:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>auth sufficient pam_u2f.so authfile=/etc/u2f_mappings</pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">On dynamics networks (e.g. where hostnames are set by DHCP),
+users should not rely on the default origin and appid ("pam://$HOSTNAME")
+but set those parameters explicitly to the same value.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_individual_authorization_mapping_by_user">Individual authorization mapping by user</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Each user creates a <code>~/.config/Yubico/u2f_keys</code> file inside of their home
+directory and places the mapping in that file, the file must have only one
+line:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>&lt;username&gt;:&lt;KeyHandle1&gt;,&lt;UserKey1&gt;:&lt;KeyHandle2&gt;,&lt;UserKey2&gt;:...</pre>
+</div></div>
+<div class="paragraph"><p>This is much the same concept as the SSH authorized_keys file.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="registration">Obtaining key-handles and public keys</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In order to obtain the required information for the authentication procedure,
+a token should be first registered. This can be done by using the command line
+configuration tool provided with the module:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ pamu2fcfg -uusername -opam://myorigin -ipam://myappid</pre>
+</div></div>
+<div class="paragraph"><p>the tool will register a connected token by using the specified origin and
+appid. If neither are specified they will default to <span class="monospaced">pam://$HOSTNAME</span>.
+During the U2F registration, the user is required to touch the token.
+On success the tool prints to standard output a configuration line that
+can be directly used with the module. For additional information on the
+tool read the relative manpage (<span class="monospaced">man pamu2fcfg</span>)</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="devices">Multiple Devices</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Multiple devices are supported. If more than one device is specified,
+authentication against them is attempted sequentially as they are defined
+in the configuration file of the module. If during an authentication
+attempt a connected device is removed or a new device is plugged in,
+the authentication restarts from the top of the list.</p></div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

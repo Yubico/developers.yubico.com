@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>PKCS 11</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li class="active"><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/YubiHSM2">YubiHSM2</a></li>
+<li><a href="/YubiHSM2/Component_Reference">Component Reference</a></li>
+<li class="active">PKCS 11</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/YubiHSM2">YubiHSM2</a><ul class="">
+<li><a href="/YubiHSM2/Releases">Releases</a></li>
+<li><a href="/YubiHSM2/Product_Overview">Product Overview</a></li>
+<li><a href="/YubiHSM2/Concepts">Concepts</a></li>
+<li><a href="/YubiHSM2/Commands">Commands</a></li>
+<li class="active"><a href="/YubiHSM2/Component_Reference">Component Reference</a><ul class="">
+<li><a href="/YubiHSM2/Component_Reference/yubihsm-connector">yubihsm-connector</a></li>
+<li><a href="/YubiHSM2/Component_Reference/yubihsm-shell">yubihsm-shell</a></li>
+<li><a href="/YubiHSM2/Component_Reference/yubihsm-setup">yubihsm-setup</a></li>
+<li><a href="/YubiHSM2/Component_Reference/libyubihsm">libyubihsm</a></li>
+<li><a href="/YubiHSM2/Component_Reference/python-yubihsm">python-yubihsm</a></li>
+<li><a href="/YubiHSM2/Component_Reference/yubihsm-wrap">yubihsm-wrap</a></li>
+<li><a href="/YubiHSM2/Component_Reference/KSP">KSP</a></li>
+<li class="active"><a href="/YubiHSM2/Component_Reference/PKCS_11">PKCS 11</a><ul class="">
+<li><a href="/YubiHSM2/Component_Reference/PKCS_11/Compatibility.html">Compatibility</a></li>
+</ul>
+</li></ul>
+<li><a href="/YubiHSM2/Usage_Guides">Usage Guides</a></li>
+<li><a href="/YubiHSM2/Backup_and_Restore">Backup and Restore</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul></ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_pkcs_11_with_yubihsm_2">PKCS#11 with YubiHSM 2</h1>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_configuration">Configuration</h3>
+<div class="paragraph"><p>The <a href="/yubihsm-shell/yubihsm-pkcs11.html">PKCS#11</a> module requires a configuration file, default location for this
+file is current directory and default name is <code>yubihsm_pkcs11.conf</code> using the
+environment variable <code>YUBIHSM_PKCS11_CONF</code> one can point to a custom location
+and name.</p></div>
+<div class="paragraph"><p>Configuration options can also be passed as a string in the <code>pReserved</code> field of
+<code>C_Initialize</code>, using the OpenSSL PKCS#11 engine this can be set in the
+<code>INIT_ARGS</code> configuration value. This is technically a violation of the PKCS#11
+specification (which mandates <code>pReserved</code> to be set to <code>NULL</code>) and is not supported
+by all applications.</p></div>
+<div class="paragraph"><p>Accepted configuration options:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>connector</strong>: URL pointing at the connector to contact, mandatory
+</p>
+</li>
+<li>
+<p>
+<strong>debug</strong>: Turn on PKCS#11 debugging, default <code>off</code>
+</p>
+</li>
+<li>
+<p>
+<strong>dinout</strong>: Turn on call tracing, default <code>off</code>
+</p>
+</li>
+<li>
+<p>
+<strong>libdebug</strong>: Turn on debug of libyubihsm, default <code>off</code>
+</p>
+</li>
+<li>
+<p>
+<strong>debug-file</strong>: File to write debug information to, default <code>stderr</code>
+</p>
+</li>
+<li>
+<p>
+<strong>cacert</strong>: File with cacert to verify connector https cert with (not available on Windows)
+</p>
+</li>
+<li>
+<p>
+<strong>proxy</strong>: Proxy server for reaching the connector (not available on Windows)
+</p>
+</li>
+<li>
+<p>
+<strong>timeout</strong>: Timeout to use for initial connection to the connector (in seconds), default <code>5</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>A sample configuration file can be found further below.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_logging_in">Logging In</h3>
+<div class="paragraph"><p>All interesting operations through the PKCS#11 interface require a logged-in
+session, and one peculiarity of the PKCS#11 interface is that the user
+PIN <strong>MUST</strong> be prefixed by the ID (16 bits, in hexadecimal, zero padded if
+required) of the corresponding Authentication Key.</p></div>
+<div class="paragraph"><p>Assuming the default Authentication Key with ID <code>1</code> and password <code>password</code>, the user
+PIN would then be <code>0001password</code>.</p></div>
+<div class="paragraph"><p>Note that the concept of a Security Officer (SO) is not supported by the device,
+and the PIN management functions are not implemented for neither user nor SO.</p></div>
+<div class="paragraph"><p>It is recommended that PIN (Authentication Key) management is performed via the
+<code>yubihsm-shell</code> utility or the <code>libyubihsm</code> functions.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_software_operations">Software Operations</h3>
+<div class="paragraph"><p><code>C_Encrypt</code> and <code>C_Verify</code> for Asymmetric Keys are performed in software,
+as well as all of the <code>C_Digest</code> operations.</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pkcs_11_attributes">PKCS#11 Attributes</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>There are a number of attributes defined in PKCS#11 that do not
+translate to Capabilities of the YubiHSM 2 device, and are therefore
+treated as always having a fixed value.</p></div>
+<table class="table table-bordered table-striped tableblock frame-all grid-all" style="
+width:100%;
+">
+<col style="width:33%;">
+<col style="width:33%;">
+<col style="width:33%;">
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"> PKCS#11 </th>
+<th class="tableblock halign-left valign-top"> YubiHSM 2 </th>
+<th class="tableblock halign-left valign-top"> Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_PRIVATE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK_TRUE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Login is always required</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_DESTROYABLE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK_TRUE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Objects can always be deleted from the device</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_MODIFIABLE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK_FALSE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Objects are immutable on the device</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_COPYABLE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK_FALSE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Objects are immutable on the device</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_SENSITIVE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK_TRUE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All objects are sensitive</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_ALWAYS_SENSITIVE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK_TRUE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Objects are immutable on the device</p></td>
+</tr>
+</tbody>
+</col></col></col></table>
+<div class="sect2">
+<h3 id="_capabilities_and_domains">Capabilities and Domains</h3>
+<div class="paragraph"><p>Objects created via the PKCS#11 module inherit the Domains of the Authentication Key
+used to establish the session.
+The Domains can not be changed, or modified via the module.</p></div>
+<div class="paragraph"><p>Object Capabilities are set on creation, depending on their Type, e.g.
+an RSA signing key (<code>CKK_RSA</code>) created via <code>C_CreateObject</code> with the
+attribute <code>CKA_SIGN</code> set will have the following Capabilities set
+<code>sign-pkcs,sign-pss</code>.</p></div>
+<div class="paragraph"><p>Similarly for EC (<code>CKK_EC</code>), the key would have
+<code>sign-ecdsa</code> set.</p></div>
+<div class="paragraph"><p>See the following tables for mappings:</p></div>
+<table class="table table-bordered table-striped tableblock frame-all grid-all" style="
+width:100%;
+">
+<col style="width:20%;">
+<col style="width:20%;">
+<col style="width:20%;">
+<col style="width:20%;">
+<col style="width:20%;">
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"> PKCS#11 </th>
+<th class="tableblock halign-left valign-top"> RSA (CKK_RSA) </th>
+<th class="tableblock halign-left valign-top"> EC (CKK_EC) </th>
+<th class="tableblock halign-left valign-top"> Wrap (CKK_YUBICO_AES*_CCM_WRAP) </th>
+<th class="tableblock halign-left valign-top"> HMAC (CKK_SHA*_HMAC)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_SIGN</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sign-pkcs,sign-pss</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sign-ecdsa</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sign-hmac</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_VERIFY</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">verify-hmac</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_ENCRYPT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">wrap-data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_DECRYPT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">decrypt-pkcs,decrypt-oaep</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">unwrap-data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_DERIVE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">derive-ecdh</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_WRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">export-wrapped</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_UNWRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">import-wrapped</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKA_EXTRACTABLE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">export-under-wrap</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">export-under-wrap</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">export-under-wrap</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">export-under-wrap</p></td>
+</tr>
+</tbody>
+</col></col></col></col></col></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pkcs_11_objects">PKCS#11 Objects</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Not all PKCS#11 Object types are implemented, this is a list of what is
+implemented and what it maps to.</p></div>
+<table class="table table-bordered table-striped tableblock frame-all grid-all" style="
+width:100%;
+">
+<col style="width:33%;">
+<col style="width:33%;">
+<col style="width:33%;">
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"> PKCS#11 </th>
+<th class="tableblock halign-left valign-top"> Supported CKK </th>
+<th class="tableblock halign-left valign-top"> Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKO_PRIVATE_KEY</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKK_RSA, CKK_EC</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RSA 2048, 3072 &amp; 4096 with e=0x10001, EC with secp224r1, secp256r1, secp384r1, secp521r1, secp256k1, brainpool256r1, brainpool384r1, brainpool512r1</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKO_PUBLIC_KEY</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">does not exist in device, only as a property of a private key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKO_SECRET_KEY</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKK_SHA_1_HMAC, CKK_SHA256_HMAC, CKK_SHA384_HMAC, CKK_SHA512_HMAC, CKK_YUBICO_AES128_CCM_WRAP, CKK_YUBICO_AES192_CCM_WRAP, CKK_YUBICO_AES256_CCM_WRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKO_CERTIFICATE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Opaque object with algorithm YH_ALGO_OPAQUE_X509_CERTIFICATE</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKO_DATA</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Opaque object with algorithm YH_ALGO_OPAQUE_DATA</p></td>
+</tr>
+</tbody>
+</col></col></col></table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pkcs_11_functions">PKCS#11 Functions</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Not all functions in PKCS#11 are implemented in the module, this is a list of
+what is implemented.</p></div>
+<table class="table table-bordered table-striped tableblock frame-all grid-all" style="
+width:100%;
+">
+<col style="width:50%;">
+<col style="width:50%;">
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"> PKCS#11 </th>
+<th class="tableblock halign-left valign-top"> Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Initialize</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Finalize</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetInfo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetFunctionList</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetSlotList</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetSlotInfo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetTokenInfo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetMechanismList</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetMechanismInfo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_OpenSession</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_CloseSession</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_CloseAllSessions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetSessionInfo</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Login</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Logout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_CreateObject</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">with CKO_PRIVATE_KEY, CKO_SECRET_KEY, CKO_CERTIFICATE or CKO_DATA</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DestroyObject</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetObjectSize</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GetAttributeValue</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_FindObjectsInit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_FindObjects</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_FindObjectsFinal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_EncryptInit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Encrypt with Wrap Key or do software encryption for RSA key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Encrypt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_EncryptUpdate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_EncryptFinal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DecryptInit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decrypt with Wrap Key or RSA key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Decrypt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DecryptUpdate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DecryptFinal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DeriveKey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Derive key using ECDH as a PKCS#11 session object</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DigestInit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Do software digest with CKM_SHA_1, CKM_SHA256, CKM_SHA384 or CKM_SHA512</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Digest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DigestUpdate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_DigestFinal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_SignInit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sign with HMAC Key or Asymmetric Key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Sign</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_SignUpdate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_SignFinal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_VerifyInit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Verify HMAC or software verify asymmetric</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_Verify</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_VerifyUpdate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_VerifyFinal</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GenerateKey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Generate HMAC Key or Wrap Key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GenerateKeyPair</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Generate Asymmetric Key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_WrapKey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Wrap an object with Wrap Key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_UnwrapKey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unwrap an object with Wrap Key</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C_GenerateRandom</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Generate up to 2021 bytes of random</p></td>
+</tr>
+</tbody>
+</col></col></table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pkcs_11_vendor_definitions">PKCS#11 Vendor Definitions</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Working with the device Wrap Keys requires using vendor-specific definitions, these
+are listed in the table below. The Wrap Keys can be used with C_WrapKey, C_Unwrapkey,
+C_Encrypt &amp; C_Decrypt.</p></div>
+<table class="table table-bordered table-striped tableblock frame-all grid-all" style="
+width:100%;
+">
+<col style="width:50%;">
+<col style="width:50%;">
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKM_YUBICO_AES_CCM_WRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0xd9554204</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKK_YUBICO_AES128_CCM_WRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0xd955421d</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKK_YUBICO_AES192_CCM_WRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0xd9554229</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CKK_YUBICO_AES256_CCM_WRAP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0xd955422a</p></td>
+</tr>
+</tbody>
+</col></col></table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pkcs_11_configuration">PKCS#11 Configuration</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_configuration_file_sample">Configuration File Sample</h3>
+<div class="paragraph"><p>Below is a sample of a <code>yubihsm_pkcs11.conf</code> configuration file.</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="c1"># This is a sample configuration file for the YubiHSM PKCS#11 module</span>
+<span class="c1"># Uncomment the various options as needed</span>
+
+<span class="c1"># URL of the connector to use. This can be a comma-separated list</span>
+<span class="na">connector</span> <span class="o">=</span> <span class="s">http://127.0.0.1:12345</span>
+
+<span class="c1"># Enables general debug output in the module</span>
+<span class="c1">#</span>
+<span class="c1"># debug</span>
+
+<span class="c1"># Enables function tracing (ingress/egress) debug output in the module</span>
+<span class="c1">#</span>
+<span class="c1"># dinout</span>
+
+<span class="c1"># Enables libyubihsm debug output in the module</span>
+<span class="c1">#</span>
+<span class="c1"># libdebug</span>
+
+<span class="c1"># Redirects the debug output to a specific file. The file is created</span>
+<span class="c1"># if it does not exist. The content is appended</span>
+<span class="c1">#</span>
+<span class="c1"># debug-file = /tmp/yubihsm_pkcs11_debug</span>
+
+<span class="c1"># CA certificate to use for HTTPS validation. Point this variable to</span>
+<span class="c1"># a file containing one or more certificates to use when verifying</span>
+<span class="c1"># a peer. Currently not supported on Windows</span>
+<span class="c1">#</span>
+<span class="c1"># cacert = /tmp/cacert.pem</span>
+
+<span class="c1"># Proxy server to use for the connector</span>
+<span class="c1"># Currently not supported on Windows</span>
+<span class="c1">#</span>
+<span class="c1"># proxy = http://proxyserver.local.com:8080</span>
+
+<span class="c1"># Timeout in seconds to use for the initial connection to the connector</span>
+<span class="c1"># timeout = 5</span>
+</pre></div></div></div>
+</div>
+<div class="sect2">
+<h3 id="_init_args_sample">INIT_ARGS Sample</h3>
+<div class="paragraph"><p>Below is a sample of using the <code>INIT_ARGS</code> configuration with an <code>openssl.cnf</code> file.</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="na">openssl_conf</span> <span class="o">=</span> <span class="s">openssl_init</span>
+
+<span class="k">[openssl_init]</span>
+<span class="na">engines</span> <span class="o">=</span> <span class="s">engine_section</span>
+
+<span class="k">[engine_section]</span>
+<span class="na">pkcs11</span> <span class="o">=</span> <span class="s">pkcs11_section</span>
+
+<span class="k">[pkcs11_section]</span>
+<span class="na">engine_id</span> <span class="o">=</span> <span class="s">pkcs11</span>
+<span class="na">dynamic_path</span> <span class="o">=</span> <span class="s">/path/to/engine_pkcs11.so</span>
+<span class="na">MODULE_PATH</span> <span class="o">=</span> <span class="s">/path/to/yubihsm_pkcs11.so</span>
+<span class="na">INIT_ARGS</span> <span class="o">=</span> <span class="s">connector=http://127.0.0.1:12345 debug</span>
+<span class="na">init</span> <span class="o">=</span> <span class="s">0</span>
+</pre></div></div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">OpenSSL 1.1 will auto-load modules present in the system engine directory
+(like <code>/usr/lib/x86_64-linux-gnu/engines-1.1</code>) so the <code>dynamic_path</code> line has to
+be dropped there. The error shown will mention "conflicting engine id".</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

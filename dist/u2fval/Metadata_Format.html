@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>Metadata Format</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/u2fval">u2fval</a></li>
+<li class="active">Metadata Format</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/u2fval">u2fval</a><ul class="">
+<li><a href="/u2fval/Release_Notes.html">Release Notes</a></li>
+<li><a href="/u2fval/Manuals">Manuals</a></li>
+<li><a href="/u2fval/REST_API.html">REST API</a></li>
+<li><a href="/u2fval/Database_Setup.html">Database Setup</a></li>
+<li><a href="/u2fval/Apache_Deployment.html">Apache Deployment</a></li>
+<li><a href="/u2fval/Using_Memcached.html">Using Memcached</a></li>
+<li><a href="/u2fval/Installation.html">Installation</a></li>
+<li><a href="/u2fval/Logging.html">Logging</a></li>
+<li class="active"><a href="/u2fval/Metadata_Format.html">Metadata Format</a>
+<li><a href="/u2fval/Migrating_From_Older_Versions.html">Migrating From Older Versions</a></li>
+<li><a href="/u2fval/Nginx_And_uWSGI_Deployment.html">Nginx And uWSGI Deployment</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/u2fval" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_u2f_json_metadata_format_specification">U2F JSON metadata format specification</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>Attestation and metadata is provided as <span class="monospaced">MetadataObjects</span>, as defined in this
+document. These objects might be stored as files in a file system (one object
+per file), a single file (containing a list of multiple objects), as data in a
+database, or any combination thereof.</p></div>
+<div class="sect2">
+<h3 id="_metadataobject">MetadataObject</h3>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nx">dictionary</span> <span class="nx">MetadataObject</span> <span class="p">{</span>
+  <span class="nx">DOMString</span> <span class="nx">identifier</span><span class="p">;</span>
+  <span class="nx">unsigned</span> <span class="kr">long</span> <span class="nx">version</span><span class="p">;</span>
+  <span class="nx">DOMString</span><span class="p">[]</span> <span class="nx">trustedCertificates</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">VendorInfo</span> <span class="nx">vendorInfo</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">DeviceInfo</span><span class="p">[]</span><span class="o">?</span> <span class="nx">devices</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The metadata object is uniquely identified by the identifier property, which
+MUST be globally unique. The version property identifies the version of the
+object, with higher versions being newer. The trustedCertificates property
+consists of a list of PEM encoded certificates that are trusted for attestation
+certificate validation. Intermediate certificates may be present in the chain,
+between one of the trusted certificates and the attestation certificates, but
+how these certificates are provided is outside of the scope for this document.
+A certificate in the trustedCertificates list is trusted, and its own signature
+is not regarded (whether it be self-signed or not). The devices property is
+optional, and used to provide metadata about different device types.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_vendorinfo">VendorInfo</h3>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nx">dictionary</span> <span class="nx">VendorInfo</span> <span class="p">{</span>
+  <span class="nx">DOMString</span> <span class="nx">name</span><span class="p">;</span>
+  <span class="nx">DOMString</span> <span class="nx">url</span><span class="p">;</span>
+  <span class="nx">DOMString</span> <span class="nx">imageUrl</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The vendor info object contains information about the vendor, such as name and
+URL. Additional fields may be added to provide more information.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_deviceinfo">DeviceInfo</h3>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nx">dictionary</span> <span class="nx">DeviceInfo</span> <span class="p">{</span>
+  <span class="nx">DOMString</span> <span class="nx">deviceId</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">DOMString</span> <span class="nx">displayName</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">DOMString</span> <span class="nx">imageUrl</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">DOMString</span> <span class="nx">deviceUrl</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">Selector</span><span class="p">[]</span> <span class="nx">selectors</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The device object provides metadata for a U2F device. The deviceId is a unique
+identifier which can be used to update previously identified devices if the
+metadata changes. Additional fields may be added to provide more information.
+The selector is used to match a device object to a given attestation
+certificate. When not present, the device will match any certificate as long as
+it is trusted by one of the roots from the same metadata object.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_selector">Selector</h3>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nx">dictionary</span> <span class="nx">Selector</span> <span class="p">{</span>
+  <span class="nx">DOMString</span> <span class="nx">type</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">dictionary</span> <span class="nx">parameters</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The selector object provides a way to match an attestation certificate against
+a device object. When present in a device object, each supported selector type
+is tested against the attestation certificate. If any of them match, the device
+matches. If none of the selectors match, the device does not match. An empty
+selectors list [], cannot be matched by any attestation certificate. However, a
+null or missing selectors field is matched by any certificate.</p></div>
+<div class="sect3">
+<h4 id="_selector_types">Selector types</h4>
+<div class="paragraph"><p>The selector type is defined by the string in the type field. The parameters
+field is type dependent and can contain arbitrary data.</p></div>
+<div class="sect4">
+<h5 id="_fingerprint">Fingerprint</h5>
+<div class="paragraph"><p>Match certificates by their SHA1 fingerprint.</p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+Type value
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+<span class="monospaced">fingerprint</span>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Parameters type
+<br>
+</br></td>
+<td class="hdlist2">
+</td>
+</tr>
+</table></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nx">dictionary</span> <span class="nx">FingerprintParameters</span> <span class="p">{</span>
+  <span class="nx">DOMString</span><span class="p">[]</span> <span class="nx">fingerprints</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The fingerprints field contains hex values of SHA1 fingerprints of attestation
+certificates to match against.</p></div>
+</div>
+<div class="sect4">
+<h5 id="_x509extension">x509Extension</h5>
+<div class="paragraph"><p>Match certificates by their extensions.</p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+Type value
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+<span class="monospaced">x509Extension</span>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Parameters type
+<br>
+</br></td>
+<td class="hdlist2">
+</td>
+</tr>
+</table></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="nx">dictionary</span> <span class="nx">X509ExtensionParameters</span> <span class="p">{</span>
+  <span class="nx">DOMString</span> <span class="nx">key</span><span class="p">;</span>
+  <span class="nx">optional</span> <span class="nx">DOMString</span> <span class="nx">value</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>The key field contains the textual representation of the OID of the extension
+to match against. The value field contains the matching value when compared to
+the extensions OctetString value when interpreted as an ASCII string. If the
+value field is missing, any value will be accepted, as long as the certificate
+has the extension with the given key.</p></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

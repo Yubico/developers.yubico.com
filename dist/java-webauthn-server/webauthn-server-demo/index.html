@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>webauthn-server-demo</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/java-webauthn-server">java-webauthn-server</a></li>
+<li class="active">webauthn-server-demo</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/java-webauthn-server">java-webauthn-server</a><ul class="">
+<li><a href="/java-webauthn-server/Release_Notes.html">Release Notes</a></li>
+<li class="active"><a href="/java-webauthn-server/webauthn-server-demo">webauthn-server-demo</a>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul></ul>
+</div>
+<div id="page-content"><h1>webauthn-server-demo</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>A simple self-contained demo server supporting multiple authenticators per user.
+It illustrates how to use the required integration points, the most important of
+which is the user and credential registration storage, and also illustrates how
+one can build on API to enable advanced features like <strong>authenticated actions</strong>,
+such as adding an additional authenticator or deregistering a credential.</p></div>
+<div class="paragraph"><p>The central part is the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java">WebAuthnServer</a>
+class, and the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnRestResource.java">WebAuthnRestResource</a>
+class which provides the REST API on top of it.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_architecture">Architecture</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The example webapp is made up of three main layers, the bottom of which is the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/"><code>webauthn-server-core</code></a>
+library:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The front end interacts with the server via a <strong>REST API</strong>, implemented in
+  <a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnRestResource.java">WebAuthnRestResource</a>.
+</p>
+<div class="paragraph"><p>This layer manages translation between JSON request/response payloads and domain
+objects, and most methods simply call into analogous methods in the server
+layer.</p></div>
+</li>
+<li>
+<p>
+The REST API then delegates to the <strong>server layer</strong>, implemented in
+  <a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java">WebAuthnServer</a>.
+</p>
+<div class="paragraph"><p>This layer manages the general architecture of the system, and is where most
+business logic and integration code would go. The demo server implements the
+"persistent" storage of users and credential registrations - the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/CredentialRepository.java">CredentialRepository</a>
+integration point - as the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/InMemoryRegistrationStorage.java">InMemoryRegistrationStorage</a>
+class, which simply keeps them stored in memory for a limited time. The
+transient storage of pending challenges is also kept in memory, but for a
+shorter duration.</p></div>
+<div class="paragraph"><p>The logic for authorizing registration of additional credentials, and
+deregistration of credentials, is also in this layer. In general, anything that
+would be specific to a particular Relying Party (RP) would go in this layer.</p></div>
+</li>
+<li>
+<p>
+The server layer in turn calls the <strong>library layer</strong>, which is where the
+  <a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/"><code>webauthn-server-core</code></a>
+  library gets involved. The entry point into the library is the
+  <a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/RelyingParty.java">RelyingParty</a>
+  class.
+</p>
+<div class="paragraph"><p>This layer implements the Web Authentication
+<a href="https://www.w3.org/TR/webauthn/#rp-operations">Relying Party Operations</a>, and
+takes care of all RP-agnostic parts of the Web Authentication logic: generating
+challenges and verifying all aspects of the responses. It is mostly stateless,
+and exposes integration points for storage of challenges and credentials. Some
+notable integration points are:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The library user must provide an implementation of the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/CredentialRepository.java">CredentialRepository</a>
+interface to use for looking up stored public keys, user handles and signature
+counters.
+</p>
+</li>
+<li>
+<p>
+The library user can optionally provide an instance of the
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/attestation/MetadataService.java">MetadataService</a>
+interface to enable identification and validation of authenticator models. This
+instance is then used to look up trusted attestation root certificates. The
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-attestation/"><code>webauthn-server-attestation</code></a>
+sibling library provides implementations of this interface that are pre-seeded
+with Yubico device metadata.
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This subproject includes two ways to run the demo server:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+As a <code>.war</code> archive to be deployed in any Java web server
+</p>
+</li>
+<li>
+<p>
+As a standalone Java executable
+</p>
+</li>
+</ul></div>
+<div class="sect2">
+<h3 id="_code_war_code_archive"><code>.war</code> archive</h3>
+<div class="paragraph"><p>The <code>.war</code> archive includes a simple web GUI hosted at <code>/</code>, relative to the
+context root of the deployed <code>.war</code> application, which communicates with the
+server via a REST API served at <code>/api/v1/</code>.</p></div>
+<div class="paragraph"><p>To build it, run</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>$ ../gradlew war</pre>
+</div></div>
+<div class="paragraph"><p>To build and run it via Gradle, run</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>$ ../gradlew appRun</pre>
+</div></div>
+<div class="paragraph"><p>This will serve the application under <code>https://localhost:8443/webauthn/</code> by
+default.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">Since WebAuthn requires a HTTPS connection, this demo server uses a dummy
+certificate. This will cause your browser to show a warning, which is safe to
+bypass. The dummy certificate is not included in the <code>.war</code> artifact; it is only
+used when running via Gradle.</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_standalone_java_executable">Standalone Java executable</h3>
+<div class="paragraph"><p>The standalone Java executable has the main class
+<a href="https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/EmbeddedServer.java"><code>demo.webauthn.EmbeddedServer</code></a>.
+This server serves only the REST API at <code>/v1/</code>, and does not include the web
+GUI.</p></div>
+<div class="paragraph"><p>To build it, run one of the following:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>$ ../gradlew distTar
+$ ../gradlew distZip</pre>
+</div></div>
+<div class="paragraph"><p>This will build an archive which can be unpacked and run anywhere with a Java
+environment as:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>$ webauthn-server-demo-$VERSION/bin/webauthn-server-demo
+$ webauthn-server-demo-$VERSION/bin/webauthn-server-demo.bat</pre>
+</div></div>
+<div class="paragraph"><p>To build and run it via Gradle, run:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>$ ./gradlew run</pre>
+</div></div>
+<div class="paragraph"><p>This will serve the application under <code>http://localhost:8080/</code> by default.</p></div>
+<div class="paragraph"><p>HTTPS support for this mode is not yet implemented.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_configuration">Configuration</h3>
+<div class="paragraph"><p>Both modes of running the server accept the following environment variables for
+configuration. Note that if running via Gradle, you may need to disable the
+Gradle daemon (<code>--no-daemon</code>) in order for the server process to have the
+correct environment.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>YUBICO_WEBAUTHN_PORT</code>: Port number to run the server on. Example:
+    <code>YUBICO_WEBAUTHN_PORT=8081</code>
+</p>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>This is ignored when running as a `.war` artifact, since the port is
+controlled by the parent web server.</pre>
+</div></div>
+</li>
+<li>
+<p>
+<code>YUBICO_WEBAUTHN_ALLOWED_ORIGINS</code>: Comma-separated list of origins the
+    server will accept requests for. Example:
+    <code>YUBICO_WEBAUTHN_ALLOWED_ORIGINS=http://demo.yubico.com:8080</code>
+</p>
+</li>
+<li>
+<p>
+<code>YUBICO_WEBAUTHN_RP_ID</code>: The <a href="https://www.w3.org/TR/webauthn/#rp-id">RP ID</a>
+    the server will report.  Example: <code>YUBICO_WEBAUTHN_RP_ID=demo.yubico.com</code>
+</p>
+</li>
+<li>
+<p>
+<code>YUBICO_WEBAUTHN_RP_NAME</code>: The human-readable
+    <a href="https://www.w3.org/TR/webauthn/#dom-publickeycredentialentity-name">RP name</a>
+    the server will report. Example: <code>YUBICO_WEBAUTHN_RP_ID='Yubico Web
+    Authentication demo'</code>
+</p>
+</li>
+<li>
+<p>
+<code>YUBICO_WEBAUTHN_RP_ICON</code>: An optional URL to an
+    <a href="https://www.w3.org/TR/webauthn/#dom-publickeycredentialentity-icon">icon</a> to
+    represent this Relying Party. Example:
+    <code>YUBICO_WEBAUTHN_RP_ICON='https://www.yubico.com/wp-content/uploads/2014/09/favicon.ico'</code>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

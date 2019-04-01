@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>YubiKey and OpenVPN via PAM</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/yubico-pam">yubico-pam</a></li>
+<li class="active">YubiKey and OpenVPN via PAM</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/yubico-pam">yubico-pam</a><ul class="">
+<li><a href="/yubico-pam/Release_Notes.html">Release Notes</a></li>
+<li><a href="/yubico-pam/Authentication_Using_Challenge-Response.html">Authentication Using Challenge-Response</a></li>
+<li><a href="/yubico-pam/MacOS_X_Challenge-Response.html">MacOS X Challenge-Response</a></li>
+<li><a href="/yubico-pam/Two_Factor_PAM_Configuration.html">Two Factor PAM Configuration</a></li>
+<li><a href="/yubico-pam/Ubuntu_FreeRadius_YubiKey.html">Ubuntu FreeRadius YubiKey</a></li>
+<li><a href="/yubico-pam/YubiKey_and_FreeRADIUS_1FA_via_PAM.html">YubiKey and FreeRADIUS 1FA via PAM</a></li>
+<li><a href="/yubico-pam/YubiKey_and_FreeRADIUS_via_PAM.html">YubiKey and FreeRADIUS via PAM</a></li>
+<li class="active"><a href="/yubico-pam/YubiKey_and_OpenVPN_via_PAM.html">YubiKey and OpenVPN via PAM</a>
+<li><a href="/yubico-pam/YubiKey_and_Radius_via_PAM.html">YubiKey and Radius via PAM</a></li>
+<li><a href="/yubico-pam/YubiKey_and_SELinux_on_Fedora_18_and_up.html">YubiKey and SELinux on Fedora 18 and up</a></li>
+<li><a href="/yubico-pam/YubiKey_and_SSH_via_PAM.html">YubiKey and SSH via PAM</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/yubico-pam" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_introduction">Introduction</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>The purpose of this document is to guide readers through the configuration steps to use two factor authentication for OpenVPN using YubiKey. This document assumes that the reader has advanced knowledge and experience in Linux system administration, particularly for how PAM authentication mechanism is configured on a Linux platform.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites">Prerequisites</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Successful configuration of the Yubico PAM module to support two factor authentication for OpenVPN has the following prerequisites:</p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+Operating System
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Any Unix operating system which supports
+<a href="http://www.kernel.org/pub/linux/libs/pam" rel="noopener noreferrer" target="_blank">PAM</a> (Pluggable Authentication Module)
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Complier
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+<a href="http://gcc.gnu.org" rel="noopener noreferrer" target="_blank">GNU GCC complier</a>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Software
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+<a href="https://developers.yubico.com/yubico-pam">Yubico PAM Module</a><br>
+<a href="http://openvpn.net/index.php/downloads.html" rel="noopener noreferrer" target="_blank">OpenVPN</a><br>
+<a href="http://freeradius.org/download.html" rel="noopener noreferrer" target="_blank">FreeRADIUS</a><br>
+Pam_Radius
+</br></br></br></p>
+</td>
+</tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration">Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>There are two ways OpenVPN can be configured to support two factor authentication with YubiKey.</p></div>
+<div class="sect2">
+<h3 id="_openvpn_configuration_without_freeradius_support">OpenVPN Configuration without FreeRADIUS support:</h3>
+<div class="paragraph"><p>In this mode of configuration, OpenVPN server will be authenticating users
+by verifying username and user’s password against system password file
+<code>/etc/passwd</code> and verifying OTP (one time password generated from YubiKey)
+against Yubico’s OTP validation server.</p></div>
+<div class="paragraph"><p>We assume that OpenVPN server is already installed on the server.</p></div>
+<div class="sect3">
+<h4 id="_configuration_of_openvpn_server_to_support_pam_authentication">Configuration of OpenVPN server to support PAM authentication:</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+Edit the OpenVPN server configuration file <code>/etc/openvpn/server.conf</code>
+  to add the following three lines to enable PAM modules for username
+  and password authentication:
+</p>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>plugin &lt;Absolute path of  “openvpn-auth-pam.so” file&gt; &lt;PAM configuration file name for OpenVPN
+client-cert-not-required
+username-as-common-name</pre>
+</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>(for example: <code>plugin /usr/lib/openvpn/plugin/lib/openvpn-auth-pam.so openvpn</code>)</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Edit the OpenVPN client configuration file <code>/etc/openvpn/client.conf</code> to
+  add following line to configure OpenVPN client for prompting username and
+  password:
+</p>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>auth-user-pass</pre>
+</div></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_installation_of_pam_yubico_module">Installation of pam_yubico module:</h4>
+<div class="paragraph"><p>Build instructions for pam_yubico are available in its README.</p></div>
+</div>
+<div class="sect3">
+<h4 id="_configuration_of_pam_yubico_module">Configuration of pam_yubico module:</h4>
+<div class="paragraph"><p>There are two ways of user and YubiKey PublicID (token ID) mapping.
+It can be either done at administrative level or at individual user level.</p></div>
+<div class="sect4">
+<h5 id="_administrative_level">Administrative Level</h5>
+<div class="paragraph"><p>In Administrative level, system administrators hold right to configure
+the user and YubiKey PublicID mapping. Administrators can achieve this
+by creating a new file that contains information about the username and
+the corresponding PublicIDs of YubiKey(s) assigned.</p></div>
+<div class="paragraph"><p>This file contains user name that is allowed to connect to the system
+using RADIUS and the PublicID of the YubiKey(s) assigned to that
+particular user.</p></div>
+<div class="paragraph"><p>A user can be assigned multiple YubiKeys and this multikey mapping is
+supported by this file. However, presently there is no logic coded to
+detect or prevent use of same YubiKey ID for multiple users.</p></div>
+<div class="paragraph"><p>Each record in the file should begin on a new line. The parameters in
+each record are separated by <code>:</code> character similar to <code>/etc/passwd</code>.</p></div>
+<div class="paragraph"><p>The contents of this file are as follows:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>&lt;user name&gt;:&lt;YubiKey PublicID&gt;:&lt;YubiKey PublicID&gt;: ….
+&lt;user name&gt;:&lt;YubiKey PublicID &gt;:&lt;YubiKey PublicID&gt;:…..</pre>
+</div></div>
+<div class="paragraph"><p>e.g.:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>paul:indvnvlcbdre:ldvglinuddek
+simon:uturrufnjder:hjturefjtehv
+kurt:ertbhunjimko</pre>
+</div></div>
+<div class="paragraph"><p>The mapping file must be created/updated manually before configuration
+of Yubico PAM module for OpenVPN authentication.</p></div>
+<div class="paragraph"><p>====== Configuration of modified pam_yubico.so module at administrative level:</p></div>
+<div class="paragraph"><p>Append the following line to the beginning of /etc/pam.d/radiusd file:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>auth required pam_yubico.so id=16 debug authfile=/path/to/mapping/file</pre>
+</div></div>
+<div class="paragraph"><p>After the above configuration changes, whenever a user connects to the
+server using any RADIUS client, the PAM authentication interface will
+pass the control to Yubico PAM module.</p></div>
+<div class="paragraph"><p>The Yubico PAM module first checks the presence of authfile argument
+in PAM configuration. If authfile argument is present, it parses the
+corresponding mapping file and verifies the username with corresponding
+YubiKey PublicID as configured in the mapping file. If valid, the Yubico
+PAM module extracts the OTP string and sends it to the Yubico
+authentication server or else it reports failure. If authfile argument
+is present but the mapping file is not present at the provided path PAM
+module reports failure.</p></div>
+<div class="paragraph"><p>After successful verification of OTP Yubico PAM module from the Yubico
+authentication server, a success code is returned.</p></div>
+</div>
+<div class="sect4">
+<h5 id="_user_level">User Level</h5>
+<div class="paragraph"><p>Although, user level configuration of pam_yubico is possible, this might
+not be a desired configuration option in case of OpenVPN daemon in most
+enterprise.</p></div>
+<div class="paragraph"><p>====== Configuration of PAM modules for OpenVPN:</p></div>
+<div class="paragraph"><p>To configure PAM modules for OpenVPN, create a file named
+<code>/etc/pam.d/openvpn</code> (file name must be one which is specified
+in <code>/etc/openvpn/server.conf</code> along with <em>plugin</em> directive)
+and list all the PAM modules in this files accordingly.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_test_setup">Test Setup</h4>
+<div class="paragraph"><p>Our test environment is as follows:</p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+Operating System
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Fedora release 8 (Werewolf)
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+OpenVPN Server
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+OpenVPN Version 2.0.9
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Yubico PAM
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+pam_yubico Version 1.8
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+/etc/pam.d/openvpn file
+<br>
+</br></td>
+<td class="hdlist2">
+</td>
+</tr>
+</table></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>auth             required     pam_yubico.so authfile=/etc/yubikeyid id=16 debug
+auth             include        system-auth
+account          required       pam_nologin.so
+account          include        system-auth
+password         include        system-auth
+session          include        system-auth</pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_testing_the_configuration">Testing the configuration</h4>
+<div class="paragraph"><p>We have tested the pam_yubico configuration on following Linux sever platforms:</p></div>
+<div class="olist lowerroman"><ol class="lowerroman">
+<li>
+<p>
+Fedora 8:
+</p>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>Operating system: Fedora release 8 (Werewolf),
+OpenVPN Server : OpenVPN Version 2.0.9,
+Yubico PAM: pam_yubico  Version 1.8</pre>
+</div></div>
+</li>
+<li>
+<p>
+Fedora 6:
+</p>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>Operating system: Fedora Core release 6 (Zod),
+OpenVPN Server: OpenVPN Version 2.0.9,
+Yubico PAM: pam_yubico version 1.8</pre>
+</div></div>
+</li>
+</ol></div>
+<div class="paragraph"><p>To test the configuration, first create a couple of test users on the
+system where OpenVPN server is running and configure their YubiKey IDs
+accordingly.</p></div>
+<div class="paragraph"><p>Please use the following command for testing:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>[root@testsrv ~]# openvpn /etc/openvpn/client.conf</pre>
+</div></div>
+<div class="paragraph"><p>OpenVPN client will first prompt for username, enter the username.
+After that OpenVPN client will prompt for password, enter user’s password
+immediately followed by an OTP generated by a YubiKey.</p></div>
+<div class="paragraph"><p>If OpenVPN server is configured for supporting PAM authentication, it
+will verify user authentication details even at the startup of OpenVPN
+server demon, when it is started using <code>init.d</code> script or it is
+configured to start at boot time.</p></div>
+<div class="paragraph"><p>To avoid prompting of username and password at the startup of OpenVPN
+server demon, we can start OpenVPN Server demon at command line as
+follows instead of starting it using <code>init.d</code> script:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>[root@testsrv ~]# /usr/sbin/openvpn --config /etc/openvpn/server.conf --daemon openvpn</pre>
+</div></div>
+<div class="paragraph"><p>We can configure OpenVPN server demon to start at boot time by
+copying the above command in <code>/etc/rc.local</code> file.</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_openvpn_configuration_with_freeradius_support">OpenVPN Configuration with FreeRADIUS support</h3>
+<div class="paragraph"><p>In this type of configuration, the OpenVPN server will be using
+FreeRADIUS server for authenticating users. FreeRADIUS server will
+be verifying the authentication information received from OpenVPN
+server by verifying the username and user’s password against system
+password file <code>/etc/passwd</code> (or by other means supported by FreeRADIUS)
+and verifying the OTP (one time password) generated by a YubiKey
+with the Yubico’s OTP validation server.</p></div>
+<div class="paragraph"><p>To configure OpenVPN with FreeRADIUS support, please follow the steps below:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Follow all the steps mentioned in the section “OpenVPN Configuration without FreeRADIUS support” to configure OpenVPN server to support PAM authentication.
+</p>
+</li>
+<li>
+<p>
+<a href="https://developers.yubico.com/yubico-pam/YubiKey_and_FreeRADIUS_via_PAM.html">Install and configure FreeRADIUS server for two factor authentication</a>.
+</p>
+</li>
+<li>
+<p>
+Install and configure pam_radius_auth.so and copy it to /lib/security directory
+</p>
+</li>
+<li>
+<p>
+Create a file <code>/etc/pam.d/openvpn</code> (file name must be the one which is specified
+in <code>/etc/openvpn/server.conf</code> along with <em>plugin</em> directive) and copy the following
+contents to the file:
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>account         required        pam_radius_auth.so
+account         required        pam_radius_auth.so
+auth            required        pam_radius_auth.so no_warn try_first_pass</pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Create a file <code>/etc/raddb/server</code> to configure FreeRADIUS server that is
+used by <code>pam_radius_auth</code> PAM module. The content for the file is as follows:
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>&lt;RADIUS server fully qualified domain name/IP Address&gt; &lt;Shared Secret&gt;
+
+&lt;RADIUS server fully qualified domain name/IP Address&gt; &lt;Shared Secret&gt;
+.
+.
+.</pre>
+</div></div>
+<div class="paragraph"><p>e.g.:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>freeradius.example.com Admin456</pre>
+</div></div>
+<div class="paragraph"><p>We can configure failover support for RADIUS server by creating additional
+RADIUS server entries per line of ´/etc/raddb/server´ file.</p></div>
+<div class="sect3">
+<h4 id="_test_setup_2">Test Setup</h4>
+<div class="paragraph"><p>Our test environment is as follows:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>/etc/pam.d/openvpn</code> file:
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>account         required        pam_radius_auth.so
+account         required        pam_radius_auth.so
+auth            required        pam_radius_auth.so no_warn try_first_pass</pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_testing_the_configuration_2">Testing the configuration</h4>
+<div class="paragraph"><p>We have tested the pam_yubico configuration on following Linux sever platforms:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Fedora 8
+</p>
+</li>
+<li>
+<p>
+Fedora 6
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>To test the configuration, first create a couple of test users
+on the system where FreeRADIUS server is running and configure
+their YubiKey IDs accordingly.</p></div>
+<div class="paragraph"><p>Please use the following command for testing:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>[root@varsha ~]# openvpn /etc/openvpn/client.conf</pre>
+</div></div>
+<div class="paragraph"><p>OpenVPN client will first prompt for username, enter the username.
+After that OpenVPN client will prompt for password, enter user’s
+password immediately followed by an OTP generated by a YubiKey.</p></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

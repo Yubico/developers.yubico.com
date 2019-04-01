@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>Backup and Restore</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li class="active"><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/YubiHSM2">YubiHSM2</a></li>
+<li class="active">Backup and Restore</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/YubiHSM2">YubiHSM2</a><ul class="">
+<li><a href="/YubiHSM2/Releases">Releases</a></li>
+<li><a href="/YubiHSM2/Product_Overview">Product Overview</a></li>
+<li><a href="/YubiHSM2/Concepts">Concepts</a></li>
+<li><a href="/YubiHSM2/Commands">Commands</a></li>
+<li><a href="/YubiHSM2/Component_Reference">Component Reference</a></li>
+<li><a href="/YubiHSM2/Usage_Guides">Usage Guides</a></li>
+<li class="active"><a href="/YubiHSM2/Backup_and_Restore">Backup and Restore</a>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul></ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_backup_and_restore">Backup and Restore</h1>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction">Introduction</h3>
+<div class="paragraph"><p>The YubiHSM 2 supports encrypted export and import of objects using a symmetric AES-CCM based scheme.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_backup_using_yubihsm_shell">Backup Using YubiHSM Shell</h3>
+<div class="paragraph"><p>Make sure you have a Wrap Key with the Capabilities <code>export-wrapped</code>, <code>import-wrapped</code> and applicable Delegated Capabilities set:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre>
+<span></span>$ yubihsm-shell -a get-random --count<span class="o">=</span><span class="m">32</span> --out<span class="o">=</span>wrap.key
+...
+<span class="sh-dollar"></span>yubihsm-shell -a put-wrap-key -c export-wrapped,import-wrapped --delegated<span class="o">=</span>sign-pkcs,decrypt-pkcs,exportable-under-wrap --in<span class="o">=</span>wrap.key
+...
+Stored Wrap key 0xd581
+</pre></div></div></div>
+<div class="paragraph"><p>When this Wrap Key is present, any Object in the same Domain and with the Capability <code>exportable-under-wrap</code> and Capabilities matching the Wrap Key’s Delegated Capabilities can be exported:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre>
+<span></span>$ yubihsm-shell -a generate-asymmetric-key -A rsa2048 -c exportable-under-wrap,sign-pkcs,decrypt-pkcs
+...
+Generated Asymmetric key 0x6e77
+<span class="sh-dollar"></span>yubihsm-shell -a get-wrapped --wrap-id<span class="o">=</span>0x6e77 --object-id<span class="o">=</span>0xd581 -t asymmetric --out<span class="o">=</span>key_6e77.yhw
+...
+</pre></div></div></div>
+<div class="paragraph"><p>You now have an encrypted backup of the Asymmetric Key <code>0x6e77</code> in the file key_6e77.yhw. <strong>The file wrap.key here contains the cleartext version of the Wrap Key loaded into your YubiHSM and should be considered sensitive</strong>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_backup_using_yubihsm_setup">Backup Using YubiHSM Setup</h3>
+<div class="paragraph"><p>The tool <code>yubihsm-setup</code> can be used to backup all exportable objects at once:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span>$ yubihsm-setup dump
+Enter the wrapping key ID to use <span class="k">for</span> exporting objects: 0xd581
+...
+Successfully exported object Asymmetric with ID 0x6e77 to ./0x6e77.yhw
+All <span class="k">done</span>
+</pre></div></div></div>
+</div>
+<div class="sect2">
+<h3 id="_restore_using_yubihsm_shell">Restore Using YubiHSM Shell</h3>
+<div class="paragraph"><p>Considering a fresh device where you want to restore the previously backed up key <code>0x6e77</code></p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre>
+<span></span>$ yubihsm-shell -a put-wrap-key -A aes256-ccm-wrap -c export-wrapped,import-wrapped --delegated<span class="o">=</span>sign-pkcs,decrypt-pkcs,exportable-under-wrap --in<span class="o">=</span>wrap.key -i 0xd581
+...
+Stored Wrap key 0xd581
+<span class="sh-dollar"></span>yubihsm-shell -a put-wrapped -i 0xd581 --in<span class="o">=</span>key_6e77.yhw
+...
+Object imported as 0x6e77 of <span class="nb">type</span> asymmetric-key
+</pre></div></div></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_backup_and_restore_of_keys_managed_via_yubihsm_key_storage_provider">Backup and Restore of Keys Managed via YubiHSM Key Storage Provider</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>ADCS does not set the <code>NCRYPT_ALLOW_EXPORT_FLAG</code> when generating a key neither through the setup UI, nor the <code>Install-ADCSCertificationAuthority</code> PowerShell module.  When creating an ADCS root CA key via the YubiHSM 2, we add the `exportable-under-wrap´ Capability by default, so that backup and restore functionality is available through the following manual process:</p></div>
+<div class="sect2">
+<h3 id="_identify_your_private_key_container_name">Identify Your Private Key Container Name</h3>
+<div class="paragraph"><p>Open an elevated command prompt/shell.</p></div>
+<div class="paragraph"><p>Use the certutil command:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="n">PS1</span><span class="p">&gt;</span> <span class="n">certutil</span> <span class="n">-store</span> <span class="n">My</span>
+</pre></div></div></div>
+<div class="paragraph"><p>to view the currently installed certificates in the Local Machine "My" store.</p></div>
+<div class="paragraph"><p>Find the target certificate in the list.</p></div>
+<div class="paragraph"><p>Find the <code>Key Container</code> property of the target certificate. The Provider property should be equal to <code>YubiHSM Key Storage Provider</code>.</p></div>
+<div class="paragraph"><p>Record the <code>Cert Hash</code> property to identify the certificate.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_backup_the_target_certificate">Backup the Target Certificate</h3>
+<div class="paragraph"><p>Using any available means (certmgr.msc, PowerShell, certutil), export the target certificate, but without the private key in DER format. The YubiHSM does not provide a mechanism for returning the raw private key to Windows, so generating a PKCS#12 container is not currently possible. For example:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="n">PS1</span><span class="p">&gt;</span> <span class="n">certutil</span> <span class="n">-split</span> <span class="n">-store</span> <span class="n">My</span> <span class="p">&lt;</span><span class="n">Cert</span> <span class="n">Hash</span><span class="p">&gt;</span>
+</pre></div></div></div>
+<div class="paragraph"><p>will export the certificate in .crt format to a file named <code>&lt;Cert Hash&gt;.crt</code>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_backup_the_target_private_key">Backup the Target Private Key</h3>
+<div class="paragraph"><p>Using the instructions for exporting a private key under wrap via <code>yubihsm-shell</code> (see above), export the target private key with the <code>label</code> property equal to the <code>Key Container</code> property.
+The Authentication Key that performs this operation must have the <code>export-wrapped</code> capability set.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_restore_the_target_private_key">Restore the Target Private Key</h3>
+<div class="paragraph"><p>Using the instructions for importing a private key under wrap via <code>yubihsm-shell</code> (see above), import the target private key file to your backup YubiHSM. The Authentication Key that performs this operation must have the <code>import-wrapped</code> capability set.</p></div>
+<div class="paragraph"><p>The imported key object should have the same Label property as the original object.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_restore_the_target_certificate">Restore the Target Certificate</h3>
+<div class="paragraph"><p>Move the target certificate file generated above to the target machine.</p></div>
+<div class="paragraph"><p>Import the certificate to the LocalMachine "My" store via your favorite method. At this point, the certificate will not have an associated private key.  Use the <code>-repairstore</code> functionality of <code>certutil</code> to re-associate the certificate to the private key.
+Make sure that the target private key is visible via the YubiHSM KSP, using</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="n">PS1</span><span class="p">&gt;</span> <span class="n">certutil</span> <span class="n">-key</span> <span class="n">-csp</span> <span class="s2">"YubiHSM Key Storage Provider"</span>
+</pre></div></div></div>
+<div class="paragraph"><p>This command will list all private keys (and their corresponding container names — which are equal to the Label property in the YubiHSM visible to the current Authentication Key).</p></div>
+<div class="paragraph"><p>Open an elevated prompt and execute the command:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="n">PS1</span><span class="p">&gt;</span> <span class="n">certutil</span> <span class="n">-repairstore</span> <span class="n">MY</span> <span class="p">&lt;</span><span class="n">Cert</span> <span class="n">Hash</span><span class="p">&gt;</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Repeat the steps under Identify Your Private Key Container Name to verify that the certificate has been associated with the YubiHSM Key Storage Provider and has the correct <code>Key Container</code> property value.</p></div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

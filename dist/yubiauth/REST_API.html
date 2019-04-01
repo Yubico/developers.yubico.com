@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+
+<!--[if lt IE 7]>    <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>     <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>     <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<title>REST API</title>
+<meta content="" name="description">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<link href="/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/main.css" rel="stylesheet">
+<link href="/css/pygments.css" rel="stylesheet">
+<link href="/css/asciidoc.css" rel="stylesheet">
+<link href="/favicon-192x192.png" rel="icon" sizes="192x192">
+<script src="/vendor/modernizr/modernizr.js"></script>
+<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+<script>
+      (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+      function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+      e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+      e.src='//www.google-analytics.com/analytics.js';
+      r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+      ga('create', 'UA-6195355-4', 'auto');ga('send','pageview');
+    </script>
+</link></link></link></link></link></link></meta></meta></meta></meta></head>
+<body>
+<!--[if lt IE 7]>
+      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="/"><img src="/logo.png"/></a>
+</div>
+<div class="navbar-collapse collapse">
+<ul class="nav navbar-nav">
+<li><a href="/FIDO2">FIDO2</a></li><li><a href="/OTP">OTP</a></li><li><a href="/U2F">U2F</a></li><li><a href="/OATH">OATH</a></li><li><a href="/PGP">PGP</a></li><li><a href="/PIV">PIV</a></li><li><a href="/YubiHSM2">YubiHSM2</a></li><li><a href="/Software_Projects">Software Projects</a></li>
+</ul>
+<!-- Google Custom Search Engine -->
+<div class="navbar-form navbar-right" id="search-box">
+<script>
+          (function() {
+            var cx = '017198492754729237489:tcnraf8md8a';
+            var gcse = document.createElement('script');
+            gcse.type = 'text/javascript';
+            gcse.async = true;
+            gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(gcse, s);
+          })();
+          </script>
+<gcse:searchbox-only></gcse:searchbox-only>
+</div>
+<!-- End Google Custom Search Engine -->
+</div><!--/.navbar-collapse -->
+</div>
+</div>
+<div class="container">
+<div class="row">
+<ol class="breadcrumb">
+<li><a href="/">Home</a></li>
+<li><a href="/yubiauth">yubiauth</a></li>
+<li class="active">REST API</li>
+</ol>
+</div>
+<div class="row">
+<div class="col-md-4" style="padding-left: 0;">
+<!-- Sidebar -->
+<ul class="nav nav-side well well-sm">
+<li class="active"><a href="/yubiauth">yubiauth</a><ul class="">
+<li><a href="/yubiauth/Release_Notes.html">Release Notes</a></li>
+<li><a href="/yubiauth/LDAP_Setup.html">LDAP Setup</a></li>
+<li class="active"><a href="/yubiauth/REST_API.html">REST API</a>
+<li><a href="/yubiauth/YubiHSM_Setup.html">YubiHSM Setup</a></li>
+</li></ul>
+</li></ul>
+<!-- End sidebar -->
+</div>
+<div class="col-md-8">
+<!-- Main content -->
+<div class="sidelinks">
+<ul>
+<li><a href="https://github.com/Yubico/yubiauth" rel="noopener noreferrer" target="_blank"><i class="fa fa-github fa-lg"></i> Github</a></li>
+</ul>
+</div>
+<div id="page-content">
+<div class="sect1">
+<h1 id="_yubiauth_rest_api">YubiAuth REST API</h1>
+<div class="sectionbody">
+<div class="paragraph"><p>All responses are formatted as JSON. Note that the URLs given in this document
+assume standard endpoints, but depending on the configuration of your settings,
+these may differ. There are two separate REST APIs available, the
+<a href="#core">Core API</a> and the <a href="#client">Client API</a>.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="core">Core API</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The core API grants complete
+administrative powers with the ability to create and modify users, Yubikeys,
+attributes, etc. This API should never be publically exposed.</p></div>
+<div class="sect2">
+<h3 id="users">Users</h3>
+<div class="paragraph"><p>Users each have a unique user ID as well as a unique username. Each user has a
+password, and may have zero or more <a href="#yubikeys">YubiKeys</a> assigned to them.
+Users can have <a href="#attributes">Attributes</a>.</p></div>
+<div class="sect3">
+<h4 id="_create_a_user">Create a user</h4>
+<div class="sect4">
+<h5 id="_resource">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/users</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+username
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ A unique username <code>(required)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+password
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The password to give to the user <code>(required)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/core/users --data "username=trillian&amp;password=foobar"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response">Response</h5>
+<div class="paragraph"><p>Returns a <code>201 Created</code> response, with a <code>Location</code> header pointing to the
+created resource, as well as a JSON body containing the user ID and username:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">"id"</span><span class="o">:</span> <span class="mi">41</span><span class="p">,</span> <span class="s2">"name"</span><span class="o">:</span> <span class="s2">"trillian"</span><span class="p">}</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listing_users">Listing users</h4>
+<div class="sect4">
+<h5 id="_resource_2">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET http://&lt;host&gt;/core/users</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_2">Request</h5>
+<div class="paragraph"><p>Query parameters can optionally be provided to filter users by their Attributes,
+or by their assigned YubiKeys. Only users matching the filters are shown.</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users?yubikey=ccccccccccce</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_2">Response</h5>
+<div class="paragraph"><p>Returns a list of user IDs and usernames, for example:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">[</span>
+  <span class="p">{</span> <span class="s1">'id'</span><span class="o">:</span> <span class="mi">42</span><span class="p">,</span> <span class="s1">'name'</span><span class="o">:</span> <span class="s1">'zaphod'</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s1">'id'</span><span class="o">:</span> <span class="mi">43</span><span class="p">,</span> <span class="s1">'name'</span><span class="o">:</span> <span class="s1">'ford'</span> <span class="p">}</span>
+<span class="p">]</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_view_a_user">View a user</h4>
+<div class="sect4">
+<h5 id="_resource_3">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET http://&lt;host&gt;/core/users/&lt;id-or-username&gt;</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_3">Request</h5>
+<div class="paragraph"><p>A user can be uniquely identified by either the user ID or by the username.</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/43</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/ford</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_3">Response</h5>
+<div class="paragraph"><p>Returns a JSON representation of the user:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"attributes"</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">"full_name"</span><span class="o">:</span> <span class="s2">"Ford Prefect"</span>
+  <span class="p">},</span>
+  <span class="s2">"yubikeys"</span><span class="o">:</span> <span class="p">[</span><span class="s2">"ccccccccccce"</span><span class="p">],</span>
+  <span class="s2">"id"</span><span class="o">:</span> <span class="mi">43</span><span class="p">,</span>
+  <span class="s2">"name"</span><span class="o">:</span> <span class="s2">"ford"</span>
+<span class="p">}</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deleting_a_user">Deleting a user</h4>
+<div class="sect4">
+<h5 id="_resource_4">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>DELETE http://&lt;host&gt;/core/users/&lt;id-or-username&gt;</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/users/&lt;id-or-username&gt;/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_4">Request</h5>
+<div class="paragraph"><p>Deleting a user is done by sending a DELETE request to the user. To accomodate
+browsers that do not support this, an alternative is available which uses POST.</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X DELETE http://127.0.0.1:8080/core/users/41</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X POST http://127.0.0.1:8080/core/users/41/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_4">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code> on success.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_re_setting_a_users_password">(Re-) Setting a users password</h4>
+<div class="sect4">
+<h5 id="_resource_5">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/users/&lt;id-or-username&gt;/reset</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_5">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="paragraph"><p>password:
+ The users new password <code>(required)</code></p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/41/reset --data "password=newpass"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_5">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code> on success.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_validating_a_users_password_and_or_yubikey_otp">Validating a users password and/or YubiKey OTP</h4>
+<div class="paragraph"><p>Checks if a given password and/or YubiKey OTP (One Time Password) is valid for the user.</p></div>
+<div class="sect4">
+<h5 id="_resource_6">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET or POST http://&lt;host&gt;/core/users/&lt;id-or-username&gt;/validate</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_6">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+password
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The value of the attribute to set <code>(optional)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+otp
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The value of the attribute to set <code>(optional)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/41/validatepassword=foo&amp;otp=ccccccccccceglgvbrbttbctichrejkvbjbgigetfgkr</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_6">Response</h5>
+<div class="paragraph"><p>A JSON object containing "valid_password" and "valid_otp" keys, each mapping to
+either true or false.
+For example:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"valid_password"</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">"valid_otp"</span><span class="o">:</span> <span class="kc">false</span>
+<span class="p">}</span>
+</pre></div></div></div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="yubikeys">YubiKeys</h3>
+<div class="paragraph"><p>YubiKeys are identified by their unique prefixes. Each YubiKey can be assigned to
+zero or more <a href="#users">Users</a>, and can be enabled or disabled. Each YubiKey can have
+<a href="#attributes">Attributes</a>.</p></div>
+<div class="sect3">
+<h4 id="_assigning_a_yubikey_to_a_user">Assigning a YubiKey to a User</h4>
+<div class="sect4">
+<h5 id="_resource_7">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/user/&lt;id-or-username&gt;/yubikeys</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_7">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+yubikey
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The prefix of the YubiKey to assign <code>(required)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/1/yubikeys --data "yubikey=ccccccccccce"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_7">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code> on success.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_view_a_yubikey">View a YubiKey</h4>
+<div class="sect4">
+<h5 id="_resource_8">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET http://&lt;host&gt;/core/user/&lt;id-or-username&gt;/yubikeys/&lt;prefix&gt;</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET http://&lt;host&gt;/core/yubikeys/&lt;prefix&gt;</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_8">Request</h5>
+<div class="paragraph"><p>A YubiKey can be accessed either via a user to which is is assigned, or directly
+via its prefix alone. Note that trying to access an existing YubiKey (correct prefix)
+via a user to which it is NOT assigned will result in a 404 Not Found.</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/1/yubikeys/ccccccccccce</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/yubikeys/ccccccccccce</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_8">Response</h5>
+<div class="paragraph"><p>Returns a JSON representation of the YubiKey:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"attributes"</span><span class="o">:</span> <span class="p">{},</span>
+  <span class="s2">"prefix"</span><span class="o">:</span> <span class="s2">"ccccccccccce"</span><span class="p">,</span>
+  <span class="s2">"enabled"</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">"id"</span><span class="o">:</span> <span class="mi">53</span>
+<span class="p">}</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_unassigning_a_yubikey_for_a_user">Unassigning a YubiKey for a User</h4>
+<div class="sect4">
+<h5 id="_resource_9">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>DELETE http://&lt;host&gt;/core/user/&lt;id-or-username&gt;/yubikeys/&lt;prefix&gt;</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/user/&lt;id-or-username&gt;/yubikeys/&lt;prefix&gt;/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_9">Request</h5>
+<div class="paragraph"><p>Unassigning a YubiKey for a User to which it is assigned is done by sending a
+HTTP DELETE request to it. NOTE that the YubiKey will still exist in the system
+retaining its enabled state as well as any attributes. A POST alternative is available.</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X DELETE http://127.0.0.1:8080/core/users/41/yubikeys/ccccccccccce</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X POST http://127.0.0.1:8080/core/users/41/yubikeys/ccccccccccce/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_9">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code> on success.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deleting_a_yubikey">Deleting a YubiKey</h4>
+<div class="sect4">
+<h5 id="_resource_10">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>DELETE http://&lt;host&gt;/core/yubikeys/&lt;prefix&gt;</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/yubikeys/&lt;prefix&gt;/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_10">Request</h5>
+<div class="paragraph"><p>Deleting a YubiKey removes it together with any data it holds from the system, as well
+as removing any assignment to it any Users may have.</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X DELETE http://127.0.0.1:8080/core/yubikeys/ccccccccccce</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X POST http://127.0.0.1:8080/core/yubikeys/ccccccccccce/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_10">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code> on success.</p></div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="attributes">Attributes</h3>
+<div class="paragraph"><p>Both <a href="#users">Users</a> and <a href="#yubikeys">YubiKeys</a> have attributes. These are accessed by
+taking the path of the user or YubiKey and appending "/attributes" to the end, for example:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>http://127.0.0.1:8080/core/users/42/attributes</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>http://127.0.0.1:8080/core/yubikeys/cccccccccccd/attributes</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>http://127.0.0.1:8080/core/users/42/yubikeys/cccccccccccd/attributes</pre>
+</div></div>
+<div class="paragraph"><p>In the following requests, any of the above formats qualify as <code>attribute_base</code>.</p></div>
+<div class="sect3">
+<h4 id="_view_attributes">View attributes</h4>
+<div class="sect4">
+<h5 id="_resource_11">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET http://&lt;host&gt;/core/&lt;attribute_base&gt;</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_11">Request</h5>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/42/attributes</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_11">Response</h5>
+<div class="paragraph"><p>A JSON object with key-values matching the attributes.</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"full_name"</span><span class="o">:</span> <span class="s2">"Ford Prefect"</span>
+  <span class="s2">"email"</span><span class="o">:</span> <span class="s2">"ford@example.com"</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_set_attribute">Set attribute</h4>
+<div class="paragraph"><p>Sets the value of an attribute. If the attribute already exists, it will be
+overwritten.</p></div>
+<div class="sect4">
+<h5 id="_resource_12">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/&lt;attribute_base&gt;</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_12">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+key
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The key of the attribute to set <code>(required)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+value
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The value of the attribute to set <code>(required)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/42/attributes --data "key=email&amp;value=ford@example.com"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_12">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code> on success.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_get_attribute">Get attribute</h4>
+<div class="paragraph"><p>Gets the value of a single attribute.</p></div>
+<div class="sect4">
+<h5 id="_resource_13">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET http://&lt;host&gt;/core/&lt;attribute_base&gt;/&lt;key&gt;</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_13">Request</h5>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/core/users/42/attributes/email</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_13">Response</h5>
+<div class="paragraph"><p>A JSON string, or null, for example:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>"ford@example.com"</pre>
+</div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_unset_delete_attribute">Unset/Delete attribute</h4>
+<div class="paragraph"><p>Removes an attribute, if it exists.</p></div>
+<div class="sect4">
+<h5 id="_resource_14">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>DELETE http://&lt;host&gt;/core/&lt;attribute_base&gt;/&lt;key&gt;</pre>
+</div></div>
+<div class="paragraph"><p>or</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>POST http://&lt;host&gt;/core/&lt;attribute_base&gt;/&lt;key&gt;/delete</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_14">Request</h5>
+<div class="paragraph"><p>Attributes are removed by sending a HTTP DELETE request (POST alternative
+available).</p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl -X DELETE http://127.0.0.1:8080/core/users/42/attributes/email</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_14">Response</h5>
+<div class="paragraph"><p>Returns an empty response with status <code>204 No Content</code>.</p></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="client">Client API</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The client API provides user authentication and modification of individual
+users, as well as session management. This API can be used by clients wishing
+to administer a single users password and yubikeys. Many of the actions
+require a valid session for the user on which to perform the action.</p></div>
+<div class="sect2">
+<h3 id="authentication">Authentication</h3>
+<div class="paragraph"><p>Validate user credentials. Also see Validating a users password and/or YubiKey
+under <a href="#users">Users</a> in the <a href="#core">Core API</a>.</p></div>
+<div class="sect3">
+<h4 id="_authenticate_a_user">Authenticate a user</h4>
+<div class="paragraph"><p>Checks if the provided credentials are valid and sufficient to authenticate a
+user. The username may be omitted if the server allows OTP based user
+identification, and a valid OTP is provided.</p></div>
+<div class="sect4">
+<h5 id="_resource_15">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET or POST http://&lt;host&gt;/client/authenticate</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_15">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+username
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The username of the user to authenticate <code>(optional)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+password
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The users password <code>(optional)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+otp
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ A valid OTP from a YubiKey that is assigned to the user <code>(optional)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/client/authenticate --data "username=trillian&amp;password=foo"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_15">Response</h5>
+<div class="paragraph"><p>Returns a JSON boolean true value if the given parameters are valid and
+sufficient to authenticate the given user, false otherwise.</p></div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="sessions">Sessions</h3>
+<div class="paragraph"><p>Create, view and destroy user sessions. Creating a session results in a session
+cookie which must been included in requests for actions requiring a session.
+The cookie may be passed in cookie form, or alternatively, in the
+X-YubiAuth-Session HTTP header. Calling a resource that requires a valid
+session without a valid session cookie will result in an error. For example:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"error"</span><span class="o">:</span> <span class="s2">"Session required!"</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="sect3">
+<h4 id="_create_a_session">Create a session</h4>
+<div class="paragraph"><p>Creates a new session for the given user, returning a session cookie.</p></div>
+<div class="sect4">
+<h5 id="_resource_16">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET or POST http://&lt;host&gt;/client/login</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_16">Request</h5>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+username
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The username of the user to authenticate <code>(optional)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+password
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The users password <code>(optional)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+otp
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ A valid OTP from a YubiKey that is assigned to the user <code>(optional)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/client/login --data "username=trillian&amp;password=foo"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_16">Response</h5>
+<div class="paragraph"><p>Returns a JSON object containing a session cookie if the given parameters are
+valid and sufficient to authenticate the given user. Returns an error
+otherwise. For example:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"session"</span><span class="o">:</span> <span class="s2">"6cfba105278bb491c35aaffe727df40664265b27d3ffe472638540bf91af73f77884be55"</span>
+<span class="p">}</span>
+</pre></div></div></div>
+<div class="paragraph"><p>Besides returning the cookie in the JSON response, the HTTP response will set
+the session cookie as a HTTP cookie.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_destroy_a_session">Destroy a session</h4>
+<div class="sect4">
+<h5 id="_resource_17">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET or POST http://&lt;host&gt;/client/logout</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_17">Request</h5>
+<div class="paragraph"><p><strong>Requires valid session</strong></p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/client/logout -H "X-YubiAuth-Session: 6cfb...be55"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_17">Response</h5>
+<div class="paragraph"><p>Invalidates the session and returns a JSON boolean true value if the given
+session cookie was valid. Returns an error otherwise.</p></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_get_the_status_of_a_session">Get the status of a session</h4>
+<div class="sect4">
+<h5 id="_resource_18">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET or POST http://&lt;host&gt;/client/status</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_18">Request</h5>
+<div class="paragraph"><p><strong>Requires valid session</strong></p></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/client/status -H "X-YubiAuth-Session: 6cfb...be55"</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_18">Response</h5>
+<div class="paragraph"><p>Returns a JSON object with information about the user if the given session
+cookie was valid. Returns an error otherwise. For example:</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">"username"</span><span class="o">:</span> <span class="s2">"trillian"</span><span class="p">,</span>
+  <span class="s2">"user_id"</span><span class="o">:</span> <span class="mi">41</span><span class="p">,</span>
+  <span class="s2">"prefix"</span><span class="o">:</span> <span class="s2">"ccccccccccce"</span><span class="p">,</span>
+  <span class="s2">"_accessed_time"</span><span class="o">:</span> <span class="mf">1426068715.018119</span><span class="p">,</span>
+  <span class="s2">"_creation_time"</span><span class="o">:</span> <span class="mf">1426068593.186552</span>
+<span class="p">}</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_change_the_users_password">Change the users password</h4>
+<div class="paragraph"><p>Sets a new password for the authenticated uses. This requires the caller to
+provide authentication again, in the form of the current password and a new
+OTP (if applicable).</p></div>
+<div class="sect4">
+<h5 id="_resource_19">Resource</h5>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>GET or POST http://&lt;host&gt;/client/password</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_request_19">Request</h5>
+<div class="paragraph"><p><strong>Requires valid session</strong></p></div>
+<div class="paragraph"><p><strong>Parameters</strong></p></div>
+<div class="hdlist"><table>
+<tr>
+<td class="hdlist1">
+newpass
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The new password to set for the user <code>(required)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+oldpass
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ The current password of the user <code>(optional)</code>
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+otp
+<br>
+</br></td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+ A valid OTP from a YubiKey that is assigned to the user <code>(optional)</code>
+</p>
+</td>
+</tr>
+</table></div>
+<div class="paragraph"><p><strong>Example</strong></p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>curl http://127.0.0.1:8080/client/password -d''</pre>
+</div></div>
+</div>
+<div class="sect4">
+<h5 id="_response_19">Response</h5>
+<div class="paragraph"><p>Returns a JSON boolean true value if successful.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">This API is not fully documented.</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- End main content -->
+</div>
+</div>
+</div>
+<footer class="container">
+<div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%">
+<strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+<a href="/FIDO2">FIDO2</a><br>
+<a href="/OTP">OTP</a><br>
+<a href="/U2F">U2F</a><br>
+<a href="/OATH">OATH</a><br>
+<a href="/PGP">PGP</a><br>
+<a href="/PIV">PIV</a><br>
+<a href="/YubiHSM2">YubiHSM2</a><br>
+<a href="/Software_Projects">Software Projects</a><br>
+</br></br></br></br></br></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+<a href="https://store.yubico.com/" rel="noopener noreferrer" target="_blank">Buy YubiKeys</a><br>
+<a href="https://www.yubico.com/blog/" rel="noopener noreferrer" target="_blank">Blog</a><br>
+<a href="https://www.yubico.com/newsletter/" rel="noopener noreferrer" target="_blank">Newsletter</a><br>
+<a href="http://forum.yubico.com/" rel="noopener noreferrer" target="_blank">Yubico Forum Archive</a></br></br></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" rel="noopener noreferrer" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+<a href="https://www.yubico.com/why-yubico/" rel="noopener noreferrer" target="_blank">Why Yubico</a><br>
+<a href="https://www.yubico.com/about/about-us/" rel="noopener noreferrer" target="_blank">About Yubico</a></br></br></p>
+</div>
+<div class="col-md-3">
+<p style="line-height:1em;font-size:90%"> </p>
+<table align="right" cellpadding="0" cellspacing="0" style="color:#9aca3c">
+<tbody>
+<tr>
+<td style="padding:10px"><a href="https://www.yubico.com/feed/" rel="noopener noreferrer" target="_blank" title="Blog RSS"><i class="fa fa-rss"></i></a></td>
+<td style="padding:10px"><a href="https://twitter.com/yubico" rel="noopener noreferrer" target="_blank" title="Twitter"><i class="fa fa-twitter"></i></a></td>
+<td style="padding:10px"><a href="https://plus.google.com/114531431015898699937" rel="noopener noreferrer" target="_blank" title="Google Plus"><i class="fa fa-google-plus"></i></a></td>
+<td style="padding:10px"><a href="https://www.facebook.com/Yubikey" rel="noopener noreferrer" target="_blank" title="Facebook"><i class="fa fa-facebook"></i></a></td>
+<td style="padding:10px"><a href="https://www.youtube.com/c/Yubico" rel="noopener noreferrer" target="_blank" title="YouTube"><i class="fa fa-youtube"></i></a></td>
+<td style="padding:10px 0 10px 10px"><a href="https://github.com/Yubico" rel="noopener noreferrer" target="_blank" title="GitHub"><i class="fa fa-github"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</footer>
+<!-- Offset anchor links for navbar -->
+<script>
+    var shiftWindow = function() { scrollBy(0, -50) };
+    if (location.hash) shiftWindow();
+    window.addEventListener("hashchange", shiftWindow);
+  </script>
+<script src="/vendor/jquery/dist/jquery.min.js"></script>
+<script src="/vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
