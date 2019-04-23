@@ -137,8 +137,8 @@ class JavaDocModule(Module):
         xmldoc = minidom.parseString(xml)
         versions = [v.firstChild.nodeValue
                     for v in xmldoc.getElementsByTagName('version')]
-        return [v for v in versions
-                if re.match(r"^\d+\.\d+\.\d+$", v)]
+        return sorted([v for v in versions
+                       if re.match(r"^\d+\.\d+\.\d+$", v)])
 
 
 module = JavaDocModule()
