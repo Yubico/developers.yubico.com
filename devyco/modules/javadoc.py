@@ -6,6 +6,7 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
 """
 
 import os
+import re
 import shutil
 from os import path
 from urllib2 import urlopen, URLError
@@ -82,15 +83,40 @@ class JavaDocModule(Module):
         consecutive_timeouts_store.write(consecutive_timeouts)
 
         if not up_to_date or not path.exists(javadoc_cache_path):
-            url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
-                                             artifact=self.artifact,
-                                             version=self.remote_version)
-            jarfile = urlopen(url).read()
-            zipfile = ZipFile(StringIO(jarfile))
-            zipfile.extractall(javadoc_cache_path)
+            if conf.get('all_versions', False) == True:
+                versions = self.get_release_versions()
+                versions.reverse()
+                for version in versions:
+                    self._extract_javadoc(
+                        path.join(javadoc_cache_path, version),
+                        version)
+
+                self._extract_javadoc(
+                    path.join(javadoc_cache_path, 'latest'),
+                    self.remote_version)
+
+                outpath = path.join(javadoc_cache_path, 'index.partial')
+                tplt = self.get_template('javadoc-versions')
+                with open(outpath, 'w') as outfile:
+                    outfile.write(tplt.render(
+                                  latest=self.remote_version,
+                                  versions=versions
+                                  ).encode('utf-8'))
+
+            else:
+                self._extract_javadoc(javadoc_cache_path, self.remote_version)
+
             version_store.write(self.remote_version)
 
         shutil.copytree(javadoc_cache_path, path.join(self._target, 'JavaDoc'))
+
+    def _extract_javadoc(self, output_path, version):
+        url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
+                                         artifact=self.artifact,
+                                         version=version)
+        jarfile = urlopen(url).read()
+        zipfile = ZipFile(StringIO(jarfile))
+        zipfile.extractall(output_path)
 
     def _up_to_date(self, version_store):
         self._get_remote_version()
@@ -103,6 +129,16 @@ class JavaDocModule(Module):
         xmldoc = minidom.parseString(xml)
         self.remote_version = xmldoc.getElementsByTagName('latest')[
             0].firstChild.nodeValue
+
+    def get_release_versions(self):
+        url = HASH_URL.format(group_url=self.group_url,
+                              artifact=self.artifact)
+        xml = urlopen(url).read()
+        xmldoc = minidom.parseString(xml)
+        versions = [v.firstChild.nodeValue
+                    for v in xmldoc.getElementsByTagName('version')]
+        return [v for v in versions
+                if re.match(r"^\d+\.\d+\.\d+$", v)]
 
 
 module = JavaDocModule()
