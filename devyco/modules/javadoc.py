@@ -5,6 +5,7 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
     artifactId: The Maven artifactId for the project
 """
 
+import json
 import os
 import re
 import shutil
@@ -118,6 +119,9 @@ class JavaDocModule(Module):
                                     for v, aids in versions.items()
                                 ], reverse=True),
                                 ).encode('utf-8'))
+
+                with open(path.join(javadoc_cache_path, '.conf.json'), 'w') as excludefile:
+                    json.dump({'exclude': artifact_ids}, excludefile)
 
             else:
                 self._extract_javadoc(javadoc_cache_path, self.artifact, self.remote_version)
