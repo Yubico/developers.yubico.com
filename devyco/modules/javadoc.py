@@ -5,7 +5,9 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
     artifactId: The Maven artifactId for the project
 """
 
+import json
 import os
+import re
 import shutil
 from os import path
 from urllib2 import urlopen, URLError
@@ -82,15 +84,59 @@ class JavaDocModule(Module):
         consecutive_timeouts_store.write(consecutive_timeouts)
 
         if not up_to_date or not path.exists(javadoc_cache_path):
-            url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
-                                             artifact=self.artifact,
-                                             version=self.remote_version)
-            jarfile = urlopen(url).read()
-            zipfile = ZipFile(StringIO(jarfile))
-            zipfile.extractall(javadoc_cache_path)
+            if conf.get('all_versions', False) == True:
+                artifact_ids = conf.get('artifactIds', [self.artifact])
+
+                latest_versions = {}
+                versions = {}
+
+                for artifact_id in artifact_ids:
+                    (artifact_versions, artifact_latest) = self.get_versions(artifact_id)
+
+                    for version in artifact_versions:
+                        self._extract_javadoc(
+                            path.join(javadoc_cache_path, artifact_id, version),
+                            artifact_id,
+                            version)
+
+                        versions[version] = versions.get(version, set())
+                        versions[version].add(artifact_id)
+
+                    latest_versions[artifact_id] = artifact_latest
+
+                    self._extract_javadoc(
+                        path.join(javadoc_cache_path, artifact_id, 'latest'),
+                        artifact_id,
+                        artifact_latest)
+
+                outpath = path.join(javadoc_cache_path, 'index.partial')
+                tplt = self.get_template('javadoc-versions')
+                with open(outpath, 'w') as outfile:
+                    outfile.write(tplt.render(
+                                latest_versions=sorted(latest_versions.items()),
+                                versions=sorted([
+                                    (v, sorted(aids))
+                                    for v, aids in versions.items()
+                                ], reverse=True),
+                                ).encode('utf-8'))
+
+                with open(path.join(javadoc_cache_path, '.conf.json'), 'w') as excludefile:
+                    json.dump({'exclude': artifact_ids}, excludefile)
+
+            else:
+                self._extract_javadoc(javadoc_cache_path, self.artifact, self.remote_version)
+
             version_store.write(self.remote_version)
 
         shutil.copytree(javadoc_cache_path, path.join(self._target, 'JavaDoc'))
+
+    def _extract_javadoc(self, output_path, artifact_id, version):
+        url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
+                                         artifact=artifact_id,
+                                         version=version)
+        jarfile = urlopen(url).read()
+        zipfile = ZipFile(StringIO(jarfile))
+        zipfile.extractall(output_path)
 
     def _up_to_date(self, version_store):
         self._get_remote_version()
@@ -103,6 +149,19 @@ class JavaDocModule(Module):
         xmldoc = minidom.parseString(xml)
         self.remote_version = xmldoc.getElementsByTagName('latest')[
             0].firstChild.nodeValue
+
+    def get_versions(self, artifact_id):
+        url = HASH_URL.format(group_url=self.group_url,
+                              artifact=artifact_id)
+        xml = urlopen(url).read()
+        xmldoc = minidom.parseString(xml)
+        latest = xmldoc.getElementsByTagName('latest')[
+            0].firstChild.nodeValue
+        versions = [v.firstChild.nodeValue
+                    for v in xmldoc.getElementsByTagName('version')]
+        versions = sorted([v for v in versions
+                           if re.match(r"^\d+\.\d+\.\d+$", v)])
+        return (versions, latest)
 
 
 module = JavaDocModule()
