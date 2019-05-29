@@ -16,7 +16,22 @@ Once you have obtained your PFX file, split the certificate from the PFX file us
 
 This will create a file named `<Cert Hash>.crt`.
 
-If you are moving the key to the YubiHSM 2 on the same machine, you must delete the original private key in your current provider.
+If you are moving the key to the YubiHSM 2 on the same machine, you must delete the original private key in your current provider.  To do so, first execute
+
+  PS1> certutil -key
+  
+Locate the key that corresponds with the CA.  It may look something like
+
+```
+Microsoft Software Key Storage Provider:
+  EXAMPLE-CA
+  abcdef1234fedcba4321abcdef123456_9cfc1053-1b5a-44d7-8a7e-3a8a1c0d0db0
+  RSA
+    AT_KEYEXCHANGE
+```    
+To actually delete this example private key, execute
+
+  PS1> certutil -delkey -csp "Microsoft Software Key Storage Provider" "abcdef1234fedcba4321abcdef123456_9cfc1053-1b5a-44d7-8a7e-3a8a1c0d0db0"
 
 === Import the Target Private Key
 
@@ -24,7 +39,13 @@ Using the instructions for importing a PFX private key via `yubihsm-shell`, impo
 
 Record the link:../../Concepts/Label.adoc[Label] property of your imported key.
 
-IMPORTANT: The `certutil` utility doesn't provide an easy way to split a key exported from the Software KSP into an un-encrypted PEM file.  It may be necessary to use another tool like OpenSSL to convert the key file to an un-encrypted format for import into the HSM.
+IMPORTANT: The `certutil` utility doesn't provide an easy way to split a key exported from the Software KSP into an un-encrypted PEM file.  It may be necessary to use another tool like OpenSSL to convert the key file to an un-encrypted format for import into the HSM.  For example, to export the private key, execute 
+
+  PS1> openssl pkcs12 -in <pfx file> -nocerts -out ca.key -nodes
+  
+To remove the passphrase from the private key, execute
+
+  PS1> openssl rsa -in ca.key -out ca.key
 
 === Restore the Target Certificate
 
