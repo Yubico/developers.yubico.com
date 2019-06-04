@@ -7,19 +7,27 @@ of the PUK and Management keys in a secure location.
 
 === Prerequisites
 * a PIV enabled YubiKey
-* the link:/yubico-piv-tool[yubico-piv-tool] or link:/yubikey-piv-manager[YubiKey PIV Manager] software
+* the link:/yubico-piv-tool[yubico-piv-tool] or link:/yubikey-manager-qt[YubiKey Manager] software
 
-=== Using YubiKey PIV Manager for device setup
-YubiKey PIV Manager will automatically prompt you to initialize the device by
-setting the PIN, PUK, and Management Keys when it detects a YubiKey which is
-using the default values. Follow the on-screen instructions to set new values
-for your YubiKey. The YubiKey PIV Manager presents you with an option to only
-set the PIN and not set a PUK or Management Key. This can be more convenient,
-but also less secure. Also note that this scheme is not compatible with other
-tools. Do not select this option if you are planning on changing any of these
-keys using tools other than the YubiKey PIV Manager (this includes
-yubico-piv-tool). For more information on this mode, see
-link:/yubikey-piv-manager/PIN_and_Management_Key.html[PIN and Management Key].
+=== Using YubiKey Manager for device setup
+YubiKey Manager allows you to change the PIN, PUK and Management Key.
+
+    Applications > PIV > Configure PINs
+
+The Management Key can be protected with the PIN, meaning that it's saved on
+the device in a location only readable with the PIN. This lets the user access the
+key management features while only having to remember the PIN.
+
+The link:/yubikey-manager[YubiKey Manager CLI] can also be used for device setup.
+
+  $ ykman piv change-pin
+  $ ykman piv change-puk
+  $ ykman piv change-management-key
+
+It also allows you to generate a random management key and store it on the device,
+protected with the PIN.
+
+  $ ykman piv change-management-key --generate --protect
 
 === Using yubico-piv-tool for device setup
 The Management Key is set by invoking the `set-mgm-key` action. You will need
@@ -47,9 +55,10 @@ If the wrong PIN is entered 3 times consecutively, the PIN will become blocked.
 Once blocked, the PIN cannot be used. To recover from this state you can
 provide the PUK to set a new PIN, which will then not be blocked.
 
-For the YubiKey PIV Manager this is done by opening the _Manage device PINs_
-window. If PIN is blocked there will be a button titled _Reset PIN_, which will
-let you do this.
+With YubiKey Manager this can be done by pressing the `Unblock PIN` button found
+under `Configure PINs`, or with the CLI.
+
+  $ ykman piv unblock-pin
 
 To set a new PIN using yubico-piv-tool you invoke the `unblock-pin` action and
 provide the PUK (using `-P`) and a new PIN to set (using `-N`).
@@ -61,19 +70,17 @@ If you've lost your Management Key the only way to recover is to completely
 reset the PIV functionality, which will erase any keys or certificates stored
 on the device and set the default PIN, PUK and Management Key. This will only
 affect the PIV portion of your YubiKey, so any non-PIV configuration will
-remain intact. Resetting the PIV functionality is only possibly when both the
-PIN and PUK have been blocked.
+remain intact.
 
-For the YubiKey PIV Manager this is done by opening the _Manage device PINs_
-window. If both the PIN and PUK are blocked there will be a button titled
-_Reset device_. If this button is not visible you will likely have to use the
-_Change PIN_ and/or _Change PUK_ buttons to block them by providing incorrect
-values until they are both blocked. After resetting you will be prompted to
-initialize your YubiKey again.
+With YubiKey Manager this is done by pressing the `Reset PIV` button in the GUI,
+or with the CLI.
+
+  $ ykman piv reset
 
 To reset PIV on your YubiKey using yubico-piv-manager you invoke the `reset`
-action. To ensure that both the PIN and PUK are in a blocked state, you can run
-the following commands:
+action. Resetting the PIV functionality with yubico-piv-tool is only possibly
+when both the PIN and PUK have been blocked. To ensure that both the PIN and
+PUK are in a blocked state, you can run the following commands:
 
   # Attempt to use an invalid PIN multiple times to block it #
   $ yubico-piv-tool -a verify-pin -P 000000
@@ -90,5 +97,3 @@ the following commands:
 Once PIN and PUK are both blocked, you can reset the YubiKey.
 
   $ yubico-piv-tool -a reset
-
-
