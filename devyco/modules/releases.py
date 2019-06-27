@@ -157,27 +157,36 @@ class ReleasesModule(Module):
         with open(confpath, 'w') as f:
             json.dump(conf, f)
 
-        redirects = self._create_latest(entries[0], path.join(self._context['path'][0], target))
+        redirects = self._create_latest(entries, path.join(self._context['path'][0], target))
 
         if redirects:
             htaccess = path.join(self._target, '.htaccess')
             with open(htaccess, 'a') as f:
                 f.writelines(redirects)
 
-    def _create_latest(self, entry, path):
-        ver = entry["version"]
+    def _create_latest(self, entries, path):
         ret = ""
-        for f in entry["files"]:
-            if re.search(r"-" + ver, f["filename"]):
-                link = re.sub(r"-" + ver, "-latest", f["filename"])
-                redir = 'Redirect 302 "/%s/%s" "/%s/%s"\n' % (
-                        path, link, path, f["filename"])
-                ret += redir
-                if f["sig"]:
-                    link = re.sub(r"-" + ver, "-latest", f["sig"])
+        created = {}
+        for entry in entries:
+            ver = entry["version"]
+            for f in entry["files"]:
+                name = f["filename"]
+                sig = f["sig"]
+                match = re.search(r"-" + ver + "(.+)$", name)
+                if match:
+                    suffix = match.group(1)
+                    if suffix in created:
+                        continue
+                    created[suffix] = 1
+                    link = re.sub(r"-" + ver, "-latest", name)
                     redir = 'Redirect 302 "/%s/%s" "/%s/%s"\n' % (
-                            path, link, path, f["sig"])
+                            path, link, path, name)
                     ret += redir
+                    if sig:
+                        link = re.sub(r"-" + ver, "-latest", sig)
+                        redir = 'Redirect 302 "/%s/%s" "/%s/%s"\n' % (
+                                path, link, path, sig)
+                        ret += redir
         return ret
 
     def _post_run(self):
