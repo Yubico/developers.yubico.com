@@ -29,7 +29,8 @@
   <code class="Nm" title="Nm">fido_cred_set_rp</code>,
   <code class="Nm" title="Nm">fido_cred_set_user</code>,
   <code class="Nm" title="Nm">fido_cred_set_extensions</code>,
-  <code class="Nm" title="Nm">fido_cred_set_options</code>,
+  <code class="Nm" title="Nm">fido_cred_set_rk</code>,
+  <code class="Nm" title="Nm">fido_cred_set uv</code>,
   <code class="Nm" title="Nm">fido_cred_set_fmt</code>,
   <code class="Nm" title="Nm">fido_cred_set_type</code> &#x2014;
 <div class="Nd" title="Nd">set parameters of a FIDO 2 credential</div>
@@ -37,6 +38,16 @@
 <code class="In" title="In">#include
   &lt;<a class="In" title="In">fido.h</a>&gt;</code>
 <div class="Pp"></div>
+<div class="Bd">
+<pre class="Li">
+typedef enum { 
+	FIDO_OPT_OMIT = 0, /* use authenticator's default */ 
+	FIDO_OPT_FALSE,    /* explicitly set option to false */ 
+        FIDO_OPT_TRUE,     /* explicitly set option to true */ 
+} fido_opt_t;
+</pre>
+</div>
+<br/>
 <var class="Ft" title="Ft">int</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_set_authdata</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
@@ -93,10 +104,15 @@
 <div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
-<code class="Fn" title="Fn">fido_cred_set_options</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
-  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">bool
-  rk</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">bool
-  uv</var>);
+<code class="Fn" title="Fn">fido_cred_set_rk</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">fido_opt_t rk</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_set_uv</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">fido_opt_t uv</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
@@ -155,7 +171,11 @@ The <code class="Fn" title="Fn">fido_cred_set_user</code>() function sets the
   <var class="Fa" title="Fa">name</var>,
   <var class="Fa" title="Fa">display_name</var>, and
   <var class="Fa" title="Fa">icon</var> are copied, and no references to the
-  passed pointers are kept.
+  passed pointers are kept. Previously set user attributes are flushed. The
+  <var class="Fa" title="Fa">user_id</var>,
+  <var class="Fa" title="Fa">name</var>,
+  <var class="Fa" title="Fa">display_name</var>, and
+  <var class="Fa" title="Fa">icon</var> parameters may be NULL.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_extensions</code>() function sets
   the extensions of <var class="Fa" title="Fa">cred</var> to the bitmask
@@ -164,10 +184,13 @@ The <code class="Fn" title="Fn">fido_cred_set_extensions</code>() function sets
   supported. If <var class="Fa" title="Fa">flags</var> is zero, the extensions
   of <var class="Fa" title="Fa">cred</var> are cleared.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_cred_set_options</code>() function sets the
+The <code class="Fn" title="Fn">fido_cred_set_rk</code>() and
+  <code class="Fn" title="Fn">fido_cred_set_uv</code>() functions set the
   <i class="Em" title="Em">rk</i> (resident key) and
   <i class="Em" title="Em">uv</i> (user verification) attributes of
-  <var class="Fa" title="Fa">cred</var>. Both are off by default.
+  <var class="Fa" title="Fa">cred</var>. Both are
+  <code class="Dv" title="Dv">FIDO_OPT_OMIT</code> by default, allowing the
+  authenticator to use its default settings.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_fmt</code>() function sets the
   format of <var class="Fa" title="Fa">cred</var> to
@@ -182,10 +205,12 @@ The <code class="Fn" title="Fn">fido_cred_set_fmt</code>() function sets the
 The <code class="Fn" title="Fn">fido_cred_set_type</code>() function sets the
   type of <var class="Fa" title="Fa">cred to</var>
   <var class="Fa" title="Fa">cose_alg</var>, where
-  <var class="Fa" title="Fa">cose_alg</var> is either
-  <code class="Dv" title="Dv">COSE_ES256</code> or
-  <code class="Dv" title="Dv">COSE_RS256</code>. The type of a credential may
-  only be set once. Note that not all tokens support COSE_RS256.
+  <var class="Fa" title="Fa">cose_alg</var> is
+  <code class="Dv" title="Dv">COSE_ES256</code>,
+  <code class="Dv" title="Dv">COSE_RS256</code>, or
+  <code class="Dv" title="Dv">COSE_EDDSA</code>. The type of a credential may
+  only be set once. Note that not all authenticators support COSE_RS256 or
+  COSE_EDDSA.
 <div class="Pp"></div>
 Use of the <code class="Nm" title="Nm">fido_cred_set</code> set of functions may
   happen in two distinct situations: when generating a new credential on a FIDO
@@ -215,6 +240,6 @@ The error codes returned by the <code class="Nm" title="Nm">fido_cred_set</code>
 <table class="foot">
   <tr>
     <td class="foot-date">May 23, 2018</td>
-    <td class="foot-os">Linux 4.18.7-arch1-1-ARCH</td>
+    <td class="foot-os">Linux 5.2.1-arch1-1-ARCH</td>
   </tr>
 </table>
