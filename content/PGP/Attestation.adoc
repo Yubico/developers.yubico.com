@@ -8,13 +8,18 @@ The concept of attestation is to cryptographically certify that a certain asymme
 
 === Terminology
 
-+Attestion Key            -+ Private signature key to sign the generated Attestation Statement (also called Attesting Key)
-+Attestation Certificate  -+ X.509 certificate for the Attestation Key, used as template for Attestation Statement
-+Attested Key             -+ OpenPGP signature, decryption, or authentication key to attest was generated on device
-+Attestation Statement    -+ Generated X.509 certificate specifying the Attested Key details, signed by the Attestation Key
+[cols="<2,<5",grid="rows"]
+|===================
+|*Attestation Key*|Private signature key to sign the generated Attestation Statement (also called Attesting Key)
+|*Attestation Certificate*|X.509 certificate for the Attestation Key, used as template for Attestation Statement
+|*Attestated Key*|OpenPGP signature, decryption, or authentication key to attest was generated on device
+|*Attestation Statement*|Generated X.509 certificate specifying the Attested Key details, signed by the Attestation Key
+|===================
 
 === Implementation
 Attestation generates a new X.509 certificate (the Attestation Statement) for the key that is to be attested (Attested Key). The certificate is based on a template X.509 certificate issued by a CA (Attestation Certificate), and signed by the matching Attestation Key. An attestation certificate can only be generated if the attested key has been generated on device. This certificate should only be used for the purpose of verifying that the key was generated in device, not for any other purposes.
+
+When an attestation statement is generated, it is placed in the OpenPGP cardholder certificate slot for the attested key.  For example, if the signature key is attested, the attestation statement is placed in the SIG cardholder certificate slot (index 2 of DO 0x7F21).  Any data currently stored in the cardholder certificate slot is overwritten.
 
 The YubiKey is pre-loaded with an attestation certificate and matching attestation key issued by the Yubico CA. The template and key are replaceable, which permits an individual or organization to issue attestations verifiable with their own CA if they prefer. If replaced, the Yubico template can never be restored. The attestation key and certificate will not be cleared out by a reset of the device.
 
@@ -31,28 +36,102 @@ Some features of the generated Attestation Statement:
 
 Extensions in the generated certificate:
 
-* +1.3.6.1.4.1.41482.5.1 [   UTF-8 String]+: Cardholder name
-* +1.3.6.1.4.1.41482.5.2 [        Integer]+: Attested key source
-** Key Source 00 = imported (not permitted)
-** Key Source 01 = generated on device
-* +1.3.6.1.4.1.41482.5.3 [ 3 Octet String]+: Version number as Major|Minor|Patch (ex: 050203 == 5.2.3)
-* +1.3.6.1.4.1.41482.5.4 [20 Octet String]+: PGP fingerprint of attested key
-* +1.3.6.1.4.1.41482.5.5 [ 4 Octet String]+: Generation date of attested key
-* +1.3.6.1.4.1.41482.5.6 [        Integer]+: Signature counter of attested key, if applicable
-* +1.3.6.1.4.1.41482.5.7 [        Integer]+: Serial number of the YubiKey
-* +1.3.6.1.4.1.41482.5.8 [ 1 Octet String]+: User Interaction Flag (UIF), the touch policy
-** UIF: 00 = touch disabled
-** UIF: 01 = touch enabled
-** UIF: 02 = touch permanent
-** UIF: 03 = touch cached
-** UIF: 04 = touch permanent, cached
-* +1.3.6.1.4.1.41482.5.9 [ 1 Octet String]+: Form Factor
-** Form Factor 00 = Unspecified
-** Form Factor 01 = USB-A Keychain
-** Form Factor 02 = USB-A Nano
-** Form Factor 03 = USB-C Keychain
-** Form Factor 04 = USB-C Nano
+[options="header",cols="<1,<1,<2"]
+|==================================
+|OID|Type|Description
+|1.3.6.1.4.1.41482.5.1|UTF-8 String|Cardholder name
+|1.3.6.1.4.1.41482.5.2|Integer|Attested key's source +
++- 0x00:+ imported (not permitted) +
++- 0x01:+ generated on device
+|1.3.6.1.4.1.41482.5.3|Octet String (3)|YubiKey version number +
+ex: `050303` = 5.3.3
+|1.3.6.1.4.1.41482.5.4|Octet String (20)|Attested key's fingerprint
+|1.3.6.1.4.1.41482.5.5|Octet String (4)|Attested key's generation date
+|1.3.6.1.4.1.41482.5.6|Integer|Attested key's signature counter (if applicable)
+|1.3.6.1.4.1.41482.5.7|Integer|YubiKey's serial number
+|1.3.6.1.4.1.41482.5.8|Octet String (1)| User Interaction Flag (UIF) +
++- 0x00:+ touch disabled +
++- 0x01:+ touch enabled +
++- 0x02:+ touch permanent +
++- 0x03:+ touch cached +
++- 0x04:+ touch permanent, cached
+|1.3.6.1.4.1.41482.5.9|Octet String (1)|Form Factor +
++- 0x00:+ Unspecified +
++- 0x01:+ USB-A Keychain +
++- 0x02:+ USB-A Nano +
++- 0x03:+ USB-C Keychain +
++- 0x04:+ USB-C Nano
+|==================================
 
 === Yubico CA
 
 The pre-loaded attestation certificate is signed by a link:opgp-attestation-ca.pem[Yubico OPGP CA].
+
+=== Protocol Specification
+
+OpenPGP Attestation is an extension to the link:https://gnupg.org/ftp/specs/[OpenPGP application on ISO Smart Card Operating Systems] specification.  The new tags and instructions are reserved from version 3.4 of the spec.  Their usage is defined here.
+
+==== Attestation Key (Data Objects)
+
+The Attestation Key (ATT key), an asymmetric keypair of any supported algorithm except curve25519, is added as a fourth key (in addition to the existing SIG, DEC, and AUT).  Importing or generating an ATT key uses the same underlying commands as the other keys.
+
+Import and generation commands specify which key to load via a Control Reference Template (CRT).  Since the ATT key is a second 'signature' key, it must be addressed by using the 'complex' CRT format, which allows specifying a Key ID.
+
+Attestation Key identifiers:
+
+[options="header"]
+|=========================
+|Identifier | Value (hex)
+|Key ID | 81
+|CRT | B6 03 84 01 81
+|=========================
+
+New Data Objects tags for Attestation Key metadata:
+
+[options="header"]
+|=========================
+|Data Object | Description
+|0xDA | Algorithm Attributes
+|0xDB | Key Fingerprint
+|0xDC | CA Fingerprint
+|0xDD | Key Generation Date
+|0xD9 | User Interaction Flag (UIF)
+|=========================
+
+Setting the attestation key requires the administration PIN (PW3).
+
+==== Attestation Certificate (Data Object)
+
+The Attestation Certificate is stored in a dedicated DO with tag +0xFC+, accessible via standard PUT DATA and GET DATA instructions.
+
+The maximum size of the certificate is 2048 bytes.
+
+==== Generate Attestation (Instruction)
+
+A new instruction is added to generate the Attestation Statement.  Note that the class is 0x80, indicating that it is not an ISO interindustry standard instruction.
+
+[options="header",cols="<1,<3"]
+|=========================
+|APDU Field | Value(s)
+|CLA|0x80
+|INS|0xFB
+|P1|0x01 (SIG), 0x02 (DEC), 0x03 (AUT)
+|P2|0x00
+|Lc|0x00
+|Data|None
+|Le|0x00
+|=========================
+
+There is no response data.
+
+Upon successful completion (SW 0x9000), the Attestation Statement is written to the corresponding Cardholder Certificate slot.  The Attestation Statement can be retrieved via the normal GET DATA instruction to DO tag 0x7F21.
+
+Note that the order is non-standard in the cardholder certificate DO, so the mapping is as follows:
+
+[options="header"]
+|=========================
+|P1 Value | DO 7F21 Index | Key
+|1|2|SIG
+|2|1|DEC
+|3|0|AUT
+|=========================
