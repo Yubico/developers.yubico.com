@@ -27,6 +27,7 @@ build: docker-build
 		-u $(shell id -u):$(shell id -g) \
 		-v $(shell pwd):/developers \
 		-e NORELEASES=true \
+                -e NOPROJECTS=true \
 		yubico/developers/build
 
 docker-httpd:
