@@ -1,0 +1,58 @@
+== OpenPGP Attestation
+
+=== Introduction
+This document describes the attestation feature added to the OpenPGP module in YubiKey 5.2. For generating attestation certificates, you can use link:https://www.yubico.com/products/services-software/download/yubikey-manager/[YubiKey Manager] version 3.0.0 or higher.
+
+=== Purpose
+The concept of attestation is to cryptographically certify that a certain asymmetric key has been generated on device, and not imported. This can be used to prove that no other copies of the asymmetric key exist.
+
+=== Terminology
+
++Attestion Key            -+ Private signature key to sign the generated Attestation Statement (also called Attesting Key)
++Attestation Certificate  -+ X.509 certificate for the Attestation Key, used as template for Attestation Statement
++Attested Key             -+ OpenPGP signature, decryption, or authentication key to attest was generated on device
++Attestation Statement    -+ Generated X.509 certificate specifying the Attested Key details, signed by the Attestation Key
+
+=== Implementation
+Attestation generates a new X.509 certificate (the Attestation Statement) for the key that is to be attested (Attested Key). The certificate is based on a template X.509 certificate issued by a CA (Attestation Certificate), and signed by the matching Attestation Key. An attestation certificate can only be generated if the attested key has been generated on device. This certificate should only be used for the purpose of verifying that the key was generated in device, not for any other purposes.
+
+The YubiKey is pre-loaded with an attestation certificate and matching attestation key issued by the Yubico CA. The template and key are replaceable, which permits an individual or organization to issue attestations verifiable with their own CA if they prefer. If replaced, the Yubico template can never be restored. The attestation key and certificate will not be cleared out by a reset of the device.
+
+The attestation key can use any supported algorithm except curve25519. All keys, including curve25519, can be attested.
+
+Some features of the generated Attestation Statement:
+
+* Serial will be a random 16 byte integer
+* Issuer will be the subject of the template Attestation Certificate
+* Dates will be copied from the template Attestation Certificate
+* Subject will be the string "YubiKey OPGP Attestation " with the attested slot appended ("SIG", "DEC", or "AUT")
+* If the attestion key is RSA the signature will be SHA256-PKCS#1v1.5
+* If the attestion key is EC the signature will be ECDSA-SHA256
+
+Extensions in the generated certificate:
+
+* +1.3.6.1.4.1.41482.5.1 [   UTF-8 String]+: Cardholder name
+* +1.3.6.1.4.1.41482.5.2 [        Integer]+: Attested key source
+** Key Source 00 = imported (not permitted)
+** Key Source 01 = generated on device
+* +1.3.6.1.4.1.41482.5.3 [ 3 Octet String]+: Version number as Major|Minor|Patch (ex: 050203 == 5.2.3)
+* +1.3.6.1.4.1.41482.5.4 [20 Octet String]+: PGP fingerprint of attested key
+* +1.3.6.1.4.1.41482.5.5 [ 4 Octet String]+: Generation date of attested key
+* +1.3.6.1.4.1.41482.5.6 [        Integer]+: Signature counter of attested key, if applicable
+* +1.3.6.1.4.1.41482.5.7 [        Integer]+: Serial number of the YubiKey
+* +1.3.6.1.4.1.41482.5.8 [ 1 Octet String]+: User Interaction Flag (UIF), the touch policy
+** UIF: 00 = touch disabled
+** UIF: 01 = touch enabled
+** UIF: 02 = touch permanent
+** UIF: 03 = touch cached
+** UIF: 04 = touch permanent, cached
+* +1.3.6.1.4.1.41482.5.9 [ 1 Octet String]+: Form Factor
+** Form Factor 00 = Unspecified
+** Form Factor 01 = USB-A Keychain
+** Form Factor 02 = USB-A Nano
+** Form Factor 03 = USB-C Keychain
+** Form Factor 04 = USB-C Nano
+
+=== Yubico CA
+
+The pre-loaded attestation certificate is signed by a link:opgp-attestation-ca.pem[Yubico OPGP CA].
