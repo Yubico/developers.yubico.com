@@ -19,11 +19,55 @@ The concept of attestation is to cryptographically certify that a certain asymme
 === Implementation
 Attestation generates a new X.509 certificate (the Attestation Statement) for the key that is to be attested (Attested Key). The certificate is based on a template X.509 certificate issued by a CA (Attestation Certificate), and signed by the matching Attestation Key. An attestation certificate can only be generated if the attested key has been generated on device. This certificate should only be used for the purpose of verifying that the key was generated in device, not for any other purposes.
 
+Attestation is based on chain of trust:
+
+[mscgen]
+----
+msc {
+
+   # Entities
+   yc [label = "Yubico CA"], yk [label="YubiKey"], us [label="User"];
+
+   # Arcs
+   |||;
+   yc rbox yc [label = "Create ATT key"];
+   yc rbox yc [label = "Create X.509 cert"];
+   yc => yk [label = "issue Attestation Cert"];
+   yk rbox yk [label = "Read OpenPGP key"];
+   yk rbox yk [label = "Create X.509 cert"];
+   yk => us [label = "issue Attestation Statement"];
+}
+----
+
 When an attestation statement is generated, it is placed in the OpenPGP cardholder certificate slot for the attested key.  For example, if the signature key is attested, the attestation statement is placed in the SIG cardholder certificate slot (index 2 of DO 0x7F21).  Any data currently stored in the cardholder certificate slot is overwritten.
 
 The YubiKey is pre-loaded with an attestation certificate and matching attestation key issued by the Yubico CA. The template and key are replaceable, which permits an individual or organization to issue attestations verifiable with their own CA if they prefer. If replaced, the Yubico template can never be restored. The attestation key and certificate will not be cleared out by a reset of the device.
 
 The attestation key can use any supported algorithm except curve25519. All keys, including curve25519, can be attested.
+
+Attestation Statements are verified by validating the certificate chain in reverse:
+
+[mscgen]
+----
+msc {
+
+   # Entities
+   us [label="User"], yk [label="YubiKey"], yc [label = "Yubico"];
+
+   # Arcs
+   |||;
+   us -> yk [label = "get att. cert"];
+   yk >> us [label = "Attestation Certificate"];
+   us -> yk [label = "get att. statement"];
+   yk >> us [label = "Attestation Statement"];
+   us -> yc [label = "get CA pub. key"];
+   yc >> us [label = "CA Public Key"];
+   us rbox us [label = "\nVERIFY:\nOpenPGP Key signed in Attestation Statement?\n"];
+   us rbox us [label = "\nVERIFY:\nAttestation Statement signed by Attestation Key?\n"];
+   us rbox us [label = "\nVERIFY:\nAttestation Key signed in Attestation Certificate?\n"];
+   us rbox us [label = "\nVERIFY:\nAttestation Certificate signed by Yubico CA?\n"];
+}
+----
 
 Some features of the generated Attestation Statement:
 
@@ -62,6 +106,8 @@ ex: `050303` = 5.3.3
 +- 0x03:+ USB-C Keychain +
 +- 0x04:+ USB-C Nano
 |==================================
+
+NOTE: Cardholder name, fingerprint, and generation date can be overwritten with the admin PIN (PW3).  When verifying attestation statements, these fields should not be trusted.  Always verify the public key, and regenerate the PGP fingerprint if needed.
 
 === Yubico CA
 
@@ -135,3 +181,36 @@ Note that the order is non-standard in the cardholder certificate DO, so the map
 |2|1|DEC
 |3|0|AUT
 |=========================
+
+==== Protocol Diagram
+
+The diagram below illustrates a rough overview of what happens when the YubiKey Manager creates and fetches an Attestation Statement:
+
+[mscgen]
+----
+msc {
+
+   # Entities
+   ym [label = "YubiKey Manger"], yk [label="YubiKey"], do [label="Data Objects"];
+
+   # Arcs
+   |||;
+   ym => yk [label = "GENERATE ATT. (SIG)"];
+   yk -> do [label = "DO 0xFC"];
+   do >> yk [label = "Attestation Cert"];
+   yk rbox yk [label = "create att. template"];
+   yk -> do [label = "CRT 0xB600"];
+   do >> yk [label = "SIG public key"];
+   yk rbox yk [label = "add SIG key"];
+   yk rbox yk [label = "hash att. template"];
+   yk -> do [label = "CRT 0xB603840181"];
+   do >> yk [label = "ATT private key"];
+   yk rbox yk [label = "sign with ATT key"];
+   yk :> do [label = "Attestation Statement"];
+   yk >> ym [label = "SW 0x9000"];
+   ym => yk [label = "GET DATA (SIG cert)"];
+   yk -> do [label = "DO 0x7F21 IDX 2"];
+   do >> yk [label = "Attestation Statement"];
+   yk >> ym [label = "Attestation Statement"];
+}
+----
