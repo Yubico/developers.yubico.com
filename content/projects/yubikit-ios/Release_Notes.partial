@@ -1,0 +1,190 @@
+<h1 id="toc_0">YubiKit Changelog</h1>
+
+<h4 id="toc_1">2.0.0 [2.0.0 RC1 -&gt; 2.0.0]</h4>
+
+<ul>
+<li><p>The internal CBOR encoder used by the FIDO2 API is now sorting the map keys according to canonical CBOR rules when the keys are text strings. This fixes a bug with the order of the keys in the <code>webauthnAttestationObject</code> returned by the <code>YKFKeyFIDO2MakeCredentialResponse</code>.</p></li>
+<li><p>Improved the error handling when the applications are disabled on the YubiKey. In case of FIDO (FIDO2 and U2F) the application is shared (the CTAP specifications use the same AID). In this specific scenario, when only one of them is enabled, YubiKit was returning <code>YKFKeyAPDUErrorCodeInsNotSupported</code>. Now the library will return <code>YKFKeySessionErrorMissingApplicationCode</code> when trying to use the disabled application, similar with the scenario when both applications are disabled.</p></li>
+<li><p>Added a new constant, <code>YKFKeyFIDO2GetInfoResponseOptionUserVerification</code>, which can be used to test if the authenticator supports UV (User Verification). Removed from the YubiKit Demo application the explicit set of the UV options flag when creating FIDO2 credentials or getting assertions because the YubiKey 5Ci is not capable of verifying the user within itself. This update is available from firmware version 5.2.x and reflects the latest <a href="https://fidoalliance.org/specs/fido-v2.0-ps-20190130/fido-client-to-authenticator-protocol-v2.0-ps-20190130.html#authenticatorGetInfo">CTAP2 specifications</a>.</p></li>
+<li><p>Renamed the <code>supportsLightningKey</code> property from <code>YubiKitDeviceCapabilities</code> to <code>supportsMFIAccessoryKey</code>. The property will also return <code>NO/false</code> when the iOS device has an USB-C connector, such as the iPad Pro 3rd generation. These devices do not officially support MFi external accessories.</p></li>
+<li><p>Renamed several classes, properties and UI labels in the YubiKit Demo application to not use the term <em>Lightning</em>. This change was made to avoid possible trademark issues with this term. </p></li>
+<li><p>Some minor improvements to the PC/SC API to dynamically read some properties, like the name and the model of the key, from the <code>YKFKeySession</code> instead of returning hardcoded values.</p></li>
+<li><p>Several OATH improvements, including support for touch credentials and improved compatibility with other libraries/applications which implement the YOATH protocol, such as Yubico Authenticator for Android and desktop.</p></li>
+<li><p>Improved the ability to manually build OATH credentials using the <code>YKFOATHCredential</code> model provided by the library.</p></li>
+<li><p>The <code>build.sh</code> script will generate a <code>release-universal</code> flavour of the library, together with the previous flavours (<code>release</code> and <code>debug-universal</code>).</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_2">2.0.0 RC1 [2.0.0 B8 -&gt; 2.0.0 RC1]</h4>
+
+<ul>
+<li><p>The <code>YKFKeyFIDO2MakeCredentialResponse</code> has two new properties: <code>ctapAttestationObject</code> and <code>webauthnAttestationObject</code>: </p>
+
+<ul>
+<li>The <code>ctapAttestationObject</code> is identical to the <code>rawResponse</code> from the key. This attestation format follows the <a href="https://fidoalliance.org/specs/fido-v2.0-ps-20190130/fido-client-to-authenticator-protocol-v2.0-ps-20190130.html#responses">CTAP2 specifications</a> for packing the attestation object from the authenticator. In this format the top level CBOR map is using numeric keys for <code>authData</code>, <code>fmt</code> and <code>attStmt</code>.</li>
+<li>The <code>webauthnAttestationObject</code> is similar with the <code>ctapAttestationObject</code>. The only difference is in the top level CBOR map keys which are text, as defined in the <a href="https://developer.mozilla.org/en-US/docs/Web/API/AuthenticatorAttestationResponse/attestationObject">WebAuthN Attestation Object specifications</a>.</li>
+</ul></li>
+<li><p>The <code>attStmt</code> property from the <code>YKFKeyFIDO2MakeCredentialResponse</code> is an opaque object now (NSData/Data) instead of a parsed CBOR map to comply with the CTAP2 specifications on how the clients need to handle this object.</p></li>
+<li><p>The <strong>U2F</strong> external accessory protocol support has been removed from both YubiKit and YubiKit Demo application. The library supports from this version only the <strong>com.yubico.ylp</strong> external accessory protocol. Make sure to remove the <strong>U2F</strong> protocol from the application <em>Info.plist</em> file before submitting the application for an AppStore review.</p></li>
+<li><p>The <code>YubiKitDeviceCapabilities</code> contains a new property: <code>supportsLightningKey</code>. This property should be used in the application before starting the key session. If the check is not performed, in debug builds the library will assert when trying to start the key session on an unsupported iOS version. This property returns <code>YES</code>/<code>true</code> when: </p>
+
+<ul>
+<li>the iOS version is iOS 10 or newer.</li>
+<li>the iOS version is not in a blacklist of versions where the external accessories don&#39;t work due to iOS bugs.</li>
+</ul></li>
+<li><p>Moved the WebAuthN clientData into the library. The new class provided by the library is called <code>YKFWebAuthnClientData</code>. This change avoids duplicate implementations of the Client Data in every application which could lead to different results when using the FIDO2 APIs. When using Swift 5, this change avoids a random memory corruption of the old implementation from the YubiKit Demo application, when creating and passing the data to the library. <strong>Make sure to use the new implementation</strong> if the demo application code was reused.</p></li>
+<li><p>Several improvements and bug fixes to the logging of the library in debug builds. The library check in debug builds if the application is configured properly when starting the key session by looking at the application external accessory protocols.</p></li>
+<li><p>The firmware version, available in <code>YKFKeyDescription.firmwareRevision</code> returns now the format <code>[major].[minor].[patch]</code> instead of a number.</p></li>
+<li><p>Improvements and bug fixes to the YubiKit Demo application:</p>
+
+<ul>
+<li>The <code>WebAuthnClientData</code> is using an updated Swift 5 version of <code>Data.withUnsafeBytes</code> with the memory bound explicitly specified to avoid some possible data corruption when hashing.</li>
+<li>Removed a bug in the Other demos, Raw Commands where the logs were wiped immediately after running a demo, if the flow was successful.</li>
+</ul></li>
+<li><p>Several internal library improvements related to: debug assertions, unit testability and performance.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_3">2.0.0 B8 [2.0.0 B7 -&gt; 2.0.0 B8]</h4>
+
+<ul>
+<li><p>The YubiKit Demo application was updated to Xcode 10.2 and Swift 5. This version (or newer) of Xcode is required to compile and run the application.</p></li>
+<li><p>Added support for CTAP2/FIDO2 PIN management, including verification, getting the number of retries, setting and changing the PIN. The FIDO2 requests (<code>YKFKeyFIDO2MakeCredentialRequest</code> and <code>YKFKeyFIDO2GetAssertionRequest</code>) work with the CTAP2 PIN APIs.</p></li>
+<li><p>Replaced the U2F demo tab in the demo application with a new FIDO2/WebAuthN demo. The WebAuthN demo communicates with the Yubico WebAuthN demo website. The U2F demo was moved into a self-contained demo in the Other demos tab.</p></li>
+<li><p>The self-contained FIDO2 demo in the Other demos tab provides the ability to manage the PIN.</p></li>
+<li><p>The FIDO2 Make Credential and Get Assertion requests return also the raw CBOR response from the key. These responses can be sent directly to the server when the server does the parsing of the payload.</p></li>
+<li><p>Added support for CTAP2 Get Next Assertion request.</p></li>
+<li><p>Improved the management of the session when the applications are terminated or backgrounded, to reflect the newest changes in the hardware Rev2 of the YubiKey 5Ci. </p></li>
+<li><p>Fixed a bug with the key state on the FIDO2 and U2F services being unnecessary updated to the same value, triggering unnecessary KVO notifications. </p></li>
+<li><p>The YubiKit Demo application includes two reusable helper classes, <code>KeySessionObserver</code> and <code>FIDO2ServiceObserver</code> in <code>Examples/Observers</code>, which show an example on how to translate from a KVO observation pattern to a delegate pattern, when a delegate pattern is preferred for the target application.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_4">2.0.0 B7 [2.0.0 B6 -&gt; 2.0.0 B7]</h4>
+
+<ul>
+<li><p>This version adds compatibility with the hardware Rev2 of the YubiKey 5Ci. This includes support for CTAP2/FIDO2 requests against the key with some limitations (PIN authentication not supported yet by the library). Note that this new functionality is not supported by the hardware Rev1 devices. To determine the hardware revision, run the demo application (wireless debugging enabled) and insert the key. The application will show in the console logs the information about the accessory, including the hardware revision.</p></li>
+<li><p>Updated the Other demos to include an API demo on how to use the FIDO2 functionality provided by the library.</p></li>
+<li><p>Minor bug fixes and improved session handling when multiple applications try to access the key concurrently.</p></li>
+<li><p>For more details on how to use these new interfaces check the documentation from <em>Readme.md</em>.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_5">2.0.0 B6 [2.0.0 B5 -&gt; 2.0.0 B6]</h4>
+
+<ul>
+<li><p>Updated the PC/SC interface to receive pre-allocated buffers, similar to the original PC/SC API. This new implementation adds support for ask-for-size and optional buffers. Removed the <code>A</code> suffix from some of the methods and refer in the API header documentation to the PCSCLite documentation which is more concise and cross-platform.</p></li>
+<li><p>Added a new PC/SC function, similar to <code>pcsc_stringify_error</code> from PCSCLite, <code>YKFPCSCStringifyError</code>, which returns a human readable error description for a given, known, PC/SC error code.</p></li>
+<li><p>The PC/SC interface is exposing basic support for the PC/SC method <code>SCardGetStatusChange</code>, YubiKit version: <code>YKFSCardGetStatusChange</code>, which returns immediately the status of the card.</p></li>
+<li><p>The PC/SC interface tracks better contexts and cards and returns errors when a context or a card is invalid.</p></li>
+<li><p>Minor updates to the YubiKit Demo application and bug fixes.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_6">2.0.0 B5 [2.0.0 B4 -&gt; 2.0.0 B5]</h4>
+
+<ul>
+<li><p>The <code>YKFKeyRawCommandService</code> provides the ability to execute sync commands against the key.
+The <code>YKFKeySession</code> provides the ability to check if the key is connected to the device regardless of the session state. New APIs for opening and closing synchronously the session have been added to ease the development when using the raw interface.</p></li>
+<li><p>The YubiKit Demo application has been updated to provide a demo for the raw interface when using the sync API from <code>YKFKeyRawCommandService</code>.</p></li>
+<li><p>The YubiKit Demo application was improved for iPad. Now the application allows to test the OTP reading using the YubiKey for Lightning when the device does not support NFC reading. The application has an improved UI for the Lightning action sheet which can be easier reused.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_7">2.0.0 B4 [2.0.0 B3 -&gt; 2.0.0 B4]</h4>
+
+<ul>
+<li><p>The library provides the possibility to run raw commands against the YubiKey 5Ci. To allow this, a new service, <code>YKFKeyRawCommandService</code> was introduced. This service allows to execute custom built APDU commands when the host application needs a very specific interaction with the key.</p></li>
+<li><p>Together with the <code>YKFKeyRawCommandService</code> the library provides a new, PC/SC like decoupled interface to interact with the key. This interface is still in a prototype stage (POC).</p></li>
+<li><p>The YubiKit Demo application includes a new tab, Other, which is collection of miscellaneous small demos. Currently the list has only one demo, for the Raw Command interface.</p></li>
+<li><p>For more details on how to use these new interfaces check the documentation from <em>Readme.md</em>.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_8">2.0.0 B3 [2.0.0 B2 -&gt; 2.0.0 B3]</h4>
+
+<ul>
+<li><p>The <code>YKFKeySession</code> is exposing a new service for OATH credentials, <code>oathService</code>. The OATH service allows to interact with the OATH application from the key by using the <a href="https://developers.yubico.com/OATH/YKOATH_Protocol.html">YOATH protocol</a>. For a complete description of the new functionality check the <em>Readme.md</em> file and the header documentation for <code>YKFKeyOATHService</code>.</p></li>
+<li><p>The YubiKit Demo application contains now a demo on how to read an OTP from the YubiKey 5Ci. </p></li>
+<li><p>A QuickStart guide has beed added to the documentation.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_9">2.0.0 B2 [2.0.0 B1 -&gt; 2.0.0 B2]</h4>
+
+<ul>
+<li><p>The <code>YKFKeySession</code> has a new property, <code>keyDescription</code>, which provides a list of properties about the connected key, like firmware version, device name, etc. For the complete list of properties check <code>YKFKeyDescription</code>.</p></li>
+<li><p>The library can connect to newer version of the firmware which is using the <strong>com.yubico.ylp</strong> protocol name instead of <strong>U2F</strong>. To add support for this protocol add <strong>com.yubico.ylp</strong> to the list of supported external accessories protocols. U2F protocol name is deprecated starting from this version. The library still works with the U2F protocol devices.</p></li>
+<li><p>The <code>YKFKeyConnectionError</code> has been renamed to <code>YKFKeySessionError</code> to have a consistent naming with <code>YKFKeySession</code>. The library provides a few more detailed errors for the session operations. Check the error codes from <code>YKFKeySessionError</code> for more details.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_10">2.0.0 B1 [1.1.1 -&gt; 2.0.0 B1]</h4>
+
+<ul>
+<li><p>This release is a major update which adds initial support for YubiKeys with lightning connector. </p></li>
+<li><p>This version provides functionality for performing only U2F operations. Read the integration documentation to see how to add support for the YubiKeys with lightning connector.</p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_11">1.1.1 [1.1.0 -&gt; 1.1.1]</h4>
+
+<ul>
+<li><p>This is a minor update which adds support for a new default URI format when reading the OTP over NFC. This update is required to allow the applications to support future YubiKey firmware revisions. </p></li>
+<li><p>The new supported format of the URL is: <a href="">https://my.yubico.com/yk/#[otp_value]</a></p></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_12">1.1.0 [1.0.0 -&gt; 1.1.0]</h4>
+
+<p>This version has a few improvements on the NFC APIs and to the demo application:</p>
+
+<ul>
+<li>The check for NFC capabilities does a pre-check for devices with NFC chip or newer devices before interrogating the OS for the NFC capabilities to avoid a very rare CoreNFC crash on devices which do not have a NFC reader.</li>
+<li>The OTP token interface was updated and the <code>payload</code> property was removed because it can be inferred from the other properties of the token and it&#39;s not essential in the context of YubiKit.</li>
+<li>The <code>uri</code> and <code>text</code> properties from the <code>YKFOTPToken</code> provide now the full parsed URI/Text from the device (including the prepended protocol in case or URI).</li>
+<li>The demo application has a few UI updates and fixes a few layout issues on small screen devices (iPhone 5/5c/5s/SE)</li>
+<li>The demo application can now run on iOS 10.</li>
+</ul>
+
+<hr>
+
+<h4 id="toc_13">1.0.0 [1.0.0 RC2 -&gt; 1.0.0]</h4>
+
+<p>This version does a few changes to the library interface. The provided interface should  provide from now on a final API for capabilities check, NFC and QR code scanning:</p>
+
+<ul>
+<li>Renamed the <code>YKFDeviceCapabilities</code> as <code>YubiKitDeviceCapabilities</code>, as the capabilities type becomes a top level library interface object, on par with <code>YubiKitManager</code>, <code>YubiKitConfiguration</code> and <code>YubiKitExternalLocalization</code>.</li>
+<li>The capabilities change allows a direct check without retrieving them from the shared instance of the YubiKitManager as in RC2: <code>YubiKitDeviceCapabilities.supportsNFCScanning</code>  and <code>YubiKitDeviceCapabilities.supportsQRCodeScanning</code>. For a complete example read the documentation (README.md file) for RC3 and consult the code of the demo application.</li>
+<li>The <code>YubiKitManager</code> type provides from now several types of <em>sessions</em>, each one of them being responsible to only one type of communication. This change allows for future extensibility and consistency of the APIs without transforming <code>YubiKitManager</code> into a mixed responsibility type, responsible for various types of requests. RC3 provides two sessions: <code>nfcReaderSession</code> and <code>qrReaderSession</code>. The previous calls on the managers are now part of these sessions so <code>YubiKitManager.shared.&lt;method_call&gt;</code> becomes <code>YubiKitManager.shared.[nfcReaderSession/qrReaderSession].&lt;method_call&gt;</code>. For a complete example read the documentation (README.md file) for RC3 and consult the code of the demo application.</li>
+</ul>
+
+<hr>
+
+<h4 id="toc_14">1.0.0 RC2 [1.0.0 RC1 -&gt; 1.0.0 RC2]</h4>
+
+<ul>
+<li>Exposing the cancel user action from the NFC OS action sheet which is returned as an error by CoreNFC APIs: <code>NFCReaderError.readerSessionInvalidationErrorUserCanceled</code></li>
+</ul>
+
+<hr>
+
+<h4 id="toc_15">1.0.0 RC1</h4>
+
+<p>Initial release with support for: </p>
+
+<ul>
+<li>Reading OTPs (YubicoOTP and HOTP) from NFC enabled YubiKeys.</li>
+<li>Raw QR code scanning.</li>
+</ul>
