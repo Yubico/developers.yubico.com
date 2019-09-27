@@ -1,0 +1,54 @@
+WebAuthn Deployment Best Practices
+==================================
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+
+
+Implementing the basic registration and authentication use cases for WebAuthn with security keys can be straightforward, but in order to provide a solution that will be adopted and used, it is important to think through all of the various user scenarios. An environment that doesn’t use SMS for authentication or passwords introduces a number of different user stories that need to be understood. Having a clear plan in advance will help you ensure that there is no need to fall back on SMS-based verification solutions. Below is a set of best practices to follow when implementing security keys. To learn more about the WebAuthn API flows like Registration and Authentication, read our WebAuthn developer guide. If you have specific questions that are not addressed below, Yubico’s developer program is available to help answer your questions.
+
+Register a credential
+
+
+Registering a security key is a simple process, but users who are new to the process will need clear instructions. To provide this, many successful sites have implemented small animations that show a user entering a security key into the USB port and touching the device when required. These simple animations can be very helpful in guiding new users through the process.
+
+The user should be able to register multiple security keys per account and to name each security key. This will enable the user to have a back-up key should their primary key be lost or stolen, as well as help the user identify which keys they use on the site. The name of the security key is stored by the RP and is unique to the RP. Registration timestamps and location information also help the user identify security keys that are being used.
+
+Security keys include metadata with an attestation certificate. This information includes the manufacturer and device name, supported transports, image URL, etc. It is important to capture this information as it provides a way to validate devices, customize user experiences and provide authenticator metrics reports. This information allows an RP to take action on an authenticator if a security vulnerability is discovered. A trust store containing all registered attestation certificates provides an audit trail to support high assurance MFA. For more information about attestation certificate please visit the attestation section of Yubico’s WebAuthn Developer Guide.
+Manage credentials
+
+
+After a security key has been registered, it is important that it can be managed. The user needs to be able to add additional security keys as well as identify those that are being used. Identification information needs to include the name of the authenticator, as well as the time and place of last use. The user should be able to rename and remove their security keys at their discretion.  Users need to be given ample warning if they are removing all security keys from an account as this could leave the user without any second factor protection.
+
+Additionally, users should be advised to opt out of having their phone number be used for authentication or verification. Removing SMS completely from your environment can take time, but users should be allowed to remove the vulnerability ASAP if they have setup stronger authentication mechanisms.
+Conditional Authentication
+
+
+For events that carry high levels of risk or have monetary consequences, a security key can be used to quickly validate that the user is in possession of the physical security key and intends to perform the action. Prompting the user to touch the security key before proceeding allows the system to know that the request has come from the user vsa compromised system. The user is required to provide authentication specifically for these events.
+User Adoption
+
+
+There are many benefits for the user to switch to a security key. They may have heard the cofidoncerns about SIM swapping, but they don’t want to have to remember another password or PIN. They may want to switch, but might not know how to start or are too busy to change. A little nudge at the right time will help users improve their security and online experience. Each RP will need to decide what the appropriate message is to educate the user; for example, if a user authenticates using SMS-based MFA, the RP can notify the user that stronger and more convenient authentication options are available. Additionally, the RP can query the user’s browser to see if it supports WebAuthn and provide appropriate guidance and messaging.
+
+In addition to educating users to move away from SMS-based MFA, RPs should encourage users to register multiple authenticators. Having multiple authenticators is the best way to deal with a lost or forgotten security key.
+
+WebAuthn is being built into mobile devices, personal computers and, of course, security keys. This provides a wide range of options for the user to add additional authenticators. As a best practice, a security key should always be used as one of the user’s multiple authenticators.
+Account Recovery
+
+
+
+Where passwords are still used, SMS is a common way to send a password reset code to the user. To move away from SMS, a security key can be used instead to verify the user has permission to reset the password. The forgot password flow would prompt the user to touch their security key instead of having a code sent. Once the user touches the YubiKey, the signed assertion public/private key pair will be validated. If valid, the user would be allowed to change the password. This process is fast and painless for the user.
+
+If an individual loses all of their authenticators (this will become less likely the more security keys are enrolled), the identity proofing process should be performed again. Because the risk of a person losing all of their authenticators should decrease over time, it is a good practice to adopt the same rigor as for the initial access. Remote proofing technologies and processes can accelerate the process. In-person identity proofing may be required for specific and sensitive scenarios.
+
+
+Portable Root of Trust
+
+
+A security key is portable and can be used across many devices for authentication, backup and bootstrapping new authenticators, but a platform based authenticator cannot. A mobile device based platform authenticator is convenient, but credentials on it cannot be transferred to another device when the mobile device is replaced. By using a security key as a portable root of trust, users can  bootstrap a new mobile device and ensure there is no disruption in access.
+Mobile Scenarios
+
+
+WebAuthn can be used to remove SMS-based authentication from mobile applications as well. WebAuthn support is built into Android based phones and can be leveraged by developers building mobile applications on that platform. At this time (09-2019), applications on iPhones require the integration of Yubico’s iOS mobile SDK to take advantage of WebAuthn.  With the YubiKey 5Ci and the iOS Mobile SDK, developers can provide apps on the iPhone with the same security and ease of use capabilities as other devices. For further details please review Yubico’s Mobile SDK.  If you have any questions concerning integrating YubiKeys into your mobile application don’t hesitate to reach out to Yubico’s developers program.
