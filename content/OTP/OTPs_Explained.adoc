@@ -23,3 +23,69 @@ Copying an OTP will not allow another user to spoof a YubiKey -- the counter val
 will allow the validation server to know which OTPs have already been used.
 
 image:otp_details.png[]
+
+== The Yubico OTP generation algorithm
+The YubiKey OTP generation is made up of the following fields, encrypted with a unique AES-128 bit key. The result is the 32 character modhex string included after the 12 character public ID.
+
+|===
+|Mnemonic |Byte offset |Size |Description
+|uid 
+|0 
+|6 
+|Private (secret) id
+
+|useCtr 
+|6 
+|2 
+|Usage counter
+
+|tstp 
+|8 
+|3 
+|Timestamp
+
+|sessionCtr 
+|11 
+|1 
+|Session usage counter
+
+|rnd 
+|12 
+|2 
+|Random number
+
+|crc 14 2 CRC16 checksum
+|===
+
+
+=== Private ID
+The private id field comprises 6 bytes copied from the private id field configuration value. This field can be used to store a private identity if shared encryption keys are used.
+
+The verifying instance should verify this field against the expected value. If an OTP is encrypted with a non-matching AES key, this field will be invalid and the OTP shall in this case be rejected.
+
+=== Session usage counter
+At power up, the session usage counter is initiated to zero. After each new OTP has been generated, this field is incremented by one. If this field wraps from 0xff to 0, the usage counter field is automatically incremented.
+
+=== Usage counter
+The usage counter is a non-volatile counter which value is preserved even when the device is unplugged. The first time the device is used after a power-up or reset, this value is incremented by 1 and the session counter is set to zero.
+
+This field is only 15 bits wide, giving a usable range of 1 – 0x7fff. When this counter reaches 0x7fff it stops there. One could think that this could lead to a YubiKey being practically useless during its lifetime if this occurs. However, considering a YubiKey being used five times a day, 365 days per year, it will take 18 years for the counter to get stuck. Furthermore, as this counter only increment the first time after power up / reset, the practical lifetime is even longer.
+
+If the counter reaches the final value, the device can still be re-configured which would cause the counter to be reset.
+The field is stored in little-endian format, i.e. the least significant byte being stored first.
+
+=== Timestamp
+The timestamp is a 24-bit field incremented with a rate of approximately 8 Hz. The timestamp value is set to a random value after startup from the internal random number generator.
+
+This field may be used by the verifying party to determine the time elapsed between two subsequent OTPs received during a session. 
+
+This field wraps from 0xffffff to 0 without any further action. If used by the verifying party, this condition must be taken into account. Given an 8 Hz rate, the timer will wrap approximately every 24 days. The field is stored in little-endian format, i.e. the least significant byte being stored first.
+
+=== Random number
+A 16-bit random number is picked from the internal random number generator to add some additional entropy to the final result.
+
+=== Checksum
+A 16-bit ISO13239 1st complement checksum is added to the end. The checksum spans all bytes except the checksum itself. The checksum is
+verified by calculating the checksum of all bytes, including the checksum field. This shall give a fixed residual of 0xf0b8 if the checksum is valid. If the checksum is invalid, the OTP shall be rejected. 
+
+The field is stored in little-endian format, i.e. the least significant byte being stored first.
