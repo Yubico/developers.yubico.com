@@ -1,0 +1,49 @@
+== FIDO2 WebAuthn Server Authentication
+
+=== Initiate Authentication
+Authentication works much like registration, except less complex because of the fewer parameters and absence of authenticator attestation complexities.
+
+To initiate an authentication operation, call the RelyingParty startAssertion method. The main parameter is the username of the user to authenticate, but even this is optional. If the username is not set, then the allowCredentials parameter will not be set. This means the user must use a client-side-resident credential to authenticate; also known as first-factor authentication.
+
+The startAssertion method returns an AssertionRequest containing the username, if any, and a PublicKeyCredentialRequestOptions instance which can be serialized to JSON, have its Base64 encoded byte arrays converted back into `Uint8Array`s, and passed as the publicKey argument to `navigator.credentials.get()`. Again, store the AssertionRequest in temporary storage so it can be passed as an argument to the RelyingParty finishAssertion method.
+
+[source,java]
+----
+AssertionRequest request = rp.startAssertion(StartAssertionOptions.builder()
+    .username(Optional.of("alice"))
+    .build());
+String json = jsonMapper.writeValueAsString(request);
+return json;
+----
+
+=== Finish Authentication
+After receiving the response from the client, construct a `PublicKeyCredential` from the response and wrap that in a FinishAssertionOptions along with the AssertionRequest used to initiate the request. Pass that argument to the RelyingParty finishAssertion method, which will return an AssertionResult. Be sure to remove the AssertionRequest from the pending requests storage to prevent retries.
+
+[source,java]
+----
+String responseJson = /* ... */;
+
+PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> pkc =
+    jsonMapper.readValue(responseJson, new TypeReference<PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs>>() {
+});
+
+try {
+    AssertionResult result = rp.finishAssertion(FinishAssertionOptions.builder()
+        .request(request)
+        .response(pkc)
+        .build());
+
+    if (result.isSuccess()) {
+        return result.getUsername();
+    }
+} catch (AssertionFailedException e) { /* ... */ }
+throw new RuntimeException("Authentication failed");
+----
+
+Finally, use the AssertionResult to update any database(s) and take other actions depending on your application’s needs. In particular:
+
+* Use the username and/or userHandle results to initiate a user session.
+* Update the stored signature count for the credential (identified by the credentialId result) to equal the value returned in the signatureCount result.
+* Inspect the warnings - ideally there should be none.
+
+link:/WebAuthn//FIDO2_WebAuthn_Developer_Guide/Federation.html[Next: Federation]
