@@ -4,8 +4,18 @@ key and certificate.
 
 === Prerequisites
 * a YubiKey with the PIV application
-* the yubico-piv-tool software
-* the OpenSC software
+* the yubico-piv-tool software, available link:https://developers.yubico.com/yubico-piv-tool/Releases/[here] or on link:https://github.com/Yubico/yubico-piv-tool/releases[GitHub] or
+
+  $ brew install yubico-piv-tool
+
+* the OpenSC software, available on link:https://github.com/OpenSC/OpenSC/releases[GitHub] or 
+  
+  $ brew install OpenSC
++
+====
+Installing OpenSC on macOS might stop GnuPG from working, check our link:https://developers.yubico.com/PGP/[PGP page] for more details and workarounds
+====
+
 * jarsigner and keytool from the JDK (OpenJDK 8 used here)
 
 === Steps
@@ -20,6 +30,12 @@ b. Import the key and cert (PKCS12 format) in slot 9a:
   $ yubico-piv-tool -s 9a -a import-key -a import-cert -i key.p12 -K PKCS12
 
 2. Create a java pkcs11 configuration file:
++
+* Find out where OpenSC has installed the pkcs11 module. The following command can help with that:
+
+  $ find /usr/local/ -name opensc-pkcs11*
+
+* Create the file, using the correct path discovered above for the library setting:
 
   $ cat > /tmp/pkcs11_java.cfg
   name = OpenSC-PKCS11
@@ -44,6 +60,9 @@ Certificate fingerprint (SHA1): 26:D7:CB:71:6D:42:3C:AB:58:69:E0:9D:F0:16:DF:84:
 ....
 +
 Password here is the PIN of the key (default 123456).
++
+If the keytool command fails, adding the -debug option might help understand the problem. One common issue is that the slots might be indexed differently (starting from 0, for example), requiring the file created in the step above to be configured in another way.
+
 
 4. Sign the apk with jarsigner:
 

@@ -1,0 +1,75 @@
+
+== WebAuthn Server Registration
+
+=== Initiate Registration
+To initiate the registration ceremony the application will construct a StartRegistrationOptions instance using its builder and pass that into the RelyingParty startRegistration method. The only required parameter is a UserIdentity describing the user for which to create a credential. The id field contains the user handle. This should be a stable, unique identifier for the user - equivalent to a username. However due to privacy considerations it is recommended to set the user handle to a random byte array rather than a username.
+
+[source,java]
+----
+byte[] userHandle = new byte[64];
+random.nextBytes(userHandle);
+
+PublicKeyCredentialCreationOptions request = rp.startRegistration(StartRegistrationOptions.builder()
+    .user(UserIdentity.builder()
+        .name("alice")
+        .displayName("Alice Hypothetical")
+        .id(new ByteArray(userHandle))
+        .build())
+    .build());
+----
+
+The startRegistration method returns a PublicKeyCredentialCreationOptions which can be serialized to JSON, have its Base64 encoded byte arrays converted back into `Uint8Array`s, and passed as the publicKey argument to `navigator.credentials.create()`. This request should be stored in temporary storage so that it can later be used in the finish registration step.
+
+[source,java]
+----
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+ObjectMapper jsonMapper = new ObjectMapper()
+    .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+    .setSerializationInclusion(Include.NON_ABSENT)
+    .registerModule(new Jdk8Module());
+
+String json = jsonMapper.writeValueAsString(request);
+return json;
+----
+
+=== Finish Registration
+After receiving the response from the client, construct a PublicKeyCredential from the response and wrap it in a FinishRegistrationOptions along with the PublicKeyCredentialCreationOptions which was used to initiate the request.  
+
+[source,java]
+----
+String responseJson = /* ... */;
+PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs> pkc =
+    jsonMapper.readValue(responseJson, new TypeReference<PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs>>(){});
+----
+
+Pass the PublicKeyCredential as the argument to the RelyingParty finishRegistration method to validate the response. Be sure to remove the PubicKeyCredentialCreationOptions from the pending requests storage to prevent retries. The library performs a series of checks to ensure the registration ceremony was not tampered with, including:
+
+* Verifying the signature over the `clientDataHash` and the attestation using the certificate chain in the attestation statement
+* Verifying that the origin was the origin expected
+* Optionally: verifying that the certificate chain is signed by a trusted certificate authority, as configured via the `metadataService` parameter of the `RelyingParty` class.
+
+The full list of validation steps can be found in the WebAuthn specification.
+
+[source,java]
+----
+try {
+    RegistrationResult result = rp.finishRegistration(FinishRegistrationOptions.builder()
+        .request(request)
+        .response(pkc)
+        .build());
+} catch (RegistrationFailedException e) { /* ... */ }
+----
+
+Finally, use the RegistrationResult to update any database(s) and take other action depending on your application’s needs. In particular:
+
+* Store the keyId and publicKeyCose as a new credential for the user. The CredentialRepository will need to look these up for authentication.
+* If you care about attestation, it is recommended to also store the raw attestation object as part of the credential. This enables you to retroactively inspect credential attestations in response to policy changes and/or compromised authenticators.
+* If you care about attestation, use the attestationTrusted, attestationType and attestationMetadata fields to enforce your attestation policy.
+
+[source,java]
+----
+storeCredential("alice", result.getKeyId(), result.getPublicKeyCose());
+----
+
+link:/WebAuthn//FIDO2_WebAuthn_Developer_Guide/Attestation.html[Next: Attestation]

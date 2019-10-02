@@ -76,6 +76,7 @@ class PageRenderModule(Module):
 
     def _populate_children(self, current, children):
         hidden = map(noext, self.get_conf('hidden', []))
+        preserve_names = self.get_conf('preserve_names', False)
         current['children'] = []
         for child in children:
             child_id = path.basename(child).replace('.partial', '.html')
@@ -84,10 +85,12 @@ class PageRenderModule(Module):
             child_name = child_id.replace('.html', '')
             hide = child_name in hidden or path.isdir(child) \
                 and not os.listdir(child)
+            if not preserve_names:
+                child_name = display_name(child_name)
             current['children'].append({
                 'id': child_id,
                 'url': current['url'] + '/' + child_id,
-                'name': display_name(child_name),
+                'name': child_name,
                 'active': False,
                 'hidden': hide,
                 'children': []

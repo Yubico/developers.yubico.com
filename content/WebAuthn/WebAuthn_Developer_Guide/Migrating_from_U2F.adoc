@@ -1,0 +1,11 @@
+== Migrating From U2F
+If you have users who have already registered U2F credentials with the U2F API, there is an extra step you need to take to make those existing credentials work in WebAuthn so your users do not have to re-register their authenticators.
+
+The reason for this is that the U2F AppID and the WebAuthn Relying Party (RP) ID are slightly different. This does not matter for new registrations because the authenticator identifies the Relying Party by a hash of that ID, but if you try to use a U2F credential in the WebAuthn API, those hashes will not match. The solution to this is to use the `appid` extension and pass the U2F AppId as a parameter. That way the client can try the U2F AppId if the authenticator does not recognize the WebAuthn RP ID, so you can upgrade your server to using WebAuthn without breaking your users’ existing credentials.
+
+For example, say your users have previously created U2F credentials for the U2F AppId “https://accounts.example.com”, and the new version of your service uses WebAuthn with the RP ID “example.com”. In this case you would set the `appid` extension argument to “https://accounts.example.com”, so that your users’ authenticators can still recognize your service.
+
+
+image::fido2_u2f_migrate.png[]
+
+link:/WebAuthn//FIDO2_WebAuthn_Developer_Guide/Desktop_and_Mobile_Authentication.html[Next: Desktop and mobile authentication]
