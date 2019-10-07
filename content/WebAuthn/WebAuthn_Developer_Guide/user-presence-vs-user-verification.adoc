@@ -1,0 +1,29 @@
+== User Presence vs User Verification ==
+
+This description is derived in part from the W3C's recommendation, https://www.w3.org/TR/webauthn/[Web Authentication: An API for accessing Public Key Credentials Level 1]. However, the distinction is also entirely applicable to YubiKeys outside the WebAuthn context.
+
+User **verification** serves to ensure that the person authenticating to a service is in fact who they say they are for the purposes of that service. Or, in the words of the W3C recommendation, "...a user and the user’s client (containing at least one authenticator) work in concert to cryptographically prove to [that service, the RP] that the user controls the private key credential associated with a previously-registered public key credential". The RP directs the authenticator to perform user verification, the authenticator performs user verification locally and signals to the RP whether user verification was successful. User verification can take various forms, such as password, PIN, fingerprint, public key credential, etc. The point is to distinguish one user from any other, i.e., uniquely identify the user.
+
+With user **presence**, the intent is not to identify the user, but to ensure that a user is in control of the key. Presumably that user is the one previously identified, but unless a PIN was required when the credential was created and again at authorization, it could be any individual who is physically present at the location where these ceremonies are performed.
+
+Note that the term "authorization gesture" is ambiguous: it can refer either to user presence or user verification.
+
+Both registration and authentication require any of the following:
+
+* User presence - this most basic configuration is nothing more than a FIDO2 call that prompts the user to touch the security key or interact in some way with the authenticator.
+* User verification - a FIDO2 call where the authenticator verifies that the user is authorized to use the authenticator, and signals to the RP whether user verification was successful.
+* User presence + user verification.
+
+The RP has the following options for ``userVerification`` when initiating registration or authentication:
+
+*DISCOURAGED*: This value indicates that the RP does not want user verification employed during the operation (for example, to minimize disruption to the user interaction flow).
+
+*PREFERRED*:	This value indicates that the RP prefers user verification for the operation if possible, but will not fail the operation if the response does not have the ``AuthenticatorDataFlags.UV`` flag set.
+
+*REQUIRED*: Indicates that the RP requires user verification for the operation and will fail the operation if the response does not have the ``AuthenticatorDataFlags.UV flag`` set.
+
+
+== Use Cases ==
+* User presence is appropriate for second factor authentication (2FA)
+* User verification is not recommended for 2FA because the user will have already entered a shared secret (password) sent to the server over the network
+* User verification is appropriate for passwordless scenarios and multi-factor authentication (MFA) because the user enters a shared secret with the authenticator (PIN) that is not sent over the network.
