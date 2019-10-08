@@ -1,0 +1,35 @@
+== "Platform" vs "Cross-Platform" ==
+This description is derived in part from the W3C's recommendation, https://www.w3.org/TR/webauthn[Web Authentication: An API for accessing Public Key Credentials Level 1].
+
+The WebAuthn standard supports two types of authenticators:
+
+*Platform authenticators*, also known as *internal authenticators*, such as a fingerprint scanner built into a smartphone. Platform authenticators are limited to authenticating a user via a specific device (in the case of Windows Hello, the laptop running it). To support platform authenticators, a device must include both:
+
+ - A Trusted Platform Module (TPM) security chip to handle public and private keys. Most recent business-grade laptops, desktops, and smartphones have TPMs.
+
+ - A camera or biometric reader that supports the types of input required; for example, to scan a fingerprint, a fingerprint reader is required. Note that a biometric sensor is not *required* for a platform authenticator. The point is that the authenticator must support the type of input required, which could just as well be PIN for user verification, or indeed, in the case where there is no user verification at all, the TPM would be used as a U2F style second factor authenticator.
+
+*Roaming authenticators*, also known as *cross-platform* or *external authenticators*, such as a hardware security key. These authenticators can be used with a laptop or mobile device, etc., and are thus cross-platform. This characteristic enables their use to establish a secure source for verifying the user’s identity (the "root of trust") and for delegating trust to specific devices in the user’s control. The user can therefore authorize other devices as needed ("bootstrap" them). Should one of those other devices be lost or become corrupted, the roaming authenticator is used to authorize a new device. For these reasons, it is a roaming authenticator such as a security key that should be the primary authenticator.
+
+
+== Use Case
+The following is just an exemplary use case to enable "step up" scenarios.
+
+
+=== New Device Registration
+An RP requires a primary authenticator such as a USB security key plus a platform authenticator such as a fingerprint scanner. The user thus has low-friction strong authentication with their cross-platform primary authenticator that enables them to authorize secondary client devices, even those without a platform authenticator. For example, with a computer without platform authenticator, a website might prompt at specified intervals for the security key.
+
+[NOTE]
+======
+Account recovery is facilitated by registering multiple authenticators for each account.
+======
+
+== Best Practice
+When registering a new account, use a hardware security key as the first authentication option. Then, if a previously registered device is unavailable, the security key can be used to bootstrap a new device.
+
+[NOTE]
+====
+Users should have a backup security key in case the first key becomes unavailable.
+====
+
+link:User_Handle.html[Next: User Handle]
