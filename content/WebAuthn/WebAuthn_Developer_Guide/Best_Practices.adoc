@@ -1,0 +1,78 @@
+== WebAuthn Deployment Best Practices ==
+
+Implementing the basic registration and authentication use cases for WebAuthn with security keys can be straightforward, but in order to provide a solution that will be actually adopted, it is important to think through all of the various user scenarios. An environment that does not use passwords or SMS for authentication introduces a number of different user stories.
+
+
+=== Account Recovery ===
+
+Where passwords are still used, SMS is a common way to send a password reset code to the user. To move away from SMS, a security key can be used instead. The forgot password flow would simply prompt the user to touch their security key to validate the signed assertion public/private key pair. If valid, the user would be allowed to change the password.
+
+The more security keys an individual has registered per account, the less likely that all of them are lost. However, if this does happen, the identity proofing process should be performed again as rigorously as the first time. Remote proofing technologies and processes can accelerate the process, although in-person identity proofing may be required for sensitive scenarios.
+
+
+=== Mobile / Portable Root of Trust ===
+
+The credentials on a mobile device-based platform authenticator cannot be transferred to another device when the mobile device is replaced. By using a security key as a portable root of trust, users can  bootstrap a new mobile device and ensure there is no disruption in access. WebAuthn can thus be used to remove SMS-based authentication from mobile applications.
+
+
+=== Conditional Authentication ===
+
+In high-risk situations, a security key can be used to quickly validate that the user is in possession of the physical security key and is intentionally performing the action. Prompting the user to touch the security key before proceeding enables validation that the request has come from the user instead of from a compromised system.
+
+
+=== Support ===
+
+WebAuthn support is built into Android-based phones and can be leveraged by developers building mobile applications on that platform. At this time (September 2019), applications on iPhones require the integration of Yubico’s iOS mobile SDK to take advantage of WebAuthn. Note that the RP can query the user’s browser to see if it supports WebAuthn.
+
+
+== Register a Credential ==
+
+Registering a security key is a simple process, but end-users who are new to the process will need clear instructions. Many successful sites have developed animated graphics or little videos that show a user manipulating a security key in the expected fashion (for example, inserting it into a USB port or touching a cell phone with it) and touching the device when required. These animations are very helpful in guiding new users through the process and securing adoption of the new practices.
+
+
+== Manage Credentials ==
+
+In addition to attestation certificates, security keys contain metadata with the following information at minimum:
+
+* The name of the key manufacturer
+* The device type
+* Supported transports
+* Image URL.
+
+=== RP ===
+
+It is important for the RP to capture this information as it enables device validation, user experience customization, and authenticator metrics reports. Identification information needs to include:
+
+* Name of the authenticator
+* Time and location of last use
+
+The name given by the end-user to the security key is stored by the RP and is unique, meaning that no end-user should have two keys with the same name. Nicknames for security keys are not part of the WebAuthn protocol; they need to be added on by the RP.
+
+If a security vulnerability is discovered, the RP can identify which keys/users are at risk and take appropriate action.
+
+A trust store containing all registered attestation certificates provides an audit trail to support high assurance multi-factor authentication (MFA).
+
+
+
+=== End-User ===
+
+The end-user should:
+
+* Have at least two security keys
+* Name each security key
+* Register multiple security keys per account
+* Opt out of using their phone number for authentication or verification.
+
+In addition, the end-user needs to be able to:
+
+* Add security keys
+* Identify those security keys that are being used
+* Rename security keys
+* Remove security keys from their account(s). However, users need to be given ample warning if they are removing all security keys from an account as this could leave them without any second factor protection.
+
+
+== User Adoption ==
+
+Whether or not end-users fully understand why security keys are safer, they are generally much more practical for end-users to use than solutions requiring PINs and passwords. For that reason alone, a little nudge from the RP at the right time will help users improve their own security practices as well as their online experience. Switching to security keys also enables end-users to avoid wasting time on calls for help.
+
+link:WebAuthn_Client_Registration.html[Next: WebAuthn Client Registration]

@@ -1,97 +1,54 @@
-== What is FIDO2 and Web Authentication?
-FIDO2 and WebAuthn mark an evolution of the link:https://developers.yubico.com/U2F/[FIDO U2F] open authentication standard. They now enable strong passwordless authentication built on public key cryptography using hardware devices like security keys, mobile phones, and other built-in devices.
-
-FIDO2 is an open authentication standard that consists of the link:https://www.w3.org/TR/webauthn/[W3C Web Authentication API] (WebAuthn), and the link:https://fidoalliance.org/specifications/download/[FIDO2 Client to Authentication Protocol] (CTAP). CTAP is an application layer protocol used for communication between a client (browser) or a platform (operating system) and an external authenticator (YubiKey 5). Yubico, Microsoft and Google are the core contributors to the W3C WebAuthn and FIDO2 CTAP2 specifications.
-
-Like U2F, the FIDO2/WebAuthn standard offers the same high level of security, as it is based on public key cryptography and is intended to solve additional user scenarios including first factor (passwordless) and multi-factor authentication. With these new capabilities, the hardware security key can entirely replace weak static username/password credentials with strong hardware-backed public/private-key credentials.  These credentials can not be reused, replayed or shared across services, and are not subject to phishing and MiTM attacks or server breaches.
-
-=== FIDO2/WebAuthn Advantages
-
-[horizontal]
-Strong security:: Replaces weak passwords with strong hardware-based authentication using public key crypto to protect against phishing, session hijacking, man-in-the-middle, and malware attacks.
-Privacy Protection:: A FIDO2 authenticator generates a new pair of keys for every service, and the service stores only the public key. With this approach, no secrets are shared between service providers.
-Multiple choices:: Open standards provide flexibility and product choice. Designed for existing phones and computers, for many authentication modalities, and with different communication methods (USB and NFC).
-Cost-efficient:: Hardware authenticators are affordable and available for link:https://www.yubico.com/store/[purchase online]. Yubico offers free and open source server software for back-end integration.
-Layered approach:: For organizations requiring a higher level of authentication security, WebAuthn supports use of a hardware authentication device with a PIN, biometric or gesture for additional protection.
-
-=== How it works
-The following diagrams show the basic FIDO2/WebAuthn user flows:
-
-==== Registration sequence diagram
-[mscgen]
-----
-msc {
-  # Options
-  hscale = "1.5";
-
-  # Entities
-  a [label="Authenticator"],
-  c [label="Client/Platform"],
-  s [label="Server"];
-
-  # Arcs
-  |||;
-  s => c [label="1. publicKeyCredentialCreationOptions\n(challenge, userInfo, relyingPartyInfo)\n\n\n"];
-  c => a [label="2. authenticatorMakeCredential\n(challenge, userInfo, relyingPartyInfo,\nclientDataHash)\n\n\n\n"];
-  a rbox a [label="\n3. Create new Key Pair and Attestation\n"];
-  |||;
-  a => c [label="4. attestationObject\n(newPublicKey, credentialId, attestation)\n\n\n"];
-  c => s [label="5. authenticatorAttestationResponse\n(credentialId, clientData, attestationObject)\n\n\n"];
-  s rbox s [label="\n6. Sever validation\n"];
-  |||;
-}
-----
-
-==== Authentication sequence diagram
-[mscgen]
-----
-msc {
-  # Options
-  hscale = "1.5";
-
-  # Entities
-  a [label="Authenticator"],
-  c [label="Client/Platform"],
-  s [label="Server"];
-
-  # Arcs
-  |||;
-  s => c [label="1. publicKeyCredentialRequestOptions\n(challenge)\n\n\n"];
-  c => a [label="2. authenticatorGetAssertion\n(replyingPartyInfo, clientDataHash)\n\n\n"];
-  a rbox a [label="\n3. User verification, create assertion\n"];
-  |||;
-  a => c [label="4. authenticatorGetAssertionResponse\n(credentialId, authData, signature)\n\n\n"];
-  c => s [label="5. authenticatorAssertionResponse\n(credentialId, clientData, authData, signature)\n\n\n"];
-  s rbox s [label="\n6. Sever validation\n"];
-  |||;
-}
-----
-
-== Implementing
-
-https://www.yubico.com/why-yubico/for-developers/developer-videos/[Watch FIDO2 / Web Authentication webinars] to learn more about the core concepts and how to integrate WebAuthn Relying Party operations into an authentication server.
-
-link:/WebAuthn/WebAuthn_Developer_Guide/Overview.html[Read the dev guide] for an introduction to WebAuthn/FIDO2. The guide walks through this flow using Yubico's Java WebAuthn Server.
-
-link:/FIDO2/Libraries/List_of_libraries.html[Integrate our open source libraries] and get started protecting user accounts with WebAuthn. Use these libraries to communicate with FIDO devices as well as verify attestation and assertion signatures.
-
-The link:https://www.yubico.com/why-yubico/for-developers/developer-program[Yubico Developer Program] provides resources to enable rapid implementation of strong authentication. Resources include workshops, documentation, implementation guides, APIs, and SDKs.  Sign up to receive updates for our early access to the resources for implementing the FIDO2 and Web Authentication specifications.
-
-link:https://www.yubico.com/why-yubico/for-developers/developer-program[Sign up now] for the Yubico Developer Program.
-
-=== Attestation certificates
-
-All Yubico FIDO devices use attestation certificates signed by the following root CA:
-link:/u2f/yubico-u2f-ca-certs.txt[Yubico FIDO CA].
-
-NOTE: If you have a YubiKey Preview device, the attestation certificate will 
-instead be signed by our Preview CA: link:/u2f/fido-preview-ca-cert.pem[Yubico FIDO Preview CA].
+== WebAuthn Introduction
 
 
-== Useful Links
+=== Life Before WebAuthn
 
- - http://w3c.github.io/webauthn/[W3C Web Authentication specification]
- - https://www.w3.org/Webauthn/[W3C Web Authentication working group]
- - https://fidoalliance.org/specs/fido-v2.0-ps-20170927/fido-client-to-authenticator-protocol-v2.0-ps-20170927.html[FIDO2 Client to Authentication Protocol]
- - https://groups.google.com/a/fidoalliance.org/d/forum/fido-dev[FIDO-Dev Discussion List]
+Passwords were supposed to secure our bank accounts, social media accounts, and hosts of other sensitive data - in short, we rely on passwords to secure our online existence.
 
+And yet passwords are susceptible to phishing and released to the public when websites are compromised or hacked. Over 80% of all hacking-related breaches are caused by stolen or weak passwords.
+
+For developers, the complexity of passing those passwords securely through systems and storing them securely in hacker-proofed databases is a burdensome overhead.
+
+
+=== Replacing the Password
+
+The fact that a password is a shared secret makes it vulnerable. Public-key authentication doesn’t have that weakness, and the WebAuthn API enables servers to register and authenticate users using public key cryptography instead of a password. The WebAuthn standard is a universally accepted W3C specification developed in concert by Yubico, Google, Mozilla, Microsoft, and others. Web Authentication works in tandem with other industry standards such as https://www.w3.org/TR/credential-management-1/[Credential Management] and https://fidoalliance.org/specs/fido-v2.0-rd-20170927/fido-client-to-authenticator-protocol-v2.0-rd-20170927.html[FIDO 2.0 Client to Authenticator Protocol 2] (CTAP). CTAP is an application layer protocol used for communication between a client (browser) or a platform (operating system) and an external authenticator (YubiKey 5).
+
+Databases are no longer targets because public keys are useless without the corresponding private keys. FIDO2 standards enable passwordless authentication between servers, authenticators and browsers.
+
+
+=== How It Works
+
+With WebAuthn, servers can integrate with authenticators such as the YubiKey, a USB token, a smart phone, Apple’s Touch ID, and Windows Hello. The private key is securely stored on the device, while the server stores the public key and randomly generates challenges for the authenticator to sign. The signature proves possession of the private key, and the random challenge prevents replay attacks.
+
+image::fido2_building_blocks.png[]
+
+A server provides the data that binds a user to a private-public keypair (credential). The data includes identifiers for user and service or organization (the relying party, or RP). The RP can be Amazon, Facebook, Google, or any other service that has adopted WebAuthn. When the user begins the registration process, the RP sends out a challenge. The user agent - typically a browser -  responds by using the WebAuthn API to prompt the user’s authenticator to create a new keypair. The private key is used to sign the challenge generated by the RP. The user agent sends the public key, an identifier for the public key (credential ID), and the signed challenge back to the RP for storage. When at a later time the user wants to authenticate, the RP sends out the credential ID and a new challenge. The authenticator signs the challenge with the private key identified by the credential ID, and the user agent sends the signature back to the RP which verifies it, proving that the user is in possession of the previously registered private key.
+
+
+==== On the Front End
+
+To experience registration and authentication from the end user’s perspective, check out https://demo.yubico.com/webauthn[this demo].
+
+
+==== On the Back End
+
+image::fido2_app_architecture.png[]
+
+In general, a FIDO2/WebAuthn authentication architecture involves a conversation between a computing environment controlled by a Relying Party and one controlled by the user to be authenticated.
+
+The following sections in this guide describe the basic FIDO2/WebAuthn user flows:
+
+* Registration Sequence
+* Authentication Sequence
+
+
+=== Building a WebAuthn Experience
+
+The Yubico Developer Program provides workshops, documentation, implementation guides, APIs, and SDKs. To get started,
+
+1. Sign up to the Yubico Developer Program to access the resources for implementing the FIDO2 and Web Authentication specifications.
+2. Watch FIDO2 / Web Authentication webinars to learn more about the core concepts and how to integrate WebAuthn RP operations into an authentication server.
+3. Read the developer guide for an introduction to WebAuthn/FIDO2 using Yubico’s Java WebAuthn Server.
+
+link:/WebAuthn_Developer_Guide/.conf.html[Next: WebAuthn Developer Guide Table of Contents]
