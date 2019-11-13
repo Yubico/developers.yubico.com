@@ -24,35 +24,45 @@ The configuration steps to be performed  are set out briefly below. These steps 
 
 1. Set up communication between the YubiHSM 2 tools and the device.
 
-2. Start the configuration process.
+2. Run the YubiHSM Setup with the argument `ksp`, specifying the Connector URL if necessary.
 
-3. Authenticate to the YubiHSM 2 device.
+3. Start the YubiHSM Setup process and authenticate to the YubiHSM 2 device.
 
-4. Specify whether you need to add RSA decryption. If you plan to use your YubiHSM 2 exclusively with an application that only needs signing capabilities, RSA decryption is not required. Active Directory Certificate Services (ADCS), for example, does not require RSA decryption. However, if you are planning on using the same YubiHSM 2 device for something that requires the capability to decrypt RSA, then you do need RSA decryption. This is the case for Microsoft SQL Server Always Encrypted, for example.
+4. Add RSA decryption capabilities if required. If you plan to use your YubiHSM 2 exclusively with an application that only needs signing capabilities, RSA decryption is not required. Active Directory Certificate Services (ADCS), for example, does not require RSA decryption. However, if you are planning on using the same YubiHSM 2 device for something that does require the capability to decrypt RSA, then you do need RSA decryption. The Microsoft SQL Server Always Encrypted, for example, needs RSA decryption capabilities.
 
 5. Enter the name of the domain in which you need the application authentication key and audit key to be available.
 
-6. Create the *wrap key*.
+6. Generate the *wrap key* and its ID.
 
-7. Split the wrap key into shares and specify the number of shares required to regenerate the wrap key.
+7. Split the wrap key into shares and specify the privacy threshold.
 
-8. Create the *application authentication key* and its password. The password to the authentication key must be at least eight (8) characters.
+8. Have the wrap key custodians record their shares.
 
-9. Create the *audit key*.
+9. Create the *application authentication key*
+
+10. Create the password for the application authentication key.
+
+11. Create the *audit key* (optional).
+
+12. Original default authentication key is deleted and setup process finishes.
 
 image::yubi-hsm-2-flowchart.png[]
 
 **Figure 2 – Flowchart illustrating the YubiHSM 2 setup for Windows**
 
-=== Procedure: Configuring Primary YubiHSM 2
+== Procedure: Configuring the Primary YubiHSM 2
 
 *Step 1*: Enable communication with the YubiHSM 2 device by running the YubiHSM Connector on the system where the device is inserted. If the YubiHSM Connector is running on a host machine to which the YubiHSM 2 is physically connected, the Connector should be started in networked mode. For example, if the host IP address is 192.168.100.252, the Connector should be started on the host machine with the following command:
 
-`$ yubihsm-connector -l 192.168.100.252:12345`
+....
+$ yubihsm-connector -l 192.168.100.252:12345
+....
 
 In this scenario, you can verify that the Connector is running properly by typing the following URL into your web browser:
 
-`http://192.168.100.252:12345/connector/status`
+....
+http://192.168.100.252:12345/connector/status
+....
 
 The output in the web browser should be similar to:
 
@@ -68,18 +78,20 @@ port=12345
 *Step 2*: In the Command Prompt, navigate to a directory for which you have write access and run the YubiHSM Setup with the argument `ksp`.
 
 ....
-        $ yubihsm-setup ksp
+$ yubihsm-setup ksp
 ....
 
-If the application calling it is installed on a machine other than the YubiHSM Connector, the `connector` flag needs to specify the Connector URL. For example:
+If the application calling it is installed on a machine other than the YubiHSM Connector, use the `connector` flag to specify the Connector URL, for example:
 
 ....
 $ yubihsm-setup --connector http://192.168.100.252:12345 ksp
 ....
 
-*Step 3*: To start the YubiHSM Setup process, type the default authentication key password `password`. A message is displayed, confirming that the default authentication key was used and that you are authenticated to the device:
+*Step 3*: To start the YubiHSM Setup process, type the default authentication key password `password`. A message confirms that the default authentication key was used and that you are authenticated to the device:
 
-`Using authentication key 0x0001`
+....
+Using authentication key 0x0001
+....
 
 Object IDs are displayed in the YubiHSM Setup Tool using hexadecimal numbers. In this case the default authentication key is ID `1` (or `0x0001` in hexadecimal format).
 
@@ -103,20 +115,22 @@ One
 Enter wrap keyID (0 to choose automatically):
 ....
 
-*Step 6*: You are prompted to create a wrap key and enter its ID. Do one of the following:
+*Step 6*: You are prompted to generate a wrap key and enter its ID. Do one of the following:
 
 * To manually assign a wrap key ID, type a number for the ID. As object ID `1` is already in use by the default application authentication key, we recommend assigning ID `2` to the wrap key.
 * To allow the system to generate a wrap key ID automatically, type `0`.
 
 In both cases, a confirmation message like the following is displayed:
 
-`Stored wrap key with ID 0x0002 on the device`
+....
+Stored wrap key with ID 0x0002 on the device
+....
 
-*Step 7*: You are prompted to configure splitting the wrap key among a number of key custodians. For this example, we will assume that the wrap key is split into three shares, of which at least two shares must be present in order to regenerate the key.
+*Step 7*: You are prompted to specify the number of shares into which the wrap key should be split in order to be distributed to an equal number of key custodians. You are also prompted to specify the privacy threshold, which is the number of shares that must be present for the wrap key to be regenerated. For this example, we  assume that the wrap key is split into three shares, of which at least two shares must be present in order to regenerate the key.
 
-_Note: See "Key Splitting and Key Custodians" in https://developers.yubico.com/YubiHSM2/Usage_Guides/YubiHSM_2_Windows_Deployment_Guide/Prerequisites_and_Preparations.adoc[Prerequisites and Preparations] for key custodian instructions._
+_Note: For an overview of key custodian activities, see "Key Splitting and Key Custodians" in link:Prerequisites_and_Preparations.adoc[Prerequisites and Preparations]._
 
-TIP: For test purposes, such as in a lab scenario where wrap key sharing is not crucial, it is not necessary to specify that the wrap key should be shared between key custodians. Instead, you can use a single key. To do this, when configuring the device using YubiHSM Setup, indicate the number of shares to be `1` and the privacy threshold to also be `1`.
+TIP: For test purposes, such as in a lab scenario where wrap key sharing is not crucial, it is not necessary to specify that the wrap key should be split between key custodians. Instead, you can use a single key. To do this, when configuring the device using YubiHSM Setup, indicate the number of shares to be `1` and the privacy threshold to be `1` as well.
 
 When prompted, do the following:
 
@@ -124,7 +138,14 @@ a) Enter the number of shares. In this example, enter `3`.
 
 b) Enter the privacy threshold. In this example, enter `2`.
 
-*Step 8*: When the relevant prompt is displayed, each of the three wrap key custodians should take their turn in front of the screen to record their share. A warning notice appears advising you/them  that the shares are not stored anywhere.
+The wrap key thereby generated is saved to the HSM 2 device.
+
+*Step 8*: When the relevant prompt is displayed, each of the three wrap key custodians should take their turn in front of the screen to record their share.
+
+[IMPORTANT]
+============
+Each custodian must record the whole string presented, including the prefix (in the following example, `2-1-`) which indicates the number of shares required to regenerate the key (the privacy threshold) and the number identifying where in the sequence the share was created.
+============
 
 The following is an example of a share presented on the screen:
 
@@ -133,10 +154,7 @@ The following is an example of a share presented on the screen:
 Have you recorded the key share? (y/n)
 ....
 
-[IMPORTANT]
-============
-Each custodian must record the whole string presented, including the prefix (in this example, `2-1-`) which indicates the number of shares required to regenerate the key (the privacy threshold) and the number identifying where in the sequence the share was created.
-============
+A notice is displayed, warning that the shares are not stored anywhere.
 
 a) To start having the custodians record the key shares, press **Enter**.
 
@@ -144,21 +162,18 @@ b) The first custodian records his or her share and confirms that the share was 
 
 c) The next custodian records the key share for the second share, confirms it, and so on.
 
-*Step 9*: You are prompted to create an **application authentication key**. Since object IDs `1` and `2` are already in use by the default authentication key and the wrap key respectively, the example in this guide assumes that the application authentication key to be created gets ID `3`. Do one of the following:
+*Step 9*: You are prompted to create an **application authentication key**. Since object IDs `1` and `2` are already in use by the default authentication key and the wrap key respectively, the example in this guide assumes that you enter ID `3` for the application authentication key. To allow the system to generate a wrap key ID automatically, type `0`.
 
-* To manually assign an application authentication key ID, type `3`.
-* To allow the system to generate a wrap key ID automatically, type `0`.
-
-*Step 10*: Create a password for the application authentication key. Be sure to store the password of the application authentication key so that it cannot be compromised. You will need this information later to configure the YubiHSM KSP DLL. The password should be at least eight (8) characters. Enter the application authentication key password. A confirmation message like the following appears:
+*Step 10*: Create and enter a password of at least eight (8) characters for the application authentication key. Store it so that it cannot be compromised. You will need this password later to configure the YubiHSM KSP DLL, as described in link:Configure_the_YubiHSM_2_Software.adoc[Configure the YubiHSM 2 Software]. A confirmation message like the following appears:
 
 ....
 Stored application authentication key with ID 0x0003 on the device
 Saved wrapped application authentication key to 0x0003.yhw
 ....
 
-The wrapped application authentication key (in this example, `0x0003.yhw`) is saved to the current working directory. Although the keys are encrypted using the wrap key, we recommend that you do not store keys - even under wrap - on network-accessible or any storage media that could be compromised. However, if you are making the backup (and you should), leave the `*.yhw-file` with the wrapped authentication key where it was saved for now.
+The wrapped application authentication key (in this example, `0x0003.yhw`) is exported to the current working directory. Although the keys are encrypted using the wrap key, we recommend that you do not store keys - even under wrap - on network-accessible or any storage media that could be compromised. However, if you will be making a backup (and you should), leave the `*.yhw-file` with the wrapped authentication key where it was saved for now, deleting it *AFTER* you have made the backup.
 
-*Step 11*: Decide whether to create an **audit authentication key**. To log into the YubiHSM 2 with this authentication key, both the key ID and the password will be needed.
+*Step 11*: Decide whether to create an **audit authentication key**. To log into the YubiHSM 2 with the audit authentication key, both the key ID and the password will be needed.
 
 a) When prompted to create an audit key, type `y`.
 
@@ -168,14 +183,14 @@ c) When prompted, enter the audit key password. Store this password so that it c
 
 The audit key is exported under wrap to the current working directory. Using our example of key ID `4`, the file will be named `0x0004.yhw`.
 
-*Step 12*: The setup tool (in default mode) finishes by letting you know that the previous authentication key has been deleted.
+*Step 12*: The setup tool (in default mode) finishes by letting you know that the default authentication key has been deleted.
 
 ....
 Previous authentication key 0x0001 deleted
 All done
 ....
 
-The YubiHSM Setup application exits. The YubiHSM 2 device is equipped with the symmetric keys for wrap, audit, and application authentication.
+The YubiHSM Setup application exits. The YubiHSM 2 device is now equipped with the symmetric keys for wrap, audit, and application authentication.
 
 
 link:Verify_the_YubiHSM_2_Setup.adoc[Verify the YubiHSM 2 Setup]
