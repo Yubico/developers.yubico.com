@@ -1,6 +1,10 @@
 == OpenSSL with YubiHSM 2 via engine_pkcs11 and yubihsm_pkcs11
 
 Install `engine_pkcs11` and `pkcs11-tool` from OpenSC before proceeding.
+Depending on your operating system and configuration you may have to install
+[libp11](https://github.com/OpenSC/libp11/blob/master/INSTALL.md) as well.
+If you are on macOS you will have to [symlink `pkg-config`](https://gist.github.com/aklap/e885721ef15c8668ed0a1dd64d2ea1a7#gistcomment-2814899)
+in order to do so.
 
 OpenSSL requires engine settings in the `openssl.cnf` file.
 Some OpenSSL commands allow specifying `-conf ossl.conf` and some do not.
@@ -11,6 +15,15 @@ commands like `openssl req`.
 In other words, you may have to add the engine entries to your default OpenSSL
 config file (`openssl.cnf` in the directory shown by `openssl version -d`) or
 add other requirements for your OpenSSL command into the config file.
+
+It is suggested that you create a separate config file for interactions with 
+the HSM in order to prevent conflicts with previous settings or defaults.
+
+An alias can be created to easily read from a dedicated config file and ensure
+ compatibility across systems
+....
+alias yubissl='OPENSSL_CONF=/path/to/yubihsm.conf openssl'
+....
 
 Here is an example of generating a key in the device, creating a self-signed
 certificate and then signing a CSR with it:
@@ -78,8 +91,12 @@ $ cat > engine.conf <<EOF
 
     [pkcs11_section]
     engine_id = pkcs11
-    dynamic_path = /path/to/engine_pkcs11.so
-    MODULE_PATH = /path/to/yubihsm_pkcs11.so
+    # dynamic_path is not required if you have installed
+    # the appropriate pkcs11 engines to your openssl directory
+    dynamic_path = /path/to/engine_pkcs11.{so|dylib}
+    MODULE_PATH = /path/to/yubihsm_pkcs11.{so|dylib}
+    # it is not recommended to use "debug" for production use
+    INIT_ARGS = connector=http://127.0.0.1:12345 debug
     init = 0
 EOF
 
