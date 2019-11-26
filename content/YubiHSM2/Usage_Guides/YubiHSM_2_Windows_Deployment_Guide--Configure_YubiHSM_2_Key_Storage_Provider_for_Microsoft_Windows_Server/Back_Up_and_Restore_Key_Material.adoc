@@ -2,8 +2,10 @@
 
 We strongly recommend making a backup copy of all production objects residing on your production devices, particularly once the asymmetric key has been generated on the YubiHSM 2. If there is a hardware failure of the production device, having a backup ensures that you can resume operations quickly. The backup process will result in two identical YubiHSM 2 devices with the same number of objects, keys, labels, etc.
 
-_Note: Making specific recommendations for governance of your critical key material is out of scope for this guide. Make sure to design these security procedures to meet the requirements of your organization - and then document them carefully._
-
+[NOTE]
+======
+Making specific recommendations for governance of your critical key material is out of scope for this guide. Make sure to design these security procedures to meet the requirements of your organization - and then document them carefully.
+======
 
 === Back Up the YubiHSM 2
 
@@ -43,8 +45,10 @@ image::yubi-hsm-2-flowchart.png[]
 
 **Figure 4 - Flowchart illustrating backup and recovery of YubiHSM 2 keys**
 
-TIP: For *test purposes* you can set the `yubihsm-setup -d` flag to keep the default authentication-key with the administrative privileges; this will allow you to delete keys on the YubiHSM 2 for test purposes only. For *production purposes*; however, the `yubihsm-setup` command must be executed without the `-d` flag to ensure that the factory preset authentication key is properly deleted on the YubiHSM 2 device.
-
+[TIP]
+=====
+For *test purposes* you can set the `yubihsm-setup -d` flag to keep the default authentication-key with the administrative privileges; this will allow you to delete keys on the YubiHSM 2 for test purposes only. For *production purposes*; however, the `yubihsm-setup` command must be executed without the `-d` flag to ensure that the factory preset authentication key is properly deleted on the YubiHSM 2 device.
+=====
 
 === Restore Keys on the Secondary YubiHSM 2 Device
 
@@ -68,9 +72,12 @@ For example, the following wrapped key files may be present:
 
 * `0x427a-AsymmetricKey.yhw`		(Private asymmetric key under wrap - not referenced by this guide in the configuration of the primary HSM 2)
 
-TIP: If the initial authentication key (by default available as ID 0x0001) has been deleted, the new authentication application key will be identified with the flag `yubihsm-setup --authkey`. For example:
+[TIP]
+=====
+If the initial authentication key (by default available as ID 0x0001) has been deleted, the new authentication application key will be identified with the flag `yubihsm-setup --authkey`. For example:
 
 `$ yubihsm-setup --authkey 0x0003 dump`
+=====
 
 *Step 2*: To begin the process of restoring the data onto the secondary YubiHSM 2, if the primary YubiHSM 2 device is still inserted into your computer, remove it and insert the secondary device.
 
@@ -98,7 +105,10 @@ Received share 2-1WWmTQj5PHGJQ4H9Y2ouURm8m75QkDOeYzFzOX1VyMpAO…
 Stored wrap key with ID 0x0002 on the device
 ....
 
-_Note: The ID of the wrap key on the secondary device is the same as the ID of the wrap key on the primary device._
+[NOTE]
+======
+The ID of the wrap key on the secondary device is the same as the ID of the wrap key on the primary device.
+======
 
 *Step 8*: Once the wrap key has been stored on the secondary HSM 2, the YubiHSM Setup program reads the files containing the application authentication key and, if applicable, the audit key, which were saved to file under wrap during the configuration of the primary device. The output below shows that in this case, the Certificate Authority (CA) root key was also generated and exported along with a private asymmetric key, both under wrap.
 
