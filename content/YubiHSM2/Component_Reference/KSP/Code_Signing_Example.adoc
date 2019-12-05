@@ -1,8 +1,22 @@
 == Creating a Code-Signing Certificate using the Key Storage Provider
 
-This example will show you how to create a code-signing certificate request using a key generated and stored in the YubiHSM 2 via the Key Storage Provider.  This type of code-signing certificate is appropriate for use with the Microsoft `signtool` utility for digitially signing Windows binaries.
+This example will show you how to create a code-signing certificate request using a key generated and stored in the YubiHSM 2 via the Key Storage Provider (KSP).  This type of code-signing certificate is appropriate for use with the Microsoft `signtool` utility for digitally signing Windows binaries.
 
 In this example, we will use the command line `certreq` utility.  All procedures documented here are available in the Certificate Manager (`certmgr.msc`) MMC snap-in if you prefer a UI experience.
+
+=== Configure the Key Storage Provider
+
+The KSP will by default use the factory authentication key in slot 1.
+If the factory authentication key no longer exists or use of a different authentication key is desired, the KSP must first be link:index.adoc[configured] with the desired key ID and password.
+
+Note that the configured authentication key must at a minimum have capabilities `generate-asymmetric-key,sign-pkcs` and delegated capability `sign-pkcs`. If you want the generated key to be exportable, then add the `exportable-under-wrap` delegated capability.
+
+==== Authentication Key Example
+
+Create a new Authentication Key capable of generating exportable asymmetric keys through KSP.
+
+  yubihsm> put authkey 0 0 "GenerateKey" 1 generate-asymmetric-key,sign-pkcs sign-pkcs,exportable-under-wrap password
+  Stored Authentication key 0x0e32
 
 === Create the Certificate Request Configuration File
 
@@ -14,16 +28,22 @@ The `certreq` utility requires a _.inf_ file as input which defines your request
 Signature="$Windows NT$"
 
 [NewRequest]
-Subject = "CN=My Publisher"         ; Entity name (dns name/upn for other cert types)
-Exportable = FALSE                  ; Private key is not exportable
-KeyLength = 2048                    ; YubiHSM KSP key sizes: 2048, 3072, 4096
-KeySpec = 2                         ; 1 = AT_KEYEXCHANGE, 2 = AT_SIGNATURE
-KeyUsage = 0x80                     ; 80 = Digital Signature, 20 = Key Encipherment (bitmask)
-MachineKeySet = False               ; True: cert belongs the local computer, False: current user
+Subject = "CN=My Publisher"                     ; Entity name (dns name/upn for other cert types)
+HashAlgorithm = sha256                          ; Request uses sha256 hash
+KeyAlgorithm = RSA                              ; Key pair generated using RSA algorithm
+Exportable = FALSE                              ; Private key is not exportable
+ExportableEncrypted = FALSE                     ; Private key is not exportable encrypted
+KeyLength = 2048                                ; YubiHSM KSP key sizes: 2048, 3072, 4096
+KeySpec = 2                                     ; 1 = AT_KEYEXCHANGE, 2 = AT_SIGNATURE
+KeyUsage = 0x80                                 ; 80 = Digital Signature, 20 = Key Encipherment (bitmask)
+MachineKeySet = FALSE                           ; True: cert belongs the local computer, False: current user
+KeyUsageProperty = NCRYPT_ALLOW_SIGNING_FLAG    ; Private key only used for signing, not decryption
+UseExistingKeySet = FALSE                       ; Do not use an existing key pair
 ProviderName = "YubiHSM Key Storage Provider"
 ProviderType = 1
-SMIME = FALSE
-RequestType = CMC                   ; Can be CMC, PKCS10, PKCS7 or Cert (self-signed)
+SMIME = FALSE                                   ; No secure email function
+UseExistingKeySet = FALSE                       ; Do not use an existing key pair
+RequestType = PKCS10                            ; Can be CMC, PKCS10, PKCS7 or Cert (self-signed)
 
 [Strings]
 szOID_ENHANCED_KEY_USAGE = "2.5.29.37"
@@ -65,4 +85,4 @@ If you have multiple certificates available for code signing, it may be necessar
 
 For a detailed explanation of all options available in the request _inf_ file, please see the documentation for the link:https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certreq_1[certreq] utility.
 
-To generate a simliar request using the Certificate Manager, open the Certificate Manager snap-in, select the Personal/Certificates store, right click and select _All Tasks->Advanced Operations->Create Custom Request_.
+To generate a similar request using the Certificate Manager, open the Certificate Manager snap-in, select the Personal/Certificates store, right click and select _All Tasks->Advanced Operations->Create Custom Request_.
