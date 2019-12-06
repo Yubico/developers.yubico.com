@@ -1,0 +1,114 @@
+<style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+    div.Nd, div.Bf, div.Op { display: inline; }
+    span.Pa, span.Ad { font-style: italic; }
+    span.Ms { font-weight: bold; }
+    dl.Bl-diag > dt { font-weight: bold; }
+    code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn,
+    code.Cd { font-weight: bold; font-family: monospace; }
+    var { font-family: monospace; }
+    .Sh { font-size: 1.5em; padding-top: 1em; padding-bottom: 1em; }
+</style>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">FIDO_BIO_ENROLL_NEW(3)</td>
+    <td class="head-vol">Library Functions Manual</td>
+    <td class="head-rtitle">FIDO_BIO_ENROLL_NEW(3)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm" title="Nm">fido_bio_enroll_new</code>,
+  <code class="Nm" title="Nm">fido_bio_enroll_free</code>,
+  <code class="Nm" title="Nm">fido_bio_enroll_last_status</code>,
+  <code class="Nm" title="Nm">fido_bio_enroll_remaining_samples</code> &#x2014;
+<div class="Nd" title="Nd">FIDO 2 biometric enrollment API</div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In" title="In">#include
+  &lt;<a class="In" title="In">fido.h</a>&gt;</code>
+<br/>
+<code class="In" title="In">#include
+  &lt;<a class="In" title="In">fido/bio.h</a>&gt;</code>
+<div class="Pp"></div>
+<div class="Bd">
+<pre class="Li">
+#define FIDO_BIO_ENROLL_FP_GOOD				0x00 
+#define FIDO_BIO_ENROLL_FP_TOO_HIGH			0x01 
+#define FIDO_BIO_ENROLL_FP_TOO_LOW			0x02 
+#define FIDO_BIO_ENROLL_FP_TOO_LEFT			0x03 
+#define FIDO_BIO_ENROLL_FP_TOO_RIGHT			0x04 
+#define FIDO_BIO_ENROLL_FP_TOO_FAST			0x05 
+#define FIDO_BIO_ENROLL_FP_TOO_SLOW			0x06 
+#define FIDO_BIO_ENROLL_FP_POOR_QUALITY			0x07 
+#define FIDO_BIO_ENROLL_FP_TOO_SKEWED			0x08 
+#define FIDO_BIO_ENROLL_FP_TOO_SHORT			0x09 
+#define FIDO_BIO_ENROLL_FP_MERGE_FAILURE		0x0a 
+#define FIDO_BIO_ENROLL_FP_EXISTS			0x0b 
+#define FIDO_BIO_ENROLL_FP_DATABASE_FULL		0x0c 
+#define FIDO_BIO_ENROLL_NO_USER_ACTIVITY		0x0d 
+#define FIDO_BIO_ENROLL_NO_USER_PRESENCE_TRANSITION	0x0e
+</pre>
+</div>
+<br/>
+<var class="Ft" title="Ft">fido_bio_enroll_t *</var>
+<br/>
+<code class="Fn" title="Fn">fido_bio_enroll_new</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">void</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void</var>
+<br/>
+<code class="Fn" title="Fn">fido_bio_enroll_free</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_bio_enroll_t
+  **enroll_p</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">uint8_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_bio_enroll_last_status</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_bio_enroll_t *enroll</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">uint8_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_bio_enroll_remaining_samples</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_bio_enroll_t *enroll</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+Ongoing FIDO 2 biometric enrollments are abstracted in
+  <i class="Em" title="Em">libfido2</i> by the
+  <var class="Vt" title="Vt">fido_bio_enroll_t</var> type.
+<div class="Pp"></div>
+The functions described in this page allow a
+  <var class="Vt" title="Vt">fido_bio_enroll_t</var> type to be allocated,
+  deallocated, and inspected. For device operations on
+  <var class="Vt" title="Vt">fido_bio_enroll_t</var>, please refer to
+  <a class="Xr" title="Xr" href="fido_bio_dev_get_info.html">fido_bio_dev_get_info(3)</a>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_bio_enroll_new</code>() function returns a
+  pointer to a newly allocated, empty
+  <var class="Vt" title="Vt">fido_bio_enroll_t</var> type. If memory cannot be
+  allocated, NULL is returned.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_bio_enroll_free</code>() function releases
+  the memory backing <var class="Fa" title="Fa">*enroll_p</var>, where
+  <var class="Fa" title="Fa">*enroll_p</var> must have been previously allocated
+  by <code class="Fn" title="Fn">fido_bio_enroll_new</code>(). On return,
+  <var class="Fa" title="Fa">*enroll_p</var> is set to NULL. Either
+  <var class="Fa" title="Fa">enroll_p</var> or
+  <var class="Fa" title="Fa">*enroll_p</var> may be NULL, in which case
+  <code class="Fn" title="Fn">fido_bio_enroll_free</code>() is a NOP.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_bio_enroll_last_status</code>() function
+  returns the enrollment status of <var class="Fa" title="Fa">enroll</var>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_bio_enroll_remaining_samples</code>()
+  function returns the number of samples left for
+  <var class="Fa" title="Fa">enroll</var> to complete.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="fido_bio_dev_get_info.html">fido_bio_dev_get_info(3)</a>,
+  <a class="Xr" title="Xr" href="fido_bio_template.html">fido_bio_template(3)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">September 13, 2019</td>
+    <td class="foot-os">Linux 5.3.12-arch1-1</td>
+  </tr>
+</table>
