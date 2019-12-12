@@ -1,0 +1,58 @@
+== Verify the YubiHSM 2 Setup
+
+Verify the results of the YubiHSM Setup program using the YubiHSM Shell program. Log in using the application authentication key. To verify the YubiHSM 2 setup:
+
+*Step 1*: In your Command Prompt, run the following command:
+
+`$ yubihsm-shell`
+
+If the YubiHSM Connector is running on a host machine to which the YubiHSM 2 is physically connected, start the YubiHSM Shell program in networked mode. For example, if the host server's IP address is 192.168.100.252, start the YubiHSM Shell program at the VM with the following command:
+
+`$ yubihsm-shell –-connector http://192.168.100.252:12345`
+
+*Step 2*: To connect to the YubiHSM 2, at the `yubihsm` prompt, type `connect`. A message verifying that you have a successful connection is displayed.
+
+*Step 3*: To open a session with the YubiHSM 2, type `session open 3`.
+
+*Step 4*: Type in the password for the application authentication key. You will receive a confirmation message that session 0 has been set up successfully.
+
+*Step 5*: You now have an administrative connection to the YubiHSM 2. You can list the objects available by typing `list objects 0`. Your results should be similar to the following:
+
+....
+Found 3 object(s)
+id: 0x0002, type: wrap-key, sequence: 0
+id: 0x0003, type: authentication-key, sequence: 0
+id: 0x0004, type: authentication-key, sequence: 0
+....
+
+As you can see by looking at their IDs, these objects correspond to the wrap key, the application authentication key and the audit key that were just created.
+
+*Step 6*: To obtain more information about any of the objects and its capabilities -- for example, the application authentication key (object ID 3) -- run the `objectinfo` command with the appropriate ID format, for example:
+
+`yubihsm> get objectinfo 0 3 authentication-key`
+
+The response you receive should look similar to the following:
+
+....
+id: 0x0003, type: authentication-key, algorithm:
+aes128-yubico-authentication, label: "Application auth key", length: 40, domains: 1, sequence: 0, origin: imported, capabilities: exportable-under-wrap:generate-asymmetric-key:
+sign-attestation-certificate:sign-pkcs:sign-pss:sign-ecdsa,
+delegated_capabilities:exportable-under-wrap: generate-asymmetric-key:sign-attestation-certificate:sign-pkcs:
+sign-pss:sign-ecdsa
+....
+
+This indicates that YubiHSM 2 has now been configured to:
+
+* Generate asymmetric objects
+* Compute signatures using RSA-PKCS1v1.5
+* Compute signatures using RSA-PSS
+* Export other objects under wrap
+* Import wrapped objects
+* Mark an object as exportable under wrap
+
+In addition, this object (the application authentication key, object ID 3) also has delegated capabilities that can be bestowed on other objects that it creates. For more information on delegated capabilities, see link:../../Concepts/Capability.adoc[Capability].
+
+*Step 7*: To exit, type `quit`.
+
+
+link:Configure_the_YubiHSM_2_Software.adoc[Configure the YubiHSM 2 Software]
