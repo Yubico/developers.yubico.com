@@ -6,9 +6,13 @@ All requests are HTTP GET requests. As such, all parameters must be
 properly URL encoded.  In particular, some base64 characters (such as
 "+") in the value fields needs to be escaped.
 
+Each request sent to the server can be signed. To ensure that the
+server rejects any requests that have been tampered with, clients
+should sign each request they make to the server.
+
 Each response sent by the server is signed.  To verify that the
-response has not been tampered with, clients either verify the HMAC
-signature or use HTTPS connections (and verify the server
+response has not been tampered with, clients should verify the HMAC
+signature and must use HTTPS connections (and verify the server
 certificate).
 
 === Generating signatures
@@ -115,7 +119,44 @@ counters:
  https://api.yubico.com/wsapi/2.0/verify?id=87&otp=vvvvvvcucrlcietctckflvnncdgckubflugerlnr&timeout=8&sl=50&nonce=askjdnkajsndjkasndkjsnad&timestamp=1
 
 
+If you are using the public YubiCloud service (api.yubico.com), you
+MUST use HTTP over TLS and you MUST use Server Name Indication. You
+SHOULD NOT hard-code the IP addresses that the DNS name resolves to,
+and you SHOULD NOT pin the TLS certificates that the service presents.
+You SHOULD sign your API requests and validate the response signatures
+as described above.
+
 === Response
+
+If the verification server has successfully processed your request
+(even if the reponse is not a successful verification), it will return
+an HTTP status of `200 OK` with a text/plain body.
+
+If you get a `4xx` or `5xx` response you should retry your request a
+few times, as intermediate proxies and gateways may cause transient
+errors. If you are using a locally-hosted validation server on your
+own network, this may not be necessary.
+
+The body consists of a number of parameter=value pairs, separated by
+CR LF.
+
+For example:
+
+ h=4uvN1cIqh0vk6bnkO8ya48L2F5c=
+ t=2020-01-06T02:52:13Z0998
+ otp=cccccckdvvulgjvtkjdhtlrbjjctggdihuevikehtlil
+ nonce=ba336f7fdb9b8fec5d6d70313125d9985f6d295e
+ sl=20
+ status=OK
+
+or
+
+ h=paOSl7f61trM4PPLnlFFLuR+z20=
+ t=2020-01-06T02:52:23Z0098
+ otp=cccccckdvvulgjvtkjdhtlrbjjctggdihuevikehtlil
+ nonce=ba336f7fdb9b8fec5d6d70313125d9985f6d295e
+ status=REPLAYED_REQUEST
+
 
 The verification response tells you whether the OTP is valid.  The
 response has the following values:
