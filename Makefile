@@ -29,6 +29,14 @@ build: docker-build
 		-e NORELEASES=true \
 		yubico/developers/build
 
+build_noprojects: docker-build
+	@docker run --rm \
+		-u $(shell id -u):$(shell id -g) \
+		-v $(shell pwd):/developers \
+		-e NORELEASES=true \
+		-e NOPROJECTS=true \
+		yubico/developers/build
+
 docker-httpd:
 	@docker build -t yubico/developers/httpd -f Dockerfile.httpd .
 
