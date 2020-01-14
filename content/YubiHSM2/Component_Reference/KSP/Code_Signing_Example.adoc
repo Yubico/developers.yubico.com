@@ -81,6 +81,69 @@ If you have multiple certificates available for code signing, it may be necessar
 
   > signtool sign /sha1 <certificate hash> <binary name>
 
+When importing the certificate for the first time on a new computer, it may be
+necessary to manually bind the certificate to the private key.
+This is because the key is not stored with the certificate and Windows doesn't
+automatically create an association between the two.
+
+After importing the certificate to your personal store, use the `certutil` utility
+provided by Windows to associate the YubiHSM private key to the certificate.
+
+  > certutil -repairstore my <certificate hash>
+
+=== Troubleshooting
+
+The error messages returned from `signtool` are often unhelpful in diagnosing why
+a signing operation failed.
+In these situations there are a few commands you can use to try to track down the root cause.
+
+When using `signtool`, use the `/v` and `/debug` flags to get more detailed output.
+The example below shows a response you may receive if the certificate is installed
+but the YubiHSM is not connected or is misconfigured.
+
+  > signtool sign /v /debug <binary name>
+  After EKU filter, 1 certs were left.
+  After expiry filter, 1 certs were left.
+  After Hash filter, 1 certs were left.
+  After Private Key filter, 0 certs were left.
+  SignTool Error: No certificates were found that met all the given criteria.
+
+Use `certutil` to check the validity of the imported certificate.
+
+  > certutil -verifystore my <certificate hash>
+  ================ Certificate 0 ================
+  Serial Number: 029fe48291dd587c1e6f42bca341291
+  ...
+  Certificate is valid
+
+Use `certutil` to check whether the KSP has been installed correctly.
+You should see `Provider Name: YubiHSM Key Storage Provider` as one of the entries with no errors.
+
+  > certutil -csplist
+  ...
+  Provider Name: YubiHSM Key Storage Provider
+  ...
+
+Use `certutil` to check if the key is accessible through the storage provider.
+You can also add the `-v` flag to get additional details.
+
+  > certutil -csp "YubiHSM Key Storage Provider" -key
+  YubiHSM Key Storage Provider:
+  tq-75c94c4b-5e40-4e44-bcd2-ee3330d4942f
+  RSA
+    AT_SIGNATURE
+
+Use `certutil` to dump certificate information.
+This command may show `Cannot find the certificate and private key for decryption.`
+when using a new computer if `certutil -repairstore` hasn't yet been performed.
+
+  > certutil -store my <certificate hash>
+  ================ Certificate 0 ================
+  Serial Number: 029fe48291dd587c1e6f42bca341291
+  ...
+  Private key is NOT exportable
+  Signature test passed
+
 === More Information
 
 For a detailed explanation of all options available in the request _inf_ file, please see the documentation for the link:https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certreq_1[certreq] utility.
