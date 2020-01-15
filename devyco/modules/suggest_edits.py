@@ -2,7 +2,6 @@
 Adds a 'Suggest Edits' link to pages.
 """
 
-import re
 import urllib
 from devyco.module import Module, noext
 from os import path
@@ -22,9 +21,10 @@ class SuggestedEditsModule(Module):
 
     def _add_suggest_edits_link(self, variables):
         for f in self.list_files('*.partial'):
-            basename = noext(path.basename(f))
-            filename = path.join(*(self._context['path'] + [basename]))
-            urlname = re.sub("/index$", "/", filename)
+            basename = path.basename(f)
+            basename_noext = noext(basename)
+            filename = path.join(*(self._context['path'] + [basename_noext]))
+            urlname = path.join(*(self._context['path'] + ['' if basename_noext == 'index' else basename]))
 
             variables.append({
                 'filter': basename,
