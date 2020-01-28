@@ -1,76 +1,59 @@
-== Using PIV for SSH through PKCS11
-This is a step-by-step for how to get a YubiKey with PIV to work for
-public-key authentication with OpenSSH through PKCS11.
-Primarily on a OS X or Linux system.
+== Using PIV for SSH through PKCS #11
+This is a step-by-step guide on setting up a YubiKey with PIV to work for public-key authentication with OpenSSH through PKCS #11. These instructions apply primarily to OS X and Linux systems.
 
 === Prerequisites
 * a YubiKey with the PIV application loaded
-* the yubico-piv-tool software
+* the yubico-piv-tool software (download from https://developers.yubico.com/yubico-piv-tool/Releases/)
 * the OpenSC software
-* OpenSSH: we only support 10.13 and above
+* OpenSSH
+* For OS X, iOS 10.13 and later are supported
 
-
-[NOTE]
-The following example assume that you have not yet changed the management key. If you have changed the management key, add `--key` to the `yubico-piv-tool -a import-certificate` command below.
-
-
-=== Steps
-1. Generate or import a key in slot 9a (any slot should suffice):
-a. Import the key (PEM format):
-
-  $ yubico-piv-tool -s 9a -a import-key -i key.pem
-+
-[NOTE]
-If an external key is imported and there already exists a certificate step 2 can be skipped.
-
-b. Generate the key:
-
-  $ yubico-piv-tool -s 9a -a generate -o public.pem
-+
 [NOTE]
 RSA 4096-bit keys are not currently supported due to a limitation in the PIV spec: https://github.com/Yubico/yubico-piv-tool/issues/58
 
-2. Create a self-signed certificate for that key.
-The only use for the X.509 certificate is to make PIV/PKCS#11 lib happy.
-They would want to be able to extract the public-key from the smartcard,
-and do that through the X.509 certificate.
+[NOTE]
+The examples given in the following steps assume that you have not yet changed the management key. If you have changed the management key, add `--key` to the `yubico-piv-tool -a import-certificate` command below.
+
+
+=== Procedure
+*Step 1*: Import or generate a key in slot 9a (any slot should suffice):
+
+Either *import* the key (PEM format):
+
+  $ yubico-piv-tool -s 9a -a import-key -i key.pem
+
+[NOTE]
+If an external key has been imported and a certificate already exists, skip step 2.
+
+or *generate* the key:
+
+  $ yubico-piv-tool -s 9a -a generate -o public.pem
+
+*Step 2*: Create a self-signed certificate for that key. The only use for the X.509 certificate is to satisfy PIV/PKCS #11 lib. It needs to be able to extract the public-key from the smartcard, and to do that through the X.509 certificate.
 
   $ yubico-piv-tool -a verify-pin -a selfsign-certificate -s 9a -S "/CN=SSH key/" -i public.pem -o cert.pem
 
-3. Load the certificate:
+*Step 3*: Load the certificate:
 
    $ yubico-piv-tool -a import-certificate -s 9a -i cert.pem
 
-4. Find out where OpenSC has installed the pkcs11 module.
+*Step 4*: Find out where OpenSC has installed the pkcs #11 module. For OS X with binary installation, this is typically in `/Library/OpenSC/lib/`. For a Debian-based system, this is typically in `/usr/lib/x86_64-linux-gnu/`. From now on, we will call this location `$OPENSC_LIBS`.
 
-  * For OS X with binary installation this is typically in `/Library/OpenSC/lib/`. Homebrew users can use:
-
-  $ sudo ln `brew list opensc | grep lib/opensc-pkcs11.so` /usr/local/lib/opensc-pkcs11.so
-
-  * For a Debian based system this is typically in `/usr/lib/x86_64-linux-gnu/`
-+
-After this we'll call this location `$OPENSC_LIBS`
-
-5. Export the public key in correct format for ssh and once you got it,
-add it to authorized_keys on the target system.
+*Step 5*: Export the public key in correct format for SSH and then add it to authorized_keys on the target system.
 
    $ ssh-keygen -D $OPENSC_LIBS/opensc-pkcs11.so -e
-+
-[NOTE]
-The command will export all keys stored on the YubiKey Neo.
-Hopefully it will keep the slot order so it should be not hard to guess which
-is the public key associated with your targeted private key.
 
-6. Authenticate to the target system using the new key:
+[NOTE]
+The command will export all keys stored on the YubiKey. The slot order should remain the same, thereby facilitating identification of the public key associated with your targeted private key.
+
+*Step 6*: Authenticate to the target system using the new key:
 
    $ ssh -I $OPENSC_LIBS/opensc-pkcs11.so user@remote.example.com
 
-7. This can also be setup to work with ssh-agent: (Optional)
+*Step 7*: (Optional) This can also be set up to work with ssh-agent:
 
    $ ssh-add -s $OPENSC_LIBS/opensc-pkcs11.so
-+
-NOTE: On OS X prior to macOS 10.12 “Sierra” this typically requires installation of a third-party OpenSSH from Homebrew or the like and using that ssh-agent.
-+
-To confirm that the ssh-agent correctly finds that key and getting the public key in correct format:
+
+Confirm that the ssh-agent finds the correct key and gets the public key in the correct format by running:
 
    $ ssh-add -L
