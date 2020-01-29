@@ -1,5 +1,9 @@
 == Securing SSH with OpenPGP or PIV
-SSH supports multiple types of asymmetric certificates when implementing secure communication with remote systems, including OpenPGP format and X.509 (PIV). The YubiKey supports both certificate formats, but typically deployment considerations or the particular use case will dictate the format.
+Securing communication with remote systems via SSH can be done by using key-based authentication with the user's key residing on a physical YubiKey. With a YubiKey, the user's SSH key data can be secured using OpenPGP and/or PIV. Typically, deployment considerations or the particular use case will dictate which application to use.
+
+If you use the OpenPGP option for SSH, then SSH will use the same key as Git would use to sign a commit (since Git uses the GnuPG command to sign). However, the OpenPGP option is more complicated to set up properly (SSH will speak to the GnuPG agent) so the PIV option would probably be easier for anyone who does not use Git or who does not want to use the same key for both SSH and Git. Furthermore, for the PIV option, you can use the opensc-pkcs11 module, or our new ykcs11 module. Our ykcs11 is a lighter software package, so it would probably offer an easier path for someone who does not already have the OpenSC software installed. (The same goes for OpenPGP vs PIV as well, if you already have GnuPG working).
+
+For a developer the OpenPGP path is typically the natural one, because GnuPG needs to be working to enable the use of Git, and it is only necessary to upload a single public key to GitHub, which it then uses both to authenticate SSH access (used for Git pushing) and for verifying the signatures on Git commits.
 
 === OpenPGP
 OpenPGP certificates and keys are managed on the OpenPGP function of the YubiKey. OpenPGP for SSH supports a more direct flow between the user and their key management, making it ideal for independent or open source developers who want to ensure they maintain control over their SSH keys.
