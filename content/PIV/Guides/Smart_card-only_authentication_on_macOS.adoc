@@ -1,0 +1,53 @@
+== Smart card-only authentication on macOS
+macOS support mandatory use of a smart card, which disables all
+password-based authentication. This makes it possible to use a YubiKey with PIV 
+support for all authentication on macOS, including computer login.
+
+=== Prerequisites
+* macOS High Sierra or later
+* a YubiKey with the PIV application. Make sure you go through the link:../Device_setup.html[device setup.]
+* link:/yubikey-manager[YubiKey Manager CLI] installed
+
+=== Steps
+
+1. Generate certificates on your YubiKey to be paired with macOS.
+
+a. Generate key pairs for slot 9a and 9d, save public part to files.
+
+  $ ykman piv generate-key 9a --algorithm ECCP256 /tmp/9a.pub
+  $ ykman piv generate-key 9d --algorithm ECCP256 /tmp/9d.pub
+
+b. Generate self-signed certificates, anything can be used as subject. You may also set the expiration, default is one year.:
+
+  $ ykman piv generate-certificate 9a --subject "YubiKey 5" /tmp/9a.pub
+  $ ykman piv generate-certificate 9d --subject "YubiKey 5" /tmp/9d.pub
+
+2. Pair the the YubiKey with macOS
+
+a. The public key hash should now be listed as an unpaired identity.
+
+  $ sc_auth identities
+
+b. Use the listed hash to pair the YubiKey with your user.
+
+  $ sc_auth pair -h HASH -u USERNAME
+
+c. Verify that your user is paired:
+
+  $ sc_auth list
+
+You may now use your YubiKey for login, but your password still works as well.
+
+3. Install a configuration profile
+
+a. To enforce the use of smart card a configuration profile needs to be installed. A sample profile can be found link:https://support.apple.com/en-us/HT208372[here.] Save the sample profile as `sample.mobileconfig`
+
+b. Install the profile:
+
+  $ profiles install --path sample.mobileconfig
+
+The YubiKey is now required for all authentication tasks on the system.
+
+=== More reading:
+
+ * link:https://support.apple.com/en-us/HT208372[Apple: Configure macOS for smart card-only authentication]
