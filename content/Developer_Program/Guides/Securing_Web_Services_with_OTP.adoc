@@ -1,0 +1,226 @@
+= Securing Web Services with OTP
+One-Time Passwords (OTPs) are the most common form of multifactor authentication in use today. Found in a wide range of solutions, including everything from traditional hardware tokens to smart phone apps, like Google Authenticator, OTPs offer a quick and simple path to implementation.
+
+All YubiKeys, with the exception of the Security Key by Yubico (SKY) series supports multiple OTP protocols - link:https://developers.yubico.com/OTP/OTPs_Explained.html[Yubico OTP], https://developers.yubico.com/OATH/[OATH-HOTP and OATH-TOTP]. These OTPs can be provided by the YubiKey via two methods:
+
+* link:https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.adoc[A touch-triggered output of the OTP sent via a series of keystrokes from a virtual keyboard]
+* link:https://developers.yubico.com/OATH/YubiKey_OATH_software.html[An application similar to Google Authenticator where the OTPs are generated on the YubiKey and presented on the local device.]
+
+== Overview
+Developers looking to add OTP support will need to implement an OTP validation server and client. Yubico offers a free Yubico OTP validation service, the YubiCloud, as well as the server code as open source for those who wish to stand up their own server. In addition, Yubico also offers a number of pre-built Yubico OTP clients. The YubiKey is compliant with any server or software which follows the link:https://openauthentication.org/members/[OATH standard for OATH-HOTP or OATH-TOTP], and can be used out of the box with most solutions.
+
+== Selecting the OTP Type
+For all OTP types used to authenticate a website or service, the user experience is similar; supply username and password, be prompted or have a field for the OTP by the webpage, and the user supplies the OTP. However, the back end validation server for each OTP type does offer some pros and cons when looking for which to use.
+
+*Yubico OTP*
+
+* Pros:
+** Modern OTP implementation
+** Never gets out of sync between server and authenticator
+** Supports automatic association between account and YubiKey
+** Offers self-hosted servers for more control
+** Supported by the YubiCloud to remove requirement to load secrets onto devices
+* Cons:
+** Requires a field to accept 44 character strings
+** Self-hosted validation servers require path to provision authenticators
+** Not supported outside of the YubiKey
+
+*OATH-HOTP*
+
+* Pros:
+** Widely supported OTP implementation
+** Large number of open-source servers and solutions
+** Supported by a wide number of authenticators
+** Only requires OTPs of 6 to 8 digits in length
+* Cons:
+** Authenticators and servers can fall out of sync
+** Difficult to link authenticators to accounts automatically
+** Validation servers require path to provision authenticators
+** Event based and weak against OTPs being intercepted.
+
+*OATH-TOTP*
+
+* Pros:
+** Widely supported OTP implementation
+** Large number of open-source servers and solutions
+** OTPs have a limited lifespan
+** Only requires OTPs of 6 to 8 digits in length
+* Cons:
+** Authenticators and servers can fall out of sync if time drifts
+** Requires a QR code to register authenticators - limits supporting devices
+** Weak against OTPs being intercepted
+
+
+== Yubico OTP
+=== Understanding the Yubico OTP Flow
+The Yubico OTP is a simple yet strong authentication mechanism that is supported by all YubiKeys out of the box. Apart from the general advantages of 2-factor authentication, such as not requiring client software (the OTP is just a string - If you can send a password, you can send an OTP), the Yubico OTP offers unique advantages in having the YubiKey ID embedded in each OTP, making self-provisioning simple, and having the OTP be an encrypted string as opposed to a truncated hash; this allows usage counters encrypted in each OTP to prevent the authenticator and server from falling out of sync.
+
+As with all OTPs, the Yubico OTP user flow is straightforward:
+
+. User is prompted for OTP on a webpage
+. User plugs in their YubiKey and supplies the OTP
+OTP, Username and Password are sent to the web service.
+. User is logged in if all are valid.
+
+On the server side, the OTP validation is slightly different:
+
+. The YubiKey ID is checked by the web service to ensure it is associated with the same account as the username.
+. The web service sends the OTP to a validation server.
+. OTP is received by the Validation server and passed to the Key Storage Module (KSM) Server.
+. The KSM identifies the YubiKey with the YubiKey Public ID and uses the unique encryption key for that YubiKey to decrypt the OTP.
+. The KSM validates the OTP was decrypted correctly; if so, it only passes the validity of the OTP and the usage counters back to the Validation Server.
+. The Validation server checks the usage counters against those from the last valid OTP for that YubiKey; only those from an OTP generated after are valid.
+. The Validation server reports the validity of the OTP back to the web service.
+. If the OTP is valid and associated with the same account as the username, the user is logged in.
+
+Yubico offers open source clients and servers to help implement these flows, as well as the YubiCloud, a free online Yubico OTP validation service.
+
+*Using an Yubico OTP Server:*
+
+* link:https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.adoc[Introduction to Yubico OTP]
+* link:https://developers.yubico.com/OTP/OTPs_Explained.html[Yubico OTPs Explained]
+* link:https://developers.yubico.com/OTP/Specifications/OTP_validation_protocol.html[Yubico OTP Validation Protocol]
+* link:https://developers.yubico.com/OTP/Specifications/OTP_decryption_protocol.html[Yubico OTP Decryption Protocol]
+
+=== Yubico OTP Authentication Options
+The Yubico OTP is only supported on the Touch-Triggered OTP function of the YubiKey. Users can pass the OTP by plugging in their YubiKey to any device with a USB-A, USB-C or Lighting port (depending on YubiKey Model), and send the Yubico OTP as a series of keystrokes.
+
+https://developers.yubico.com/Software_Projects/YubiKey_Device_Configuration/[YubiKey configuration tools] can be used to load Yubico OTP secrets on a YubiKey, via a scripted CLI, using the low level libraries or through a GUI Application.
+
+*Yubico OTP Supporting Interfaces:*
+
+* link:https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.adoc[Touch-Triggered OTPs]
+
+=== Yubico OTP Implementation
+When implementing the Yubico OTP two elements are needed; a client on the web service to associate the YubiKey with an account, send the OTP to a validation service and receive the response back. As the Yubico OTP is a text string, there is no end-user clients required.
+
+Implementers can use the free online YubiCloud for the Yubico OTP validation. The main advantages of the YubiCloud are that every off-the-shelf YubiKey will work with the YubiCloud without having to register or pass credentials to it. Further, the YubiCloud will act as a full validation server, removing the necessity of standing up and maintaining additional servers.
+
+Should using the YubiCloud not be an option, Yubico has open-source servers for both validation as well as key storage. These servers can be stood up to create a user-controlled validation service; only YubiKeys with the secrets loaded into the user’s service will be validated.
+
+Yubico offers a number of clients in various languages. These clients will work with both self-hosted validation servers as well as the YubiCloud; the interface is the same for both, only the IP address needs to be changed.
+
+*Implementation Resources:*
+
+* link:https://www.yubico.com/products/services-software/yubicloud/[YubiCloud]
+* link:https://developers.yubico.com/OTP/Plugins.html[Yubico OTP Clients]
+* link:https://developers.yubico.com/yubikey-val/Getting_Started_Writing_Clients.html[Getting Started Writing Clients]
+* link:https://developers.yubico.com/OTP/Guides/Self-hosted_OTP_validation.html[Self-hosted OTP validation]
+
+=== Yubico OTP Best Practices and Compliance
+After adding support for Yubico OTP to a web service, integrators can submit their solution to the Yubico Works with YubiKey program for review. Approved services will be listed on the Yubico website.
+
+*OTP Solution Reviews:*
+
+* link:https://partners.yubico.com/prm/English/c/works-with-yubikey#form[Works with YubiKey]
+
+
+
+
+
+
+
+== OATH-HOTP
+=== Understanding the OATH-HOTP Flow
+OATH-HOTP is one of the two most commonly used protocol maintained by OATH. Due to its long use as an open standard, OATH-HOTP is found in a significant number of solutions.  Apart from the general advantages of 2-factor authentication, such as not requiring client software (the OTP is just a string - If you can send a password, you can send an OTP), OATH-HOTP offers advantages in having an OTP as short as 6 digits, allowing it to be manually typed in easily between devices..
+
+As with all OTPs, the OATH-HOTP user flow is straightforward:
+
+. User is prompted for OTP on a webpage
+. User plugs in their YubiKey and supplies the OTP
+. The YubiKey increments the OATH-HOTP counter by one.
+. OTP, Username and Password are sent to the web service.
+. User is logged in if all are valid.
+
+On the server side, the OTP validation is slightly different:
+
+. The web service sends the OTP and username or unique identifier (UID) to a validation server.
+. The UID is used to identify the OATH-HOTP device to be verified.
+. The Validation server performs the same OATH-HOTP generation algorithm as the authenticator did, using an identical secret and counter stored on the server.
+. The provided OTP and generated OTP are compared. If they are identical, the validation server returns a valid response and updates the locally stored counter value for that authenticator.
+. If the provided and generated OTPs do not match, the validation server increments the counter and performs the validation again. This repeats until a valid match is made, or the server’s limit of retries (look-ahead value) is exceeded.
+. If the counter on the authenticator is outside of the look-ahead value, the server and authenticator are out of sync and will not validate until a resync action is performed.
+
+*Using an OATH-HOTP Server:*
+
+* link:http://www.ietf.org/rfc/rfc4226.txt[HOTP: An HMAC-Based OTP Algorithm (RFC 4226)]
+* link:https://openauthentication.org/wp-content/uploads/2015/09/ReferenceArchitectureVersion2.pdf[OATH Reference Architecture Version 2.0]
+
+=== OATH-HOTP Authentication Options
+The YubiKey supports OATH-HOTP via two methods; the touch-triggered OTP and the OATH Application. The touch triggered OTP will not require a client software, but can be accidentally triggered easily, leading to a risk that the YubiKey falls out of sync with the validation server. The OATH Application does require client software on any device you wish to use it with, but since the secrets are stored on the YubiKey, the same YubiKey can be used across multiple devices seamlessly.
+
+*OATH-HOTP Supporting Interfaces:*
+
+* link:https://developers.yubico.com/Developer_Program/Guides/Touch_triggered_OTP.adoc[Touch-Triggered OTPs]
+* link:https://developers.yubico.com/OATH/YubiKey_OATH_software.html[YubiKey OATH software]
+* link:https://developers.yubico.com/OATH/YKOATH_Protocol.html[YubiKey OATH protocol]
+
+=== OATH-HOTP Implementation
+Implementation of OATH-HOTP is dependant on the server being used. Yubico does not offer an OATH-HOTP server, and we recommend ensuring any solution chosen follows the protocol standards
+
+*Implementation Resources:*
+
+* link:https://openauthentication.org/members/[OATH Members]
+* link:https://openauthentication.org/wp-content/uploads/2015/09/TechnicalWhitePaper.pdf[Technical White Paper]
+* link:https://openauthentication.org/wp-content/uploads/2015/09/FAQ1.pdf[OATH-HOTP FAQ]
+
+=== OATH-HOTP Best Practices and Compliance
+After adding support for the YubiKey via OATH-HOTP to a web service, integrators can submit their solution to the Yubico Works with YubiKey program for review. Approved services will be listed on the Yubico website. Further, OATH also offers a certification program for validation servers which can be utilized when judging which services to use.
+
+*OATH-HOTP Solution Reviews:*
+
+* link:https://openauthentication.org/oath-certification/[OATH Certification]
+* link:https://partners.yubico.com/prm/English/c/works-with-yubikey#form[Works with YubiKey]
+
+
+
+
+
+== OATH-TOTP
+=== Understanding the OATH-TOTP Flow
+OATH-TOTP is the most widely used OTP protocol used today. Found in solutions such as Google Authenticator, its ability to add a lifespan to the OTPs generated along with its resistance to falling out of sync makes it a popular option to support. Apart from the general advantages of 2-factor authentication, such as not requiring client software (the OTP is just a string - If you can send a password, you can send an OTP), OATH-TOTP offers advantages in having an OTP as short as 6 digits, allowing it to be manually typed in easily between devices.
+
+As with all OTPs, the OATH-TOTP user flow is straightforward:
+
+. User is prompted for OTP on a webpage.
+. User plugs in their YubiKey.
+. The YubiKey is passed the system time to generate the OTP, which is supplied to the webpage
+. OTP, Username and Password are sent to the web service.
+. User is logged in if all are valid.
+
+On the server side, the OTP validation is slightly different:
+
+. The web service sends the OTP and username or unique identifier (UID) to a validation server.
+. The UID is used to identify the OATH-HOTP device to be verified.
+. The Validation server performs the same OATH-HOTP generation algorithm as the authenticator did, using an identical secret and server time.
+. The provided OTP and generated OTP are compared. If they are identical, the validation server returns a valid response and updates the locally stored counter value for that authenticator.
+
+*Using an OATH-HOTP Server:*
+
+* link:http://tools.ietf.org/html/rfc6238[TOTP – Time-based One-time Password Algorithm (RFC 6238)]
+* link:https://openauthentication.org/wp-content/uploads/2015/09/ReferenceArchitectureVersion2.pdf[OATH Reference Architecture Version 2.0]]
+
+=== OATH-TOTP Authentication Options
+The YubiKey supports OATH-TOTP via the OATH Application - the Yubico Client software is required to pass the current time to the YubiKey, where it is used along with the secret to generate the OATH-TOTP OTPs. Since the secrets are stored on the YubiKey, the same YubiKey can be used across multiple devices seamlessly. The Yubico OATH Software can also consume QR codes to automatically add OATH-TOTP credentials to connected Yubikeys.
+
+*OATH-HOTP Supporting Interfaces:*
+
+* link:https://developers.yubico.com/OATH/YubiKey_OATH_software.html[YubiKey OATH software]
+* link:https://developers.yubico.com/OATH/YKOATH_Protocol.html[YubiKey OATH protocol]
+
+=== OATH-TOTP Implementation
+Implementation of OATH-TOTP is dependant on the server being used. Yubico does not offer an OATH-TOTP server, and we recommend ensuring any solution chosen follows the protocol standards. To make the registration process easier, it is recommended that the OATH-TOTP server offers a QR code which can be supplied to a user to automatically add OATH-TOTP credentials to the YubiKey.
+
+*Authentication Resources:*
+
+* link:https://openauthentication.org/members/[OATH Members]
+* link:https://openauthentication.org/wp-content/uploads/2015/09/TechnicalWhitePaper.pdf[Technical White Paper]
+* link:https://github.com/google/google-authenticator/wiki/Key-Uri-Format[Key Uri Format]
+* link:https://stefansundin.github.io/2fa-qr/[QR Code Demo Page]
+
+=== OATH-TOTP Best Practices and Compliance
+After adding support for the YubiKey via OATH-TOTP to a web service, integrators can submit their solution to the Yubico Works with YubiKey program for review. Approved services will be listed on the Yubico website. Further, OATH also offers a certification program for validation servers which can be utilized when judging which services to use.
+
+*OATH-HOTP Solution Reviews:*
+
+* link:https://openauthentication.org/oath-certification/[OATH Certification]
