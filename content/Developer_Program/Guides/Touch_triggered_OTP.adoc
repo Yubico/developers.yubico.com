@@ -57,12 +57,9 @@ The YubiKey Personalization tool is a legacy CLI tool which supports all of the 
 
 === Low-Level Libraries:
 
-* Yubico-c
-* Yubico OTP configuration library in C.
-* Yubico-j
-* Yubico OTP configuration library in Java.
-* python-yubico
-* Yubico configuration library in Python.
+* Yubico-c - Yubico OTP configuration library in C.
+* Yubico-j - Yubico OTP configuration library in Java.
+* python-yubico - Yubico configuration library in Python.
 
 == Introduction to Yubico OTP
 The Yubico One Time Password schema was developed by Yubico to take full advantage of the functionality of the YubiKey. It provides a path to automate the linkage between an account and authenticator at registration, security that the OTP generated may only be used once, and the assurance that the authenticator and server will never fall out of sync. The Yubico OTP further includes the advantages of traditional OTPs, in that since the code is text based, it can be used across almost every site, service and interface.
@@ -86,72 +83,45 @@ The translation to keystrokes is done by the computer. For the YubiKey, it is cr
 
 The Modhex mapping is based on hexadecimal coding but the output is mapped into the following characters, found at the same scan code address on most keyboards
 
-Hex
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-a
-b
-c
-d
-e
-f
-ModHex
-c
-b
-d
-e
-f
-g
-h
-i
-j
-k
-l
-n
-r
-t
-u
-v
+|===
+|Hex| 0| 1| 2| 3| 4| 5| 6| 7| 8| 9| a | b | c | d | e | f
+
+|ModHex|c|b|d|e|f|g|h|i|j|k|l|n|r|t|u|v
+|===
 
 For more details, see the Modhex Converter.
 
 === Yubico OTP Validation
 The Yubico OTP takes advantage of the full range of information encrypted within during authentication. Broadly, the following steps are included in each Validation:
-1. The YubiKey is inserted into the USB port. The computer detects it as
-an external USB HID keyboard
-2. The user touches the YubiKey OTP generation button
-3. Internally, a byte string is formed by concatenation of various internally stored and calculated fields, including as a non-volatile counter, a timer and a random number.
-4. The byte string is encrypted with a 128-bit AES key
-5. The encrypted string is converted to a series of characters that are outputted as keystrokes via the keyboard port
+
+. The YubiKey is inserted into the USB port. The computer detects it as an external USB HID keyboard
+. The user touches the YubiKey OTP generation button
+. Internally, a byte string is formed by concatenation of various internally stored and calculated fields, including as a non-volatile counter, a timer and a random number.
+. The byte string is encrypted with a 128-bit AES key
+. The encrypted string is converted to a series of characters that are outputted as keystrokes via the keyboard port
 
 The generated string of keystrokes is then typically sent via an input dialog or a web form to a server or host application for verification. The basic steps for verification can be conceptually described as:
-1. The received string is converted back to a byte string
-2. The byte string is decrypted using the same (symmetric) 128-bit AES key
-3. The string’s checksum is verified. If not valid, the OTP is rejected
-4. Additional fields are verified. If not valid, the OTP is rejected
-5. The non-volatile counter is compared with the previously received value. If lower than or equal to the stored value, the received OTP is rejected as a replay.
-If greater than the stored value, the received value is stored and the OTP is accepted as valid.
+
+. The received string is converted back to a byte string
+. The byte string is decrypted using the same (symmetric) 128-bit AES key
+. The string’s checksum is verified. If not valid, the OTP is rejected
+. Additional fields are verified. If not valid, the OTP is rejected
+. The non-volatile counter is compared with the previously received value. If lower than or equal to the stored value, the received OTP is rejected as a replay. If greater than the stored value, the received value is stored and the OTP is accepted as valid.
 
 For a more in depth description of this process, refer to the Yubico Validation Server Algorithm.
 
 The Yubico Validation Service is comprised of 2 servers; a Validation server which compares the counters and acts as the public facing interface and a Key Storage Module where the secrets for the Yubico OTPs are stored and OTPs are decrypted. Yubico offers both a Validation server and Key Storage Module to make standing up a personal validation server straightforward. Users can set up more than one of each type of server, and use the tooling built into them to keep each in sync. These servers and frameworks are described in more depth at Setup of a self-hosted Yubico OTP validation server.
 
 Relevant pages:
-OTP Decryption Protocol
-OTP Validation Protocol
-Test vectors
+
+* OTP Decryption Protocol
+* OTP Validation Protocol
+* Test vectors
 
 Servers:
-Validation Server: yk-val
-KSM server (both using YubiHSM and soft DB): pyHSM
+
+* Validation Server: yk-val
+* KSM server (both using YubiHSM and soft DB): pyHSM
 
 ==== YubiCloud
 For services and websites connected to the internet, Yubico offers a free Yubico OTP Validation service called the YubiCloud. Every YubiKey is programmed at the factory with a YubiCloud credential, removing the need to manage and upload secrets. The YubiCloud runs the same code and behaves in the same manner as a Yubico OTP Validation servers available as open source. For more details, refer to the YubiCloud OTP Validation Service Guide.
