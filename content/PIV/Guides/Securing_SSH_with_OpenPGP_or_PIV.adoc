@@ -1,0 +1,42 @@
+== Securing SSH with OpenPGP or PIV
+Securing communication with remote systems via SSH can be done by using key-based authentication with the user's key residing on a physical YubiKey. With a YubiKey, the user's SSH key data can be secured using OpenPGP and/or PIV. Typically, deployment considerations or the particular use case will dictate which application to use.
+
+If you use the OpenPGP option for SSH, then SSH will use the same key as Git would use to sign a commit (since Git uses the GnuPG command to sign). However, the OpenPGP option is more complicated to set up properly (SSH will speak to the GnuPG agent) so the PIV option would probably be easier for anyone who does not use Git or who does not want to use the same key for both SSH and Git. Furthermore, for the PIV option, you can use the opensc-pkcs11 module, or our new ykcs11 module. Our ykcs11 is a lighter software package, so it would probably offer an easier path for someone who does not already have the OpenSC software installed. (The same goes for OpenPGP vs PIV as well, if you already have GnuPG working).
+
+For a developer the OpenPGP path is typically the natural one, because GnuPG needs to be working to enable the use of Git, and it is only necessary to upload a single public key to GitHub, which it then uses both to authenticate SSH access (used for Git pushing) and for verifying the signatures on Git commits.
+
+=== OpenPGP
+OpenPGP certificates and keys are managed on the OpenPGP function of the YubiKey. OpenPGP for SSH supports a more direct flow between the user and their key management, making it ideal for independent or open source developers who want to ensure they maintain control over their SSH keys.
+
+Instructions for setting up SSH with OpenPGP and the YubiKey are available here:
+link:../../PGP/SSH_authentication/index.adoc/[SSH Authentication]
+
+==== Advantages to OpenPGP
+OpenPGP makes it simple to manage keys on a single local machine controlled by the user. Using the OpenPGP software, users have complete control over the details of a certificate, including the key algorithm size and type, expiration date, associated user information and other details. The private key remains completely in the user’s control, existing only on the machine used to generate it and on the secure element of the YubiKey itself.
+
+Furthermore, OpenPGP makes it simple to share the corresponding public key, allowing for usage of the OpenPGP cert and key beyond just SSH. A popular usage is to have the same key for authenticating into an SSH session and for Git code signing and email encryption. Since OpenPGP has cross-platform support on Windows, Linux and MacOS, an OpenPGP key on a YubiKey can also enable SSH authentication across all platforms as well.
+
+==== Considerations when using OpenPGP ===
+As powerful as OpenPGP is, there are some drawbacks which need to be kept in mind. One of the great strengths of OpenPGP--the direct generation of a key on a local machine--can lead to loss of access if the YubiKey holding the OpenPGP key becomes unavailable. This can be mitigated if the private key is securely backed up.
+
+In larger organizations, OpenPGP’s ability to run without a greater framework also can hinder the uniform application of security policies. Without a central authority enforcing a standard set of attributes during key generation, there is a risk of a user unintentionally generating a weak key or setting an expiration date too far in the future or too soon. Again, this can be offset via training and documentation, but this mitigation strategy assumes users read the documentation.
+
+While OpenPGP is widely used for signing and encryption services, it is not commonly used for centrally managed authentication. When using certificate-based authentication, the lack of a framework to support a credential authority means OpenPGP is not supported. This and the fact that OpenPGP on a smart card is limited to a single cert and key (split into 3 sub-keys), credential management services and certificate authorities have not added native support for OpenPGP credentials.
+
+=== PIV / X.509
+The X.509 certificate format is a widely used PKI standard which also can be used with SSH. The YubiKey stores and manages loaded X.509 certificates within the PIV application, enabling the use of the associated keys for authentication to SSH. The widespread support for the X.509 standard is one of its greatest strengths; it is widely utilized in large enterprise or corporate solutions for credential management.
+
+Instructions for setting up SSH with PIV/X.509 and the YubiKey are available here:
+link:SSH_user_certificates.adoc[SSH User Certificates].
+
+==== Advantages to PIV
+Using PIV with X.509 certificates for SSH enables the primary strengths of a centrally managed PKI framework to be extended to secure remote access. As the keys and certificates are issued from a central location, managed account recovery is supported in the event a certificate is unavailable. In addition, the centralized management of generated certificates and keys permits the standardized enforcement of security policies across an organization. Many machine-based certificates are X.509 and used in this manner - extending them to a YubiKey allows for all of the advantages to be maintained while also adding an additional layer of security.
+
+As the PIV application on the YubiKey allows for multiple certificates and keys to be loaded and used, the SSH use case may be added to existing functions already supported on a YubiKey, such as Windows Login or network access. Furthermore, as PIV and X.509 are widely supported, there are many options for managing certificates on a YubiKey, including not just Windows, but OpenSC or the Yubico YKCS11 plugin. A large organization can take advantage of the features PIV offers to create a process-driven, uniform and well-documented YubiKey implementation of secure access to SSH.
+
+==== Considerations when using PIV
+While PIV and X.509 certificates offer a number of advantages in regards to the management of credentials used to secure SSH, there are challenges to constructing such a solution. Primary among these challenges is the limited supported functionality of SSH with an X.509 certificate - instead of using the certificate chain to verify the authenticity of a key, the certificate just passes the key to the SSH server for validation. On the backend, an SSH-specific CA will need to be stood up in order to provide key authentication services, manage certificate expiration and the like.
+
+In addition, the central management of certificates also adds friction when attempting to create a non-standard key; one which has a longer expiration date, for example. While not insurmountable, it does add an additional load on the team managing the CA which should be taken into consideration in an environment where a standard template would not be ideal.
+
+Users can forgo the requirements of setting up a dedicated SSH-CA by using self-signed certificates, but in doing so they sacrifice the advantages of a CA-backed certificate. Managing self-signed certificates can quickly become a significant burden due to the lack of native framework.
