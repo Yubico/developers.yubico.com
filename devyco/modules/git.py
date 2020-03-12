@@ -32,7 +32,7 @@ class GitModule(Module):
         super(GitModule, self).__init__()
         self._updated = []
         if os.environ.get('NORELEASES'):
-            self._updated.append('git@github.com:Yubico/yubico-binaries.git')
+            self._updated.append('git@gitlab.in.yubico.org:engineering/yubico-binaries.git')
 
     def _run(self):
         if os.environ.get('NOPROJECTS'):
