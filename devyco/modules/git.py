@@ -79,13 +79,13 @@ class GitModule(Module):
                     print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
-                subprocess.call(['git', 'fetch', 'origin', 'master'], cwd=repo_dir,
-                                stderr=sys.stdout.fileno())
-                subprocess.call(['git', 'reset', 'origin/master', '--hard'],
-                                cwd=repo_dir, stderr=sys.stdout.fileno())
+                subprocess.check_call(['git', 'fetch', 'origin', 'master'],
+                                      cwd=repo_dir, stderr=sys.stdout.fileno())
+                subprocess.check_call(['git', 'reset', 'origin/master', '--hard'],
+                                      cwd=repo_dir, stderr=sys.stdout.fileno())
             else:
                 print "clone:", url
-                subprocess.call(['git', 'clone', url, repo_dir],
+                subprocess.check_call(['git', 'clone', url, repo_dir],
                                 stderr=sys.stdout.fileno())
 
             if conf.get('preserve_mtimes'):
