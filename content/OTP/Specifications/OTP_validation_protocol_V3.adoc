@@ -1,0 +1,245 @@
+== OTP validation protocol version 3.0
+
+=== Introduction
+
+All requests are HTTP over TLS. They may or may not have a JSON
+payload.
+
+Each request sent to the server must include an `X-API-Key` header
+which identifies the client.
+
+Each request sent to the server must be signed to verify that the
+client is who they say they are and that the message has not been
+altered in transit. The signature is passed in an `X-API-Signature`
+header.
+
+Each response sent by the server is signed.  To verify that the
+response has not been tampered with and that the server is who they
+say they are, clients must verify the signature. The signature is
+passed in an `X-API-Signature` header.
+
+=== Generating signatures
+
+The protocol uses base64 encoded HMAC-SHA-256 signatures. The HMAC key
+to use is the client secret that is provided when registering for an
+API key (remember to base64-decode it). The data to perform the HMAC
+on is the request or response body.
+
+e.g. in python:
+
+    import hmac; import hashlib; import base64;
+    mac = hmac.new(client_secret, request_body.encode("utf-8"), hashlib.sha256)
+    return "X-API-Signature: " + base64.b64encode(mac.digest()).decode("ascii")
+
+=== Verifying signatures
+
+To verify a signature, generate the HMAC of your client secret
+concatenated with the response body, and compare it to the value
+received in the `X-API-Signature` header.
+
+=== Verification
+
+There is one call to verify YubiKey OTPs: verify.
+
+The verify call lets you check whether an OTP is valid.  Since the OTP
+itself contains identification information, all you have to do is to
+send the OTP.
+
+To avoid cut'n'paste attacks, the client must verify that the "otp" in
+the response is the same as the "otp" supplied in the request, and
+that the "nonce" in the response is the same as the "nonce" supplied
+in the request.
+
+=== Request
+
+Construct an HTTP POST call to
+
+ https://api.yubico.com/v3/verify
+
+with the request body being a JSON object containing the following fields:
+
+[options="header"]
+|===
+| parameter | type | required | purpose
+
+| otp 
+| string 
+| Yes 
+| The OTP from the YubiKey.
+
+| nonce 
+| string 
+| Yes 
+| A 16 to 40 character long string with random unique data (ASCII letters and digits only)
+
+| timestamp 
+| boolean 
+| No 
+| If this is true, timestamp and session counter information will be returned in the response.
+
+| sl 
+| string 
+| No 
+| Either "fast" or "secure". "fast" will prioritise availability over consistency, and "secure" will prioritise consistency over availability. If not supplied, the server will use a configured default. For YubiCloud, the default is "secure".
+|===
+
+An example request:
+
+....
+POST /v3/verify HTTP/1.0
+Host: my.v3.api.server
+X-API-Key: test_api_key
+X-API-Signature: epHo/O7us8LkN64TaCTuwcwlmwuWHe03O5Sbn7xGqeE=
+Content-Type: application/json
+
+{
+  "otp": "cccccccccccccccccccccccccccccccccccccccccccc",
+  "timestamp": true,
+  "nonce": "dddddddddddddddddddd",
+  "sl": "secure"
+}
+....
+
+If you are using the public YubiCloud service (api.yubico.com), you
+must use HTTP over TLS and you must use Server Name Indication. You
+should not hard-code the IP addresses that the DNS name resolves to,
+and you should not pin the TLS certificates that the service presents.
+You must sign your API requests and validate the response signatures
+as described above. If you do not validate the response signatures and
+the result's `otp` and `nonce` fields, you will be vulnerable to
+people who can obtain a fraudulent TLS certificate and intercept your
+traffic.
+
+=== Response
+
+If the verification server has successfully processed your request
+(even if the reponse is not a successful verification), it will return
+an HTTP status of `200 OK` with a JSON body.
+
+If you get a `4xx` or `5xx` response you should retry your request a
+few times, as intermediate proxies and gateways may cause transient
+errors. If you are using a locally-hosted validation server on your
+own network, this may not be necessary.
+
+For example:
+
+....
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-control: no-store
+X-API-Signature: epHo/O7us8LkN64TaCTuwcwlmwuWHe03O5Sbn7xGqeE=
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+{
+  "t": "2020-03-18T02:37:21.835014",
+  "otp": "cccccccccccccccccccccccccccccccccccccccccccc",
+  "nonce": "dddddddddddddddddddd",
+  "status": "BAD_OTP"
+}
+....
+
+The verification response tells you whether the OTP is valid.  The
+response has the following values:
+
+[options="header"]
+|===
+|parameter | type | purpose
+
+|otp
+|string
+|The OTP for which this is a response
+
+|nonce
+|string
+|The nonce that was supplied in the request
+
+|t
+|time stamp
+|Timestamp in UTC (ISO-8601 format)
+
+|status
+|string
+|The status of the operation, see below
+
+|timestamp
+|string
+|YubiKey internal timestamp value when key was pressed
+
+|counter
+|string
+|YubiKey internal counter when key was pressed
+
+|touch
+|string
+|YubiKey internal touch counter when key was pressed
+|===
+
+These are the possible "status" values in a verify response:
+
+[options="header"]
+|===
+| name | meaning
+
+| OK 
+| The OTP is valid.
+
+| BAD_OTP 
+| The OTP is invalid.
+
+| REPLAYED_OTP 
+| The OTP has already been seen by the service.
+
+| BAD_SIGNATURE 
+| The HMAC signature verification failed.
+
+| MISSING_PARAMETER 
+| The request lacks a required parameter.
+
+| NO_SUCH_CLIENT 
+| The supplied API key does not exist.
+
+| BACKEND_ERROR 
+| Unexpected error in our server. Please contact us if you see this error.
+
+| REPLAYED_REQUEST 
+| Server has seen the OTP/Nonce combination before
+|===
+
+=== Changes since version 2.0
+
+The verify URL has changed.
+
+Requests are a POST now (never a GET)
+
+All request data is now passed as a JSON payload in the request body
+instead of as query parameters.
+
+"sessionuse" and "sessioncounter" response fields have been renamed to
+"counter" and "touch" due to the words "use" and "counter" being used
+inconsistently across several different codebases.
+
+The meaning of the "sl" request parameter has changed, due to the fact
+that there are more ways to deploy the validation service and manage
+the consistency vs. availability tradeoff.
+
+The "timeout" request parameter has been removed, because there will
+not necessary be an inter-server sync protocol at the service side.
+
+As with the version 1.1 to version 2.0 changes, version 3.0 is not
+backwards compatible. This is why it has a new version number and new
+URL. OTP validation services may support several versions of the API
+concurrently. YubiCloud will continue to support version 2.0 until
+YYYY-MM-DD.
+
+=== Changes since version 1.1
+
+The verify URL has changed.  In the request, the new required field
+"nonce" were added, and the new optional fields "sl" and "timeout" are
+added.  In the response, the new fields "otp", "nonce", and "sl" are
+added.  The status codes NOT_ENOUGH_ANSWERS and REPLAYED_REQUEST were
+added.
+
+Since both the URL and required fields has changed, version 2.0 is not
+backwards compatible with version 1.1 or version 1.0.  However,
+because version 2.0 use a different URL than version 1.x, the server
+may support both version 1.x and version 2.0 clients at the same time.
