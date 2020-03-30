@@ -20,6 +20,7 @@ For more information on PIV APDUs, see the guidance provided by  Special Publica
 |Set PIN retries       |0xfa
 |Attest                |0xf9
 |Get serial            |0xf8
+|Get metadata          |0xf7
 |===========================
 
 == SET MANAGEMENT KEY
@@ -146,6 +147,32 @@ Get the serial number of the device. Only available in YubiKey 5.
 |=========
 
 Enoded as three bytes like `050302` for version 5.3.2.
+
+== GET METADATA
+Get information about a specific key. Only available in YubiKey 5.3.
+
+=== Syntax
+|================
+|CLA |0x00
+|INS |0xfa
+|P1  |0x00
+|P2  |Slot
+|================
+
+The following TLVs will be returned if the key is present:
+
+|========================================================================================
+|Algorithm     |0x01 |Algorithm/type of the key
+|Policy        |0x02 |PIN and Touch policy of the key (keys only)
+|Origin        |0x03 |Origin of the key: imported or generated
+|Public key    |0x04 |Public key associated with the private key
+|Default value |0x05 |Whether the PIN/key has a default value (PIN, PUK and Mgmt key only
+|Retries       |0x06 |Number of retries left (PIN and PUK only)
+|========================================================================================
+
+Use slot `0x80` for PIN, slot `0x81` PUK and slot `0x9b` for the Management key.
+
+Only the TLV that apply to an object will be returned.
 
 == Answer To Reset (ATR) and Answer To Select (ATS)
 Note: The YubiKey 5 Series ATR card issuer's data has been changed from `Yubikey 4` to `YubiKey`.
