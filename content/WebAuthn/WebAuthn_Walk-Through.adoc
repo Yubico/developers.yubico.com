@@ -96,6 +96,7 @@ The sequence of events in the authentication flow is described in detail in the 
 3 Initiate request to register an authenticator:: Call the JavaScript method ``navigator.credentials.create()``. See link:https://www.w3.org/TR/webauthn/#createCredential[Create a new credential].
 
 4 Relying Party finalizes registration::
+
 4.1 The authenticator processes and returns to the browser the ``attestationObject``. This includes a new public key, a credential ID, and attestation data. See link:https://www.w3.org/TR/webauthn/#iface-authenticatorattestationresponse[AuthenticatorAttestationResponse] and link:https://www.w3.org/TR/webauthn/#sctn-attestation-types[Attestation Types].
 
 4.2 The ``navigator.credentials.create()`` method returns a promise resolving to a ``PublicKeyCredential``. The ``PublicKeyCredential`` needs to be returned to the Relying Party. See link:https://www.w3.org/TR/webauthn/#extensions[WebAuthn Extensions].
@@ -188,6 +189,7 @@ RelyingParty rp = RelyingParty.builder()
 ....
 
 3 App initiates registration ceremony::
+
 3.1 Construct a ``StartRegistrationOptions`` instance using its ``.builder()``.
 
 3.2 Pass data to RP using ``startRegistration`` method, which returns ``PublicKeyCredentialCreationOptions``.
@@ -195,6 +197,7 @@ RelyingParty rp = RelyingParty.builder()
 3.3 Store the ``PublicKeyCredentialCreationOptions`` temporarily as a pending request.
 
 4 Finish registration::
+
 4.1 Construct ``PublicKeyCredential`` from the JSON response using link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/data/PublicKeyCredential.html#parseRegistrationResponseJson(java.lang.String)[``PublicKeyCredential.parseRegistrationResponseJson()].
 
 4.2 Retrieve and remove the ``PublicKeyCredentialCreationOptions`` from pending requests.
@@ -202,11 +205,13 @@ RelyingParty rp = RelyingParty.builder()
 4.3 Call ``RelyingParty.finishRegistration()`` and pass as arguments this ``PublicKeyCredential`` and the ``PublicKeyCredentialCreationOptions`` returned in the previous step.
 
 5 Set up for use;;
+
 5.1 Use ``RegistrationResult`` to update databases.
 
 5.2 Store ``keyId`` and ``publicKeyCose`` for use by ``CredentialRepository``.
 
 6 Attestation::
+
 6.1 Store raw attestation object as part of credential. For example:
 
 ....
@@ -220,6 +225,7 @@ result.getPublicKeyCose());
 === Configure Server-side Authentication Ceremony
 
 1 Initiate Authentication::
+
 1.1 Call: RelyingParty startAssertion method returns ``AssertionRequest`` and ``PublicKeyCredentialRequestOptions``.
 
 1.2 Serialize ``PublicKeyCredentialRequestOptions`` to JSON and pass to ``navigator.credentials.get()`` method. For example:
@@ -235,6 +241,7 @@ return json;
 1.3 Store the ``AssertionRequest`` temporarily as a pending request.
 
 2 Finish Authentication::
+
 2.1 Construct ``PublicKeyCredential`` from client response using link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/data/PublicKeyCredential.html#parseAssertionResponseJson(java.lang.String)[``PublicKeyCredential.parseAssertionResponseJson()``]
 
 2.2 Retrieve and remove the ``AssertionRequest`` from pending requests.
@@ -265,6 +272,7 @@ throw new RuntimeException("Authentication failed");
 ....
 
 3 Post Authentication::
+
 3.1 Initiate user session, using ``username`` and/or ``userHandle``.
 
 3.2 Update stored signature count to link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/AssertionResult.html#getSignatureCount()[]``signatureCount``] value in ``AssertionResult``.
