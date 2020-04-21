@@ -1,21 +1,16 @@
 == PGP Walk-Through
-
-
 Configure the YubiKey with PGP (Pretty Good Privacy) to encrypt and sign your data and communications. PGP is defined by the OpenPGP Working Group of the Internet Engineering Task Force (IETF) as a Proposed Standard in link:https://tools.ietf.org/html/rfc4880[RFC 4880] and described by the organization that develops it, link:https://www.openpgp.org/[OpenPGP.org]. PGP is used in Gnu and Linux environments for email encryption. It also provides a toolbox to handle many common cryptography operations.
 
-YubiKeys with PGP:
-
-•	Can be configured and used with any application that supports OpenPGP smart cards.
-•	Do not support the OpenPGP elliptic-curve cryptography (ECC) keys option.
-•	Cannot be used for web authentication.
+YubiKeys with PGP can be configured and used with any application that supports OpenPGP smart cards. However, they do not support the OpenPGP elliptic-curve cryptography (ECC) keys option, nor can they be used for web authentication.
 
 
 === Configuration Tools
+•	YubiKeys using OpenPGP are typically configured using link:https://www.gnupg.org/[GnuPG (GPG)].
+•	Use link:https://gpgtools.org/[GPGTools] for some MacOS software such as link:https://opensc.org/[OpenSC].
+•	Open source link:https://developers.yubico.com/ykneo-openpgp/[ykneo-openpgp] applet.
 
-•	YubiKeys using OpenPGP are typically configured using link:https://www.gnupg.org/[GnuPG (GPG)]
-•	Use link:https://gpgtools.org/[GPGTools] for some MacOS software such as link:OpenSC
-•	Open source ykneo-openpgp applet.
-System Requirements
+
+== System Requirements
 •	A PGP-enabled RSA public-key cryptosystem.
 •	A Yubico smartcard that holds a private key.
 •	A device with a common interface that meets Public-Key Cryptography Standards (PKCS), for example link:http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html[PKCS#11].
@@ -39,9 +34,9 @@ In this example 01 00 05 means version 1.0.5.
 === Importing Keys
 Import an existing PGP key to a YubiKey.
 
-1 - Generate a Key::
+Step 1 - Generate a Key::
 If you have a key, skip this step and proceed to step 2.
-Initiate and complete the command-driven wizard:
+Initiate and complete the command-driven wizard. In the following example, the key ID is `13AFCE85`. As stated in the output below, the entropy of the prime generation is supported by the performance of some other action such as typing on the keyboard, moving the mouse, and/or utilizing the disks.
 
 ....
 $ gpg --gen-key
@@ -91,7 +86,7 @@ sub   2048R/D7421CDF 2014-03-07 [expires: 2014-06-15]
 ....
 
 
-2 - Add an Authentication Key::
+Step 2 - Add an Authentication Key::
 
 ....
 # add authentication key
@@ -148,13 +143,13 @@ sub 2048R/B4000C55 created: 2014-03-07 expires: 2014-06-15 usage: A
 gpg> Save changes? (y/N) y
 ....
 
-3 - Back up your key::
+Step 3 - Back up your key::
 Create your backup and store it in a secure offline location.
 ....
 gpg --export-secret-key --armor 13AFCE85
 ....
 
-4 - Import the key to your YubiKey::
+Step 4 - Import the key to your YubiKey::
 ....
 $ gpg --edit-key 13AFCE85
 gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
@@ -227,30 +222,21 @@ The secret key is no longer stored on your computer.  A pointer on the computer 
 
 == Editing Smartcard
 
-1 - Install and verify prerequisites::
-In addition to the Task Prerequisites listed above, check the following:
-1.	Install the link:../../yubikey-personalization[YubiKey personalization tool], `ykpersonalize`.
-2.	Verify versions and settings.
-
+Step 1 - Install and verify prerequisites::
+In addition to the Task Prerequisites listed above, check verify versions and settings:
+1. Install the link:../../yubikey-personalization[YubiKey personalization tool], `ykpersonalize`.
+2. Verify the YubiKey firmware version is 3.1.8 or later by running `lsusb -v`.
+3. Use ykpersonalize to set your device to OTP/CCID or CCID mode:
 ....
-# Verify the YubiKey firmware version is 3.1.8 or later.
-$ lsusb -v
-# Set your device to OTP/CCID or CCID mode. Use ykpersonalize.
 $ ykpersonalize -m6
-# Verify libccid version is 1.4.10 or later.
-$ pkg info ccid
-# Verify /etc/libccid_Info.plist contains YubiKey USB PID/VID
-$ ls yubikey
-# Check PCSCD setup is working. Review response to PCSC scan for a reference to YubiKey.
-$ pscs_scan
-# Verify scdaemon version is 2.0.22 or later.
-$ scdaemon --version
 ....
+4. Verify the `libccid` version is 1.4.10 or later by running `pkg info ccid`.
+5. Verify that ``/etc/libccid_Info.plist` contains `YubiKey USB PID/VID` by running `ls yubikey`.
+6. Check that the PCSCD setup is working. Review the response to a PCSC scan for a reference to YubiKey by running `pscs_scan`.
+7. Verify that the scdaemon version is 2.0.22 or later by running `scdaemon --version`.
+8. To use the optional YubiTouch, install the custom bash script, link:https://github.com/a-dma/yubitouch[]`yubitouch.sh`], and obtain the YubiKey admin PIN.
 
-
-3. To use the optional Yubi Touch, install custom bash script, `yubitouch.sh`, and obtain the YubiKey admin PIN.
-
-2 - Set the OpenPGP parameters::
+Step 2 - Set the OpenPGP parameters::
 For example:
 
 ....
