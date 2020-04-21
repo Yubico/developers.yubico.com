@@ -10,17 +10,17 @@ YubiKeys with PGP can be configured and used with any application that supports 
 •	Open source link:https://github.com/Yubico/ykneo-openpgp/[ykneo-openpgp] applet.
 
 
-== System Requirements
+=== System Requirements
 •	A PGP-enabled RSA public-key cryptosystem.
-•	A Yubico smartcard that holds a private key.
+•	A Yubico smart card (YubiKey) that already holds or will hold a private key.
 •	A device with a common interface that meets Public-Key Cryptography Standards (PKCS), for example, link:http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html[PKCS#11].
 
 
 === Task Prerequisites
 •	link:https://www.gnupg.org/[GnuPG] version 2.0.2 or later installed on your computer and a good understanding of how GnuPG works. See link:https://www.gnupg.org/documentation/[GnuPG documentation], usage and setting of PIN and reset codes.
 •	The key to be imported (or already imported) must be an RSA-2048 bit key.
-•	YuibiKey Admin PIN.
-•	YubiKey OpenPGP module version 1.0.5 or later. To check the version, insert your YubiKey in the computer, and run the command:
+•	The Admin PIN for your YubiKey.
+•	YubiKey OpenPGP module version 1.0.5 or later. To check the version, insert your YubiKey in the computer, and run the command `gpg-connect-agent --hex "scd apdu 00 f1 00 00"`, as shown in the example below:
 
 ....
 $ gpg-connect-agent --hex "scd apdu 00 f1 00 00" /bye
@@ -31,11 +31,10 @@ OK
 In this example 01 00 05 means version 1.0.5.
 
 
-=== Importing Keys
-Import an existing PGP key to a YubiKey.
+=== Importing Keys to your YubiKey
+If you already have a PGP key, skip step 1 and start with step 2.
 
-Step 1 - Generate a Key::
-If you have a key, skip this step and proceed to step 2.
+Step 1 - Generate a key::
 Initiate and complete the command-driven wizard. In the following example, the key ID is `13AFCE85`. As stated in the output below, the entropy of the prime generation is supported by the performance of some other action such as typing on the keyboard, moving the mouse, and/or utilizing the disks.
 
 ....
@@ -86,11 +85,9 @@ sub   2048R/D7421CDF 2014-03-07 [expires: 2014-06-15]
 ....
 
 
-Step 2 - Add an Authentication Key::
+Step 2 - Add an authentication key:: The following example uses the same key ID. Start the wizard by running `gpg --expert --edit-key 13AFCE85` where you substitute your own key ID. The following example shows the wizard and the example input:
 
 ....
-# add authentication key
-$ gpg --expert --edit-key 13AFCE85
 gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
@@ -144,10 +141,7 @@ gpg> Save changes? (y/N) y
 ....
 
 Step 3 - Back up your key::
-Create your backup and store it in a secure offline location.
-....
-gpg --export-secret-key --armor 13AFCE85
-....
+Create your backup and store it in a secure offline location by running `gpg --export-secret-key --armor 13AFCE85`, substituting your own key ID.
 
 Step 4 - Import the key to your YubiKey::
 ....
@@ -220,7 +214,7 @@ Save changes? (y/N) y
 The secret key is no longer stored on your computer.  A pointer on the computer indicates that the secret key is stored on the YubiKey smart card.
 
 
-== Editing Smartcard
+=== Editing a Smart Card
 
 Step 1 - Install and verify prerequisites::
 In addition to the Task Prerequisites listed above, check verify versions and settings:
