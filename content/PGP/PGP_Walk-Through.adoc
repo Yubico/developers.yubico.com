@@ -1,0 +1,248 @@
+== PGP Walk-Through
+
+
+Configure the YubiKey with PGP (Pretty Good Privacy) to encrypt and sign your data and communications. PGP is defined by the OpenPGP Working Group of the Internet Engineering Task Force (IETF) as a Proposed Standard in link:https://tools.ietf.org/html/rfc4880[RFC 4880] and described by the organization that develops it, link:https://www.openpgp.org/[OpenPGP.org]. PGP is used in Gnu and Linux environments for email encryption. It also provides a toolbox to handle many common cryptography operations.
+
+YubiKeys with PGP:
+
+•	Can be configured and used with any application that supports OpenPGP smart cards.
+•	Do not support the OpenPGP elliptic-curve cryptography (ECC) keys option.
+•	Cannot be used for web authentication.
+
+
+=== Configuration Tools
+
+•	YubiKeys using OpenPGP are typically configured using link:https://www.gnupg.org/[GnuPG (GPG)]
+•	Use link:https://gpgtools.org/[GPGTools] for some MacOS software such as link:OpenSC
+•	Open source ykneo-openpgp applet.
+System Requirements
+•	A PGP-enabled RSA public-key cryptosystem.
+•	A Yubico smartcard that holds a private key.
+•	A device with a common interface that meets Public-Key Cryptography Standards (PKCS), for example link:http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html[PKCS#11].
+
+
+=== Task Prerequisites
+•	link:https://www.gnupg.org/[GnuPG] version 2.0.2 or later installed on your computer and a good understanding of how GnuPG works. See link:https://www.gnupg.org/documentation/[GnuPG documentation], usage and setting of PIN and reset codes.
+•	The key to be imported (or already imported) must be an RSA-2048 bit key.
+•	YuibiKey Admin PIN.
+•	YubiKey OpenPGP module version 1.0.5 or later. To check the version, insert your YubiKey in the computer, and run the command:
+
+....
+$ gpg-connect-agent --hex "scd apdu 00 f1 00 00" /bye
+D[0000]  01 00 05 90 00                                     .....
+OK
+....
+
+In this example 01 00 05 means version 1.0.5.
+
+
+=== Importing Keys
+Import an existing PGP key to a YubiKey.
+
+1 - Generate a Key::
+If you have a key, skip this step and proceed to step 2.
+Initiate and complete the command-driven wizard:
+
+....
+$ gpg --gen-key
+gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Please select what kind of key you want:
+   (1) RSA and RSA (default)
+   (2) DSA and Elgamal
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+Your selection?
+# Set size and type limits, and expiration date.
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (2048)
+Requested keysize is 2048 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0)
+# Associate a real name, email address, and optionally add a comment for this key.
+# Confirm the provided information.
+Real name:
+Email address:
+Comment:
+You selected this USER-ID:
+    "Foo Bar <foo@example.com>"
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit?
+# Record the ID of the key. In this example the ID is 13AFCE85.
+We need to generate a lot of random bytes. It is a good idea to perform some other action (type on the keyboard, move the mouse, utilize the disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+We need to generate a lot of random bytes. It is a good idea to perform some other action (type on the keyboard, move the mouse, utilize the disks) during the prime generation; this gives the random number generator a better chance to gain enough entropy.
+gpg: key 13AFCE85 marked as ultimately trusted
+public and secret key created and signed.
+gpg: checking the trustdb
+gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
+gpg: depth: 0  valid:  4  signed:  8  trust: 0-, 0q, 0n, 0m, 0f, 4u
+gpg: depth: 1  valid:  8  signed:  2  trust: 3-, 0q, 0n, 5m, 0f, 0u
+gpg: next trustdb check due at 2014-03-23
+pub  2048R/13AFCE85 2014-03-07 [expires: 2014-06-15]
+Key fingerprint = 743A 2D58 688A 9E9E B4FC  493F 70D1 D7A8 13AF CE85
+uid   Foo Bar <foo@example.com>
+sub   2048R/D7421CDF 2014-03-07 [expires: 2014-06-15]
+....
+
+
+2 - Add an Authentication Key::
+
+....
+# add authentication key
+$ gpg --expert --edit-key 13AFCE85
+gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Secret key is available.
+pub 2048R/13AFCE85 created: 2014-03-07 expires: 2014-06-15 usage: SC
+                   trust: ultimate      validity: ultimate
+sub 2048R/D7421CDF created: 2014-03-07 expires: 2014-06-15 usage: E
+[ultimate] (1). Foo Bar foo@example.com
+
+gpg> addkey
+2048-bit RSA key, ID 13AFCE85, created 2014-03-07
+# Select 8 to attach another RSA key to our key.
+Please select what kind of key you want:
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+   (5) Elgamal (encrypt only)
+   (6) RSA (encrypt only)
+   (7) DSA (set your own capabilities)
+   (8) RSA (set your own capabilities)
+Your selection?
+# Get a pure authentication key, select A, then S, then E. When done select Q to continue.
+Possible actions for a RSA key: Sign Encrypt Authenticate
+Current allowed actions: Sign Encrypt
+   (S) Toggle the sign capability
+   (E) Toggle the encrypt capability
+   (A) Toggle the authenticate capability
+   (Q) Finished
+Your selection?
+# Set key size as 2048 bits.
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (2048)
+# Select the same expiry you set previously. Confirm by entering y.
+Requested keysize is 2048 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0)
+Is this correct? (y/N) y
+Really create? (y/N) y
+We need to generate a lot of random bytes. It is a good idea to perform some other action (type on the keyboard, move the mouse, utilize the disks) during the prime generation; this gives the random number generator a better chance to gain enough entropy.
+pub 2048R/13AFCE85 created: 2014-03-07 expires: 2014-06-15 usage: SC
+                   trust: ultimate      validity: ultimate
+sub 2048R/D7421CDF created: 2014-03-07 expires: 2014-06-15 usage: E
+sub 2048R/B4000C55 created: 2014-03-07 expires: 2014-06-15 usage: A
+[ultimate] (1). Foo Bar foo@example.com
+
+gpg> Save changes? (y/N) y
+....
+
+3 - Back up your key::
+Create your backup and store it in a secure offline location.
+....
+gpg --export-secret-key --armor 13AFCE85
+....
+
+4 - Import the key to your YubiKey::
+....
+$ gpg --edit-key 13AFCE85
+gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Secret key is available.
+pub 2048R/13AFCE85 created: 2014-03-07 expires: 2014-06-15 usage: SC
+                   trust: ultimate      validity: ultimate
+sub 2048R/D7421CDF created: 2014-03-07 expires: 2014-06-15 usage: E
+sub 2048R/B4000C55 created: 2014-03-07 expires: 2014-06-15 usage: A
+[ultimate] (1). Foo Bar <foo@example.com>
+# Move the primary key to the YubiKey PGP Signature slot.
+gpg> toggle
+sec  2048R/13AFCE85  created: 2014-03-07  expires: 2014-06-15
+ssb  2048R/D7421CDF  created: 2014-03-07  expires: never
+ssb  2048R/B4000C55  created: 2014-03-07  expires: never
+(1)  Foo Bar <foo@example.com>
+gpg> keytocard
+Really move the primary key? (y/N) y
+Signature key ....: [none]
+Encryption key....: [none]
+Authentication key: [none]
+Please select where to store the key:
+   (1) Signature key
+   (3) Authentication key
+Your selection? 1
+gpg> key 1
+sec 2048R/13AFCE85 created: 2014-03-07 expires: 2014-06-15
+                   card-no: 0000 00000001
+ssb* 2048R/D7421CDF created: 2014-03-07 expires: never
+ssb  2048R/B4000C55 created: 2014-03-07 expires: never
+(1)  Foo Bar <foo@example.com>
+# Move the Encryption key.
+gpg> keytocard
+Signature key ....: 743A 2D58 688A 9E9E B4FC  493F 70D1 D7A8 13AF CE85
+Encryption key....: [none]
+Authentication key: [none]
+Please select where to store the key:
+   (2) Encryption key
+Your selection? 2
+# Move the Authentication key to the YubiKey.
+gpg> key 1
+sec 2048R/13AFCE85 created: 2014-03-07 expires: 2014-06-15
+                   card-no: 0000 00000001
+ssb 2048R/D7421CDF created: 2014-03-07 expires: never
+                   card-no: 0000 00000001
+ssb 2048R/B4000C55 created: 2014-03-07 expires: never
+(1)  Foo Bar <foo@example.com>
+gpg> key 2
+sec 2048R/13AFCE85 created: 2014-03-07 expires: 2014-06-15
+                   card-no: 0000 00000001
+ssb 2048R/D7421CDF created: 2014-03-07 expires: never
+                    card-no: 0000 00000001
+ssb* 2048R/B4000C55 created: 2014-03-07 expires: never
+(1)  Foo Bar <foo@example.com>
+gpg> keytocard
+Signature key ....:743A 2D58 688A 9E9E B4FC 493F 70D1 D7A8 13AF CE85
+Encryption key....:8D17 89A0 5C2F B804 22E5 5C04 8A68 9CC0 D742 1CDF
+Authentication key: [none]
+Please select where to store the key:
+   (3) Authentication key
+Your selection? 3
+# Save the keyring.
+gpg> quit
+Save changes? (y/N) y
+....
+
+The secret key is no longer stored on your computer.  A pointer on the computer indicates that the secret key is stored on the YubiKey smart card.
+
+
+== Editing Smartcard
+
+1 - Install and verify prerequisites::
+In addition to the Task Prerequisites listed above, check the following:
+1.	Install the link:../../yubikey-personalization[YubiKey personalization tool], `ykpersonalize`.
+2.	Verify versions and settings.
+
+....
+# Verify the YubiKey firmware version is 3.1.8 or later.
+$ lsusb -v
+# Set your device to OTP/CCID or CCID mode. Use ykpersonalize.
+$ ykpersonalize -m6
+# Verify libccid version is 1.4.10 or later.
+$ pkg info ccid
+# Verify /etc/libccid_Info.plist contains YubiKey USB PID/VID
+$ ls yubikey
+# Check PCSCD setup is working. Review response to PCSC scan for a reference to YubiKey.
+$ pscs_scan
+# Verify scdaemon version is 2.0.22 or later.
+$ scdaemon --version
+....
