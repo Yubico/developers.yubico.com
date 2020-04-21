@@ -35,7 +35,7 @@ In this example 01 00 05 means version 1.0.5.
 If you already have a PGP key, skip step 1 and start with step 2.
 
 Step 1 - Generate a key::
-Initiate and complete the command-driven wizard. In the following example, the key ID is `13AFCE85`. As stated in the output below, the entropy of the prime generation is supported by the performance of some other action such as typing on the keyboard, moving the mouse, and/or utilizing the disks.
+Initiate and complete the command-driven wizard by running `gpg --gen-key`. In the following example, the key ID is `13AFCE85`. As stated in the output below, the entropy of the prime generation is supported by the performance of some other action such as typing on the keyboard, moving the mouse, and/or utilizing the disks.
 
 ....
 $ gpg --gen-key
@@ -88,6 +88,7 @@ sub   2048R/D7421CDF 2014-03-07 [expires: 2014-06-15]
 Step 2 - Add an authentication key:: The following example uses the same key ID. Start the wizard by running `gpg --expert --edit-key 13AFCE85` where you substitute your own key ID. The following example shows the wizard and the example input:
 
 ....
+$ gpg --expert --edit-key 13AFCE85
 gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
@@ -143,7 +144,8 @@ gpg> Save changes? (y/N) y
 Step 3 - Back up your key::
 Create your backup and store it in a secure offline location by running `gpg --export-secret-key --armor 13AFCE85`, substituting your own key ID.
 
-Step 4 - Import the key to your YubiKey::
+Step 4 - Import the key to your YubiKey:: Again, substitute your own key ID. The following example shows the wizard and the example input:
+
 ....
 $ gpg --edit-key 13AFCE85
 gpg (GnuPG) 2.0.22; Copyright (C) 2013 Free Software Foundation, Inc.
@@ -216,21 +218,18 @@ The secret key is no longer stored on your computer.  A pointer on the computer 
 
 === Editing a Smart Card
 
-Step 1 - Install and verify prerequisites::
-In addition to the Task Prerequisites listed above, check verify versions and settings:
+==== Install and Verify Prerequisites
+In addition to the Task Prerequisites listed above, check versions and settings as follows:
 1. Install the link:../Software_Projects/YubiKey_Device_Configuration/[YubiKey personalization tool], `ykpersonalize`.
 2. Verify the YubiKey firmware version is 3.1.8 or later by running `lsusb -v`.
-3. Use ykpersonalize to set your device to OTP/CCID or CCID mode:
-....
-$ ykpersonalize -m6
-....
+3. Use ykpersonalize to set your device to OTP/CCID or CCID mode by running `ykpersonalize -m6`.
 4. Verify the `libccid` version is 1.4.10 or later by running `pkg info ccid`.
 5. Verify that ``/etc/libccid_Info.plist` contains `YubiKey USB PID/VID` by running `ls yubikey`.
 6. Check that the PCSCD setup is working. Review the response to a PCSC scan for a reference to YubiKey by running `pscs_scan`.
 7. Verify that the scdaemon version is 2.0.22 or later by running `scdaemon --version`.
-8. To use the optional YubiTouch, install the custom bash script, link:https://github.com/a-dma/yubitouch[]`yubitouch.sh`], and obtain the YubiKey admin PIN.
+8. (Optional) To use the YubiTouch, install the custom bash script, link:https://github.com/a-dma/yubitouch[]`yubitouch.sh`], and obtain the YubiKey admin PIN.
 
-Step 2 - Set the OpenPGP parameters::
+==== Set the OpenPGP Parameters
 For example:
 
 ....
