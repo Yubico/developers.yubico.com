@@ -1,14 +1,12 @@
 == Introduction
 
-With the release of the YubiKey 5Ci device with firmware 5.2.3, Yubico offers support for the latest OpenPGP Smart Card 3.4 functionality, offering advancements in OpenPGP functionality. These enhancements allow users an expanded encryption algorithm set beyond RSA for OpenPGP operations, utilize separate x.509 cardholder certificates alongside the existing OpenPGP certificates for authentication, signature and encryption/decipher, bring attestation functionality to OpenPGP keys and certificates generated on a YubiKey and a number of quality of life improvements. Further, security has been improved as the YubiKey with firmware 5.2.3 and above supports Key Derived Format PINs, allowing the PIN to never be exposed over an insecure channel.
+With the release of the YubiKey 5Ci device with firmware 5.2.3, Yubico offers support for the latest OpenPGP Smart Card 3.4 functionality, offering advancements in OpenPGP functionality. These enhancements allow users an anded encryption algorithm set beyond RSA for OpenPGP operations, utilize separate x.509 cardholder certificates alongside the existing OpenPGP certificates for authentication, signature and encryption/decipher, bring attestation functionality to OpenPGP keys and certificates generated on a YubiKey and a number of quality of life improvements. Further, security has been improved as the YubiKey with firmware 5.2.3 and above supports Key Derived Format PINs, allowing the PIN to never be exposed over an insecure channel.
 
 This document is a high level review of the OpenPGP feature enhancements including in firmware 5.2.3 and above. The full specifications of what has been changed can be found in the OpenPGP Smart Card v3.4 specifications, here: https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf
 
-=== Functional Feature Enhancements
-YubiKey firmware 5.2.3 and OpenPGP 3.4 offers a set of new options to users, namely new support for cryptographic algorithms beyond RSA and the Yubico Attestation feature for verifying keys generated on a YubiKey device.
 
 === Elliptic Curves
-Support for Elliptic Curve Cryptographic Algorithms have been added to the YubiKey 5.2.3 and above firmware. These curves can be used for Signature, Authentication and Decipher keys. The full list of curves supported by OpenPGP 3.4 can be found in section 4.4.3.10 of the https://www.google.com/url?q=https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf&sa=D&ust=1566260477095000[OpenPGP Smart Card 3.4] spec.
+YubiKey firmware 5.2.3 and OpenPGP 3.4 offers a set of new options to users. Support for Elliptic Curve Cryptographic Algorithms have been added to the YubiKey 5.2.3 and above firmware. These curves can be used for Signature, Authentication and Decipher keys.
 
 YubiKeys support the following Elliptic Curve algorithms in addition to RSA (Firmware 5.2.3 and above only)
 
@@ -73,7 +71,7 @@ $ gpg-connect-agent "SCD SETATTR KEY-ATTR --force 2 22 cv25519" /bye
 === Attestation
 YubiKeys offer a new feature to the OpenPGP Smart Card, the attestation of Keys generated on device. With the attestation function, generating an Authentication, Signature or Decipher key on a YubiKey will also create an X.509 certificate signed with the Attestation key present on the device. This certificate can be used to verify any other key generated on the device and was not imported, ensuring said key only exists on the YubiKey. 
 
-Attestation is supported for all combinations of attestation key and attested key, except the attestation key cannot be from the curve25519 family. A fourth key slot is reserved for an attestation key.  If specifying it by ID, it is Key ID 0x81. The Attestation template certificate Is stored on a fourth user certificate slot reserved for it. It is selected directly with SELECT_DATA index 4.  It can also be retrieved by calling GET_NEXT_DATA three times after SELECT_DATA on index 1.
+Attestation is supported for all combinations of attestation key and attested key, except the attestation key cannot be from the curve25519 family. A fourth key slot is reserved for an attestation key.  If specifying it by ID, it is Key ID 0x81. The Attestation template certificate is stored on a fourth user certificate slot reserved for it. It is selected directly with SELECT_DATA index 4.  It can also be retrieved by calling GET_NEXT_DATA three times after SELECT_DATA on index 1.
 
 Each YubiKey comes with a pre-loaded Attestation certificate signed by a Yubico OpenPGP CA. Attestation is a Yubikey-proprietary extension. The https://www.google.com/url?q=https://www.yubico.com/products/services-software/download/yubikey-manager/&sa=D&ust=1566260477099000[YubiKey Manager] application can be used to manage the Attestation Certificate. For more details, refer to the OpenPGP Attestation page at: https://developers.yubico.com/PGP/Attestation.html
 
@@ -83,7 +81,7 @@ Alongside new cryptographic curves and key attestation, the YubiKey 5.2.3 and up
 === Key Derived Format
 To remove the transmission and on-card storage of OpenPGP PINs in plain text, the YubiKey supports the Key Derived Function (KDF) functionality. With the KDF function enabled, the PIN is stored as a hash on the YubiKey. When entering the PIN to the OpenPGP Smart Card, the OpenPGP client will only pass the hashed value, never passing the PIN directly. KDF functionality is set on the card itself, and communicated to the client; it is transparent to the user. Should the KDF functionality not be enabled, the PIN function will work as previously. The KDF function is listed in section 4.3.2  of the https://www.google.com/url?q=https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf&sa=D&ust=1566260477100000[OpenPGP Smart Card 3.4] spec.
 
-Current stable releases (2.2.12) of gnupg support enabling KDF, but do not have any indication when it is enabled. This will be added in the upcoming GnuPG 2.3.0, which displays KDF state as part of the card status.
+Current stable releases (2.2.20) of gnupg support enabling KDF.
 
 * Enable KDF
 [source, python]
@@ -135,21 +133,21 @@ The YubiKey has implemented support for the touch-to-verify function with OpenPG
 === General Enhancements
 The OpenPGP Smart card 3.4 specifications include a number of enhancements designed to improve general functionality and speed. These include:
 
-* Expanded Length Responses
+* Extended Length Responses
 * Algorithm Information & Attributes
 * Key Information
 * Get Random Challenge
 
-=== Expanded Length Responses
+=== Extended Length Responses
 
 The YubiKey firmware 5.2.3 and up can utilize longer responses to queries from OpenPGP, allowing more data to be sent per interaction and reduce the overall time for operations, especially in environments where the USB communication latency is the largest bottleneck. Several data objects (DOs) with variable length have had their maximum response length increased with the max length now listed in the Extended Capabilities DO. The YubiKey has had the max response length increased from 255 to over 3000 bytes. Section 4.4.1 in the OpenPGP Smart Card 3.4 spec lists the DOs which have been affected by this enhancement.
 
 === Algorithm Information & Attributes
-When generating or importing new keys with the new expanded algorithm set, it is important for the OpenPGP Smart Card to correctly identify which algorithms are supported. The Algorithm Information and Attributes DOs provide that information to a host system. 
+When generating or importing new keys with the new extended algorithm set, it is important for the OpenPGP Smart Card to correctly identify which algorithms are supported. The Algorithm Information and Attributes DOs provide that information to a host system. 
 
 The Algorithm Information DO will list all of the supported algorithms and key sizes for an OpenPGP Smart card. This allows the OpenPGP host to correctly present options to users for everything supported on the Authentication, Signature and Decipher keys. Applications can read this DO without having to make changes to the algorithms on the associated key. The Algorithm Information is listed in section 4.4.3.11 of the https://www.google.com/url?q=https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf&sa=D&ust=1566260477106000[OpenPGP Smart Card 3.4] spec.
 
-Each key on an OpenPGP card can also have the allowed algorithms and keys sizes set to a specific subset of all available options. The allowed options are set in the Algorithm Attributes DO. The attributes can be changed independent for each key, so it is possible, for example, to use different key length for signing and decrypting. If the attributes of an existing key are changed and no longer match with the stored key, the card will prevent it from being used. The Algorithm Attributes is listed in section 4.4.3.9 of the https://www.google.com/url?q=https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf&sa=D&ust=1566260477106000[OpenPGP Smart Card 3.4] spec.
+Each key on an OpenPGP card can also have the allowed algorithms and keys sizes set to a specific subset of all available options. The allowed options are set in the Algorithm Attributes DO. The attributes can be changed independent for each key, so it is possible, for example, to use different key length for signing and decrypting. If the attributes of an existing key are changed and no longer match with the stored key, the key will be wiped and will not recoverable. The Algorithm Attributes is listed in section 4.4.3.9 of the https://www.google.com/url?q=https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf&sa=D&ust=1566260477106000[OpenPGP Smart Card 3.4] spec.
 
 === Get Challenge
 The Get Challenge command generates a random number of a specific byte length. This is useful for using the YubiKey as a hardware based random number generator to create highly sophisticated random numbers. The maximum length of a random number which can be generated is listed in Extended Capabilities. The Get Challenge is listed in section  7.2.15of the https://www.google.com/url?q=https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf&sa=D&ust=1566260477106000[OpenPGP Smart Card 3.4] spec.
