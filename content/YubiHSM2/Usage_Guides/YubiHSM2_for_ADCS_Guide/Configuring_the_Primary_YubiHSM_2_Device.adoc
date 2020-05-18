@@ -1,79 +1,77 @@
 == Configuring the Primary YubiHSM 2 Device
-The YubiHSM Setup program, which is part of the YubiHSM 2 toolset, is used to perform the initial
-configuration of the primary YubiHSM 2 device. This program configures the device with the
-requirements needed for deploying YubiHSM 2 to safely store the ADCS root CA key. Specifically,
-during the setup process the YubiHSM is configured so that:
-•	 The necessary key material is generated on the device:
-•	 One wrap key
-•	 One application authentication key
-•	 One audit key
-•	 The wrap key is split among a determined number of key custodians, and each share is recorded
+The YubiHSM Setup program, which is part of the YubiHSM 2 toolset, is used to perform the initial configuration of the primary YubiHSM 2 device. This program configures the device with the requirements needed for deploying YubiHSM 2 to safely store the ADCS root CA key. Specifically, during the setup process the YubiHSM is configured so that:
+
+* The necessary key material is generated on the device:
+
+  * One wrap key
+  * One application authentication key
+  * One audit key
+
+* The wrap key is split among a determined number of key custodians, and each share is recorded
 by each custodian
-•	 The authentication key and the audit key are exported under wrap to a file, located in the current
+* The authentication key and the audit key are exported under wrap to a file, located in the current
 working directory
-To safeguard the integrity of the device, configuration must be performed in an airgap environment.
-Configuration Steps
-After you have inserted the primary device into the air-gapped system, the configuration steps are as
-follows. These steps are described in detail in the following procedure.
-1.	 Set up communication between the YubiHSM 2 tools and the device.
-2.	 Start the configuration process.
-3.	 Authenticate to the YubiHSM device.
-4.	 Specify if you need to add RSA decryption (not required if you are using YubiHSM 2 exclusively
-with ADCS).
-5.	 Enter the domains you need the application authentication key and audit key to be available in.
-6.	 Create the wrap key.
-7.	 Split the wrap key into shares, and record the number of shares required to rejoin the wrap key.
-8.	 Create the application authentication key, which is used to authenticate to the device by the KSP
-in Windows so the KSP can perform operations in YubiHSM 2.
-9.	 Create the audit key, to access the internal audit log of the device which holds information about
-the last 62 operations performed and so you can reset the audit log.
+
+To safeguard the integrity of the device, configuration must be performed in an air-gapped environment.
+
+
+
+=== Summary of Configuration Steps
+After you have inserted the primary device into the air-gapped system, the configuration steps are diagrammed in the following image, and listed below. They are described in detail in the next section, *Configuration Procedure*.
 
 .. image:: preconditions-postconditions.png
 
-To configure your YubiHSM 2 device
-1.	 Enable communication with the YubiHSM 2 device by ensuring that the YubiHSM Connector
-service (yhconsrv in Windows) is running on the system where the device is inserted. You can
-validate that the connector is running properly by typing the following URI into your browser:
-http://127.0.0.1:12345/connector/status
-Output should be similar to:
+*Configuration Steps*
+
+1.	 Set up communication between the YubiHSM 2 tools and the device.
+2.	 Start the configuration process.
+3.	 Authenticate to the YubiHSM device.
+4.	 Specify if you need to add RSA decryption (not required if you are using YubiHSM 2 exclusively with ADCS).
+5.	 Enter the domains you need the application authentication key and audit key to be available in.
+6.	 Create the wrap key.
+7.	 Split the wrap key into shares, and record the number of shares required to rejoin the wrap key.
+8.	 Create the application authentication key, which is used to authenticate to the device by the KSP in Windows so the KSP can perform operations in YubiHSM 2.
+9.	 Create the audit key, to access the internal audit log of the device which holds information about the last 62 operations performed and so you can reset the audit log.
+
+
+=== Configuration Procedure
+
+*Step 1* Enable communication with the YubiHSM 2 device by ensuring that the YubiHSM Connector service (`yhconsrv` in Windows) is running on the system where the device is inserted. You can validate that the connector is running properly by typing the following URI into your browser: `http://127.0.0.1:12345/connector/status`. Output should be similar to:
+
+....
 status=OK
-
 serial=*
-
 version=1.0.0
-
 pid=*
 address=127.0.0.1
-
 port=12345
+....
 
-2.	 In your command line application (where $ is the generic prompt used in this document;
-depending on your command line application, your prompt may be different), run YubiHSM Setup
-with the argument ksp. To do this, launch your command line application, navigate to the
-directory containing the YubiHSM Setup program, run the following command, and press Enter.
-$ yubihsm-setup ksp
-TIP: The setup tool also has a help argument that you can call to learn more about its usage.
-3.	 To start the YubiHSM Setup process, type the default authentication key password: password
-and press Enter. A confirmation message is displayed that the default authentication key was used
-and that you successfully have authenticated to the device:
-Using authentication key 0x0001
-Object IDs are displayed in the YubiHSM Setup Tool using hexadecimal numbers, in this case the
+*Step 2* In your command line application (where $ is the generic prompt used in this document; depending on your command line application, your prompt may be different), run YubiHSM Setup with the argument `ksp`. To do this, launch your command line application, navigate to the directory containing the YubiHSM Setup program, run `yubihsm-setup ksp` and press *Enter*.
+
+
+[TIP]
+=====
+The setup tool also has a help argument that you can call to learn more about its usage.
+=====
+
+*Step 3* To start the YubiHSM Setup process, type the default authentication key password: `password` and press *Enter*. A message appears, confirming that the default authentication key was used and that you have successfully authenticated to the device: `Using authentication key 0x0001`. Object IDs are displayed in the YubiHSM Setup Tool using hexadecimal numbers, in this case the
 default authentication key has ID 1, or 0x0001 in hexadecimal.
 
-4.	 You are prompted if you want to add RSA decryption capabilities. Do one of the following:
-•	 If you plan to use your YubiHSM 2 exclusively with Active Directory Certificate Services
-(ADCS), you will not need the RSA decryption capabilities, you will only need signing
-capabilities. Type n.
-•	 If you do need RSA decryption capabilities, if you plan on also using the same YubiHSM 2
-device for purposes that do require the capability to decrypt RSA, type y.
-TIP: If you are unsure what selection to make, select no (n).
-5.	 The next question to be answered is what domain(s) you need the application authentication key
-and audit key to be available in (the authentication and audit keys are generated after you create
-the wrap key). You will only need one domain for the purposes of completing this guide. Do the
-following:
-•	 Unless you have a requirement to assign more than one domain, type a single number
-between 1 to 16 and press Enter. In this guide, we assume that domain 1 was entered.
-Confirmation will look like the following:
+*Step 4* You are prompted to add RSA decryption capabilities. Do one of the following:
+
+* If you plan to use your YubiHSM 2 with ADCS exclusively, you will not need the RSA decryption capabilities, you will only need signing
+capabilities. Type `n`.
+* If you do need RSA decryption capabilities, if you plan on using the same YubiHSM 2 device for purposes that do require decrypting RSA, type `y`.
+
+[TIP]
+====
+If you are unsure what selection to make, type `n`.
+====
+
+*Step 5* The next question to be answered is what domain(s) you need the application authentication key and audit key to be available in (the authentication and audit keys are generated after you create the wrap key). You will only need one domain for the purposes of completing this guide. Do the following:
+
+* Unless you have a requirement to assign more than one domain, type a single number between 1 to 16 and press *Enter*. In this guide, we assume that domain 1 was entered. Confirmation will look like the following:
 got domains [
 One
 ]
