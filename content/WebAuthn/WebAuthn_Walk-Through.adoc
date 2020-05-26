@@ -14,12 +14,16 @@ In this document, we are going to walk through the Java-WebAuthn-Server's regist
 === Prerequisites
 You will need at least one YubiKey, plus installation of the following:
 
-* **Yubico’s Java link:https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo[WebAuthn Server demo]**
-* **link:https://git-scm.com/[Git]**
-* **link:https://github.com/Yubico/java-webauthn-server#dependency-configuration[Dependency configuration]** for Maven or Gradle
-* **link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/package-summary.html[Javadoc API documentation package-summary]** for the following
+* Yubico’s Java link:https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo[WebAuthn Server demo]
+* link:https://git-scm.com/[Git]
+* link:https://github.com/Yubico/java-webauthn-server#dependency-configuration[Dependency configuration] for Maven or Gradle
+* link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/package-summary.html[Javadoc API documentation package-summary] for the following:
+
     ** link:https://developers.yubico.com/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.html[Interface CredentialRepository]
     ** link:https://developers.yubico.com/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/RelyingParty.html[Class RelyingParty]
+
+* link:https://www.w3.org/TR/webauthn/#extensions[`navigator.credentials.create()``] method
+* link:https://www.w3.org/TR/webauthn/#extensions[`navigator.credentials.get()`] method
 
 
 === Run Demo
@@ -36,8 +40,6 @@ You will get warnings in your browser about the connection not being secure. Thi
 
 
 === Registration
-The sequence of events in the registration flow is described in detail in the “Registration flow” section of the link:WebAuthn_Developer_Guide/WebAuthn_Client_Registration.adoc[WebAuthn Client Registration] chapter of the WebAuthn Developer Guide.
-
 
 *Step 1* (Server) Implement the `CredentialRepository` interface. Look at the JavaDoc for link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.adoc[`CredentialRepository`] and implement access logic for your database. Use the example link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.html[`InMemoryRegistrationStorage`] as a reference.
 
@@ -122,10 +124,11 @@ result.getPublicKeyCose());
 
 Use link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/RegistrationResult.html#isAttestationTrusted()[`isAattestationTrusted()`], link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/RegistrationResult.html#getAttestationType()[`getAttestationType()`] and link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/RegistrationResult.html#getAttestationMetadata()[`getaAttestationMetadata()`] accessors to inspect attestation data and take action as dictated by your attestation policy fields.
 
+For more information, look at the sequence of events in the registration flow described in detail in the “Registration flow” section of the link:WebAuthn_Developer_Guide/WebAuthn_Client_Registration.adoc[WebAuthn Client Registration] chapter of the WebAuthn Developer Guide.
+
+
 
 === Authentication
-The sequence of events in the authentication flow is described in detail in the “Authentication Flow” section of the link:/WebAuthn_Developer_Guide/WebAuthn_Client_Authentication.adoc[Client Authentication] chapter of the WebAuthn Developer Guide.
-
 
 *Step 1* (Client) Initiate request to RP. Request to authenticate on behalf of user.
 
@@ -205,6 +208,9 @@ throw new RuntimeException("Authentication failed");
 ....
 
 *Step 7* (Server) Post authentication complete steps for use. Initiate user session, using `username` and/or `userHandle`. Update stored signature count to `signatureCount` value in `AssertionResult`. Inspect warnings, if any.
+
+For more information, look at the sequence of events in the authentication flow described in detail in the “Authentication Flow” section of the link:/WebAuthn_Developer_Guide/WebAuthn_Client_Authentication.adoc[Client Authentication] chapter of the WebAuthn Developer Guide.
+
 
 
 == Test your App
