@@ -550,7 +550,7 @@ test('Modernizr.prefixed() - css and DOM resolving', function(){
 });
 
 
-// FIXME: so a few of these are explicitly allowed for webkit. i'd like to improve that.
+// FIXME: so a few of these are whitelisting for webkit. i'd like to improve that.
 test('Modernizr.prefixed autobind', function(){
 
   var rAFName;
