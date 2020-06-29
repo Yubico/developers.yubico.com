@@ -1,0 +1,129 @@
+== PIV Walk-Through
+
+=== Getting Started: SSH Authentication with a YubiKey as a Smart Card
+Build an app that enables your users to register and authenticate with PIV (Personal Identity Verification). This walk-through describes how to integrate the PIV protocol with your application or framework.
+
+PIV enables RSA or ECC sign/encrypt operations using a private key stored on a smart card, through common interfaces such as PKCS#11. The YubiKey 4 and the YubiKey 5 support not only RSA keys, but also link:https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm[Elliptic Curve Digital Signature Algorithm] (ECDSA) keys. Their "touch-policy=always" feature ensures that in addition to entering the PIN, the end-user must touch or tap the Yubikey when prompted. User consent is thus obtained without an intermediary keyboard.
+
+
+=== About SSH
+SSH (Secure Shell) is a protocol and a software package that enables secure system administration and file transfers over insecure networks. For more information, see link:https://www.ssh.com/ssh/[the SSH Home Page].
+
+
+=== About the Yubico PIV Tool
+Use this tool for managing the PIV application on a YubiKey. For more information, see link:https://developers.yubico.com/yubico-piv-tool/[the Yubico PIV Tool page].
+
+The Yubico PIV tool is available link:https://developers.yubico.com/yubico-piv-tool/Releases/[on Yubico's release page for it] or on link:https://github.com/Yubico/yubico-piv-tool/releases[GitHub].
+
+
+=== Development Prerequisites
+Install:
+
+* OpenSSH
+* For OS X, iOS 10.13 or later.
+
+To implement the PIV security protocol in your app, ensure that your app:
+
+* Meets the link:https://csrc.nist.gov/projects/piv/piv-standards-and-supporting-documentation[Personal Identity Verification of Federal Employees and Contractors standards], link:https://csrc.nist.gov/publications/detail/fips/201/2/final[FIPS 201-2] standard, and the related mobile standard, link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.1800-12.pdf[Derived Personal Identity Verification (PIV) Credentials]
+
+* Works with a link:http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html[PKCS#11 Cryptographic Token Interface Base Specification OASIS Standard].
+
+
+=== Overview
+The steps to enable your app to use the PIV protocol vary depending upon the operating system. Note that Certificate Authority (CA) considerations are not taken into account in this Walk-Through.
+
+1. Import or generate a key in the device slot
+
+2. Locate the module
+
+3. Export the public key
+
+4. Authenticate to the target system
+
+5. (Optional) Set it up to work with ssh-agent.
+
+
+=== Configuration Prerequisites
+To manage the PIV security protocol on your PIV-compliant app, on the administrative system, install the Yubico PIV tool and the Yubico PKCS#11 module, ykcs11, which is part of the PIV tool package.
+
+For SSH on PKCS#11, configure public key authentication with link:https://developers.yubico.com/PIV/Guides/SSH_with_PIV_and_PKCS11.html[OpenSSH through PKCS#11], which provides examples for OS X and Linux systems.
+
+
+=== Generate or Import an SSH Private Key with a YubiKey
+
+*Step 1*: Import or generate a key in any slot. If an external key has been imported and a certificate exists, skip ahead to Step 2, adjusting the command to reflect the slot into which the external key was imported.
+
+To import the key (PEM format) into slot 9A, for example, run:
+
+....
+yubico-piv-tool -s 9a -a import-key -i key.pem
+....
+
+To generate the key in slot 9A, run:
+
+....
+yubico-piv-tool -s 9a -a generate -o public.pem
+....
+
+*Step 2*: Create a self-signed certificate for the key in slot 9A, and load the certificate.
+
+To create the certificate for the key, run
+
+....
+yubico-piv-tool -a verify-pin -a selfsign-certificate -s 9a -S "/CN=SSH key/" -i public.pem -o cert.pem
+....
+
+To load the certificate into the same slot, run
+
+....
+yubico-piv-tool -a import-certificate -s 9a -i cert.pem
+....
+
+
+=== Locate the PKCS#11 Module
+Locate the ykcs11 installation, which comes as part of the PIV tool. Unzip a release to find it in the lib directory, or alternatively, install OpenSC and use the link:https://github.com/OpenSC/OpenSC/wiki[opensc-pkcs11.so library].
+
+* For Debian-based systems, the default path is ``/usr/local/lib/libykcs11``
+* For MacOS, the default path is ``/usr/local/lib/libykcs11.dylib``
+
+
+=== Export the SSH Public Key
+Export the public key in the correct SSH format and add it to ``authorized_keys`` on the target system.
+
+Export the keys by running the following command, which exports all the keys stored on the YubiKey in sequence. Use the sequence to identify the public key associated with your targeted private key.
+
+....
+ssh-keygen -D path/to/libykcs11.so -e
+....
+
+
+=== Add the New SSH Public Key to your GitHub Account
+Do this by following link:https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account[GitHub's own instructions].
+
+
+=== Test Your SSH Connection
+Do this by following link:https://help.github.com/en/github/authenticating-to-github/testing-your-ssh-connection[GitHub's own instructions].
+
+Authenticate to GitHub using the new key by running
+
+....
+ssh -T git@github.com
+....
+
+Optionally, you can set this up to work with ssh-agent by running
+
+....
+ssh-add -s git@github.com
+....
+
+Finally, confirm that the ssh-agent locates the correct key and public key by running
+
+....
+ssh-add -L
+....
+
+
+=== Tools for Creating Your YubiKey PIV Module
+
+* link:https://www.yubico.com/products/services-software/download/smart-card-drivers-tools/[Smart card drivers and tools], and
+* link:https://developers.yubico.com/PIV/Tools.html[Supported PIV Configuration Tools], which include the YubiKey Manager and the Yubico PIV Tool.

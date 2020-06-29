@@ -1,0 +1,193 @@
+= Touch-Triggered One Time Passwords
+
+The Touch-Triggered One-Time Passwords (OTP) functions of the YubiKey provide the behavior most people visualize when thinking about OTPs. When the YubiKey is triggered with a touch to the gold contact, it will provide to the host computer a unique random and single-use code which can be validated by a server the YubiKey has been registered with. The YubiKey supports a number of user-programmable configurations which can be loaded into either of the two OTP configuration slots.
+
+== How do I use the Touch-Triggered OTPs on a Computer?
+In short, when using the YubiKey as a Touch-Triggered OTP authenticator with a computer, the end user will always follow these steps:
+
+. Plug the YubiKey directly into the computer
+. Place the text cursor in the field where an OTP needs to be entered
+. Touch the gold contact on the YubiKey
+. The YubiKey will then automatically enter the OTP into the selected field. This flow is the same regardless of the OS environment or application accepting the OTP.
+
+When the YubiKey is used with a computer it is physically connected to, such as via a USB port, the YubiKey identifies itself as a standard USB HID keyboard, which allows it to be used in most
+computer environments using the system’s native drivers.
+
+The YubiKey has an integrated touch-contact that triggers the OTP generation. Generated OTPs are sent as keystrokes by the emulated keyboard, thereby allowing the OTPs to be received by any text input field or command prompt. This can be done across any channel which accepts keyboard input, such as virtual desktops, remote desktops, SSH or web interfaces.
+
+For the Touch-Triggered OTP functions, the YubiKey can hold up to two different configurations. These OTP configurations are stored in “OTP Slots”, and the user differentiates which slot to use by how long they touch the gold contact; a short touch (1~2.5 seconds) will output an OTP based on the configuration stored in slot 1, while a long touch (3~5 seconds) will output an OTP based on the configuration stored in slot 2.
+
+Each of the OTP slots is independent of the other; there is no data shared between them. Either can be programmed by the user, deleting or overwriting the stored configuration. To prevent unauthorized changes, a user may set an access code to prevent modification to the protected slot. Each OTP slot can have a different access code set.
+
+Each Touch-Triggered OTP slot can be loaded with one of the supported configurations:
+
+* Yubico OTP
+* OATH-HOTP
+* Static Password
+* Challenge-Response
+
+An off-the-shelf YubiKey comes with OTP slot 1 configured with a Yubico OTP registered for the link:https://www.yubico.com/products/services-software/yubicloud/[YubiCloud], and OTP slot 2 empty.
+
+== How do I use the Touch-Triggered OTPs on a Mobile Device?
+When using the YubiKey as a Touch-Triggered One-Time Password (OTP) device on a mobile platform, the user experience is slightly different. The act of tapping and holding an NFC-enabled YubiKey to the NFC reader on a mobile device takes the place of touching the gold contact to generate an OTP.
+
+The OTP is passed as part of the NDEF tag, which is supported on most mobile devices with NFC. Once sent, the NDEF tag can be captured by an app on the mobile platform, which can then extract the OTP and utilize it. For iOS and Android, Yubico offers a mobile SDK to support this user experience. Further, on Android, Yubico offers the YubiClip app, which will capture the OTP and save it to the device clipboard for use.
+
+* link:https://developers.yubico.com/Software_Projects/Mobile_SDK/[YubiKit iOS SDK]
+* link:https://developers.yubico.com/Software_Projects/Mobile_SDK/[YubiKit Android SDK]
+* link:https://play.google.com/store/apps/details?id=com.yubico.yubiclip&hl=en_US[YubiClip on Google Play]
+* link:https://github.com/Yubico/yubiclip-android[YubiClip Source code]
+
+== How do I Load a Touch-Triggered OTP Configuration onto a YubiKey?
+The ability of YubiKey users to define their own OTP configurations and secrets and load them onto their device sets the YubiKey apart from its predecessors. Configurations are loaded using the same HID Keyboard channel, leveraging the flexibility of the HID keyboard specifications to use “endpoint 0” (host to keyboard) to send commands to the YubiKey.
+
+Yubico offers a selection of libraries and tools to aid in the configuration of a YubiKey, ranging from the YubiKey Manager tool for end users looking to program their personal device to command line interfaces for scripting low level C, python and Java libraries for direct integration.
+
+=== GUI tools:
+==== YubiKey Manager
+The link:https://developers.yubico.com/yubikey-manager-qt/[YubiKey Manager] can manage the most commonly used features for all the functions of the YubiKey. It is the recommended tool for most end users looking to manage their own devices.
+
+==== YubiKey Personalization tool
+The link:https://developers.yubico.com/yubikey-personalization-gui/[YubiKey Personalization tool] is a legacy tool used for just configuring the OTP functions of the YubiKey. It is recommended to be used by power users and developers looking for legacy support or defining configurations for others.
+
+=== CLI tools:
+==== YubiKey Manager CLI
+The link:https://developers.yubico.com/yubikey-manager/[YubiKey Manager] can manage the majority of commands for all functions on the YubiKey. It is recommended for power users and scripts. The YubiKey Manager tool supports all of the OTP function commands.
+
+==== YKPersonalize
+The link:https://developers.yubico.com/yubikey-personalization/[YKPersonalize tool] is a legacy CLI tool which supports all of the OTP commands. It is superseded by the YubiKey Manager CLI, and should only be used for legacy support or as sample code for implementing the yubico-c library.
+
+=== Low-Level Libraries:
+
+* link:https://github.com/Yubico/yubico-c[Yubico-c - Yubico OTP configuration library in C.]
+* link:https://github.com/Yubico/yubico-j[Yubico-j - Yubico OTP configuration library in Java.]
+* link:https://github.com/Yubico/python-yubico[python-yubico - Yubico configuration library in Python.]
+
+== Introduction to Yubico OTP
+The Yubico One Time Password scheme was developed by Yubico to take full advantage of the functionality of the YubiKey. It provides a path to automate the linkage between an account and authenticator at registration, security that the OTP generated may only be used once, and the assurance that the authenticator and server will never fall out of sync. The Yubico OTP further includes the advantages of traditional OTPs, in that since the code is text based, it can be used across almost every site, service and interface.
+
+The Yubico OTP, like other OTPs, was designed to be used as a second factor authenticator in addition to username and password, as well as simple to implement for client services and systems. When implementing the Yubico OTP, developers have the option to either utilize the YubiCloud Yubico OTP Online Validation service, or stand up their own servers.
+
+=== Yubico OTP Characteristics
+To take full advantage of the YubiKey’s ability to output directly to a host computer, the Yubico OTP is 44 characters in length. This allows for information to be encrypted and passed to a validation server, unlike the more commonly used 6 to 8 digit OATH OTPs, which are only checked if they are identical to locally generated codes.
+
+The first 12 characters of each OTP generated by the YubiKey remain constant over every OTP generated. These characters are called the Public ID, and are used to identify the YubiKey which generated the OTP. Integrators can use the Public ID to associate a YubiKey with an account, checking before the OTP is even validated if the correct YubiKey is being used. Further, since the Public ID is part of every OTP submitted, it can be captured during registration, automating the linkage between the YubiKey device and account.
+
+The remaining 32 characters are a 128-bit AES-128 encrypted string containing information for validating the authenticity of the OTP. Each YubiKey uses a unique AES key, ensuring that should the key of one Yubico OTP become compromised, it does not affect any other users. The information encrypted includes a Private ID, Session and Usage Counters, a timer value, a checksum and 4 bytes of random data. For full details on these components, refer to https://developers.yubico.com/OTP/OTPs_Explained.html.
+
+Since the usage counters are encrypted in the Yubico OTP string, the YubiKey and OTP validation server will never get out of sync - the validation server can update the values it has for the YubiKey on each successfully decrypted OTP. For more details, see the YubiCloud and the Yubico Validation Server.
+
+==== Modhex
+The Yubico OTP was designed to be compatible across as wide a range of keyboard languages as possible. The character set used is a Modified Hexadecimal encoding, commonly referred to as Modhex.
+
+The character representation may look a bit strange at first sight but is designed to cope with various keyboard layouts causing potential ambiguities when decoded. USB keyboards send their keystrokes by the means of “scan codes” rather than the actual character representation.
+The translation to keystrokes is done by the computer. For the YubiKey, it is critical that the same code is generated if it is inserted in a German computer having a QWERTZ, a French with an AZERTY or a US one with a QWERTY layout. The “Modhex”, or Modified Hexadecimal coding was invented by Yubico to just use the specific characters that don’t create any ambiguities. The Modhex coding packs four bits of information in each keystroke. This gives that a 128-bit OTP string requires 128 / 4 = 32 Characters.
+
+The Modhex mapping is based on hexadecimal coding but the output is mapped into the following characters, found at the same scan code address on most keyboards
+
+|===
+|Hex| 0| 1| 2| 3| 4| 5| 6| 7| 8| 9| a | b | c | d | e | f
+
+|ModHex|c|b|d|e|f|g|h|i|j|k|l|n|r|t|u|v
+|===
+
+For more details, see the link:https://developers.yubico.com/OTP/Modhex_Converter.html[Modhex Converter].
+
+=== Yubico OTP Validation
+The Yubico OTP takes advantage of the full range of information encrypted within during authentication. Broadly, the following steps are included in each Validation:
+
+. The YubiKey is inserted into the USB port. The computer detects it as an external USB HID keyboard.
+. The user touches the YubiKey OTP generation button.
+. Internally, a byte string is formed by concatenation of various internally stored and calculated fields, including as a non-volatile counter, a timer and a random number.
+. The byte string is encrypted with a 128-bit AES key.
+. The encrypted string is converted to a series of characters and sent as keystrokes via the keyboard port.
+
+The generated string of keystrokes is then typically sent via an input dialog or a web form to a server or host application for verification. The basic steps for verification can be conceptually described as:
+
+. The received string is converted back to a byte string.
+. The byte string is decrypted using the same (symmetric) 128-bit AES key.
+. The string’s checksum is verified. If not valid, the OTP is rejected.
+. Additional fields are verified. If not valid, the OTP is rejected.
+. The non-volatile counter is compared with the previously received value. If lower than or equal to the stored value, the received OTP is rejected as a replay. If greater than the stored value, the received value is stored and the OTP is accepted as valid.
+
+For a more in depth description of this process, refer to the link:https://developers.yubico.com/yubikey-val/Validation_Server_Algorithm.html[Yubico Validation Server Algorithm].
+
+The Yubico Validation Service is comprised of 2 servers; a Validation server which compares the counters and acts as the public facing interface and a Key Storage Module where the secrets for the Yubico OTPs are stored and OTPs are decrypted. Yubico offers both a Validation server and Key Storage Module to make standing up a personal validation server straightforward. Users can set up more than one of each type of server, and use the tooling built into them to keep each in sync. These servers and frameworks are described in more depth at Setup of a self-hosted link:https://developers.yubico.com/OTP/Guides/Self-hosted_OTP_validation.html[Yubico OTP validation server].
+
+Relevant pages:
+
+* link:https://developers.yubico.com/OTP/Specifications/OTP_decryption_protocol.html[OTP Decryption Protocol]
+* link:https://developers.yubico.com/OTP/Specifications/OTP_validation_protocol.html[OTP Validation Protocol]
+* link:https://developers.yubico.com/OTP/Specifications/Test_vectors.html[Test vectors]
+
+Servers:
+
+* Validation Server: link:https://developers.yubico.com/yubikey-val/[yk-val]
+* KSM server (both using YubiHSM and soft DB): link:https://developers.yubico.com/python-pyhsm/YubiKey_KSM.html[pyHSM]
+
+==== YubiCloud
+For services and websites connected to the internet, Yubico offers a free Yubico OTP Validation service called the YubiCloud. Every YubiKey is programmed at the factory with a YubiCloud credential, removing the need to manage and upload secrets. The YubiCloud behaves in the same manner as a Yubico OTP Validation servers available as open source. 
+
+To make it simple to integrate the YubiCloud, Yubico offers client libraries as open source in a number of languages. These offerings can be accessed under the link:https://developers.yubico.com/OTP/Plugins.html[Yubico OTP Integrations Plug-ins] page. Alternatively, it is a straightforward matter to create your own client - advice and direction on how to do so can be referenced at link:https://developers.yubico.com/yubikey-val/Getting_Started_Writing_Clients.html[Getting Started Writing Clients].
+
+Whether using a pre-built client or writing a new one, each client service will need an API key from Yubico. Directions on acquiring one are listed in link:https://support.yubico.com/support/solutions/articles/15000006443-obtaining-an-api-key-for-yubikey-development[Obtaining an API Key for YubiKey Development]. Note that only the client service sending an OTP to the YubiCloud needs an API key; individual users utilizing the service do not.
+
+== Introduction to OATH-HOTP
+Most older One-Time Password tokens utilize the OATH protocol; they can be easily identified with the 6 to 8 digit codes generated. The YubiKey can have the Touch-Triggered OTP slots to act as an Event-based OATH OTP generator (OATH-HOTP). It is important to note that the YubiKey also has an OATH Application which can also generate OATH Event based (HOTP) and Time based (TOTP) codes with supporting software; this function is separate from the Touch-Triggered OTP functions discussed here. For more information, refer to the OATH Application pages.
+
+=== OATH-HOTP Characteristics
+OATH-HOTP is one of the most widespread legacy OTP solutions supported by authentication services today. The protocol is defined and maintained by the link:https://openauthentication.org/[OATH Initiative for Open Authentication], and is available as an open standard. The YubiKey Touch-Triggered function supports the link:https://www.ietf.org/rfc/rfc4226.txt[HOTP: An HMAC-Based OTP Algorithm (RFC 4226)].
+
+With HOTP, the value is based on a counter (incremented each use) and a shared secret key (shared between authentication service and each supported YubiKey). As with the Yubico OTP, the server must keep track of the counters used. The counter is 8 bytes long. Also like the Yubico OTP, for a YubiKey to work with an authentication server, the shared secret key along with the seed value for the counter must be shared prior to the key being used.
+
+=== OATH-HOTP Validation
+The HOTP code is created by hashing the secret key with the counter value, and truncating the end result to the desired length of the OTP code. This code is then sent to the authentication service, where it is compared against the results of the same calculation done by the server against its internal counter.
+
+Since the OTP validation is done by a comparison check, no data on the counter value of the OATH-HOTP OTP counter on the YubiKey can be extracted. This means the counter value on the YubiKey and the authentication server can fall out of synchronization, such as if the YubiKey generates a number of OATH-HOTP codes without submitting them to the server. To reduce the chance of an out-of-sync event, most OATH-HOTP Authentication servers have a “look-ahead” window, checking the OTPs generated with a number of counter values. However, should the counter value on the authenticator exceed this window, the authentication server will still fail. Many OATH-HOTP services have a recovery path in the event this occurs - the details on the process is specific to each service.
+
+==== Token ID
+The YubiKey also supports the optional link:https://openauthentication.org/token-specs/[Token Identifier specification (TokenID)]. This allows for an identifier for the device to be prefixed to the generated OTP code. For full details, refer to the specification. Yubico is registered as an OATH Manufacturer, with an OATH Manufacturer Prefix (OMP) of UB.
+
+==== Symantec VIP
+The Symantec VIP is a widely used OATH-HOTP authentication service. YubiKeys can be configured to be supported in the Symantec VIP service - contact Yubico Sales for more details.
+
+== Introduction to Challenge-Response
+In some situations, applications and services cannot connect to an external validation service; such as isolated machines where access to the internet or even an external network is not available. For local authentication, the YubiKey supports a Challenge-Response interaction where a host service passes a challenge to the YubiKey, which then performs a cryptographic operation and returns the resulting response.
+
+=== Challenge-Response Characteristics
+The Challenge-Response interaction on the YubiKey utilizes the cryptographic processor to perform an action on supplied data, and return the response. Unlike the other Touch-Triggered OTP functions, the Challenge-Response communication completely takes place in the HID keyboard data channels; the output is not returned as a series of keystrokes.
+
+The YubiKey supports two methods for Challenge-Response: HMAC-SHA1 and Yubico OTP. HMAC-SHA1 takes a string as a challenge and returns a response created by hashing the string with a stored secret. Yubico OTP takes a challenge and returns a Yubico OTP code based on it encrypted with a stored AES key. Most implementations use the HMAC-SHA1 as it is more widely supported.
+
+When configuring the Touch-Triggered OTP Slots to perform a Challenge-Response interaction, there is an option to require a user touch before the YubiKey will perform the cryptographic operation. This allows for a user presence to be validated, preventing unauthorized operations, but it can impede the user’s experience if multiple Challenge-Response interactions are required in a short period. By not requiring a touch, the user experience is more seamless, but may expose risk if the YubiKey remains plugged into a user’s system.
+
+When integrating the Challenge-Response, Yubico offers code examples:
+
+Python:
+https://github.com/Yubico/python-yubico/blob/master/examples/rolling_challenge_response
+
+C (included as part of the yubikey personalization package)
+https://github.com/Yubico/yubikey-personalization/blob/master/ykchalresp.c
+
+==== HMAC-SHA1 Challenge-Response
+The HMAC-SHA1 Challenge-Response follows the definition of the process defined in link:https://tools.ietf.org/html/rfc2104[RFC2104 - HMAC: Keyed-Hashing for Message Authentication]. The HMAC-SHA1 mode creates a HMAC on a 0-64 byte (0-512 bits) data block using a 20 byte (160 bits) fixed secret. As there are no fields generated by the device, the response is identical if a second identical challenge is issued.
+
+==== Yubico OTP Challenge-Response
+The Challenge-Response mode may also be used to generate a Yubico OTP with a 6 byte string (similar to the private ID) passed to the YubiKey in the challenge. The Yubico OTP mode takes a 6 byte challenge and creates a response using the Yubico OTP algorithm and a user defined AES key, where variable fields generated by the device creates different responses even if the challenge is the same.
+
+== Introduction to Static Password
+For complete legacy support, the YubiKey Touch-Triggered OTP Slots can also hold a static password. A static password is an unchanging string of characters which remain the same each time the OTP slot is triggered, passed as a series of keystrokes, exactly like a password users would enter directly. However, the YubiKey offers the advantage that the password is entered the same every time, and even if the YubiKey hardware is left in plain sight, the password is not exposed to the casual glance or video recording.
+
+The YubiKey offers two types of static passwords: passwords generated on the device automatically, and passwords entered by a user, with the YubiKey recording the keyboard scan code for each character.
+
+=== Generated Static Password
+Static Passwords generated on a YubiKey allow for the longest passwords to be stored - they can be up to 64 characters in length. However, the character set is limited to the modhex character set. The length of a randomly generated 64-character password does provide a high level of entropy which exceeds a shorter password with an expanded character set.
+
+However, to be in compliance with password complexity requirements, a static password generated in such a manner can be configured to have a “!” symbol prepended, a numeric value replace one of the 64 characters, and another of the 64 characters be upper-case.
+
+Generated Static Password configurations may also have an option set to enable the password to be reset to a new value by holding down the button on the YubiKey for over 20 seconds. This is not recommended for common use, as it is easier to accidentally erase a password for a critical system in such a manner.
+
+=== Scan Code Static Password
+For user defined passwords, the Touch-Triggered OTP Slot can hold a static password defined by the user, stored as a series of scan codes indicating the keystrokes to replicate the password. This includes all key combinations on a keyboard, such as symbols, upper-case characters or numbers. However, to support the entire character set, a scan code Static Password may only be 38 characters in length.
+
+It is important to note that since Scan Code Static Password only record the keyboard address of the key each character is associated with, moving to a different keyboard language will prevent the password from being typed correctly.
