@@ -62,11 +62,11 @@ The webauthn demo web app is composed of four layers:
 
 Go to https://localhost:8443 to view the demo web app. It is a single page app that demonstrates the WebAuthn registration and authentication ceremonies. In production systems, the WebAuthn authenticator registration functionality is typically located under the security section of the user's profile page. This demo app combines both registration and authentication on a single page for simplicity.
 
-==== *Step 1* (Server) Create a credential repository
+==== *Step 1* (Server) Create a credential repository:
 
 The first task of the server is to register and store user's WebAuthn credentials in a credential repository. The link:./java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.adoc[`CredentialRepository`] interface describes how the server looks up credentials by username or user handle. This demo stores usernames and credentials in memory. See the link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.html[`InMemoryRegistrationStorage`] class for the reference implementation.
 
-==== *Step 2* (Server) Set up the WebAuthn relying party
+==== *Step 2* (Server) Set up the WebAuthn relying party:
 
 As the web app starts up, it instantiates a `RelyingParty` object from the `webauthn-server-core` library. Your credential repository is passed in as the argument to `.credentialRepository()` method. See the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java#L141-L153[`WebAuthnServer` class constructor] for reference.
 
@@ -96,7 +96,7 @@ public class WebAuthnServer {
 }
 ....
 
-==== *Step 3* (Client) Send registration request to server
+==== *Step 3* (Client) Send registration request to server:
 
 Now we can initiate a request to register an authenticator via the web app at https://localhost:8443.
 
@@ -105,7 +105,7 @@ Now we can initiate a request to register an authenticator via the web app at ht
 
 The JavaScript makes a call the `/register` endpoint of the REST API to initiate a registration request and passes in the username.
 
-==== *Step 4* (Server) Prepare the registration ceremony parameters
+==== *Step 4* (Server) Prepare the registration ceremony parameters:
 
 The server calls the `rp.startRegistration()` operation which creates a `PublicKeyCredentialCreationOptions` JSON object and sets the values based on the service's policy and preferences. In the following example you can see that JavaScript app passed in the username 'test'. The server set the relying party ID (rpID) to 'localhost'. The rpID is important because the client, the browser in this case, validates it against the link:https://www.w3.org/TR/webauthn/#relying-party-identifier[origin's effective domain] to protect against spoofing attacks. The server also generated a pseudo-random challenge to protect against replay attacks.
 
