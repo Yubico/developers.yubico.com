@@ -1,35 +1,35 @@
 == WebAuthn Walk-Through
 
-We are going to walk through link:https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo[Yubico's Java WebAuthn Server library demo] registration and authentication ceremonies and explain how the WebAuthn interaction works, step by step.
+We are going to walk through link:https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo[Yubico's Java WebAuthn Server library demo] registration and authentication ceremonies, explaining how the WebAuthn interaction works, step by step.
 
 TIP: This walk through is designed for people who prefer to *learn by doing*. If you prefer learning concepts from the ground up, check out our link:WebAuthn_Developer_Guide/Overview.adoc[WebAuthn Developer Guide]. This Walk-Through and the guide are complementary to each other.
 
-The walk through is divided into several sections:
+The walk through is divided into the following sections:
 
-* Setup will give you a starting point to follow the Walk-Through
-* Overview will teach you the fundamentals of WebAuthn
-* Registration will explain the steps to register an authenticator
-* Authentication will explain the steps to sign in to the server
+* **Setup**: you will be setting up a local development environment on your computer to provide the starting point for following the walk-through
+* **Overview** runs through the fundamentals of WebAuthn
+* **Registration** explains the steps to register an authenticator
+* **Authentication** explains the steps to sign in to the server
 
 We recommend you check out https://demo.yubico.com/webauthn-technical/registration if you are new to WebAuthn.
 
+
 ==== Prerequisites
 
-We'll assume you have some familliarity with HTML, JavaScript, and Java, but you should be able to follow along even if you're coming from a different programming language. We'll also assume that you're famiilar with programming concepts like functions, ojbects, arrays, and classes.
+We are assuming that you have some familiarity with HTML, JavaScript, and Java. However, you should be able to follow along even if you are coming from a different programming language. We also assume that you are familiar with programming concepts such as functions, objects, arrays, and classes.
+
 
 === Setup
 
-In this walk through you will be setting up a local development environment on your computer.
+1. In addition to setting up a local development environment, you also need a YubiKey (or other authenticator).
 
-You'll want an authenticator, such as a YubiKey.
+2. The following software must be installed to continue with the walk-through:
 
-The following software must be installed to continue with the walk through:
+* link:https://www.java.com/en/download/[Java version 1.8]
+* link:https://gradle.org/[Gradle]
+* link:https://git-scm.com/[Git]
 
-* **https://www.java.com/en/download/[Java version 1.8]**
-* **link:https://gradle.org/[Gradle]**
-* **link:https://git-scm.com/[Git]**
-
-Verify that you can run the webauthn demo server:
+3. Verify that you can run the webauthn demo server:
 
 ....
 git clone https://github.com/Yubico/java-webauthn-server
@@ -37,13 +37,14 @@ cd java-webauthn-server
 ./gradlew run
 ....
 
-Open https://localhost:8443 to access the WebAuthn demo website.
+4. Open https://localhost:8443 to access the WebAuthn demo website.
 
 NOTE: You will get warnings in your browser about the connection not being secure. This is expected, because this server uses a self-signed certificate. You can safely proceed to the site.
 
+
 ==== Help, I am stuck!
 
-If you get stuck, you can check link:https://stackoverflow.com[Stack Overflow]. If you don't receive an answer, or remain stuck, please file an issue or open a support ticket and we'll help you out.
+If you get stuck, you can check link:https://stackoverflow.com[Stack Overflow]. If you don't receive an answer, or remain stuck, please file an issue or open a support ticket with Yubico and we will help you out.
 
 === Overview
 
@@ -53,7 +54,7 @@ With WebAuthn (also known as FIDO2), public-key cryptography is used to authenti
 
 The webauthn demo web app is composed of four layers:
 
-1. The *front end layer*, a.k.a. the client, is made of up the `index.html` along with some JavaScript libraries e.g. `js/webauthn.js` and `js/base64url.js` which call the WebAuthn API methods and handle the ByteArray to Base64 conversions, respectively.
+1. The *front end layer*, a.k.a. the client, is made of up the `index.html` along with some JavaScript libraries such as `js/webauthn.js` (which calls the WebAuthn AOI methods), and `js/base64url.js` (which handles the ByteArray to Base64 conversions).
 2. The front end interacts with the server via a *REST API layer* that is implemented in the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnRestResource.java[`WebAuthnRestResource`] class.
 3. The REST API then delegates to the *server layer* that is implemented in the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java[`WebAuthnServer`] class. This layer is where the business logic lives. The demo server implements "persistent" storage of users and credental registrations using the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/InMemoryRegistrationStorage.java[`InMemoryRegistrationStorage`] class which implements the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/CredentialRepository.java[`CredentialRepository`] interface.
 4. The server layers calls the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/[`webauthn-server-core`] *library layer* which implements the link:https://www.w3.org/TR/webauthn/#rp-operations[WebAuthn API Relying Party Operations].
