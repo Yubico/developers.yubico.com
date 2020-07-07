@@ -2,16 +2,16 @@
 
 We are going to walk through link:https://github.com/Yubico/java-webauthn-server/tree/master/webauthn-server-demo[Yubico's Java WebAuthn Server library demo] registration and authentication ceremonies, explaining how the WebAuthn interaction works, step by step.
 
-TIP: This walk through is designed for people who prefer to *learn by doing*. If you prefer learning concepts from the ground up, check out our link:WebAuthn_Developer_Guide/Overview.adoc[WebAuthn Developer Guide]. This Walk-Through and the guide are complementary to each other.
+TIP: This walk through is designed for people who prefer to *learn by doing*. If you prefer learning concepts from the ground up, check out our link:WebAuthn_Developer_Guide/Overview.adoc[WebAuthn Developer Guide]. This walk-through and the guide are complementary to each other.
 
-The walk through is divided into the following sections:
+The walk-through is divided into the following sections:
 
 * **Setup**: you will be setting up a local development environment on your computer to provide the starting point for following the walk-through
 * **Overview** runs through the fundamentals of WebAuthn
 * **Registration** explains the steps to register an authenticator
-* **Authentication** explains the steps to sign in to the server
+* **Authentication** explains the steps to sign in to the server.
 
-We recommend you check out https://demo.yubico.com/webauthn-technical/registration if you are new to WebAuthn.
+If you are new to WebAuthn, we recommend you check out https://demo.yubico.com/webauthn-technical/registration.
 
 
 ==== Prerequisites
@@ -21,23 +21,23 @@ We are assuming that you have some familiarity with HTML, JavaScript, and Java. 
 
 === Setup
 
-1. In addition to setting up a local development environment, you also need a YubiKey (or other authenticator).
+In addition to setting up a local development environment, you also need a YubiKey (or other authenticator).
 
-2. The following software must be installed to continue with the walk-through:
+1. The following software must be installed to continue with the walk-through:
 
 * link:https://www.java.com/en/download/[Java version 1.8]
 * link:https://gradle.org/[Gradle]
 * link:https://git-scm.com/[Git]
 
-3. Verify that you can run the webauthn demo server:
-
+2. Verify that you can run the webauthn demo server:
++
 ....
 git clone https://github.com/Yubico/java-webauthn-server
 cd java-webauthn-server
 ./gradlew run
 ....
-
-4. Open https://localhost:8443 to access the WebAuthn demo website.
++
+3. Open https://localhost:8443 to access the WebAuthn demo website.
 
 NOTE: You will get warnings in your browser about the connection not being secure. This is expected, because this server uses a self-signed certificate. You can safely proceed to the site.
 
@@ -48,28 +48,35 @@ If you get stuck, you can check link:https://stackoverflow.com[Stack Overflow]. 
 
 === Overview
 
-With WebAuthn (also known as FIDO2), public-key cryptography is used to authenticate users to an online service, also known as a Relying Party (RP). When the end-user registers for an online service, an RP-specific credential key pair, i.e., a private key and a public key, is generated on the authenticator and the public key is sent to the RP (the private key never leaves the authenticator). When the user makes the request to log in, the authenticator sends an assertion that proves the user possesses the private key. The RP uses the public key to validate the assertion before allowing the user to log in.
+With WebAuthn (also known as FIDO2), public-key cryptography is used to authenticate end-users to an online service, also known as a Relying Party (RP). When the end-user registers for an online service, an RP-specific credential key pair - i.e., a private key and a public key - is generated on the authenticator and the public key is sent to the RP (the private key never leaves the authenticator). When the user makes the request to log in, the authenticator sends an assertion that proves the user possesses the private key. The RP uses the public key to validate the assertion before allowing the user to log in.
 
 ==== Inspecting the code
 
-The webauthn demo web app is composed of four layers:
+The WebAuthn demo web app is composed of four layers:
 
-1. The *front end layer*, a.k.a. the client, is made of up the `index.html` along with some JavaScript libraries such as `js/webauthn.js` (which calls the WebAuthn AOI methods), and `js/base64url.js` (which handles the ByteArray to Base64 conversions).
+1. The *front end layer*, a.k.a. the client, is made up of the `index.html` along with some JavaScript libraries such as:
++
+* `js/webauthn.js` which calls the WebAuthn API methods, and
+* `js/base64url.js` which handles the ByteArray to Base64 conversions.
++
 2. The front end interacts with the server via a *REST API layer* that is implemented in the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnRestResource.java[`WebAuthnRestResource`] class.
-3. The REST API then delegates to the *server layer* that is implemented in the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java[`WebAuthnServer`] class. This layer is where the business logic lives. The demo server implements "persistent" storage of users and credental registrations using the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/InMemoryRegistrationStorage.java[`InMemoryRegistrationStorage`] class which implements the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/CredentialRepository.java[`CredentialRepository`] interface.
-4. The server layers calls the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/[`webauthn-server-core`] *library layer* which implements the link:https://www.w3.org/TR/webauthn/#rp-operations[WebAuthn API Relying Party Operations].
+3. The REST API then delegates to the *server layer* that is implemented in the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java[`WebAuthnServer`] class. This layer is where the business logic lives. The demo server implements "persistent" storage of users and credential registrations using the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/InMemoryRegistrationStorage.java[`InMemoryRegistrationStorage`] class, which implements the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/CredentialRepository.java[`CredentialRepository`] interface.
+4. The server layer calls the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/[`webauthn-server-core`] *library layer*, which implements the link:https://www.w3.org/TR/webauthn/#rp-operations[WebAuthn API Relying Party Operations].
+
 
 === Registration
 
-Go to https://localhost:8443 to view the demo web app. It is a single page app that demonstrates the WebAuthn registration and authentication ceremonies. In production systems, the WebAuthn authenticator registration functionality is typically located under the security section of the user's profile page. This demo app combines both registration and authentication on a single page for simplicity.
+View the demo web app by going to https://localhost:8443. It is a single-page app that demonstrates the WebAuthn registration and authentication ceremonies. In production systems, the WebAuthn authenticator registration functionality is typically located under the security section of the user's profile page. For simplicity, this demo app combines both registration and authentication on a single page.
+
 
 ==== *Step 1* (Server) Create a credential repository:
 
-The first task of the server is to register and store user's WebAuthn credentials in a credential repository. The link:./java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.adoc[`CredentialRepository`] interface describes how the server looks up credentials by username or user handle. This demo stores usernames and credentials in memory. See the link:https://github.com/Yubico/java-webauthn-server/JavaDoc/webauthn-server-core/latest/com/yubico/webauthn/CredentialRepository.html[`InMemoryRegistrationStorage`] class for the reference implementation.
+The first task of the server is to register and store the user's WebAuthn credentials in a credential repository. The link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-core/src/main/java/com/yubico/webauthn/CredentialRepository.java[`CredentialRepository`] interface describes how the server looks up credentials by username or user handle. This demo stores usernames and credentials in memory. For the reference implementation, see the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/InMemoryRegistrationStorage.java[`InMemoryRegistrationStorage`] class.
+
 
 ==== *Step 2* (Server) Set up the WebAuthn relying party:
 
-As the web app starts up, it instantiates a `RelyingParty` object from the `webauthn-server-core` library. Your credential repository is passed in as the argument to `.credentialRepository()` method. See the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java#L141-L153[`WebAuthnServer` class constructor] for reference.
+As the web app starts up, it instantiates a `RelyingParty` object from the `webauthn-server-core` library. Your credential repository is passed in as the argument to the `.credentialRepository()` method. For reference, see the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java#L141-L153[`WebAuthnServer` class constructor].
 
 ....
 public class WebAuthnServer {
@@ -97,18 +104,19 @@ public class WebAuthnServer {
 }
 ....
 
-==== *Step 3* (Client) send registration request to server:
+
+==== *Step 3* (Client) Send registration request to server:
 
 Now we can initiate a request to register an authenticator via the web app at https://localhost:8443.
 
-1. Enter a username
-2. Click the 'Register new account' button
+a. Enter a username
+b. Click the 'Register new account' button.
 
-The JavaScript makes a call the `/register` endpoint of the REST API to initiate a registration request and passes in the username.
+The JavaScript makes a call to the `/register` endpoint of the REST API to initiate a registration request and passes in the username.
 
 ==== *Step 4* (Server) Prepare the registration ceremony parameters:
 
-The server calls the `rp.startRegistration()` operation which creates a `PublicKeyCredentialCreationOptions` JSON object and sets the values based on the service's policy and preferences. In the following example you can see that JavaScript app passed in the username 'test'. The server set the relying party ID (rpID) to 'localhost'. The rpID is important because the client, the browser in this case, validates it against the link:https://www.w3.org/TR/webauthn/#relying-party-identifier[origin's effective domain] to protect against spoofing attacks. The server also generated a pseudo-random challenge to protect against replay attacks.
+The server calls the `rp.startRegistration()` operation, which creates a `PublicKeyCredentialCreationOptions` JSON object and sets the values based on the service's policy and preferences. In the following example you can see that the JavaScript app passed in the username "test". The server set the RP ID (`rpID`) to "localhost". The rpID is important because the client - the browser in this case - protects against spoofing attacks by validating it against the link:https://www.w3.org/TR/webauthn/#relying-party-identifier[origin's effective domain]. To also protect against replay attacks, the server generates a pseudo-random challenge.
 
 ....
 {
@@ -145,39 +153,45 @@ The server calls the `rp.startRegistration()` operation which creates a `PublicK
 }
 ....
 
-This registration response is returned to the client. See link:https://www.w3.org/TR/webauthn/#iface-pkcredential[`PublicKeyCredential Interface`] and link:https://www.w3.org/TR/webauthn/#credentialrequestoptions-extension[`CredentialRequestOptions`] to learn more about this data structure.
+This registration response is returned to the client. To learn more about this data structure, see link:https://www.w3.org/TR/webauthn/#iface-pkcredential[`PublicKeyCredential Interface`] and link:https://www.w3.org/TR/webauthn/#credentialrequestoptions-extension[`CredentialRequestOptions`].
 
-==== *Step 5* (Client) Send registration request to the authenticator
 
-The JavaScript calls the method `navigator.credentials.create()` and passes the `PublicKeyCredentialCreationOptions` from the `/register` response, see link:https://www.w3.org/TR/webauthn/#createCredential[Create a new credential] to learn more.
+==== *Step 5* (Client) Send registration request to the authenticator:
 
-At this point the client will prompt the user to interact with an authenticator. This experience may vary based on browser or operating system. A user may be asked to use a USB security key or a platform built-in sensor. The user may be prompted to touch the security key, enter a PIN, and touch the security key again.
+The JavaScript app calls the method `navigator.credentials.create()` and passes the `PublicKeyCredentialCreationOptions` from the `/register` response. To learn more, see link:https://www.w3.org/TR/webauthn/#createCredential[Create a new credential].
 
-The authenticator then generates a RP specific key-pair and includes the public key in the link:https://www.w3.org/TR/webauthn/#iface-authenticatorattestationresponse[`AuthenticatorAttestationResponse`] that is returned from the `navigator.credentials.create()` method.
+At this point the client will prompt the end-user to interact with an authenticator. This experience varies based on browser or operating system. The user will be asked to use a USB security key or a platform built-in sensor. Then the user may be prompted to touch the security key, enter a PIN, and touch the security key again.
 
-==== *Step 6* (Client) Send the authenticator registration response to the server
+The authenticator then generates an RP-specific key-pair. It includes the public key in the link:https://www.w3.org/TR/webauthn/#iface-authenticatorattestationresponse[`AuthenticatorAttestationResponse`] that is returned from the `navigator.credentials.create()` method.
+
+
+==== *Step 6* (Client) Send the authenticator registration response to the server:
 
 The `AuthenticatorAttestationResponse` has an attestation object with an attestation statement that contains a signature by the private key over the attested credential public key and challenge.
 
 The JavaScript now calls the `/register/finish` endpoint of the REST API and passes along the `AuthenticatorAttestationResponse`.
 
-==== *Step 7* (Server) Finish the registration
 
-Once the server receives the request to finish the registration it calls the `rp.finishRegistration()` method with the 'AuthenticatorAttestationResponse' data. The `webauthn-server-core` parses the authenticator response and verifies the rpID and challenge are the values it expected.  It also verifies the public key and signature. If these all check out the server stores the credential ID, credential public key, and signature counter to the database. We also recommend storing the raw `attestationObject` for future reference.
+==== *Step 7* (Server) Finish the registration:
 
-Check out the link:WebAuthn_Developer_Guide/WebAuthn_Client_Registration.adoc[WebAuthn Client Registration] chapter of the WebAuthn Developer Guide to learn more.
+Once the server receives the request to finish the registration, it calls the `rp.finishRegistration()` method with the `AuthenticatorAttestationResponse` data. The `webauthn-server-core` parses the authenticator response and verifies that the `rpID` and challenge are the values it expected.  It also verifies the public key and signature. If these are all correct, the server stores the credential ID, credential public key, and signature counter to the database. We recommend storing the raw `attestationObject` as well for future reference.
+
+To learn more, check out the link:WebAuthn_Developer_Guide/WebAuthn_Client_Registration.adoc[WebAuthn Client Registration] chapter of the WebAuthn Developer Guide.
+
 
 === Authentication
 
-Now that we have registered our credential, let's authenticate with it!
+Now that we have registered our credential, let us authenticate with it!
 
-==== *Step 1* (Client) Send the authentication request to the server
 
-Go to https://localhost:8443 and click the `Authenticate` button. The JavaScript will make a call the `/authenticate` endpoint of the REST API and passes along the username.
+==== *Step 1* (Client) Send the authentication request to the server:
 
-==== *Step 2* (Server) Prepare the authentication ceremony parameters
+Go to https://localhost:8443 and click the `Authenticate` button. The JavaScript app makes a call to the `/authenticate` endpoint of the REST API and passes along the username.
 
-The server calls the `rp.startAuthentication()` operation which creates a link:https://www.w3.org/TR/webauthn/#assertion-options[`PublicKeyCredentialRequestOptions`] JSON object and sets the values based on the service's policy and preferences. Just like in the registration step, the server sets the rpID and challenge. The `allowCredentials` list is populated with the previously registered credentials that the user is allowed to authenticate with.
+
+==== *Step 2* (Server) Prepare the authentication ceremony parameters:
+
+The server calls the `rp.startAuthentication()` operation, which creates a link:https://www.w3.org/TR/webauthn/#assertion-options[`PublicKeyCredentialRequestOptions`] JSON object and sets the values based on the service's policy and preferences. Just as in the registration step, the server sets the `rpID` and challenge. The `allowCredentials` list is populated with those previously registered credentials that the user is allowed to authenticate with.
 
 ....
 {
@@ -198,34 +212,40 @@ The server calls the `rp.startAuthentication()` operation which creates a link:h
 
 This authentication response is returned to the JavaScript app.
 
-==== *Step 3* (Client) Send the authentication request to the authenticator
 
-The JavaScript calls `navigator.credentials.get()` and passes the `PublicKeyCredentialRequestOptions` into the method.
+==== *Step 3* (Client) Send the authentication request to the authenticator:
 
-At this point the client will prompt the user to interact with an authenticator. This experience may vary based on browser or operating system. A user may be asked to use a USB security key or a platform built-in sensor. The user may be prompted to touch the security key, enter a PIN, and touch the security key again.
+The JavaScript app calls `navigator.credentials.get()` and passes the `PublicKeyCredentialRequestOptions` into the method.
 
-The authenticator matches a credential from the `allowCredentials` list, recall that credentials are scoped to a rpID, uses the associated private key to sign over the authenticator data, and returns an link:https://www.w3.org/TR/webauthn/#iface-authenticatorassertionresponse[`AuthenticatorAssertionResponse`] to the JavaScript app.
+At this point the client prompts the user to interact with an authenticator. This experience varies based on browser or operating system. A user is asked to use a USB security key or a platform built-in sensor. The user may be prompted to touch the security key, enter a PIN, and touch the security key again.
 
-==== *Step 4* (Client) Send the authentication response to the server
+The authenticator matches a credential from the `allowCredentials` list (recall that credentials are scoped to an `rpID`), uses the associated private key to sign over the authenticator data, and returns an link:https://www.w3.org/TR/webauthn/#iface-authenticatorassertionresponse[`AuthenticatorAssertionResponse`] to the JavaScript app.
 
-The `AuthenticatorAssertionResponse` contains authenticator data (rpID & challenge) and the signature by the private key over the authenticator data.
 
-The JavaScript now calls the `/authenticate/finish` endpoint of the REST API and passes along the `AuthenticatorAssertionResponse`.
+==== *Step 4* (Client) Send the authentication response to the server:
 
-==== *Step 5* (Server) Finish the authentication
+The `AuthenticatorAssertionResponse` contains authenticator data (`rpID` and challenge) and the signature by the private key over the authenticator data.
 
-Once the server receives the request to finish the authentication it calls the `rp.finishAuthentication()` method with the 'AuthenticatorAssertionResponse' data. The `webauthn-server-core` parses the authenticator response and verifies the rpID and challenge are the values it expected.  It also verifies the public key and signature. If these all check out the server authenticates the user.
+The JavaScript app now calls the `/authenticate/finish` endpoint of the REST API and passes along the `AuthenticatorAssertionResponse`.
 
-Check out the “Authentication Flow” section of the link:./WebAuthn_Developer_Guide/WebAuthn_Client_Authentication.adoc[Client Authentication] chapter of the WebAuthn Developer Guide to learn more.
 
-=== Wrapping up
-Congratulations! You've completed all the steps to register and authenticate with a WebAuthn credential.
+==== *Step 5* (Server) Finish the authentication:
 
-If you have more time we recommend you check out Yubico’s best practices in the link:WebAuthn_Developer_Guide/Integration_Review_Standard_FIDO.adoc[integration review standard] and review the WebAuthn/FIDO2 link:WebAuthn_Developer_Guide/WebAuthn_Readiness_Checklist.adoc[Readiness Checklist].
+Once the server receives the request to finish the authentication, it calls the `rp.finishAuthentication()` method with the `AuthenticatorAssertionResponse` data. The `webauthn-server-core` parses the authenticator response and verifies that the `rpID` and challenge are the values it expected.  It also verifies the public key and signature. If these are all correct, the server authenticates the user.
+
+To learn more, check out the “Authentication Flow” section of the link:./WebAuthn_Developer_Guide/WebAuthn_Client_Authentication.adoc[Client Authentication] chapter of the WebAuthn Developer Guide.
+
+
+=== Wrapping Up
+
+Congratulations! You have completed all the steps to register and authenticate with a WebAuthn credential.
+
+If you have more time, we recommend you check out Yubico’s best practices in the link:WebAuthn_Developer_Guide/Integration_Review_Standard_FIDO.adoc[integration review standard] and review the WebAuthn/FIDO2 link:WebAuthn_Developer_Guide/WebAuthn_Readiness_Checklist.adoc[Readiness Checklist].
+
 
 === Additional Resources
 
-* link:https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-client-to-authenticator-protocol-v2.0-id-20180227.html#authenticator-api[Client to Authenticator Protocol (CTAP) authenticator API]
+* link:https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-client-to-authenticator-protocol-v2.0-id-20180227.html#authenticator-api[Client to Authenticator Protocol (CTAP) Authenticator API]
 * link:https://www.w3.org/TR/webauthn/[Web Authentication Public Key Credentials API]
 * link:../Software_Projects/WebAuthn-FIDO2/WebAuthn-FIDO2_Server_Libraries/[WebAuthn FIDO2 Server Libraries]
 * link:../Software_Projects/WebAuthn-FIDO2/WebAuthn-FIDO2_Host_Libraries/[WebAuthn FIDO2 Host Libraries]
