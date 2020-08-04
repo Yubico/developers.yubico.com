@@ -1,0 +1,131 @@
+
+
+= YubiKey User-Loaded Data
+
+The YubiKey is designed to be a user authentication or identification device. The applications on the YubiKey hardware are limited to contain only authentication secrets and keys either generated internally or loaded by users; none of the functions on a YubiKey are designed for mass storage of data.
+Each function on the YubiKey can only accept and store data in the proper format for securely authenticating with the various supported validation protocols. All loaded information is stored in the secured EEPROM in the memory space allocated with the applications utilizing the data. This document will detail the expected inputs for each application and how the data is used by the YubiKey.
+
+
+== Credentials and Allowed Values
+Many of the functions of the YubiKey can be secured with a user-provided credential, preventing unauthorized access to modify or access the applications on the YubiKey. These codes are never exposed to the user, but instead used to validate user provided values to gain access.
+
+|===
+|YubiKey application |Credential |Allowed Values
+|YubiKey Interface Management a| * Lock code a| * 6 byte lock code
+|One Time Password (OTP)
+a|* Access Code: OTP Slot 1
+* Access Code: OTP Slot 2
+
+a|* 6 byte access codes
+* 6 byte access codes
+
+| OATH
+a| * Authentication Key
+
+a| * 14-64 byte HMAC SHA1/SHA256 key
+
+| PIV Smart Card
+a| * Management Key
+* PUK
+* PIN
+
+a| * 3-key TDES key
+* 6-8 byte PIN
+* 6-8 byte PIN
+
+| OpenPGP Smart Card
+a| * Admin Password (PW3)
+* Reset Code (RC, Optional)
+* User Password (PW1)
+
+a| * 8 to 127 byte PIN
+* 8 to 127 byte PIN
+* 6 to 127 byte PIN
+
+| U2F
+a| * N/A
+
+a| * N/A
+
+| FIDO2
+a| * PIN (optional)
+
+a| * 6 to 127 byte PIN
+|===
+
+== Applications
+Each Application on the YubiKey acts an an atomic and independent entity; there is no information is shared between each Application, nor is there communication directly between each function.
+
+
+=== OTP Application
+The OTP Application can be configured to generate YubiOTP codes, OATH-HOTP codes, Challenge-Response interactions or Static Passwords on either or both of the 2 configuration slots.
+
+==== YubiOTP
+The YubiOTP configuration will accept data in the following formats and lengths:
+Public ID - 1-16 byte modhex string, default 6 bytes (12 characters)
+Private ID - 6 byte hexadecimal string
+AES key - 16 byte hexadecimal string
+
+The generated OTP codes contain the characters of the Public ID as entered, followed by a 32 character string generated as a hash of the Private ID with counter, time stamp and randomly generated data, encrypted with the provided AES key.
+
+==== OATH-HOTP
+The OATH-HOTP configuration will accept data in the following formats and lengths:
+Token Identifier - Optional 6 byte string composed of either modhex or numeric characters (12 characters).
+Moving factor seed - 8 byte decimal value
+Secret key - 20 byte hexadecimal string
+
+The generated OTP codes contain the characters of the Token Identifier as entered if included, followed by a 6 or 8 digit numeric string generated as a truncated hash of the Secret key with the counter.
+
+
+==== Challenge-Response
+The Challenge-Response configuration will accept data in the following formats and lengths:
+Secret key - 20 byte hexadecimal string
+
+The generated responses consist of a 40 character hexadecimal string generated as a HMAC-SHA1 hash of the supplied challenge and the Secret key.
+
+==== Static Password
+The Static Password configuration will accept data in the following formats and lengths:
+Password - A string of up to 38 characters as defined by the keyboard scan code ID.
+
+The generated Static Password codes contain the characters as programed, provided that the host system is using the same keyboard layout as the system the password was programmed on.
+
+
+=== OATH Application
+The OATH Application can be configured to generate OATH event based (HOTP) or time based (TOTP) codes, based on the user provided secrets. Multiple OATH credentials are supported.
+
+The OATH configuration will accept data in the following formats and lengths:
+Name - 64 byte character string composed of alphanumeric characters.
+Secret key - 20 byte base32 string
+
+The Name can be displayed, along with a 6 or 8 digit numeric string generated as a truncated hash of the Secret key with the timestamp or counter, depending on the algorithm used.
+
+
+=== OpenPGP Application
+The OpenPGP Application can be configured to hold up to 3 OpenPGP keys; each key may be a master key or a subkey. Keys can be imported by the user or generated onboard the YubiKey.
+
+The OpenPGP configuration will accept data in the following formats and lengths:
+
+* Key - One RSA key, up to 4096 bits (limited to 2048 on the FIPS series devices), also including the following data objects:
+	** Name - 255 character UTF-8 string
+	** Email - 255 character UTF-8 http://tools.ietf.org/html/rfc2822[RFC2822] mail name-addr string
+	** Comment - 255 character UTF-8 string
+	** Language - 2 to 8 byte string as defined by ISO 639
+	** Sex - 1 byte string as defined by https://www.iso.org/standard/36266.html[ISO 5218]
+* Authentication key - One RSA sub-key, up to 4096 bits (limited to 2048 on the FIPS series devices)
+* Encryption key - One RSA sub-key, up to 4096 bits (limited to 2048 on the FIPS series devices)
+* Signing key - One RSA sub-key, up to 4096 bits (limited to 2048 on the FIPS series devices)
+
+
+=== PIV Application
+The PIV Application can be configured to hold up to 24 user uploaded x509 certificates in DER format with a maximum size of 3052 bytes each, along with associated user Data Objects. It also has 15260 bytes available for storing Certificate Chain Certificates (root and intermediate certificates).
+
+The PIV Application will accept data in the formats defined by NIST in https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-73-4.pdf[Special Publication 800-73-4].
+
+
+=== FIDO U2F
+The FIDO U2F Application does not accept any user data which can be extracted. All keys and associated data are generated internally and only exposed to the associated service being authenticated. Private keys are never exposed.
+
+
+=== FIDO2
+The FIDO2 Application, when used with non-resident keys, does not accept any user data which can be extracted. All non-resident keys and associated data are generated internally and only exposed to the associated service being authenticated. Private keys are never exposed.
+With resident keys, the FIDO2 Application can hold up to 20 private credentials which can include information about the associated user account, including login name. Any data accepted by the FIDO2 Application will be defined in the https://www.w3.org/TR/webauthn/[W3C Web Authentication specification].

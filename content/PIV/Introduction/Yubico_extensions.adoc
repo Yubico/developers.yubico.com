@@ -19,6 +19,8 @@ For more information on PIV APDUs, see the guidance provided by  Special Publica
 |Reset                 |0xfb
 |Set PIN retries       |0xfa
 |Attest                |0xf9
+|Get serial            |0xf8
+|Get metadata          |0xf7
 |===========================
 
 == SET MANAGEMENT KEY
@@ -121,7 +123,7 @@ The tag used is 0xab and possible values are:
 |==================================================================
 
 == ATTESTATION
-Get an attestation certificate for a slot where the key has been generated on device. Only available in YubiKey 4 & 5.3+.
+Get an attestation certificate for a slot where the key has been generated on device. Only available in YubiKey 4.3 & 5.
 
 The output is a DER encoded X.509 certificate.
 
@@ -133,12 +135,51 @@ The output is a DER encoded X.509 certificate.
 |P2  |0x00
 |=========
 
+== GET SERIAL
+Get the serial number of the device. Only available in YubiKey 5.
+
+=== Syntax
+|=========
+|CLA |0x00
+|INS |0xf8
+|P1  |0x00
+|P2  |0x00
+|=========
+
+Encoded as a four-bytes Big-Endian number: `0001e240` for serial number `123456`.
+
+== GET METADATA
+Get information about a specific key. Only available in YubiKey 5.3.
+
+=== Syntax
+|================
+|CLA |0x00
+|INS |0xf7
+|P1  |0x00
+|P2  |Slot
+|================
+
+The following TLVs will be returned if the key is present:
+
+|=========================================================================================
+|Algorithm     |0x01 |Algorithm/type of the key
+|Policy        |0x02 |PIN and Touch policy of the key (keys only)
+|Origin        |0x03 |Origin of the key: imported or generated
+|Public key    |0x04 |Public key associated with the private key
+|Default value |0x05 |Whether the PIN/key has a default value (PIN, PUK and Mgmt key only)
+|Retries       |0x06 |Number of retries left (PIN and PUK only)
+|=========================================================================================
+
+Use slot `0x80` for PIN, slot `0x81` for PUK and slot `0x9b` for the Management key.
+
+Only the TLV that apply to an object will be returned.
+
 == Answer To Reset (ATR) and Answer To Select (ATS)
-Note: The YubiKey 5 Series ATR card issuer's data has been changed from “YubiKey 4 & 5” to “YubiKey”.
+Note: The YubiKey 5 Series ATR card issuer's data has been changed from `Yubikey 4` to `YubiKey`.
 
 |===
 |YubiKey 5 Series |ATR | 0x3b, 0xfd, 0x13, 0x00, 0x00, 0x81, 0x31, 0xfe, 0x15, 0x80, 0x73, 0xc0, 0x21, 0xc0, 0x57, 0x59, 0x75, 0x62, 0x69, 0x4b, 0x65, 0x79, 0x40
 |YubiKey 5 Series |ATS | 0x12, 0x78, 0xb3, 0x84, 0x00, 0x80, 0x73, 0xc0, 0x21, 0xc0, 0x57, 0x59, 0x75, 0x62, 0x69, 0x4b, 0x65, 0x79
-|YubiKey 4 & 5 Series |ATR | 0x3b, 0xf8, 0x13, 0x00, 0x00, 0x81, 0x31, 0xfe, 0x15, 0x59, 0x75, 0x62, 0x69, 0x6b, 0x65, 0x79, 0x34, 0xd4
+|YubiKey 4 Series |ATR | 0x3b, 0xf8, 0x13, 0x00, 0x00, 0x81, 0x31, 0xfe, 0x15, 0x59, 0x75, 0x62, 0x69, 0x6b, 0x65, 0x79, 0x34, 0xd4
 |YubiKey NEO |ATR | 0x3b, 0xfc, 0x13, 0x00, 0x00, 0x81, 0x31, 0xfe, 0x15, 0x59, 0x75, 0x62, 0x69, 0x6b, 0x65, 0x79, 0x4e, 0x45, 0x4f, 0x72, 0x33, 0xe1
 |===

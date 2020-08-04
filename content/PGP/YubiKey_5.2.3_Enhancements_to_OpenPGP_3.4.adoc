@@ -1,0 +1,166 @@
+== Introduction
+
+With the release of the YubiKey 5Ci device with firmware 5.2.3, Yubico offers support for the latest OpenPGP Smart Card 3.4 functionality, offering advancements in OpenPGP functionality. These enhancements allow users an anded encryption algorithm set beyond RSA for OpenPGP operations, utilize separate x.509 cardholder certificates alongside the existing OpenPGP certificates for authentication, signature and encryption/decipher, bring attestation functionality to OpenPGP keys and certificates generated on a YubiKey and a number of quality of life improvements. Further, security has been improved as the YubiKey with firmware 5.2.3 and above supports Key Derived Format PINs, allowing the PIN to never be exposed over an insecure channel.
+
+This document is a high level review of the OpenPGP feature enhancements including in firmware 5.2.3 and above. The full specifications of what has been changed can be found in the OpenPGP Smart Card v3.4 specifications, here: https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf
+
+
+=== Elliptic Curves
+YubiKey firmware 5.2.3 and OpenPGP 3.4 offers a set of new options to users. Support for Elliptic Curve Cryptographic Algorithms have been added to the YubiKey 5.2.3 and above firmware. These curves can be used for Signature, Authentication and Decipher keys.
+
+YubiKeys support the following Elliptic Curve algorithms in addition to RSA (Firmware 5.2.3 and above only)
+
+* secp256r1 
+* secp256k1 
+* secp384r1 
+* secp521r1 
+* brainpoolP256r1 
+* brainpoolP384r1 
+* brainpoolP512r1 
+* curve25519 
+** x25519 (decipher only) 
+** ed25519 (sign / auth only) 
+
+=== Sample usage [GnuPG (2.2.12+)]:
+
+* curve25519 or secp384r1
+[source, python]
+-----------------
+$ gpg --edit-card
+gpg/card> admin
+gpg/card> key-attr
+Changing card key attribute for: Signature key
+Please select what kind of key you want:
+  (1) RSA
+  (2) ECC
+Your selection? 2
+Please select which elliptic curve you want:
+  (1) Curve 25519
+  (4) NIST P-384
+Your selection? 1
+gpg/card> generate
+-----------------
+* all curves
+[source, python]
+-----------------
+$ gpg --edit-card --expert 
+-----------------
+* Set slot attributes with scdaemon
+[source, python]
+-----------------
+$ gpg-connect-agent "SCD SETATTR KEY-ATTR --force <SLOT> <ALGO ID> <ALGO>" /bye 
+-----------------
+* RSA
+[source, python]
+-----------------
+$ gpg-connect-agent "SCD SETATTR KEY-ATTR --force 1 1 rsa2048" /bye 
+-----------------
+* ECDSA
+[source, python]
+-----------------
+$ gpg-connect-agent "SCD SETATTR KEY-ATTR --force 1 19 nistp256" /bye
+$ gpg-connect-agent "SCD SETATTR KEY-ATTR --force 1 19 brainpoolP256r1" /bye
+-----------------
+* curve25519
+[source, python]
+-----------------
+$ gpg-connect-agent "SCD SETATTR KEY-ATTR --force 1 22 ed25519" /bye
+$ gpg-connect-agent "SCD SETATTR KEY-ATTR --force 2 22 cv25519" /bye
+-----------------
+
+=== Attestation
+YubiKeys offer a new feature to the OpenPGP Smart Card, the attestation of Keys generated on device. With the attestation function, generating an Authentication, Signature or Decipher key on a YubiKey will also create an X.509 certificate signed with the Attestation key present on the device. This certificate can be used to verify any other key generated on the device and was not imported, ensuring said key only exists on the YubiKey. 
+
+Attestation is supported for all combinations of attestation key and attested key, except the attestation key cannot be from the curve25519 family. A fourth key slot is reserved for an attestation key.  If specifying it by ID, it is Key ID 0x81. The Attestation template certificate is stored on a fourth user certificate slot reserved for it. It is selected directly with SELECT_DATA index 4.  It can also be retrieved by calling GET_NEXT_DATA three times after SELECT_DATA on index 1.
+
+Each YubiKey comes with a pre-loaded Attestation certificate signed by a Yubico OpenPGP CA. Attestation is a Yubikey-proprietary extension. The https://www.yubico.com/products/services-software/download/yubikey-manager/[YubiKey Manager] application can be used to manage the Attestation Certificate. For more details, refer to the OpenPGP Attestation page at: https://developers.yubico.com/PGP/Attestation.html
+
+=== Configuration Enhancements
+Alongside new cryptographic curves and key attestation, the YubiKey 5.2.3 and up supports advanced configuration enhancements, allowing more security and extending functionality for existing features.
+
+=== Key Derived Format
+To remove the transmission and on-card storage of OpenPGP PINs in plain text, the YubiKey supports the Key Derived Function (KDF) functionality. With the KDF function enabled, the PIN is stored as a hash on the YubiKey. When entering the PIN to the OpenPGP Smart Card, the OpenPGP client will only pass the hashed value, never passing the PIN directly. KDF functionality is set on the card itself, and communicated to the client; it is transparent to the user. Should the KDF functionality not be enabled, the PIN function will work as previously. The KDF function is listed in section 4.3.2  of the https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf[OpenPGP Smart Card 3.4] spec.
+
+Current stable releases (2.2.20) of gnupg support enabling KDF.
+
+* Enable KDF
+[source, python]
+-----------------
+$ gpg --edit-card
+gpg/card> admin
+gpg/card> kdf-setup
+gpg/card> passwd
+gpg: OpenPGP card no. D2760001240103030006294453760000 detected
+ 
+1 - change PIN
+2 - unblock PIN
+3 - change Admin PIN
+4 - set the Reset Code
+Q - quit
+ 
+Your selection? 1
+PIN changed.
+-----------------
+
+=== Multiple cardholder certificate slots 
+With OpenPGP 3.4, support for additional X.509 certificates for the Authentication, Signing and Decipher keys has been added. Where as previously, these keys were treated as sub-keys for the OpenPGP certificate, now they can behave as independently issued credentials assigned to the user.
+
+The YubiKey (5.2.3 and above) supports 2KB per key certificate for up to 4 slots:
+
+* Authentication
+* Decryption
+* Signature
+* Attestation template
+
+Slots can be iterated over with the GET_NEXT_DATA instruction. These certificates may be used to identify the card in a client-server authentication, where specific non-OpenPGP certificates are needed, such as S-MIME and other x.509 related functions. The certificates are stored in the following order: Authentication, Decipher, Signature and Attestation. 
+
+GnuPG does not currently support accessing all certificates.  The authentication certificate can be read with:
+
+[source, python]
+-----------------
+$ gpg --edit-card
+...
+gpg/card> admin
+gpg/card> readcert 3 > aut_cert.der
+gpg/card> writecert 3 < aut_cert.der
+-----------------
+Reading the other slots is not currently possible with gpg 2.2.12. However, the YubiKey Manager can be used to load and manage the cardholder certificates for the Authentication, Decipher and Signing.
+
+
+=== Touch Cache
+The YubiKey has implemented support for the touch-to-verify function with OpenPGP for existing and prior firmware, allowing users to require any OpenPGP cryptographic event to be verified with a user’s touch on the YubiKey hardware before proceeding. With the release of the 5.2.3 firmware, this function has been extended to support a “Touch Cache” feature. With this option enabled, the user verification touch event unlocks the OpenPGP cryptographic functions for up to 15 seconds or until the OpenPGP session ends. This allows for subsequent authentication or signing events to be validated with a single touch, enhancing the user experience. The Touch Cache options can be set using the https://www.yubico.com/products/services-software/download/yubikey-manager/[YubiKey Manager].
+
+=== General Enhancements
+The OpenPGP Smart card 3.4 specifications include a number of enhancements designed to improve general functionality and speed. These include:
+
+* Extended Length Responses
+* Algorithm Information & Attributes
+* Key Information
+* Get Random Challenge
+
+=== Extended Length Responses
+
+The YubiKey firmware 5.2.3 and up can utilize longer responses to queries from OpenPGP, allowing more data to be sent per interaction and reduce the overall time for operations, especially in environments where the USB communication latency is the largest bottleneck. Several data objects (DOs) with variable length have had their maximum response length increased with the max length now listed in the Extended Capabilities DO. The YubiKey has had the max response length increased from 255 to over 3000 bytes. Section 4.4.1 in the OpenPGP Smart Card 3.4 spec lists the DOs which have been affected by this enhancement.
+
+=== Algorithm Information & Attributes
+When generating or importing new keys with the new extended algorithm set, it is important for the OpenPGP Smart Card to correctly identify which algorithms are supported. The Algorithm Information and Attributes DOs provide that information to a host system. 
+
+The Algorithm Information DO will list all of the supported algorithms and key sizes for an OpenPGP Smart card. This allows the OpenPGP host to correctly present options to users for everything supported on the Authentication, Signature and Decipher keys. Applications can read this DO without having to make changes to the algorithms on the associated key. The Algorithm Information is listed in section 4.4.3.11 of the https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf[OpenPGP Smart Card 3.4] spec.
+
+Each key on an OpenPGP card can also have the allowed algorithms and keys sizes set to a specific subset of all available options. The allowed options are set in the Algorithm Attributes DO. The attributes can be changed independent for each key, so it is possible, for example, to use different key length for signing and decrypting. If the attributes of an existing key are changed and no longer match with the stored key, the key will be wiped and will not recoverable. The Algorithm Attributes is listed in section 4.4.3.9 of the https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf[OpenPGP Smart Card 3.4] spec.
+
+=== Get Challenge
+The Get Challenge command generates a random number of a specific byte length. This is useful for using the YubiKey as a hardware based random number generator to create highly sophisticated random numbers. The maximum length of a random number which can be generated is listed in Extended Capabilities. The Get Challenge is listed in section  7.2.15of the https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf[OpenPGP Smart Card 3.4] spec.
+
+Sample code:
+
+* Get 10 random bytes
+[source, python]
+-----------------
+$ gpg-connect-agent "SCD RANDOM 10" /bye
+-----------------
+* Get 1000 random bytes
+[source, python]
+-----------------
+$ gpg-connect-agent "SCD RANDOM 1000" /bye
+-----------------
