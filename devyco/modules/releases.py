@@ -157,15 +157,15 @@ class ReleasesModule(Module):
         with open(confpath, 'w') as f:
             json.dump(conf, f)
 
-        redirects = self._create_latest(entries, path.join(self._context['path'][0], target))
+        redirects = self._create_latest(entries, path.join(self._context['path'][0], target), target)
 
         if redirects:
             htaccess = path.join(self._target, '.htaccess')
             with open(htaccess, 'a') as f:
                 f.writelines(redirects)
 
-    def _create_latest(self, entries, path):
-        ret = ""
+    def _create_latest(self, entries, path, relpath):
+        ret = 'RewriteEngine On\n'
         created = {}
         for entry in entries:
             ver = entry["version"]
@@ -179,13 +179,13 @@ class ReleasesModule(Module):
                         continue
                     created[suffix] = 1
                     link = re.sub(r"-" + ver, "-latest", name)
-                    redir = 'Redirect 302 "/%s/%s" "/%s/%s"\n' % (
-                            path, link, path, name)
+                    redir = 'RewriteRule ^%s/%s$ %%{ENV:REQUEST_PROTO}://%%{HTTP_HOST}/%s/%s [L,R=302]\n' % (
+                            relpath, link, path, name)
                     ret += redir
                     if sig:
                         link = re.sub(r"-" + ver, "-latest", sig)
-                        redir = 'Redirect 302 "/%s/%s" "/%s/%s"\n' % (
-                                path, link, path, sig)
+                        redir = 'RewriteRule ^%s/%s$ %%{ENV:REQUEST_PROTO}://%%{HTTP_HOST}/%s/%s [L,R=302]\n' % (
+                                relpath, link, path, sig)
                         ret += redir
         return ret
 

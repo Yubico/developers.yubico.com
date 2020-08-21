@@ -150,6 +150,7 @@ class GitModule(Module):
         if redirects:
             htaccess = path.join(self._target, '.htaccess')
             with open(htaccess, 'a') as f:
+                f.writelines(["RewriteEngine On\n"])
                 f.writelines(redirects)
 
     def _get_old_names(self, repo_dir, directory, fname, subs):
@@ -179,8 +180,8 @@ class GitModule(Module):
         basepath = path.join(*self._context['path'])
         new_path = path.join(basepath, names[0])
         for old_name in names[1:]:
-            redirects.add('Redirect 301 "/%s" "/%s"\n' % (
-                path.join(basepath, old_name), new_path))
+            redirects.add('RewriteRule ^%s$ %%{ENV:REQUEST_PROTO}://%%{HTTP_HOST}/%s [L,R=301]\n' % (
+                old_name, new_path))
         return list(redirects)
 
 
