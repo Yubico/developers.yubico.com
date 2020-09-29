@@ -14,6 +14,50 @@ A generic prompt, `*$*`, is used in command line examples in this document. Depe
 * `yubihsm-cngprovider-windows-amd64.msi` (YubiHSM Key Storage Provider)
 * `yubihsm-connector-windows-amd64.msi` (YubiHSM Connector for Windows)
 
+*Step 3* Set the ADCS service dependency for the YubiHSM Connector service via an elevated/admin Windows Command Prompt. This prevents an error which occurs if the ADCS services starts before the YubiHSM connector is running.
+List the current dependencies with `sc qc “certsvc”`
+....
+> sc qc “certsvc”
+[SC] QueryServiceConfig SUCCESS
+
+SERVICE_NAME: certsvc
+        TYPE               : 110  WIN32_OWN_PROCESS (interactive)
+        START_TYPE         : 2   AUTO_START
+        ERROR_CONTROL      : 1   NORMAL
+        BINARY_PATH_NAME   : C:\Windows\system32\certsrv.exe
+        LOAD_ORDER_GROUP   :
+        TAG                : 0
+        DISPLAY_NAME       : Active Directory Certificate Services
+        DEPENDENCIES       : 
+        SERVICE_START_NAME : localSystem
+....
+
+Add the YubiHSM connector dependency to ADCS with the command: `sc config "certsvc" depend="yhconsrv"`
+....
+> sc config "certsvc" depend="yhconsrv"
+[SC] ChangeServiceConfig SUCCESS
+....
+
+Once the command is entered, the dependency can be verified with `sc qc “certsvc”`
+....
+[SC] QueryServiceConfig SUCCESS
+
+SERVICE_NAME: certsvc
+        TYPE               : 110  WIN32_OWN_PROCESS (interactive)
+        START_TYPE         : 2   AUTO_START
+        ERROR_CONTROL      : 1   NORMAL
+        BINARY_PATH_NAME   : C:\Windows\system32\certsrv.exe
+        LOAD_ORDER_GROUP   :
+        TAG                : 0
+        DISPLAY_NAME       : Active Directory Certificate Services
+        DEPENDENCIES       : yhconsrv
+        SERVICE_START_NAME : localSystem
+....
+To remove depedencies for ACDS, use the same command for adding depedencies with a blank depend field: `sc config "certsvc" depend=""`
+
+
+
+
 
 === Default YubiHSM 2 Default Device Configuration
 
