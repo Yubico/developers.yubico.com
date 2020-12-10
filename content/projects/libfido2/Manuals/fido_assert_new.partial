@@ -24,6 +24,7 @@
 <code class="Nm" title="Nm">fido_assert_new</code>,
   <code class="Nm" title="Nm">fido_assert_free</code>,
   <code class="Nm" title="Nm">fido_assert_count</code>,
+  <code class="Nm" title="Nm">fido_assert_rp_id</code>,
   <code class="Nm" title="Nm">fido_assert_user_display_name</code>,
   <code class="Nm" title="Nm">fido_assert_user_icon</code>,
   <code class="Nm" title="Nm">fido_assert_user_name</code>,
@@ -32,12 +33,15 @@
   <code class="Nm" title="Nm">fido_assert_hmac_secret_ptr</code>,
   <code class="Nm" title="Nm">fido_assert_user_id_ptr</code>,
   <code class="Nm" title="Nm">fido_assert_sig_ptr</code>,
+  <code class="Nm" title="Nm">fido_assert_id_ptr</code>,
   <code class="Nm" title="Nm">fido_assert_authdata_len</code>,
   <code class="Nm" title="Nm">fido_assert_clientdata_hash_len</code>,
   <code class="Nm" title="Nm">fido_assert_hmac_secret_len</code>,
   <code class="Nm" title="Nm">fido_assert_user_id_len</code>,
   <code class="Nm" title="Nm">fido_assert_sig_len</code>,
-  <code class="Nm" title="Nm">fido_assert_sigcount</code> &#x2014;
+  <code class="Nm" title="Nm">fido_assert_id_len</code>,
+  <code class="Nm" title="Nm">fido_assert_sigcount</code>,
+  <code class="Nm" title="Nm">fido_assert_flags</code> &#x2014;
 <div class="Nd" title="Nd">FIDO 2 assertion API</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
@@ -55,6 +59,11 @@
 <var class="Ft" title="Ft">size_t</var>
 <br/>
 <code class="Fn" title="Fn">fido_assert_count</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_assert_t *assert</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">const char *</var>
+<br/>
+<code class="Fn" title="Fn">fido_assert_rp_id</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_assert_t *assert</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">const char *</var>
@@ -104,6 +113,12 @@
   fido_assert_t *assert</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
 <div class="Pp"></div>
+<var class="Ft" title="Ft">const unsigned char *</var>
+<br/>
+<code class="Fn" title="Fn">fido_assert_id_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_assert_t *assert</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
+<div class="Pp"></div>
 <var class="Ft" title="Ft">size_t</var>
 <br/>
 <code class="Fn" title="Fn">fido_assert_authdata_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
@@ -133,9 +148,21 @@
   fido_assert_t *assert</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
 <div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_assert_id_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_assert_t *assert</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
+<div class="Pp"></div>
 <var class="Ft" title="Ft">uint32_t</var>
 <br/>
 <code class="Fn" title="Fn">fido_assert_sigcount</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_assert_t *assert</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">uint8_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_assert_flags</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_assert_t *assert</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
@@ -167,6 +194,10 @@ The <code class="Fn" title="Fn">fido_assert_free</code>() function releases the
 The <code class="Fn" title="Fn">fido_assert_count</code>() function returns the
   number of statements in <var class="Fa" title="Fa">assert</var>.
 <div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_assert_rp_id</code>() function returns a
+  pointer to a NUL-terminated string holding the relying party ID of
+  <var class="Fa" title="Fa">assert</var>.
+<div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_assert_user_display_name</code>(),
   <code class="Fn" title="Fn">fido_assert_user_icon</code>(), and
   <code class="Fn" title="Fn">fido_assert_user_name</code>(), functions return
@@ -177,20 +208,26 @@ The <code class="Fn" title="Fn">fido_assert_user_display_name</code>(),
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_assert_user_id_ptr</code>(),
   <code class="Fn" title="Fn">fido_assert_authdata_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_hmac_secret_ptr</code>(), and
-  <code class="Fn" title="Fn">fido_assert_sig_ptr</code>() functions return
-  pointers to the user ID, authenticator data, hmac-secret, and signature
-  attributes of statement <var class="Fa" title="Fa">idx</var> in
+  <code class="Fn" title="Fn">fido_assert_hmac_secret_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_sig_ptr</code>(), and
+  <code class="Fn" title="Fn">fido_assert_id_ptr</code>() functions return
+  pointers to the user ID, authenticator data, hmac-secret, signature, and
+  credential ID attributes of statement <var class="Fa" title="Fa">idx</var> in
   <var class="Fa" title="Fa">assert</var>. The
   <code class="Fn" title="Fn">fido_assert_user_id_len</code>(),
   <code class="Fn" title="Fn">fido_assert_authdata_len</code>(),
-  <code class="Fn" title="Fn">fido_assert_hmac_secret_len</code>(), and
-  <code class="Fn" title="Fn">fido_assert_sig_len</code>() functions can be used
+  <code class="Fn" title="Fn">fido_assert_hmac_secret_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_sig_len</code>(), and
+  <code class="Fn" title="Fn">fido_assert_id_len</code>() functions can be used
   to retrieve the corresponding length of a specific attribute.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_assert_sigcount</code>() function can be
   used to obtain the signature counter of statement
   <var class="Fa" title="Fa">idx</var> in
+  <var class="Fa" title="Fa">assert</var>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_assert_flags</code>() function returns the
+  authenticator data flags of statement <var class="Fa" title="Fa">idx</var> in
   <var class="Fa" title="Fa">assert</var>.
 <div class="Pp"></div>
 Please note that the first statement in <var class="Fa" title="Fa">assert</var>
