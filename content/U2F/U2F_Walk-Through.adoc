@@ -1,0 +1,193 @@
+== U2F Walk-Through
+This walk-through describes how to integrate the Yubico Universal Second Factor (U2F) protocol with your application or framework. This content is based on the link:../[Yubico U2F developer guide].
+
+
+=== Implementation Methods
+
+There are three methods for integrating Yubico authentication using the U2F protocol. For the purposes of this walk-through we describe the Plugin method.
+
+
+==== link:../Plugins.html[Plugins for Content Management Systems (CMS)].
+Plugin modules for link:../pam-u2f/[PAM] (pluggable authentication module) and for link:https://github.com/search?q=u2f[Git].
+
+
+==== link:../Standalone_servers[Standalone Authentication Server]
+Use the Yubico link:../Standalone_servers/U2FVAL_REST_API.adoc[REST API] and a U2F validation server, link:../u2fval/[U2FVAL].
+
+
+==== link:../Libraries[Libraries for Programming Languages]
+Store and access U2F artifacts yourself.
+
+
+=== Plugin Implementation
+On your product or company server, configure for using Yubico U2F with a plugin. See link:../Plugins.adoc[Plugins].
+
+
+==== Git Plugin
+Select from the listed link:https://github.com/search?q=u2f[Github] options and follow the steps for the plugin you choose.
+
+
+=== PAM Plugin
+The PAM plugin requires Yubico U2F link:https://developers.yubico.com/libu2f-host[libu2f-host-dev] and link:https://developers.yubico.com/libu2f-server[libu2f-server-dev] libraries.
+
+==== Step 1: Build the project
+Debian
+....
+apt-get install autoconf automake libtool pkg-config libu2f-host-dev libu2f-server-dev --no-install-recommends
+....
+
+From a tarball
+....
+$ ./configure
+$ make
+....
+
+Build from Git
+
+Check out sources:
+....
+$ git clone git://github.com/Yubico/pam-u2f.git
+....
+
+Create directory, for example: pam-u2f
+....
+$ cd pam-u2f
+....
+
+Install libraries
+
+Debian
+....
+apt-get install autoconf automake libtool libpam-dev libu2f-host-dev libu2f-server-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends
+....
+
+Generate build system
+....
+$ autoreconf --install
+....
+
+
+==== Step 2: Install files
+Copy the file, pam_u2f to the /lib/.../security directory.
+....
+$ ./configure --with-pam-dir=
+....
+
+Create a file for the new service
+....
+$ auth sufficient pam_u2f.so debug
+....
+
+
+==== Step 3: Create mapping between YubiKey token and usernames
+Choose between individually manged by user, or centrally-managed.
+
+**Individually managed by user**
+
+Each user performs these steps on their home directory.
+
+Create directory and file
+....
+$  .config/Yuibico/u2f_keys
+....
+
+Add content to file
+....
+<username>:<KeyHandle1>,<UserKey1>:<KeyHandle2>,<UserKey2>:...
+....
+
+**Centrally managed users**
+
+Create mapping file, for example: /etc/u2f_mappings
+....
+<username1>:<KeyHandle1>,<UserKey1>:<KeyHandle2>,<UserKey2>:...
+<username2>:<KeyHandle1>,<UserKey1>:<KeyHandle2>,<UserKey2>:...
+....
+
+Add file to PAM configuration line
+....
+auth sufficient pam_u2f.so authfile=/etc/u2f_mappings
+....
+
+
+==== Step 4: Register the token device
+
+....
+pamu2fcfg -uusername -opam://myorigin -ipam://myappid
+....
+
+
+=== Available Plug-ins for Creating your YubiKey U2F Module
+
+View and download the relevant plug-in components.
+
+* PAM – Yubico-provided link:https://developers.yubico.com/pam-u2f/[pam-u2f]
+* GitHub – Variety of link:https://github.com/search?q=u2f[third-party plugins]
+
+
+=== Available Libraries for Creating your YubiKey U2F Module
+
+View and download the relevant Yubico library components.
+
+
+==== U2F Server Libraries
+
+* C –  link:https://developers.yubico.com/libu2f-server/[libu2f-server]
+* Java – link:https://developers.yubico.com/java-u2flib-server/[java-u2flib-server]
+* PHP –  link:https://developers.yubico.com/php-u2flib-server/[php-u2flib-server]
+* Python – link:https://developers.yubico.com/python-u2flib-server/[python-u2flib-server]
+
+
+==== Client Connector Libraries
+
+* Python – link:https://developers.yubico.com/u2fval-client-python/[u2fval-client-python]
+* PHP – link:https://developers.yubico.com/u2fval-client-php/[u2fval-client-php]
+
+
+==== Host Libraries
+
+* Python –  link:https://developers.yubico.com/python-u2flib-host/[python-u2flib-host]
+* C – link:https://developers.yubico.com/libu2f-host/[libu2f-host]
+
+
+=== Attestation and Metadata
+All Yubico devices attestation certificates are signed by the Yubico link:https://developers.yubico.com/U2F/yubico-u2f-ca-certs.txt[root CA].
+
+Yubico devices provide additional link:https://developers.yubico.com/U2F/yubico-metadata.json[device information] in the mapping attestation certificate. This is used by several of the link:https://developers.yubico.com/Software_Projects/FIDO_U2F/U2F_Server_Libraries/[U2F server libraries].See link:https://developers.yubico.com/U2F/Attestation_and_Metadata/[Attestation and metadata].
+
+
+=== App ID
+Specify the Facet ID, that is the platform-specific identifier (URI) for your application, where the Facet is how an application is implemented on a platform, such as Android app or Web app.
+
+* Single-facet app
+
+Example
+....
+https://example.com
+....
+
+* Multi-facet app
+
+Include all facets in and HTTPS resolvable file.
+
+Example
+....
+https://example.com/app-id.json
+....
+
+Sample JSON file
+....
+{ "trustedFacets" : [{
+"version": { "major": 1, "minor" : 0 },
+"ids": [
+"https://login.example.com",
+"https://secure.example.com",
+"android:apk-key-hash:585215fd5153209a7e246f53286035838a0be227"
+]
+}]
+}
+....
+
+
+=== Module Validation
+Submit your module to YubiKey OTP Validation Server, link:https://developers.yubico.com/yubikey-val/[https:..developers.yubico.com/yubikey-val].
