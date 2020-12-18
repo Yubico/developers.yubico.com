@@ -1,67 +1,10 @@
-== Install the YubiHSM 2 Tools and Software
+== Installing the YubiHSM 2 Tools and Software
 
 To complete the procedures in this guide, install the YubiHSM 2 tools and software that will be needed for this.
 
-[TIP]
-=====
-A generic prompt, `*$*`, is used in command line examples in this document. Depending on your command line application, your prompt may be different.
-=====
-
-*Step 1* Unzip the downloaded link:../../Releases/[archives of the SDK] containing the YubiHSM libraries and tools and move the contents to an appropriate location.
-
-*Step 2* On your Windows system, run both installers:
-
-* `yubihsm-cngprovider-windows-amd64.msi` (YubiHSM Key Storage Provider)
-* `yubihsm-connector-windows-amd64.msi` (YubiHSM Connector for Windows)
-
-*Step 3* Set the ADCS service dependency for the YubiHSM Connector service via an elevated/admin Windows Command Prompt. This prevents an error which occurs if the ADCS services starts before the YubiHSM connector is running.
-List the current dependencies with `sc qc “certsvc”`
-....
-> sc qc “certsvc”
-[SC] QueryServiceConfig SUCCESS
-
-SERVICE_NAME: certsvc
-        TYPE               : 110  WIN32_OWN_PROCESS (interactive)
-        START_TYPE         : 2   AUTO_START
-        ERROR_CONTROL      : 1   NORMAL
-        BINARY_PATH_NAME   : C:\Windows\system32\certsrv.exe
-        LOAD_ORDER_GROUP   :
-        TAG                : 0
-        DISPLAY_NAME       : Active Directory Certificate Services
-        DEPENDENCIES       : 
-        SERVICE_START_NAME : localSystem
-....
-
-Add the YubiHSM connector dependency to ADCS with the command: `sc config "certsvc" depend="yhconsrv"`
-....
-> sc config "certsvc" depend="yhconsrv"
-[SC] ChangeServiceConfig SUCCESS
-....
-
-Once the command is entered, the dependency can be verified with `sc qc “certsvc”`
-....
-[SC] QueryServiceConfig SUCCESS
-
-SERVICE_NAME: certsvc
-        TYPE               : 110  WIN32_OWN_PROCESS (interactive)
-        START_TYPE         : 2   AUTO_START
-        ERROR_CONTROL      : 1   NORMAL
-        BINARY_PATH_NAME   : C:\Windows\system32\certsrv.exe
-        LOAD_ORDER_GROUP   :
-        TAG                : 0
-        DISPLAY_NAME       : Active Directory Certificate Services
-        DEPENDENCIES       : yhconsrv
-        SERVICE_START_NAME : localSystem
-....
-To remove depedencies for ACDS, use the same command for adding depedencies with a blank depend field: `sc config "certsvc" depend=""`
-
-
-
-
-
 === About the YubiHSM Software
 The following YubiHSM pieces of software are used in this guide. They are included as part of the
-archive file you downloaded from the Yubico Knowledge Base.
+archive file you downloaded.
 
 :YubiHSM Connector: Facilitates communication between the YubiHSM 2 and applications that use it. Must always be running.
 
@@ -72,12 +15,26 @@ archive file you downloaded from the Yubico Knowledge Base.
 :YubiHSM Key Storage Provider (KSP): Acts like a “driver” for the device on Windows and allows it to work with applications that leverage Microsoft’s cryptographic interface, such as Active Directory Certificate Services.
 
 
+=== Installation
 
-=== Default YubiHSM 2 Default Device Configuration
+A generic prompt, `*$*`, is used in command line examples in this document. Depending on your command line application, your prompt may be different.
+
+
+*Step 1* Unzip the downloaded link:../../Releases/[archives of the SDK] containing the YubiHSM libraries and tools and move the contents to an appropriate location.
+
+*Step 2* On your Windows system, run both installers:
+
+         * `yubihsm-cngprovider-windows-amd64.msi` (YubiHSM Key Storage Provider)
+         * `yubihsm-connector-windows-amd64.msi` (YubiHSM Connector for Windows)
+
+
+=== Verifying the Default Configuration of the YubiHSM 2
 
 The YubiHSM 2 device comes with a single factory-installed authentication key whose default password is `password`. As part of the configuration in this guide, this default authentication key will be destroyed. If the YubiHSM 2 is reset to its default configuration, any non factory-installed objects stored on it are also destroyed. Reset instructions can be found in link:../Factory_reset.adoc[Factory Reset].
 
-To ensure that the YubiHSM 2 has not been tampered with, verify that it still has the default configuration by following the steps below:
+We reiterate that you will need two YubiHSM 2 devices to complete all steps of this guide, because you will be deploying the first device and creating a backup of all key material on the second device.
+
+To ensure that neither of the YubiHSM 2 devices have been tampered with, verify that they still have the default configuration by following the steps below:
 
 *Step 1* Do one of the following:
 
@@ -112,4 +69,4 @@ For testing or debugging the YubiHSM Shell, the flag `-d` can be set.
 To exit, type `quit`.
 
 
-link:Configure_the_Primary_YubiHSM_2_Device.adoc[Next: Configure the Primary YubiHSM 2 Device]
+link:Configuring_the_Primary_YubiHSM_2_Device.adoc[Next: Configuring the Primary YubiHSM 2 Device] 
