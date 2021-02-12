@@ -71,6 +71,7 @@ class GitModule(Module):
 
     def _clone(self, conf):
         url = conf['url']
+        branch = conf.get('branch', 'master')
         repo_dir = self.cache_dir(url, False)
 
         if url not in self._updated:
@@ -79,14 +80,14 @@ class GitModule(Module):
                     print "OFFLINE set, skip update"
                     return repo_dir
                 print "Update:", url
-                subprocess.check_call(['git', 'fetch', 'origin', 'master'],
-                                      cwd=repo_dir, stderr=sys.stdout.fileno())
-                subprocess.check_call(['git', 'reset', 'origin/master', '--hard'],
+                subprocess.check_call(['git', 'fetch', 'origin', branch],
                                       cwd=repo_dir, stderr=sys.stdout.fileno())
             else:
                 print "clone:", url
                 subprocess.check_call(['git', 'clone', url, repo_dir],
                                 stderr=sys.stdout.fileno())
+            subprocess.check_call(['git', 'reset', 'origin/%s' % branch, '--hard'],
+                                  cwd=repo_dir, stderr=sys.stdout.fileno())
 
             if conf.get('preserve_mtimes'):
                 self._fix_mtimes(repo_dir)
