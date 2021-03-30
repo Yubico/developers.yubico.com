@@ -21,7 +21,8 @@
 </table>
 <div class="manual-text">
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
-<code class="Nm" title="Nm">fido_dev_set_io_functions</code> &#x2014;
+<code class="Nm" title="Nm">fido_dev_set_io_functions</code>,
+  <code class="Nm" title="Nm">fido_dev_set_sigmask</code> &#x2014;
 <div class="Nd" title="Nd">FIDO 2 device I/O interface</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
@@ -33,17 +34,19 @@ typedef void *fido_dev_io_open_t(const char *);
 typedef void  fido_dev_io_close_t(void *); 
 typedef int   fido_dev_io_read_t(void *, unsigned char *, size_t, int); 
 typedef int   fido_dev_io_write_t(void *, const unsigned char *, size_t); 
-typedef int   fido_dev_io_rx_t(struct fido_dev *, uint8_t, unsigned char *, size_t, int); 
-typedef int   fido_dev_io_tx_t(struct fido_dev *, uint8_t, const unsigned char *, size_t); 
  
 typedef struct fido_dev_io { 
 	fido_dev_io_open_t  *open; 
 	fido_dev_io_close_t *close; 
 	fido_dev_io_read_t  *read; 
 	fido_dev_io_write_t *write; 
-	fido_dev_io_rx_t    *rx; 
-	fido_dev_io_tx_t    *tx; 
-} fido_dev_io_t;
+} fido_dev_io_t; 
+ 
+#ifdef _WIN32 
+typedef int fido_sigset_t; 
+#else 
+typedef sigset_t fido_sigset_t; 
+#endif
 </pre>
 </div>
 <br/>
@@ -52,77 +55,75 @@ typedef struct fido_dev_io {
 <code class="Fn" title="Fn">fido_dev_set_io_functions</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
   *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_dev_io_t *io</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_set_sigmask</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_sigset_t *sigmask</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
-The <code class="Nm" title="Nm">fido_dev_set_io_functions</code> interface
-  defines the I/O and transmission handlers used to talk to
-  <var class="Fa" title="Fa">dev</var>. Its usage is optional. By default,
-  <i class="Em" title="Em">libfido2</i> will use the operating system's native
-  HID interface to talk CTAP2 to a FIDO device.
-<div class="Pp"></div>
-A <var class="Vt" title="Vt">fido_dev_io_open_t</var> function is expected to
-  return a non-NULL opaque pointer on success, and NULL on error. The returned
-  opaque pointer is never dereferenced by <i class="Em" title="Em">libfido2</i>.
-<div class="Pp"></div>
-A <var class="Vt" title="Vt">fido_dev_io_close_t</var> function receives the
-  opaque handle obtained from
-  <var class="Vt" title="Vt">fido_dev_io_open_t</var>. It is not expected to be
-  idempotent.
-<div class="Pp"></div>
-A <var class="Vt" title="Vt">fido_dev_io_read_t</var> function reads a single
-  HID report from <var class="Fa" title="Fa">dev</var>. The first parameter
-  taken is the opaque handle obtained from
-  <var class="Vt" title="Vt">fido_dev_io_open_t</var>. The read buffer is
-  pointed to by the second parameter, and the third parameter holds its size.
-  The last argument passed to
-  <var class="Vt" title="Vt">fido_dev_io_read_t</var> is the number of
-  milliseconds the caller is willing to sleep, should the call need to block. If
-  this value holds -1, <var class="Vt" title="Vt">fido_dev_io_read_t</var> may
-  block indefinitely. The number of bytes read is returned. On error, -1 is
-  returned.
-<div class="Pp"></div>
-A <var class="Vt" title="Vt">fido_dev_io_write_t</var> function writes a single
-  HID report to <var class="Fa" title="Fa">dev</var>. The first parameter taken
-  is the opaque handle returned by
-  <var class="Vt" title="Vt">fido_dev_io_open_t</var>. The write buffer is
-  pointed to by the second parameter, and the third parameter holds its size. A
-  <var class="Vt" title="Vt">fido_dev_io_write_t</var> function may block. The
-  number of bytes written is returned. On error, -1 is returned.
-<div class="Pp"></div>
-A <var class="Vt" title="Vt">fido_dev_io_rx_t</var> function receives a complete
-  CTAP2 message from <var class="Fa" title="Fa">dev</var>. The first parameter
-  taken is a pointer to <var class="Fa" title="Fa">dev</var>. The second
-  parameter holds the expected CTAP2 command byte. The read buffer is pointed to
-  by the third parameter, and the fourth parameter holds its size. The last
-  argument passed to <var class="Vt" title="Vt">fido_dev_io_rx_t</var> is the
-  number of milliseconds the caller is willing to sleep, should the call need to
-  block. If this value holds -1,
-  <var class="Vt" title="Vt">fido_dev_io_rx_t</var> may block indefinitely. The
-  number of bytes read is returned. On error, -1 is returned.
-<div class="Pp"></div>
-A <var class="Vt" title="Vt">fido_dev_io_tx_t</var> function transmits a
-  complete CTAP2 message to <var class="Fa" title="Fa">dev</var>. The first
-  parameter taken is a pointer to <var class="Fa" title="Fa">dev</var>. The
-  second parameter holds the CTAP2 command byte. The write buffer is pointed to
-  by the third parameter, and the fourth parameter holds its size. A
-  <var class="Vt" title="Vt">fido_dev_io_tx_t</var> function may block. On
-  success, 0 is returned. On error, -1 is returned.
+The <code class="Fn" title="Fn">fido_dev_set_io_functions</code>() function sets
+  the I/O handlers used by <i class="Em" title="Em">libfido2</i> to talk to
+  <var class="Fa" title="Fa">dev</var>. By default, these handlers are set to
+  the operating system's native HID or NFC interfaces. They are defined as
+  follows:
+<dl class="Bl-tag">
+  <dt><var class="Vt" title="Vt">fido_dev_open_t</var></dt>
+  <dd>Receives a <var class="Vt" title="Vt">const char *</var> holding a path
+      and opens the corresponding device, returning a non-NULL opaque pointer on
+      success and NULL on error.</dd>
+  <dt><var class="Vt" title="Vt">fido_dev_close_t</var></dt>
+  <dd>Receives the opaque pointer returned by
+      <var class="Vt" title="Vt">fido_dev_open_t</var> and closes the
+    device.</dd>
+  <dt><var class="Vt" title="Vt">fido_dev_read_t</var></dt>
+  <dd>Reads a single transmission unit (HID report, APDU) from a device. The
+      first parameter is the opaque pointer returned by
+      <var class="Vt" title="Vt">fido_dev_open_t</var>. The second parameter is
+      the read buffer, and the third parameter is the read buffer size. The
+      fourth parameter is the number of milliseconds the caller is willing to
+      sleep, should the call need to block. If this value holds -1,
+      <var class="Vt" title="Vt">fido_dev_read_t</var> may block indefinitely.
+      On success, the number of bytes read is returned. On error, -1 is
+      returned.</dd>
+  <dt><var class="Vt" title="Vt">fido_dev_write_t</var></dt>
+  <dd>Writes a single transmission unit (HID report, APDU) to
+      <var class="Fa" title="Fa">dev</var>. The first parameter is the opaque
+      pointer returned by <var class="Vt" title="Vt">fido_dev_open_t</var>. The
+      second parameter is the write buffer, and the third parameter is the
+      number of bytes to be written. A
+      <var class="Vt" title="Vt">fido_dev_write_t</var> may block. On success,
+      the number of bytes written is returned. On error, -1 is returned.</dd>
+</dl>
 <div class="Pp"></div>
 When calling <code class="Fn" title="Fn">fido_dev_set_io_functions</code>(), the
   <var class="Fa" title="Fa">open</var>, <var class="Fa" title="Fa">close</var>,
-  <var class="Fa" title="Fa">read</var> and
+  <var class="Fa" title="Fa">read</var>, and
   <var class="Fa" title="Fa">write</var> fields of
-  <var class="Fa" title="Fa">io</var> may not be NULL. Either
-  <var class="Fa" title="Fa">rx</var> or <var class="Fa" title="Fa">tx</var> may
-  be NULL, in which case <i class="Em" title="Em">libfido2</i> uses its
-  corresponding CTAP2 HID transport method.
+  <var class="Fa" title="Fa">io</var> may not be NULL.
 <div class="Pp"></div>
 No references to <var class="Fa" title="Fa">io</var> are held by
   <code class="Fn" title="Fn">fido_dev_set_io_functions</code>().
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_set_sigmask</code>() function may be
+  used to specify a non-NULL signal mask
+  <var class="Fa" title="Fa">sigmask</var> to be used while
+  <i class="Em" title="Em">libfido2's</i> default I/O handlers wait on
+  <var class="Fa" title="Fa">dev</var>. On UNIX-like operating systems,
+  <var class="Vt" title="Vt">fido_sigset_t</var> is defined as
+  <var class="Vt" title="Vt">sigset_t</var>. On Windows,
+  <var class="Vt" title="Vt">fido_sigset_t</var> is defined as
+  <var class="Vt" title="Vt">int</var> and
+  <code class="Fn" title="Fn">fido_dev_set_sigmask</code>() is a no-op.
+<div class="Pp"></div>
+No references to <var class="Fa" title="Fa">sigmask</var> are held by
+  <code class="Fn" title="Fn">fido_dev_set_sigmask</code>().
 <h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
   VALUES</a></h1>
-On success, <code class="Fn" title="Fn">fido_dev_set_io_functions</code>()
-  returns <code class="Dv" title="Dv">FIDO_OK</code>. On error, a different
-  error code defined in
+On success, <code class="Fn" title="Fn">fido_dev_set_io_functions</code>() and
+  <code class="Fn" title="Fn">fido_dev_set_sigmask</code>() return
+  <code class="Dv" title="Dv">FIDO_OK</code>. On error, a different error code
+  defined in
   <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>
   is returned.</div>
 <table class="foot">
