@@ -1,0 +1,192 @@
+<style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+    div.Nd, div.Bf, div.Op { display: inline; }
+    span.Pa, span.Ad { font-style: italic; }
+    span.Ms { font-weight: bold; }
+    dl.Bl-diag > dt { font-weight: bold; }
+    code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn,
+    code.Cd { font-weight: bold; font-family: monospace; }
+    var { font-family: monospace; }
+    .Sh { font-size: 1.5em; padding-top: 1em; padding-bottom: 1em; }
+</style>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">FIDO_LARGEBLOB_GET(3)</td>
+    <td class="head-vol">Library Functions Manual</td>
+    <td class="head-rtitle">FIDO_LARGEBLOB_GET(3)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm" title="Nm">fido_dev_largeblob_get</code>,
+  <code class="Nm" title="Nm">fido_dev_largeblob_set</code>,
+  <code class="Nm" title="Nm">fido_dev_largeblob_remove</code>,
+  <code class="Nm" title="Nm">fido_dev_largeblob_get_array</code>,
+  <code class="Nm" title="Nm">fido_dev_largeblob_set_array</code> &#x2014;
+<div class="Nd" title="Nd">FIDO 2 large blob API</div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In" title="In">#include
+  &lt;<a class="In" title="In">fido.h</a>&gt;</code>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_largeblob_get</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *key_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t key_len</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">unsigned char
+  **blob_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t
+  *blob_len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_largeblob_set</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *key_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t key_len</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const unsigned char
+  *blob_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t blob_len</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *pin</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_largeblob_remove</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *key_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t key_len</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *pin</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_largeblob_get_array</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">unsigned
+  char **cbor_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t
+  *cbor_len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_largeblob_set_array</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *cbor_ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t cbor_len</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *pin</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The &#x201C;largeBlobs&#x201D; API of <i class="Em" title="Em">libfido2</i>
+  allows binary blobs residing on a FIDO 2.1 authenticator to be read, written,
+  and inspected. &#x201C;largeBlobs&#x201D; is a FIDO 2.1 extension.
+<div class="Pp"></div>
+&#x201C;largeBlobs&#x201D; are stored as elements of a CBOR array.
+  Confidentiality is ensured by encrypting each element with a distinct,
+  credential-bound 256-bit AES-GCM key. The array is otherwise shared between
+  different credentials and FIDO2 relying parties.
+<div class="Pp"></div>
+Retrieval of a credential's encryption key is possible during enrollment with
+  <a class="Xr" title="Xr" href="fido_cred_set_extensions.html">fido_cred_set_extensions(3)</a>
+  and
+  <a class="Xr" title="Xr" href="fido_cred_largeblob_key_ptr.html">fido_cred_largeblob_key_ptr(3)</a>,
+  during assertion with
+  <a class="Xr" title="Xr" href="fido_assert_set_extensions.html">fido_assert_set_extensions(3)</a>
+  and
+  <a class="Xr" title="Xr" href="fido_assert_largeblob_key_ptr.html">fido_assert_largeblob_key_ptr(3)</a>,
+  or, in the case of a resident credential, via
+  <i class="Em" title="Em">libfido2's</i> credential management API.
+<div class="Pp"></div>
+The &#x201C;largeBlobs&#x201D; CBOR array is opaque to the authenticator.
+  Management of the array is left at the discretion of FIDO2 clients. For
+  further details on FIDO 2.1's &#x201C;largeBlobs&#x201D; extension, please
+  refer to the FIDO 2.1 spec.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_largeblob_get</code>() function
+  retrieves the authenticator's &#x201C;largeBlobs&#x201D; CBOR array and, on
+  success, returns the first blob (iterating from array index zero) that can be
+  decrypted by <var class="Fa" title="Fa">key_ptr</var>, where
+  <var class="Fa" title="Fa">key_ptr</var> points to
+  <var class="Fa" title="Fa">key_len</var> bytes. On success,
+  <code class="Fn" title="Fn">fido_dev_largeblob_get</code>() sets
+  <var class="Fa" title="Fa">blob_ptr</var> to the body of the decrypted blob,
+  and <var class="Fa" title="Fa">blob_len</var> to the length of the decrypted
+  blob in bytes. It is the caller's responsibility to free
+  <var class="Fa" title="Fa">blob_ptr</var>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_largeblob_set</code>() function uses
+  <var class="Fa" title="Fa">key_ptr</var> to encrypt
+  <var class="Fa" title="Fa">blob_ptr</var> and inserts the result in the
+  authenticator's &#x201C;largeBlobs&#x201D; CBOR array. Insertion happens at
+  the end of the array if no existing element can be decrypted by
+  <var class="Fa" title="Fa">key_ptr</var>, or at the position of the first
+  element (iterating from array index zero) that can be decrypted by
+  <var class="Fa" title="Fa">key_ptr</var>.
+  <var class="Fa" title="Fa">key_len</var> holds the length of
+  <var class="Fa" title="Fa">key_ptr</var> in bytes, and
+  <var class="Fa" title="Fa">blob_len</var> the length of
+  <var class="Fa" title="Fa">blob_ptr</var> in bytes. A
+  <var class="Fa" title="Fa">pin</var> or equivalent user-verification gesture
+  is required.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_largeblob_remove</code>() function
+  retrieves the authenticator's &#x201C;largeBlobs&#x201D; CBOR array and, on
+  success, drops the first blob (iterating from array index zero) that can be
+  decrypted by <var class="Fa" title="Fa">key_ptr</var>, where
+  <var class="Fa" title="Fa">key_ptr</var> points to
+  <var class="Fa" title="Fa">key_len</var> bytes. A
+  <var class="Fa" title="Fa">pin</var> or equivalent user-verification gesture
+  is required.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_largeblob_get_array</code>() function
+  retrieves the authenticator's &#x201C;largeBlobs&#x201D; CBOR array and, on
+  success, sets <var class="Fa" title="Fa">cbor_ptr</var> to the body of the
+  CBOR array, and <var class="Fa" title="Fa">cbor_len</var> to its corresponding
+  length in bytes. It is the caller's responsibility to free
+  <var class="Fa" title="Fa">cbor_ptr</var>.
+<div class="Pp"></div>
+Finally, the <code class="Fn" title="Fn">fido_dev_largeblob_set_array</code>()
+  function sets the authenticator's &#x201C;largeBlobs&#x201D; CBOR array to the
+  data pointed to by <var class="Fa" title="Fa">cbor_ptr</var>, where
+  <var class="Fa" title="Fa">cbor_ptr</var> points to
+  <var class="Fa" title="Fa">cbor_len</var> bytes. A
+  <var class="Fa" title="Fa">pin</var> or equivalent user-verification gesture
+  is required.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+The functions <code class="Fn" title="Fn">fido_dev_largeblob_set</code>(),
+  <code class="Fn" title="Fn">fido_dev_largeblob_get</code>(),
+  <code class="Fn" title="Fn">fido_dev_largeblob_remove</code>(),
+  <code class="Fn" title="Fn">fido_dev_largeblob_get_array</code>(), and
+  <code class="Fn" title="Fn">fido_dev_largeblob_set_array</code>() return
+  <code class="Dv" title="Dv">FIDO_OK</code> on success. On error, an error code
+  defined in
+  <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>
+  is returned.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="fido_assert_largeblob_key_len.html">fido_assert_largeblob_key_len(3)</a>,
+  <a class="Xr" title="Xr" href="fido_assert_largeblob_key_ptr.html">fido_assert_largeblob_key_ptr(3)</a>,
+  <a class="Xr" title="Xr" href="fido_assert_set_extensions.html">fido_assert_set_extensions(3)</a>,
+  <a class="Xr" title="Xr" href="fido_cred_largeblob_key_len.html">fido_cred_largeblob_key_len(3)</a>,
+  <a class="Xr" title="Xr" href="fido_cred_largeblob_key_ptr.html">fido_cred_largeblob_key_ptr(3)</a>,
+  <a class="Xr" title="Xr" href="fido_cred_set_extensions.html">fido_cred_set_extensions(3)</a>,
+  <a class="Xr" title="Xr" href="fido_credman_dev_get_rk.html">fido_credman_dev_get_rk(3)</a>,
+  <a class="Xr" title="Xr" href="fido_credman_dev_get_rp.html">fido_credman_dev_get_rp(3)</a>,
+  <a class="Xr" title="Xr" href="fido_dev_get_assert.html">fido_dev_get_assert(3)</a>,
+  <a class="Xr" title="Xr" href="fido_dev_make_cred.html">fido_dev_make_cred(3)</a>
+<h1 class="Sh" title="Sh" id="CAVEATS"><a class="permalink" href="#CAVEATS">CAVEATS</a></h1>
+The &#x201C;largeBlobs&#x201D; extension is not meant to be used to store
+  sensitive data. When retrieved, a credential's &#x201C;largeBlobs&#x201D;
+  encryption key is transmitted in the clear, and an authenticator's
+  &#x201C;largeBlobs&#x201D; CBOR array can be read without user interaction or
+  verification.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">October 26, 2020</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
