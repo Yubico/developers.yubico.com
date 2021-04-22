@@ -62,6 +62,41 @@ link:https://keys.openpgp.org/search?q=9aa9bdb11bb1b99a21285a330664a76954265e8c[
 link:https://keys.openpgp.org/search?q=dcb904fab343cfa719076ef79ea90242958e0658[`DCB9 04FA B343 CFA7 1907  6EF7 9EA9 0242 958E 0658`]
 
 
+==== Verifying signatures with GnuPG
+
+The list above lists primary key fingerprints, but GnuPG may print a
+subkey fingerprint if you attempt to verify a signature made with an
+unknown key. You can use `gpg --recv-keys` to download the necessary
+key:
+
+........
+$ gpg --verify yubioath-desktop-5.0.5.tar.gz.sig
+gpg: assuming signed data in 'yubioath-desktop-5.0.5.tar.gz'
+gpg: Signature made tor 15 apr 2021 16:23:47 CEST
+gpg:                using RSA key D6919FBF48C484F3CB7B71CD870B88256690D8BC
+gpg: Can't check signature: No public key
+
+$ gpg --recv-keys D6919FBF48C484F3CB7B71CD870B88256690D8BC
+gpg: key 5CBA11E6ADC7BCD1: public key "Dennis Fokin <dennis.fokin@yubico.com>" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+
+$ gpg --verify yubioath-desktop-5.0.5.tar.gz.sig
+gpg: assuming signed data in 'yubioath-desktop-5.0.5.tar.gz'
+gpg: Signature made tor 15 apr 2021 16:23:47 CEST
+gpg:                using RSA key D6919FBF48C484F3CB7B71CD870B88256690D8BC
+gpg: Good signature from "Dennis Fokin <dennis.fokin@yubico.com>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 9E88 5C03 02F9 BB91 6752  9C2D 5CBA 11E6 ADC7 BCD1
+     Subkey fingerprint: D691 9FBF 48C4 84F3 CB7B  71CD 870B 8825 6690 D8BC
+........
+
+You can then verify this `Primary key fingerprint` against the list
+above. You can safely ignore the above warning if you have manually
+verified the primary key fingerprint.
+
+
 === Windows Software Signing
 
 Our Windows executables are signed with one of two code signing certificates,
