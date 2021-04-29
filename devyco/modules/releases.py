@@ -37,15 +37,9 @@ def remove_suffixes(part):
 
 
 def remove_classifier(part):
-    split = part.rsplit('-', 2)
-    if len(split) == 3:
-        if split[2] in CLASSIFIERS:
-            p = split[0] + "-" + split[1]
-            return p, split[2]
-        else:
-            c = split[1] + "-" + split[2]
-            if c in CLASSIFIERS:
-                return split[0], c
+    for c in CLASSIFIERS:
+        if part.endswith("-" + c):
+            return  part[:-(len(c) + 1)], c
     return part, None
 
 
