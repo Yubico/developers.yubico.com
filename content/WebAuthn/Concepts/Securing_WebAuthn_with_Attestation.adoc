@@ -2,6 +2,8 @@
 
 
 === What is Attestation?
+Attestation is built-in to the FIDO and WebAuthn protocols, which enables each service provider to use a cryptographically verified chain of trust from the device’s manufacturer to choose which security keys to trust, or to be more skeptical of, based on their individual needs and concerns.
+
 One of the most significant challenges any web-facing site or service has with user authentication is ensuring the user is practicing good habits with their authentication mechanisms. A great deal of effort has been invested to ensure users use strong, hard to guess passwords, but this cannot protect against users looking for shortcuts - re-using passwords across multiple sites, creating simple passwords which technically meet the recommendations and the like. With WebAuthn, this is no longer a concern, as the user’s authenticator ensures a strong authentication - if the authenticator itself meets the requirements.
 
 To address this without compromising a user’s privacy, WebAuthn supports device link:https://developers.yubico.com/WebAuthn/WebAuthn_Developer_Guide/Attestation.html[Attestation]. Relying Parties can request on authenticator registration that the WebAuthn Authenticator device send an Attestation certificate. This certificate contains identifying information about the Authenticator type (the GU and the credential being registered, signed with a private key unique to the manufacturer. Uniquely identifying information, such as serial number or user information is not shared. The relying party can validate the attestation certificate against the publicly registered WebAuthn attestation keys, and identify the manufacturer and model of the WebAuthn Authenticator being used.
@@ -17,6 +19,27 @@ Further, services with regulatory restrictions on the types of devices which are
 Alternatively, relying parties may utilize attestation to take proactive actions to ensure their users are not securing their accounts with flawed authenticators. By using attestation with a *deny list*, authenticators with known flaws or vulnerabilities may be prevented from being used. Further, by recording the attestation metadata at registration, users who may have already registered an authenticator before a flaw is found may be identified and actions can be taken to secure their accounts. This can range from presenting a warning to users about their vulnerabilities, to restricting permissions for sessions authenticated with a vulnerable authenticator, to preventing such an authenticator from being accepted at all.
 
 In short, attestation provides a tool to sites or services to be proactive in protecting their user’s accounts, and grants a measure of control to ensure users follow best practices. Even if there is no immediate need to use attestation data, by having it on hand it opens the options to do so in the future.
+
+
+=== Recommendations
+In order to enable the most flexibility and security, Yubico recommends that administrators and developers configure or build the following into their systems:
+
+. Request “direct” attestation and store responses in your authentication system, but do not require it unless necessary.
++
+Direct attestation responses are provided only during credential registration, and allow your service to know the details (e.g. make, model, and version) of the devices being used with your service. Even if you don’t parse them now, you can store them and validate them for later use in risk-based and auditing decisions.
+
+. If you need to require direct attestation, validate the signature of the attestation when it is provided, and use a deny list of authenticators you know to cause issues or to be unsafe, rather than an allow list.
++
+Make sure to notify people who are using authenticators that you are more skeptical of, or are disallowing, in a way that informs them why this was done if possible.
++
+You can find the root certificates used to sign attestations on manufacturer websites (Yubico’s is here[https://developers.yubico.com/U2F/yubico-u2f-ca-certs.txt]) or in the link:https://fidoalliance.org/metadata/[FIDO metadata service version 3].
+
+. If you need to use an allow list, validate the signature of the attestation when it is provided as listed above. Make sure to allow all, or a subset based on your criteria, of the authenticators listed in the link:https://fidoalliance.org/metadata/[FIDO metadata service version 3], and stay up to date with changes in the metadata service’s list.
++
+Specifically, we recommend you notify administrators of changes in the MDS data so they can make informed decisions about what to do if a new device is added or if one is removed. Define a policy for user impact in the event a registered authenticator has been removed or otherwise flagged as unsafe, allowing for continued access to protected accounts while providing incentive for the user to remove suspect credentials and replace them with ones tied to approved authenticators.
++
+Automated addition of new devices might be reasonable depending on your requirements, but we recommend against automated removal in the unlikely event there are MDS issues or errors.
+
 
 === Attestation Allow/Deny List Maintenance
 If using an Attestation Allow or Deny List to direct a user’s authentication flow, it is important to keep your list up to date. This ensures new devices entering the market are accepted, while also ensuring newly discovered vulnerabilities are also taken into account. There are a number of methods which can be used, including:
