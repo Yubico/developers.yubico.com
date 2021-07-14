@@ -21,7 +21,7 @@ link:https://aws.amazon.com/secrets-manager/[AWS Secrets Manager] with limited I
 
 ==== Database Entity Relationship
 
-image::back0-DetailedBack-EndSystemDesign-v1.jpg[]
+image::Images/back0-DetailedBack-EndSystemDesign-v1.jpg[]
 *Figure 1 -  Database entity relationship detail*
 
 The [credential].[pubicKey] will be stored as a JSON Web Key (JWK). The authenticator returns the PublicKey to the RP as an ArrayBuffer (binary). The WebAuthn Starter kit uses the
@@ -84,7 +84,7 @@ Database creation scripts available via GitHub (Source).
 The WebAuthn Starter Kit is includes 3 Lambda functions used as triggers by the Amazon Cognito Custom Authentication flow. Note that each Lambda service has a unique role, allowing it to only communicate with the other Lambda services related to the WebAuthn Authentication flow, and prohibiting communication with others.
 
 
-image::back1-congnito-user-pool-lambda-triggers-v1.png[]
+image::Images/back1-congnito-user-pool-lambda-triggers-v1.png[]
 *Figure 2 - Cognito User Pool Lamba Triggers*
 
 *Define Challenge:* Defines the type of challenge based on the user behavior (Add new Authenticator or Login).
@@ -95,7 +95,7 @@ image::back1-congnito-user-pool-lambda-triggers-v1.png[]
 
 === Registration
 
-image::back6-registration-flow-v1.jpg[]
+image::Images/back6-registration-flow-v1.jpg[]
 *Figure 3 - Registration flow*
 
 The registration & authentication operations are serverless functions which integrate with the AWS Cognito custom authentication flow hooks. The functions either add a credential to the authenticated user’s list of WebAuthn credentials stored in the database or authenticate an existing credential depending on the user flow. With a custom authentication flow, the challenges and verification of the responses are controlled via three AWS Lambda triggers. The *DefineAuthChallenge* Lambda trigger takes as input a session array of previous challenges and responses and outputs the next challenge name and booleans indicating if the user is authenticated (and should be granted tokens) or if the authentication has failed. This Lambda trigger is a state machine that controls the user’s path through the challenges.
@@ -107,14 +107,14 @@ New user “fred” launches the app for the first time, types “Fred” into t
 
 ===== Pre Sign-up
 
-image::back2-pre-sign-up-v1.png[]
+image::Images/back2-pre-sign-up-v1.png[]
 *Figure 4 - Pre sign-up*
 
 A one-task function to verify the account. This function allows for the custom challenges to be sent from Cognito.
 
 ===== DefineChallenge: ***Received*** from Client via Cognito
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 5 - Define Auth Challenge Received from Client*
 
 Cognito, after receiving the registration request from the client, triggers the DefineChallenge Lambda function to determine which flow to use - as the user is prompted to register a new WebAuthn Authenticator, it selects the Registration flow.
@@ -169,7 +169,7 @@ The DefineChallenge Lambda function sends the details to the CreateChallenge fun
 
 ===== CreateChallenge: ***Received*** from DefineChallenge
 
-image::back4-create-auth-challenge-v1.png[]
+image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 7 - Create Auth Challenge Received*
 
 The CreateChallenge Lambda function receives the details from the DefineChallenge function and proceeds to creating the WebAuthn Registration event.
@@ -193,7 +193,7 @@ The CreateChallenge Lambda function receives the details from the DefineChalleng
 
 ===== CreateChallenge: ***Response*** from CreateChallenge to Client
 
-image::back4-create-auth-challenge-v1.png[]
+image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 8 - Create Auth Challenge Response from Client*
 
 CreateChallenge returns to Cognito the challenge with the WebAuthn Registration credential, as well as a default PIN code should User Verification not be supported by the client authenticator.
@@ -234,7 +234,7 @@ This challenge is then sent by Cognito to the client’s WebAuthn supporting bro
 
 ===== VerifyChallenge: ***Received*** from Client
 
-image::back5-verify-auth-challenge-v1.png[]
+image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 9 - Verify Auth Challenge Received from Client*
 
 Once Cognito receives the Registration response from the Client as a challenge response, which is then passed to the VerifyChallange Lambda function. Note that the “challengeAnswer” is ALL provided from the client.
@@ -296,7 +296,7 @@ wCVK\\/M184r+9gW2HPIlggl9V1rsYi6KXenVDxLvejpxb7tR+1PCdzISGhPqgWfD8=\",
 
 ===== VerifyChallenge: ***Returned*** to DefineAuthChallenge
 
-image::back5-verify-auth-challenge-v1.png[]
+image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 10 - Verify Auth Challenge Returned*
 
 The VerifyChallenge will proceed to verify the WebAuthn Registration. If User Verification is not supported by the client or authenticator, it will also define the server pinCode as required, enforcing the user to provide a network pin for each authentication event with the authenticator. This response is then passed to the DefineCredential function.
@@ -346,7 +346,7 @@ wCVK\\/M184r+9gW2HPIlggl9V1rsYi6KXenVDxLvejpxb7tR+1PCdzISGhPqgWfD8=\",
 
 ===== DefineChallenge: ***Received*** from VerifyAuthChallenge
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 11 - Define Auth Challenge Received from Verify Challenge*
 
 The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, will then either require the user’s network PIN to be provided, or proceed if User Verification is supported on the WebAuthn registration.
@@ -374,7 +374,7 @@ The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, w
 
 ===== DefineChallenge: ***Returned*** from DefineAuthChallenge to User
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 12 - Define Auth Challenge Returned to User*
 
 Finally, DefineChallenge returns a success response and token approval to Cognito. Cognito passes on the success status and auth token to the client.
@@ -403,7 +403,7 @@ Finally, DefineChallenge returns a success response and token approval to Cognit
 
 === Authentication
 
-image::back7-authentication-flow-v1.jpg[]
+image::Images/back7-authentication-flow-v1.jpg[]
 *Figure 13 - Authentication flow*
 
 ==== Example Authentication for an Existing Account
@@ -412,7 +412,7 @@ User “fred” launches the app for the after initial creation, types “Fred�
 
 ===== DefineChallenge: ***Received*** from Client via Cognito
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 14 - Define Auth Challenge Received from Client*
 
 Cognito, after receiving the authentication request from the client, triggers the DefineChallenge Lambda function to determine which flow to use -as the user is prompted to authenticate with a register WebAuthn Authenticator, it selects the Authenticate flow.
@@ -451,7 +451,7 @@ Cognito, after receiving the authentication request from the client, triggers th
 
 ===== DefineChallenge: ***Returned*** from DefineChallenge
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 15 - Define Auth Challenge Returned*
 
 The DefineChallenge Lambda function sends the details to the CreateChallenge function, prompting the creation of a WebAuthn Authentication event.
@@ -468,7 +468,7 @@ The DefineChallenge Lambda function sends the details to the CreateChallenge fun
 
 ===== CreateChallenge: ***Received*** from DefineChallenge
 
-image::back4-create-auth-challenge-v1.png[]
+image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 16 - Create Auth Challenge Received*
 
 The CreateChallenge Lambda function receives the details from the DefineChallenge function and proceeds to creating the WebAuthn Authentication event.
@@ -492,7 +492,7 @@ The CreateChallenge Lambda function receives the details from the DefineChalleng
 
 ===== CreateChallenge: ***Response*** from CreateChallenge to Client
 
-image::back4-create-auth-challenge-v1.png[]
+image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 17 - Create Auth Challenge Response to Client*
 
 CreateChallenge returns to Cognito the challenge with the WebAuthn Authentication challenge.
@@ -529,7 +529,7 @@ This challenge is then sent by Cognito to the client’s WebAuthn supporting bro
 
 ===== VerifyChallenge: ***Received*** from Client
 
-image::back5-verify-auth-challenge-v1.png[]
+image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 18 - Verify Auth Challenge Received from Client*
 
 Once Cognito receives the Authentication response, containing the authenticator response and client data, from the Client as a challenge response, which is then passed to the VerifyChallange Lambda function. Note that the “challengeAnswer” is ALL provided from the client.
@@ -572,7 +572,7 @@ signature\" : \"MEQCICOiVRdbKHuSJwHN6qf5I8TroBhxqeHWtRhgtW+kg\\
 
 ===== VerifyChallenge: ***Returned*** to DefineAuthChallenge
 
-image::back5-verify-auth-challenge-v1.png[]
+image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 19 - Verify Auth Challenge Returned*
 
 The VerifyChallenge will proceed to verify the WebAuthn Authentication.
@@ -600,7 +600,7 @@ signature\" : \"MEQCICOiVRdbKHuSJwHN6qf5I8TroBhxqeHWtRhgtW+kg\\
 
 ===== DefineChallenge: ***Received*** from VerifyAuthChallenge
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 20 - Define Auth Challenge Received*
 
 The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, will then either require the user’s network PIN to be provided, or proceed if User Verification is supported on the WebAuthn registration.
@@ -628,7 +628,7 @@ The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, w
 
 ===== DefineChallenge: ***Returned*** from DefineAuthChallenge to User
 
-image::back3-define-auth-challenge-v1.png[]
+image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 21 - Define Auth Challenge Returned to User*
 
 Finally, DefineChallenge returns a success response and token approval to Cognito. Cognito passes on the success status and auth token to the client.
