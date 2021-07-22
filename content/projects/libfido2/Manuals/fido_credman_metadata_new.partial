@@ -38,6 +38,7 @@
   <code class="Nm" title="Nm">fido_credman_rp_id_hash_len</code>,
   <code class="Nm" title="Nm">fido_credman_get_dev_metadata</code>,
   <code class="Nm" title="Nm">fido_credman_get_dev_rk</code>,
+  <code class="Nm" title="Nm">fido_credman_set_dev_rk</code>,
   <code class="Nm" title="Nm">fido_credman_del_dev_rk</code>,
   <code class="Nm" title="Nm">fido_credman_get_dev_rp</code> &#x2014;
 <div class="Nd" title="Nd">FIDO 2 credential management API</div>
@@ -144,12 +145,17 @@
 <div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
-<code class="Fn" title="Fn">fido_credman_del_dev_rk</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+<code class="Fn" title="Fn">fido_credman_set_dev_rk</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
   *dev</var>,
-  <var class="Fa" title="Fa" style="white-space: nowrap;">const</var>,
-  <var class="Fa" title="Fa" style="white-space: nowrap;">unsigned</var>,
-  <var class="Fa" title="Fa" style="white-space: nowrap;">char</var>,
-  <var class="Fa" title="Fa" style="white-space: nowrap;">*cred_id&quot;</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  char *pin</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_credman_del_dev_rk</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *cred_id</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t
   cred_id_len</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">const char
@@ -164,10 +170,10 @@
   *pin</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 The credential management API of <i class="Em" title="Em">libfido2</i> allows
-  resident credentials on a FIDO2 authenticator to be listed, inspected, and
-  removed. Please note that not all FIDO2 authenticators support credential
-  management. To obtain information on what an authenticator supports, please
-  refer to
+  resident credentials on a FIDO2 authenticator to be listed, inspected,
+  modified, and removed. Please note that not all FIDO2 authenticators support
+  credential management. To obtain information on what an authenticator
+  supports, please refer to
   <a class="Xr" title="Xr" href="fido_cbor_info_new.html">fido_cbor_info_new(3)</a>.
 <div class="Pp"></div>
 The <var class="Vt" title="Vt">fido_credman_metadata_t</var> type abstracts
@@ -230,6 +236,16 @@ The <code class="Fn" title="Fn">fido_credman_rk_count</code>() function returns
   <var class="Fa" title="Fa">rk</var> has an
   <var class="Fa" title="Fa">idx</var> (index) value of 0.
 <div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_credman_set_dev_rk</code>() function
+  updates the credential pointed to by <var class="Fa" title="Fa">cred</var> in
+  <var class="Fa" title="Fa">dev</var>. The credential id and user id attributes
+  of <var class="Fa" title="Fa">cred</var> must be set. See
+  <a class="Xr" title="Xr" href="fido_cred_set_id.html">fido_cred_set_id(3)</a>
+  and
+  <a class="Xr" title="Xr" href="fido_cred_set_user.html">fido_cred_set_user(3)</a>
+  for details. Only a credential's user attributes (name, display name) may be
+  updated at this time.
+<div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_credman_del_dev_rk</code>() function
   deletes the resident credential identified by
   <var class="Fa" title="Fa">cred_id</var> from
@@ -283,6 +299,7 @@ The <code class="Fn" title="Fn">fido_credman_rp_id_hash_ptr</code>() function
   VALUES</a></h1>
 The <code class="Fn" title="Fn">fido_credman_get_dev_metadata</code>(),
   <code class="Fn" title="Fn">fido_credman_get_dev_rk</code>(),
+  <code class="Fn" title="Fn">fido_credman_set_dev_rk</code>(),
   <code class="Fn" title="Fn">fido_credman_del_dev_rk</code>(), and
   <code class="Fn" title="Fn">fido_credman_get_dev_rp</code>() functions return
   <code class="Dv" title="Dv">FIDO_OK</code> on success. On error, a different
@@ -293,16 +310,11 @@ The <code class="Fn" title="Fn">fido_credman_get_dev_metadata</code>(),
 <h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
 <a class="Xr" title="Xr" href="fido_cbor_info_new.html">fido_cbor_info_new(3)</a>,
-  <a class="Xr" title="Xr" href="fido_cred_new.html">fido_cred_new(3)</a>
+  <a class="Xr" title="Xr" href="fido_cred_new.html">fido_cred_new(3)</a>,
+  <a class="Xr" title="Xr" href="fido_dev_supports_credman.html">fido_dev_supports_credman(3)</a>
 <h1 class="Sh" title="Sh" id="CAVEATS"><a class="permalink" href="#CAVEATS">CAVEATS</a></h1>
-Credential management is a tentative feature of FIDO 2.1. Applications willing
-  to strictly abide by FIDO 2.0 should refrain from using credential management.
-  Applications using credential management should ensure it is supported by the
-  authenticator prior to using the API. Since FIDO 2.1 hasn't been finalised,
-  there is a chance the functionality and associated data structures may change.
-<div class="Pp"></div>
-Resident credentials are called &#x201C;discoverable credentials&#x201D; in
-  FIDO2.1.</div>
+Resident credentials are called &#x201C;discoverable credentials&#x201D; in FIDO
+  2.1.</div>
 <table class="foot">
   <tr>
     <td class="foot-date">June 28, 2019</td>
