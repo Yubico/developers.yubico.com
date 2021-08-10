@@ -1,0 +1,81 @@
+== Configuring Git
+
+*Step 1:* To use Git with SSH on Windows,
+link:https://git-scm.com/downloads>[download and install the Git client] on your machine. 
+
+*Step 2:* Check the ``general-key-id`` and ``authentication-key-id`` of the PGP keys at the YubiKey by running the command:
+
+  gpg --card-status
+
+Example response:
+
+image::/graphics/gpg-card-status-response.png[]
+
+The authentication-key-id in this example is ``B28F B5D2 9E6C 37FD 7E84  3CA4 6849 79BD 3F2F 3A7A``. The general-key-id in this example is ``840EB535F08D8A5F``.
+
+*Step 3:* Export the GPG/SSH public key to a file by running the command:
+
+  gpg --export-ssh-key <authentication-key-id> > ssh_auth_key.pub
+
+Example command:
+
+image::/graphics/gpg-export-ssh-key-cmd.png[]
+
+
+The ``ssh_auth_key.pub`` in this example is:
+
+    ssh-rsa 
+    AAAAB3NzaC1yc2E... 
+    openpgp:0x3F2F3A7A
+
+*Step 4:* If the GPG public key is not yet configured in GitHub, export the GPG key from the YubiKey by running the command:
+
+``gpg -o <GPG-public-key-file> --armor --export <general-key-id>``
+
+Example command:
+
+image::/graphics/gpg-pub-key-cmd.png[]
+
+The ``gpg-key.pub`` in this example is:
+
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+    mQENBGDkNIEBCACqX3aZxtO4lQ6U...
+    -----END PGP PUBLIC KEY BLOCK-----
+
+
+*Step 5:* Log in to your
+link:https://github.com/[GitHub account] at the web, select **Settings** and the option **SSH and GPG keys**.
+
+image::/graphics/github-login-gpg-ssh-keys.png[]
+
+
+*Step 6:* If the GPG key is not yet configured, upload it to GitHub as described on this
+link:https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/adding-a-new-gpg-key-to-your-github-account[web page]. Copy the GPG public key that was recently exported from the YubiKey, paste it into GitHub’s entry for **GPG keys / Add new**, and press the button **Add GPG key**.
+
+image::/graphics/github-gpg-keys-add-new.png[]
+
+
+*Step 7:* Upload the SSH/GPG key to GitHub as described on this
+link:https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account[web page]. Copy the GPG/SSH public key that was recently exported from the YubiKey, paste it into GitHub’s entry for **SSH keys / Add new**, and press the button **Add SSH key**.
+
+image::/graphics/github-ssh-keys-add-new.png[]
+
+
+A successful configuration of GPG and SSH at GitHub should look like this:
+
+image::/graphics/github-gpg-ssh-keys-added.png[]
+
+
+*Step 8:* Access GitHub by using the Git client over SSH with the YubiKey. All commands supported by the Git client can be used for managing the GitHub account.
+
+For example, you can use the ``git clone`` command to clone a repository:
+
+  git clone <URL to GitHub repository>
+
+image::/graphics/git-clone-cmd.png[]
+
+
+Optionally, you can also
+link:https://6xgate.github.io/TortoisePlink/[download and install Tortoise Plink]. Tortoise Plink provides additional features to the Git GUI using the command-line tools.
+
+link:using-cygwin-gpg4win.adoc[Next: Using Cygwin with GPG4Win]
