@@ -45,19 +45,13 @@ audit enforce is set) (2 bytes)
 
 N := Number of elements in the list (1 byte)
 
-E~i~ := Generic log entry composed of
+E~i~ := Generic log entry composed of the command number (two bytes), command ID (one byte),
+command length (two bytes), the Session originating the command (two bytes), the target key affected
+by the command (two bytes), a secondary key if the command affected more than one key (two bytes),
+the result of the command (one byte), the systick when the command was processed (4 bytes) and a digest (16 bytes). If the
+command was unsuccessful, the result byte will instead contain the error code.
 
-* Command number (two bytes)
-* Command ID (one byte)
-* Command length (two bytes)
-* ID of the originating session's authentication key (two bytes)
-* Target key affected by the command (two bytes)
-* Secondary key if the command affected more than one key (two bytes)
-* Result of the command on success or an error code if unsuccessful (one byte)
-* Systick when the command was processed (4 bytes)
-* Digest (16 bytes)
-
-The digest is computed as trunc(16, SHA256(E~i~.Data || trunc(16, E~i-1~.Digest))).
+The digest is computed as trunc(16, SHA256(E~i~ || trunc(16, SHA256(E~i-1~)))).
 For the initial log entry, a random string of 32 bytes is used, instead of the
 digest of the previous message.
 

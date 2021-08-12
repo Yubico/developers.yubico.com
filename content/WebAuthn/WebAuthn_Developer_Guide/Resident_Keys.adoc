@@ -1,47 +1,10 @@
-== Discoverable Credentials / Resident Keys
-WebAuthn enables high assurance multi-factor authentication with a passwordless login experience. One of the things that enables this is what is called Discoverable Credentials, also referred to as resident keys.
+== Resident Keys
+WebAuthn enables high assurance multi-factor authentication with a passwordless login experience. One of the things that enables this is what is called resident keys.
 
-Discoverable Credential means that the private key and associated metadata is stored in persistent memory on the authenticator, instead of encrypted and stored on the relying party server. If the credentials were stored on the server, then the server would need to return that to the authenticator before the authenticator could decrypt and use it. This would mean that the user would need to provide a username to identify which credential to provide, and usually also a password to verify their identity.
+Resident key means that the private key is stored in persistent memory on the authenticator, instead of encrypted and stored on the relying party server. If the key were stored on the server, then the server would need to return that to the authenticator before the authenticator could decrypt and use it. This would mean that the user would need to provide a username, and usually also a password.
 
-With discoverable credentials, the RP generates a user handle containing a unique identifier, the `user.id` property in `PublicKeyCredentialCreationOptions`. The user handle and private key are stored in persistent memory *on* the authenticator during the registration ceremony. During the authentication ceremony the authenticator returns the user handle, allowing the RP to look up the associated user. This means that the user does not need to enter a username to login. 
+With resident keys, the RP generates a user handle containing a unique identifier, the `user.id` property in `PublicKeyCredentialCreationOptions`. The user handle and private key are stored in persistent memory *on* the authenticator during the registration ceremony. During the authentication ceremony the authenticator returns the user handle, allowing the RP to look up the associated user. This means that the user does not need to enter a username to login. 
 
 A username-less flow might look something like this: The user goes to the login page, plugs in the authenticator, and taps the button, and then they are logged in. This is called a “first-factor” authentication. If the authenticator also supports PIN or biometric verification, you can get high assurance multi-factor authentication in a single login step with no passwords sent over the wire.
-
-=== Credential Management
-Credential Management allows the WebAuthn Client to display the credentials that reside on the YubiKey with firmware 5.2.3 and above so that the user can act upon them.  The client can display each credential's relying party information and credential descriptor, as well as the number of discoverable credentials on the authenticator.  Credential management does not have the capability to display non-discoverable keys (including U2F based credentials) as that information is not stored on the authenticator in any fashion.  
-
-The Client to Authenticator Protocol (CTAP 2) defines the information that the client can retrieve from the authenticator.  The client can retrieve the following information from the authenticator.
-
-* Number of existing discoverable credentials present on the authenticator
-* Number of maximum possible remaining discoverable credentials which can be created on the authenticator
-* Relying Party Information
-* RPID SHA-256 hash
-* Total number of RPs present on the authenticator
-* UserID
-* Total number of discoverable credentials present on the authenticator for the RP in question
-* PublicKeyCredentialDescriptor
-* Public key of the credential
-* Credential protection policy
-
-=== Credential Protection
-To counterbalance the function to enumerate FIDO2 discoverable credentials, the Credential Protection extension was introduced to improve privacy on YubiKeys with firmware 5.2.3 and above. 
-
-Credentials stored on an FIDO2 authenticator may be read to get basic information about them. Using the ‘GetInfo’  command, the authenticator will list the relying parties that have a credential stored on that authenticator. 
-
-One of the benefits of platforms being able to read the list of discoverable credentials is to provide a better user experience. The platform can find the appropriate credential without the user being involved. This feature also enables “Silent Auth” scenarios in a more secure manner. 
-
-However, If an unauthorized user is able to get a hold of the FIDO2 authenticator, they could use the same command to see what relying parties that the authenticator is registered with.  This could compromise privacy for the user, as it provides a list of sites the user accesses. To satisfy both privacy and ease-of-use, the Credential Protection extension was added. With the Credential Protection extension set, the associated FIDO2 credential can be flagged to not be exposed to any one without user verification - it can neither be read nor used for authentication with the user asserting their identity. The Credential Protect extension is set by the relying party at credential registration. The credprotect= extension has three options:
-
-*1. userVerificationOptional*
-As the name suggests, the user verification is not required for the authenticatorGetInfo command to return the list of credentials that reside on the authenticator. If the WebAuthn client or browser does not have a default value for credential protection, WebAuthn Authenticators will default to this behavior.
-
-*2. userVerificationOptionalWithCredentialIDList*
-In this configuration, the authenticator will only display the credentials associated with the credential ID that is provided by the platform without the user performing a verification step. If the user does do a verification step, all discoverable credentials would then be discoverable. As of this time, Chrome has this as the default state of the credential if the extension is not specified. 
-
-*3. userVerificationRequired*
-In this configuration, no discoverable credential information will be returned unless it is preceded by user verification.
-The credential protection policy is set by an RP at registration; the policy is applied to the created discoverable key and not the authenticator as a whole. Further, the user verification extension must be set to required for the credential protection to function correctly - failure to do so may result in the credential never being exposed for even valid authentication events. The authenticator does need to be able to interpret the credential protection request to properly create the credential, limiting support to the new YubiKey 5Ci and other YubiKeys with the 5.2.3 firmware. 
-
-All of the User Verification options only apply to discoveralble credentials. If residentKey is set to false for registration by a relying party, these options will not be applied as the created credential cannot be discovered.
 
 link:Algorithms.adoc[Next: Algorithms]

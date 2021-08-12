@@ -34,51 +34,13 @@ PIN *MUST* be prefixed by the ID (16 bits, in hexadecimal, zero padded if
 required) of the corresponding Authentication Key.
 
 Assuming the default Authentication Key with ID `1` and password `password`, the user
-PIN would then be `0001password`. To be compliant with PKCS#11
-standards, the Authentication Key password *MUST* be at least `8` characters long.
+PIN would then be `0001password`.
 
 Note that the concept of a Security Officer (SO) is not supported by the device,
 and the PIN management functions are not implemented for neither user nor SO.
 
 It is recommended that PIN (Authentication Key) management is performed via the
 `yubihsm-shell` utility or the `libyubihsm` functions.
-
-=== PKCS#11 on Windows
-After installing yubihsm-shell using the windows installer, in addition to setting `YUBIHSM_PKCS11_CONF` environment variable,
-the `YubiHSM Shell\bin` directory needs to be added to the system path in order for other applications to be able to load it.
-This is because the `yubihsm-pkcs11.dll` is dynamically linked to the `libyubihsm*.dll` and `libcrypto-1_1.dll` libraries
-and they need to be accessible for the PKCS#11 module to be useful.
-
-On Windows 10, setting the system path is done by following these steps:
-
-1- Go to Control Panel → System and Security → System → Advanced system setting
-
-2- Click “Environment Variables…“
-
-3- Under System Variables, highlight “Path“ and click “Edit…“
-
-4- Click “New“ and add the absolute path to YubiHSM Shell/bin
-
-5- Under System Variables, click “New“ and add the environment variable `YUBIHSM_PKCS11_CONF` and set it to the path to
-the YubiHSM2 PKCS11 configuration file
-
-If setting the system path is not desirable, the `libyubihsm*.dll` and `libcrypto-1_1.dll` can be copied into the same
-directory as the application that needs to access the PKCS#11 module.
-
-==== A Note for Developers
-If `LoadLibrary` is called with an absolute path, it will *not* look for dependencies of the specified DLL in that
-directory, but rather in the startup directory of the application that calls `LoadLibrary`. The solution is to either:
-
-- Call `LoadLibraryEx` with the flag `LOAD_WITH_ALTERED_SEARCH_PATH` for absolute paths
-
-- Add the directory where the PKCS#11 module is located to the system PATH
-
-- Or copy the dependencies into the application directory.
-
-Please note that calling `LoadLibraryEx` with that flag for a non-absolute path is undefined behavior according to
-MS docs. For example, the way Pkcs11Interop does it is to set a variable to `LOAD_WITH_ALTERED_SEARCH_PATH` if the
-path looks absolute, and 0 otherwise; and then always calling `LoadLibraryEx`. If the flags is `0` then `LoadLibraryEx`
-behaves exactly like `LoadLibrary`.
 
 === Software Operations
 
