@@ -9,7 +9,7 @@ Putty is an open source SSH client that can be installed and used on Windows. It
 
 
 == Setting up Access to the YubiKey’s OpenPGP Application
-To access the YubiKey’s OpenPGP application from Windows, first decide whether to use GPG4Win or Smartcard Authentication, then choose the corresponding installation instructions, "Accessing via GPG4Win" or "Accessing via Smartcard Authentication". GPG4Win is an OpenPGP client for Windows that enables Windows to access the OpenPGP application on the YubiKey. The Pageant executable in the Smartcard Authentication open source project is an alternative to GPG4Win that also enables Windows to access the OpenPGP application on the YubiKey.
+To access the YubiKey’s OpenPGP application from Windows, first decide whether to use GPG4Win or Smartcard Authentication, then choose the corresponding installation instructions, **Accessing via GPG4Win** or **Accessing via Smartcard Authentication** in the current document. GPG4Win is an OpenPGP client for Windows that enables Windows to access the OpenPGP application on the YubiKey. The Pageant executable in the Smartcard Authentication open source project is an alternative to GPG4Win that also enables Windows to access the OpenPGP application on the YubiKey.
 
 WARNING: Do **not** install GPG4Win if Smartcard Authentication is used, and vice versa. GPG4Win and Smartcard Authentication both open the OpenPGP smart card in exclusive mode, each thereby blocking the other's access. 
 
@@ -17,18 +17,20 @@ WARNING: Do **not** install GPG4Win if Smartcard Authentication is used, and vic
 === Accessing via GPG4Win
 GPG4Win has built-in support for SSH authentication, which is compatible with the Pageant protocol that is provided by PuTTY. By enabling this support, GPG4Win can act as a drop-in replacement for Pageant.
 
-1. Download and install link:https://www.gpg4win.org/[GPG4Win].
+**Step 1** Download and install link:https://www.gpg4win.org/[GPG4Win].
 
-2. Start the `gpg-connect-agent.exe` by running the following command in a PowerShell terminal or Command Prompt: `gpg-connect-agent /bye`.
+**Step 2** Start the `gpg-connect-agent.exe` by running the following command in a PowerShell terminal or Command Prompt:
+
+ gpg-connect-agent /bye
 
 3. Enable SSH support by editing the `gpg-agent.conf` file located in the `gnupg` directory `%APPDATA%\.gnupg\` on Windows, where the typical path is `C:\Users\<username>\AppData\Roaming\`. Add the following lines to it:
 
 ....
-   enable-putty-support
-   enable-ssh-support
-   use-standard-socket
-   default-cache-ttl 600
-   max-cache-ttl 7200
+enable-putty-support
+enable-ssh-support
+use-standard-socket
+default-cache-ttl 600
+max-cache-ttl 7200
 ....
 
 4. To apply this change, restart the `gpg-agent` by running the following command in a PowerShell terminal or Command Prompt:
@@ -57,73 +59,67 @@ link:https://github.com/Yubico/developers.yubico.com/issues/388>[GitHub page].
 
 == Configuring Git
 
-1. To use Git with SSH on Windows, link:https://git-scm.com/downloads>[download and install the Git client] on your machine. 
+**Step 1** To use Git with SSH on Windows, link:https://git-scm.com/downloads>[download and install the Git client] on your machine. 
 
-2. Check the `general-key-id` and `authentication-key-id` of the PGP keys at the YubiKey by running the command:
+**Step 2** Check the `general-key-id` and `authentication-key-id` of the PGP keys at the YubiKey by running the command:
 
-   $ gpg --card-status
+ gpg --card-status
 
-   Example response:
+Example response where the authentication-key-id in this example is `B28F B5D2 9E6C 37FD 7E84  3CA4 6849 79BD 3F2F 3A7A`. The general-key-id in this example is `840EB535F08D8A5F`.
 
 image::gpg-card-status-response.png[]
 
-   The authentication-key-id in this example is `B28F B5D2 9E6C 37FD 7E84  3CA4 6849 79BD 3F2F 3A7A`. The general-key-id in this example is `840EB535F08D8A5F`.
+**Step 3** Export the GPG/SSH public key to a file by running the command
 
-3. Export the GPG/SSH public key to a file by running the command:
+ gpg --export-ssh-key <authentication-key-id> > ssh_auth_key.pub
 
-   $ gpg --export-ssh-key <authentication-key-id> > ssh_auth_key.pub
+Example command where the `ssh_auth_key.pub` in this example is:
 
-   Example command:
+....
+ssh-rsa 
+AAAAB3NzaC1yc2E... 
+openpgp:0x3F2F3A7A
+....
 
 image::gpg-export-ssh-key-cmd.png[]
 
-   The ``ssh_auth_key.pub`` in this example is:
+**Step 4** If the GPG public key is not yet configured in GitHub, export the GPG key from the YubiKey by running the command
+
+ gpg -o <GPG-public-key-file> --armor --export <general-key-id>
+
+Example command where the `gpg-key.pub` in this example is:
 
 ....
-    ssh-rsa 
-    AAAAB3NzaC1yc2E... 
-    openpgp:0x3F2F3A7A
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+mQENBGDkNIEBCACqX3aZxtO4lQ6U...
+-----END PGP PUBLIC KEY BLOCK-----
 ....
 
-4. If the GPG public key is not yet configured in GitHub, export the GPG key from the YubiKey by running the command:
+image::gpg-pub-key-cmd.png[]
 
-   $ gpg -o <GPG-public-key-file> --armor --export <general-key-id>
+**Step 5** Log in to your link:https://github.com/[GitHub account], select **Settings** and the option **SSH and GPG keys**.
 
-   Example command:
+image::github-login-gpg-ssh-keys.png[]
 
-image::/graphics/gpg-pub-key-cmd.png[]
-
-   The ``gpg-key.pub`` in this example is:
-
-....
-    -----BEGIN PGP PUBLIC KEY BLOCK-----
-    mQENBGDkNIEBCACqX3aZxtO4lQ6U...
-    -----END PGP PUBLIC KEY BLOCK-----
-....
-
-5. Log in to your link:https://github.com/[GitHub account], select **Settings** and the option **SSH and GPG keys**.
-
-image::/graphics/github-login-gpg-ssh-keys.png[]
-
-6. If the GPG key is not yet configured, upload it to GitHub as described in GitHub's instructions,
+**Step 6** If the GPG key is not yet configured, upload it to GitHub as described in GitHub's instructions,
 link:https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification/adding-a-new-gpg-key-to-your-github-account[Adding a New GPG Key to Your GitHub Account]. Copy the GPG public key that was recently exported from the YubiKey, paste it into GitHub’s entry for **GPG keys / Add new**, and press the button **Add GPG key**.
 
-image::/graphics/github-gpg-keys-add-new.png[]
+image::github-gpg-keys-add-new.png[]
 
-7. Upload the SSH/GPG key to GitHub as described in GitHub's instructions,
+**Step 7** Upload the SSH/GPG key to GitHub as described in GitHub's instructions,
 link:https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account[Adding a New SSH Key to Your GitHub Account]. Copy the GPG/SSH public key that was recently exported from the YubiKey, paste it into GitHub’s entry for **SSH keys / Add new**, and press the button **Add SSH key**.
 
-image::/graphics/github-ssh-keys-add-new.png[]
+image::github-ssh-keys-add-new.png[]
 
-   A successful configuration of GPG and SSH at GitHub should look like this:
+A successful configuration of GPG and SSH at GitHub should look like this:
 
-image::/graphics/github-gpg-ssh-keys-added.png[]
+image::github-gpg-ssh-keys-added.png[]
 
-8. Access GitHub by using the Git client over SSH with the YubiKey. All commands supported by the Git client can be used for managing the GitHub account. For example, you can use the `git clone` command to clone a repository:
+**Step 8** Access GitHub by using the Git client over SSH with the YubiKey. All commands supported by the Git client can be used for managing the GitHub account. For example, you can use the `git clone` command to clone a repository:
 
-   $ git clone <URL to GitHub repository>
+ git clone <URL to GitHub repository>
 
-image::/graphics/git-clone-cmd.png[]
+image::git-clone-cmd.png[]
 
 To get additional features for the Git GUI using the command line tools, you can also
 link:https://6xgate.github.io/TortoisePlink/[download and install Tortoise Plink].
@@ -139,6 +135,6 @@ link:https://cygwin.com/install.html[Cygwin] provides a Unix-like terminal with 
 After installation, open a Cygwin shell and edit the ``~/.bashrc`` file by adding the following at the bottom:
 
 ....
-		 # ssh-pageant #
-		 eval $(/usr/bin/ssh-pageant -r -a "/tmp/.ssh-pageant-$USERNAME")
+# ssh-pageant #
+eval $(/usr/bin/ssh-pageant -r -a "/tmp/.ssh-pageant-$USERNAME")
 ....
