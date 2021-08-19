@@ -1,9 +1,96 @@
-== SSH authentication using a YubiKey on Windows
-The YubiKey 4 and YubiKey NEO support the OpenPGP interface for smart cards
-which can be used with GPG4Win for encryption and signing, as well as for SSH
-authentication. These in turn can be used by several other useful tools, like
-Git, pass, etc. This guide will help you set up the required software for
-getting things to work.
+== SSH Authentication to GitHub Using a YubiKey on Windows
+This guide explains how to configure the Git client on Windows for accessing GitHub over SSH with the YubiKey’s OpenPGP application. 
+
+The YubiKey 5, YubiKey 4, and YubiKey NEO all support the OpenPGP interface for smart cards. This can be used with GPG4Win for encryption and signing, as well as for SSH authentication. These in turn can be used by several other useful tools, like Git and Cygwin, etc. This document guides you through setting up the required software for getting SSH to work on Windows with the YubiKey OpenPGP application.
+
+
+=== PuTTY
+Putty is an open source SSH client that can be installed and used on Windows. It also includes support for the Pageant protocol, which is used by other applications in this solution. Download link:https://www.chiark.greenend.org.uk/~sgtatham/putty/download.html[PuTTY] and install it.
+
+
+== Setting up Access to the YubiKey’s OpenPGP Application
+To access the YubiKey’s OpenPGP application from Windows, first decide whether to use GPG4Win or Smartcard Authentication, then choose the corresponding installation instructions, "Accessing via GPG4Win" or "Accessing via Smartcard Authentication". GPG4Win is an OpenPGP client for Windows that enables Windows to access the OpenPGP application on the YubiKey. The Pageant executable in the Smartcard Authentication open source project is an alternative to GPG4Win that also enables Windows to access the OpenPGP application on the YubiKey.
+
+WARNING: Do **not** install GPG4Win if Smartcard Authentication is used, and vice versa. GPG4Win and Smartcard Authentication both open the OpenPGP smart card in exclusive mode, each thereby blocking the other's access. 
+
+
+=== Accessing via GPG4Win
+GPG4Win has built-in support for SSH authentication, which is compatible with the Pageant protocol that is provided by PuTTY. By enabling this support, GPG4Win can act as a drop-in replacement for Pageant.
+
+1. Download and install link:https://www.gpg4win.org/[GPG4Win].
+
+2. Start the `gpg-connect-agent.exe` by running the following command in a PowerShell terminal or Command Prompt: `gpg-connect-agent /bye`.
+
+3. Enable SSH support by editing the `gpg-agent.conf` file located in the `gnupg` directory `%APPDATA%\.gnupg\` on Windows, where the typical path is `C:\Users\<username>\AppData\Roaming\`. Add the following lines to it:
+
+....
+   enable-putty-support
+   enable-ssh-support
+   use-standard-socket
+   default-cache-ttl 600
+   max-cache-ttl 7200
+....
+
+4. To apply this change, restart the `gpg-agent` by running the following command in a PowerShell terminal or Command Prompt:
+
+....
+   gpg-connect-agent killagent /bye
+   gpg-connect-agent /bye
+....
+
+5. The SSH public key must be imported to the authorized key file on the server; instructions for doing  this configuration for GitHub are provided in "Configuring Git" below.
+
+If you need to generate or import a GPG key to the YubiKey, you can now use GPG4Win by following the steps in the
+link:https://support.yubico.com/hc/en-us/articles/360013790259-Using-Your-YubiKey-with-OpenPGP[Using Your YubiKey with OpenPGP guide].
+
+Once SSH support is enabled, any application that supports SSH authentication using Pageant should work out-of-the-box. More information on how to connect to a server with PuTTY is available on this
+link:https://www.ssh.com/academy/ssh/putty/windows>[SSH web page].
+
+
+=== Accessing via Smartcard Authentication (alternative to GPG4Win)
+As an alternative to using GPG4Win, the Pageant executable in the
+link:https://www.smartcard-auth.de/index-en.html[Smartcard Authentication] open source project can be downloaded and used.
+
+Instructions on configuring Smartcard Authentication with PuTTY are available on this
+link:https://github.com/Yubico/developers.yubico.com/issues/388>[GitHub page].
+
+
+== Configuring Git
+
+1. To use Git with SSH on Windows, link:https://git-scm.com/downloads>[download and install the Git client] on your machine. 
+
+2. Check the `general-key-id` and `authentication-key-id` of the PGP keys at the YubiKey by running the command:
+
+   $ gpg --card-status
+
+   Example response:
+
+image::gpg-card-status-response.png[]
+
+   The authentication-key-id in this example is `B28F B5D2 9E6C 37FD 7E84  3CA4 6849 79BD 3F2F 3A7A`. The general-key-id in this example is `840EB535F08D8A5F`.
+
+3. Export the GPG/SSH public key to a file by running the command:
+
+   $ gpg --export-ssh-key <authentication-key-id> > ssh_auth_key.pub
+
+   Example command:
+
+image::gpg-export-ssh-key-cmd.png[]
+
+
+The ``ssh_auth_key.pub`` in this example is:
+
+    ssh-rsa 
+    AAAAB3NzaC1yc2E... 
+    openpgp:0x3F2F3A7A
+
+*Step 4:* If the GPG public key is not yet configured in GitHub, export the GPG key from the YubiKey by running the command:
+
+``gpg -o <GPG-public-key-file> --armor --export <general-key-id>``
+
+
+
+
 
 === GPG4Win
 First things first. The core of everything is https://www.gpg4win.org/[GPG4Win].
