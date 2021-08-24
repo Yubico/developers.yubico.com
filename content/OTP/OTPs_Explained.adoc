@@ -29,29 +29,29 @@ The YubiKey OTP generation is made up of the following fields, encrypted with a 
 
 |===
 |Mnemonic |Byte offset |Size |Description
-|uid 
-|0 
-|6 
+|uid
+|0
+|6
 |Private (secret) id
 
-|useCtr 
-|6 
-|2 
+|useCtr
+|6
+|2
 |Usage counter
 
-|tstp 
-|8 
-|3 
+|tstp
+|8
+|3
 |Timestamp
 
-|sessionCtr 
-|11 
-|1 
+|sessionCtr
+|11
+|1
 |Session usage counter
 
-|rnd 
-|12 
-|2 
+|rnd
+|12
+|2
 |Random number
 
 |crc 14 2 CRC16 checksum
@@ -60,6 +60,12 @@ The YubiKey OTP generation is made up of the following fields, encrypted with a 
 
 === Private ID
 The private id field comprises 6 bytes copied from the private id field configuration value. This field can be used to store a private identity which can be accessed when the OTP is decrypted in a Yubico OTP validation server holding the AES key used to encrypt the OTP.
+
+[Note]
+======
+Yubico has declared end-of-life for the YubiKey Validation Server (YK-VAL) and YubiKey Key Storage Module (YK-KSM). These have been moved to link://github.com/YubicoLabs/yubikey-ksm[YubicoLabs] as a reference architecture. See article, link:/support.yubico.com/hc/en-us/articles/360021227000[YK-VAL, YK-KSM and YubiHSM 1 End-of-Life].
+======
+
 
 The verifying instance should verify this field against the expected value. If an OTP is encrypted with a non-matching AES key, this field will be invalid and the OTP shall in this case be rejected.
 
@@ -77,7 +83,7 @@ The field is stored in little-endian format, i.e. the least significant byte bei
 === Timestamp
 The timestamp is a 24-bit field incremented with a rate of approximately 8 Hz. The timestamp value is set to a random value after startup from the internal random number generator.
 
-This field may be used by the verifying party to determine the time elapsed between two subsequent OTPs received during a session. 
+This field may be used by the verifying party to determine the time elapsed between two subsequent OTPs received during a session.
 
 This field wraps from 0xffffff to 0 without any further action. If used by the verifying party, this condition must be taken into account. Given an 8 Hz rate, the timer will wrap approximately every 24 days. The field is stored in little-endian format, i.e. the least significant byte being stored first.
 
@@ -86,6 +92,6 @@ A 16-bit random number is picked from the internal random number generator to ad
 
 === Checksum
 A 16-bit ISO13239 1st complement checksum is added to the end. The checksum spans all bytes except the checksum itself. The checksum is
-verified by calculating the checksum of all bytes, including the checksum field. This shall give a fixed residual of 0xf0b8 if the checksum is valid. If the checksum is invalid, the OTP shall be rejected. 
+verified by calculating the checksum of all bytes, including the checksum field. This shall give a fixed residual of 0xf0b8 if the checksum is valid. If the checksum is invalid, the OTP shall be rejected.
 
 The field is stored in little-endian format, i.e. the least significant byte being stored first.
