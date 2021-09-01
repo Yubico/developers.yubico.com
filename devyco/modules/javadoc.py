@@ -8,6 +8,7 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
 import json
 import os
 import re
+import semver
 import shutil
 from os import path
 from urllib2 import urlopen, URLError
@@ -87,27 +88,32 @@ class JavaDocModule(Module):
             if conf.get('all_versions', False) == True:
                 artifact_ids = conf.get('artifactIds', [self.artifact])
 
-                latest_versions = {}
                 versions = {}
 
                 for artifact_id in artifact_ids:
-                    (artifact_versions, artifact_latest) = self.get_versions(artifact_id)
+                    artifact_versions = self.get_versions(artifact_id)
 
                     for version in artifact_versions:
+                        versions[version] = versions.get(version, set())
+                        versions[version].add(artifact_id)
+
+                latest_version = max(versions.keys(), key=semver.VersionInfo.parse)
+                latest_versions = {
+                    artifact_id: latest_version
+                    for artifact_id in versions[latest_version]
+                }
+
+                for version, version_artifact_ids in versions.items():
+                    for artifact_id in version_artifact_ids:
                         self._extract_javadoc(
                             path.join(javadoc_cache_path, artifact_id, version),
                             artifact_id,
                             version)
-
-                        versions[version] = versions.get(version, set())
-                        versions[version].add(artifact_id)
-
-                    latest_versions[artifact_id] = artifact_latest
-
+                for artifact_id in latest_versions.keys():
                     self._extract_javadoc(
                         path.join(javadoc_cache_path, artifact_id, 'latest'),
                         artifact_id,
-                        artifact_latest)
+                        latest_version)
 
                 outpath = path.join(javadoc_cache_path, 'index.partial')
                 tplt = self.get_template('javadoc-versions')
@@ -155,13 +161,11 @@ class JavaDocModule(Module):
                               artifact=artifact_id)
         xml = urlopen(url).read()
         xmldoc = minidom.parseString(xml)
-        latest = xmldoc.getElementsByTagName('latest')[
-            0].firstChild.nodeValue
         versions = [v.firstChild.nodeValue
                     for v in xmldoc.getElementsByTagName('version')]
         versions = sorted([v for v in versions
                            if re.match(r"^\d+\.\d+\.\d+$", v)])
-        return (versions, latest)
+        return versions
 
 
 module = JavaDocModule()
