@@ -97,6 +97,11 @@ class JavaDocModule(Module):
                         versions[version] = versions.get(version, set())
                         versions[version].add(artifact_id)
 
+                versions = {
+                    version: self._override_artifact_ids(conf, version, artifact_ids)
+                    for version, artifact_ids in versions.items()
+                }
+
                 latest_version = max(versions.keys(), key=semver.VersionInfo.parse)
                 latest_versions = {
                     artifact_id: latest_version
@@ -135,6 +140,32 @@ class JavaDocModule(Module):
             version_store.write(self.remote_version)
 
         shutil.copytree(javadoc_cache_path, path.join(self._target, 'JavaDoc'))
+
+    def _override_artifact_ids(self, conf, version, artifact_ids):
+        """
+        Override the `artifact_ids` if `version` matches any pattern in the `artifactIdVersions` config.
+
+        Consider each `(pattern, override_artifact_ids)` in
+        `artifactIdVersions`. Assume that `pattern` is a `semver.match`
+        pattern. If `version` matches any `pattern`, then return the
+        corresponding `override_artifact_ids`. If no pattern matches, return
+        `artifact_ids` unchanged.
+
+        The set of `pattern`s must be disjoint - `version` must match zero or one `pattern`.
+        """
+        result = artifact_ids
+        version_pattern_matches = 0
+
+        for version_pattern, version_artifact_ids in conf.get('artifactIdVersions', {}).items():
+            if semver.match(version, version_pattern):
+                version_pattern_matches += 1
+                if version_pattern_matches > 1:
+                    raise AssertionError(
+                        "version {version} of {aid} matches more than one artifactIdVersions pattern"
+                        .format(version=version, aid=self.artifact))
+
+                result = version_artifact_ids
+        return result
 
     def _extract_javadoc(self, output_path, artifact_id, version):
         url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
