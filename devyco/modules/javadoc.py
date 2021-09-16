@@ -16,6 +16,7 @@ from StringIO import StringIO
 from zipfile import ZipFile
 from devyco.module import Module
 from xml.dom import minidom
+from semver import VersionInfo
 
 MAX_CONSECUTIVE_TIMEOUTS = 10  # Accept occasional timeouts from Maven Central since this part of their API is not very stable.
 
@@ -102,7 +103,7 @@ class JavaDocModule(Module):
                     for version, artifact_ids in versions.items()
                 }
 
-                latest_version = max(versions.keys(), key=semver.VersionInfo.parse)
+                latest_version = max(versions.keys(), key=VersionInfo.parse)
                 latest_versions = {
                     artifact_id: latest_version
                     for artifact_id in versions[latest_version]
@@ -125,10 +126,13 @@ class JavaDocModule(Module):
                 with open(outpath, 'w') as outfile:
                     outfile.write(tplt.render(
                                 latest_versions=sorted(latest_versions.items()),
-                                versions=sorted([
-                                    (v, sorted(aids))
-                                    for v, aids in versions.items()
-                                ], reverse=True),
+                                versions=sorted(
+                                    [
+                                        (v, sorted(aids))
+                                        for v, aids in versions.items()
+                                    ],
+                                    key=lambda pair: VersionInfo.parse(pair[0]),
+                                    reverse=True),
                                 ).encode('utf-8'))
 
                 with open(path.join(javadoc_cache_path, '.conf.json'), 'w') as excludefile:
@@ -195,7 +199,8 @@ class JavaDocModule(Module):
         versions = [v.firstChild.nodeValue
                     for v in xmldoc.getElementsByTagName('version')]
         versions = sorted([v for v in versions
-                           if re.match(r"^\d+\.\d+\.\d+$", v)])
+                           if re.match(r"^\d+\.\d+\.\d+$", v)],
+                          key=VersionInfo.parse)
         return versions
 
 
