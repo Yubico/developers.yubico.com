@@ -8,6 +8,7 @@ Activated by a "javadoc" entry in .conf.json, containing the following settings:
 import json
 import os
 import re
+import semver
 import shutil
 from os import path
 from urllib2 import urlopen, URLError
@@ -15,6 +16,7 @@ from StringIO import StringIO
 from zipfile import ZipFile
 from devyco.module import Module
 from xml.dom import minidom
+from semver import VersionInfo
 
 MAX_CONSECUTIVE_TIMEOUTS = 10  # Accept occasional timeouts from Maven Central since this part of their API is not very stable.
 
@@ -87,37 +89,50 @@ class JavaDocModule(Module):
             if conf.get('all_versions', False) == True:
                 artifact_ids = conf.get('artifactIds', [self.artifact])
 
-                latest_versions = {}
                 versions = {}
 
                 for artifact_id in artifact_ids:
-                    (artifact_versions, artifact_latest) = self.get_versions(artifact_id)
+                    artifact_versions = self.get_versions(artifact_id)
 
                     for version in artifact_versions:
+                        versions[version] = versions.get(version, set())
+                        versions[version].add(artifact_id)
+
+                versions = {
+                    version: self._override_artifact_ids(conf, version, artifact_ids)
+                    for version, artifact_ids in versions.items()
+                }
+
+                latest_version = max(versions.keys(), key=VersionInfo.parse)
+                latest_versions = {
+                    artifact_id: latest_version
+                    for artifact_id in versions[latest_version]
+                }
+
+                for version, version_artifact_ids in versions.items():
+                    for artifact_id in version_artifact_ids:
                         self._extract_javadoc(
                             path.join(javadoc_cache_path, artifact_id, version),
                             artifact_id,
                             version)
-
-                        versions[version] = versions.get(version, set())
-                        versions[version].add(artifact_id)
-
-                    latest_versions[artifact_id] = artifact_latest
-
+                for artifact_id in latest_versions.keys():
                     self._extract_javadoc(
                         path.join(javadoc_cache_path, artifact_id, 'latest'),
                         artifact_id,
-                        artifact_latest)
+                        latest_version)
 
                 outpath = path.join(javadoc_cache_path, 'index.partial')
                 tplt = self.get_template('javadoc-versions')
                 with open(outpath, 'w') as outfile:
                     outfile.write(tplt.render(
                                 latest_versions=sorted(latest_versions.items()),
-                                versions=sorted([
-                                    (v, sorted(aids))
-                                    for v, aids in versions.items()
-                                ], reverse=True),
+                                versions=sorted(
+                                    [
+                                        (v, sorted(aids))
+                                        for v, aids in versions.items()
+                                    ],
+                                    key=lambda pair: VersionInfo.parse(pair[0]),
+                                    reverse=True),
                                 ).encode('utf-8'))
 
                 with open(path.join(javadoc_cache_path, '.conf.json'), 'w') as excludefile:
@@ -129,6 +144,32 @@ class JavaDocModule(Module):
             version_store.write(self.remote_version)
 
         shutil.copytree(javadoc_cache_path, path.join(self._target, 'JavaDoc'))
+
+    def _override_artifact_ids(self, conf, version, artifact_ids):
+        """
+        Override the `artifact_ids` if `version` matches any pattern in the `artifactIdVersions` config.
+
+        Consider each `(pattern, override_artifact_ids)` in
+        `artifactIdVersions`. Assume that `pattern` is a `semver.match`
+        pattern. If `version` matches any `pattern`, then return the
+        corresponding `override_artifact_ids`. If no pattern matches, return
+        `artifact_ids` unchanged.
+
+        The set of `pattern`s must be disjoint - `version` must match zero or one `pattern`.
+        """
+        result = artifact_ids
+        version_pattern_matches = 0
+
+        for version_pattern, version_artifact_ids in conf.get('artifactIdVersions', {}).items():
+            if semver.match(version, version_pattern):
+                version_pattern_matches += 1
+                if version_pattern_matches > 1:
+                    raise AssertionError(
+                        "version {version} of {aid} matches more than one artifactIdVersions pattern"
+                        .format(version=version, aid=self.artifact))
+
+                result = version_artifact_ids
+        return result
 
     def _extract_javadoc(self, output_path, artifact_id, version):
         url = JAVADOC_ARCHIVE_URL.format(group_url=self.group_url,
@@ -155,13 +196,12 @@ class JavaDocModule(Module):
                               artifact=artifact_id)
         xml = urlopen(url).read()
         xmldoc = minidom.parseString(xml)
-        latest = xmldoc.getElementsByTagName('latest')[
-            0].firstChild.nodeValue
         versions = [v.firstChild.nodeValue
                     for v in xmldoc.getElementsByTagName('version')]
         versions = sorted([v for v in versions
-                           if re.match(r"^\d+\.\d+\.\d+$", v)])
-        return (versions, latest)
+                           if re.match(r"^\d+\.\d+\.\d+$", v)],
+                          key=VersionInfo.parse)
+        return versions
 
 
 module = JavaDocModule()
