@@ -23,6 +23,7 @@
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
 <code class="Nm" title="Nm">fido_cred_new</code>,
   <code class="Nm" title="Nm">fido_cred_free</code>,
+  <code class="Nm" title="Nm">fido_cred_pin_minlen</code>,
   <code class="Nm" title="Nm">fido_cred_prot</code>,
   <code class="Nm" title="Nm">fido_cred_fmt</code>,
   <code class="Nm" title="Nm">fido_cred_rp_id</code>,
@@ -39,6 +40,7 @@
   <code class="Nm" title="Nm">fido_cred_sig_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_user_id_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_x5c_ptr</code>,
+  <code class="Nm" title="Nm">fido_cred_attstmt_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_authdata_len</code>,
   <code class="Nm" title="Nm">fido_cred_authdata_raw_len</code>,
   <code class="Nm" title="Nm">fido_cred_clientdata_hash_len</code>,
@@ -49,6 +51,7 @@
   <code class="Nm" title="Nm">fido_cred_sig_len</code>,
   <code class="Nm" title="Nm">fido_cred_user_id_len</code>,
   <code class="Nm" title="Nm">fido_cred_x5c_len</code>,
+  <code class="Nm" title="Nm">fido_cred_attstmt_len</code>,
   <code class="Nm" title="Nm">fido_cred_type</code>,
   <code class="Nm" title="Nm">fido_cred_flags</code>,
   <code class="Nm" title="Nm">fido_cred_sigcount</code> &#x2014;
@@ -66,10 +69,15 @@
 <code class="Fn" title="Fn">fido_cred_free</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   **cred_p</var>);
 <div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_pin_minlen</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
+<div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
-<code class="Fn" title="Fn">fido_cred_prot</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
-  *cred</var>);
+<code class="Fn" title="Fn">fido_cred_prot</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">const char *</var>
 <br/>
@@ -146,6 +154,11 @@
 <code class="Fn" title="Fn">fido_cred_x5c_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_cred_t *cred</var>);
 <div class="Pp"></div>
+<var class="Ft" title="Ft">const unsigned char *</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_attstmt_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
+<div class="Pp"></div>
 <var class="Ft" title="Ft">size_t</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_authdata_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
@@ -196,6 +209,11 @@
 <code class="Fn" title="Fn">fido_cred_x5c_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_cred_t *cred</var>);
 <div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_attstmt_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
+<div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_type</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
@@ -236,10 +254,22 @@ The <code class="Fn" title="Fn">fido_cred_free</code>() function releases the
   <var class="Fa" title="Fa">*cred_p</var> may be NULL, in which case
   <code class="Fn" title="Fn">fido_cred_free</code>() is a NOP.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_cred_prot</code>() function returns the
-  protection of <var class="Fa" title="Fa">cred</var>. See
+If the FIDO 2.1 <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code> extension
+  is enabled on <var class="Fa" title="Fa">cred</var>, then the
+  <code class="Fn" title="Fn">fido_cred_pin_minlen</code>() function returns the
+  minimum PIN length of <var class="Fa" title="Fa">cred</var>. Otherwise,
+  <code class="Fn" title="Fn">fido_cred_pin_minlen</code>() returns zero. See
+  <a class="Xr" title="Xr" href="fido_cred_set_pin_minlen.html">fido_cred_set_pin_minlen(3)</a>
+  on how to enable this extension.
+<div class="Pp"></div>
+If the FIDO 2.1 <code class="Dv" title="Dv">FIDO_EXT_CRED_PROTECT</code>
+  extension is enabled on <var class="Fa" title="Fa">cred</var>, then the
+  <code class="Fn" title="Fn">fido_cred_prot</code>() function returns the
+  protection of <var class="Fa" title="Fa">cred</var>. Otherwise,
+  <code class="Fn" title="Fn">fido_cred_prot</code>() returns zero. See
   <a class="Xr" title="Xr" href="fido_cred_set_prot.html">fido_cred_set_prot(3)</a>
-  for the values understood by <i class="Em" title="Em">libfido2</i>.
+  for the protection policies understood by
+  <i class="Em" title="Em">libfido2</i>.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_fmt</code>() function returns a
   pointer to a NUL-terminated string containing the format of
@@ -263,11 +293,12 @@ The <code class="Fn" title="Fn">fido_cred_authdata_ptr</code>(),
   <code class="Fn" title="Fn">fido_cred_largeblob_key_ptr</code>(),
   <code class="Fn" title="Fn">fido_cred_pubkey_ptr</code>(),
   <code class="Fn" title="Fn">fido_cred_sig_ptr</code>(),
-  <code class="Fn" title="Fn">fido_cred_user_id_ptr</code>(), and
-  <code class="Fn" title="Fn">fido_cred_x5c_ptr</code>() functions return
+  <code class="Fn" title="Fn">fido_cred_user_id_ptr</code>(),
+  <code class="Fn" title="Fn">fido_cred_x5c_ptr</code>(), and
+  <code class="Fn" title="Fn">fido_cred_attstmt_ptr</code>() functions return
   pointers to the CBOR-encoded and raw authenticator data, client data hash, ID,
   authenticator attestation GUID, &#x201C;largeBlobKey&#x201D;, public key,
-  signature, user ID, and x509 certificate parts of
+  signature, user ID, x509 certificate, and attestation statement parts of
   <var class="Fa" title="Fa">cred</var>, or NULL if the respective entry is not
   set.
 <div class="Pp"></div>
@@ -280,8 +311,9 @@ The corresponding length can be obtained by
   <code class="Fn" title="Fn">fido_cred_largeblob_key_len</code>(),
   <code class="Fn" title="Fn">fido_cred_pubkey_len</code>(),
   <code class="Fn" title="Fn">fido_cred_sig_len</code>(),
-  <code class="Fn" title="Fn">fido_cred_user_id_len</code>(), and
-  <code class="Fn" title="Fn">fido_cred_x5c_len</code>().
+  <code class="Fn" title="Fn">fido_cred_user_id_len</code>(),
+  <code class="Fn" title="Fn">fido_cred_x5c_len</code>(), and
+  <code class="Fn" title="Fn">fido_cred_attstmt_len</code>().
 <div class="Pp"></div>
 The authenticator data, x509 certificate, and signature parts of a credential
   are typically passed to a FIDO 2 server for verification.
@@ -317,6 +349,8 @@ If not NULL, pointers returned by
   ALSO</a></h1>
 <a class="Xr" title="Xr" href="fido_cred_exclude.html">fido_cred_exclude(3)</a>,
   <a class="Xr" title="Xr" href="fido_cred_set_authdata.html">fido_cred_set_authdata(3)</a>,
+  <a class="Xr" title="Xr" href="fido_cred_set_pin_minlen.html">fido_cred_set_pin_minlen(3)</a>,
+  <a class="Xr" title="Xr" href="fido_cred_set_prot.html">fido_cred_set_prot(3)</a>,
   <a class="Xr" title="Xr" href="fido_cred_verify.html">fido_cred_verify(3)</a>,
   <a class="Xr" title="Xr" href="fido_credman_metadata_new.html">fido_credman_metadata_new(3)</a>,
   <a class="Xr" title="Xr" href="fido_dev_largeblob_get.html">fido_dev_largeblob_get(3)</a>,

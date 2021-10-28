@@ -22,7 +22,8 @@
 <div class="manual-text">
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
 <code class="Nm" title="Nm">fido_dev_set_io_functions</code>,
-  <code class="Nm" title="Nm">fido_dev_set_sigmask</code> &#x2014;
+  <code class="Nm" title="Nm">fido_dev_set_sigmask</code>,
+  <code class="Nm" title="Nm">fido_dev_set_timeout</code> &#x2014;
 <div class="Nd" title="Nd">FIDO 2 device I/O interface</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
@@ -61,6 +62,12 @@ typedef sigset_t fido_sigset_t;
 <code class="Fn" title="Fn">fido_dev_set_sigmask</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
   *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_sigset_t *sigmask</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_set_timeout</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">int
+  ms</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 The <code class="Fn" title="Fn">fido_dev_set_io_functions</code>() function sets
   the I/O handlers used by <i class="Em" title="Em">libfido2</i> to talk to
@@ -118,10 +125,23 @@ The <code class="Fn" title="Fn">fido_dev_set_sigmask</code>() function may be
 <div class="Pp"></div>
 No references to <var class="Fa" title="Fa">sigmask</var> are held by
   <code class="Fn" title="Fn">fido_dev_set_sigmask</code>().
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_set_timeout</code>() function informs
+  <i class="Em" title="Em">libfido2</i> not to block for more than
+  <var class="Fa" title="Fa">ms</var> milliseconds while communicating with
+  <var class="Fa" title="Fa">dev</var>. If a timeout occurs, the corresponding
+  <i class="Em" title="Em">fido_dev_*</i> function will fail with
+  <code class="Dv" title="Dv">FIDO_ERR_RX</code>. If
+  <var class="Fa" title="Fa">ms</var> is -1, then
+  <i class="Em" title="Em">libfido2</i> may block indefinitely. This is the
+  default behaviour. When using the Windows Hello backend,
+  <var class="Fa" title="Fa">ms</var> is used as a guidance and may be
+  overwritten by the platform.
 <h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
   VALUES</a></h1>
-On success, <code class="Fn" title="Fn">fido_dev_set_io_functions</code>() and
-  <code class="Fn" title="Fn">fido_dev_set_sigmask</code>() return
+On success, <code class="Fn" title="Fn">fido_dev_set_io_functions</code>(),
+  <code class="Fn" title="Fn">fido_dev_set_sigmask</code>(), and
+  <code class="Fn" title="Fn">fido_dev_set_timeout</code>() return
   <code class="Dv" title="Dv">FIDO_OK</code>. On error, a different error code
   defined in
   <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>
