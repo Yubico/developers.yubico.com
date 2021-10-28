@@ -72,5 +72,4 @@ COPY --chown=0:0 httpd.conf /etc/apache2/
 COPY --from=builder --chown=0:0 /build/htdocs/dist /var/www/localhost/htdocs
 
 EXPOSE 8080
-USER 1000:1000
 CMD ["httpd", "-DFOREGROUND", "-f/etc/apache2/httpd.conf"]

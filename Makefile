@@ -24,15 +24,13 @@ docker-build:
 
 build: docker-build
 	@docker run --rm \
-		-u $(shell id -u):$(shell id -g) \
-		-v $(shell pwd):/developers \
+		-v $(shell pwd):/developers:z \
 		-e NORELEASES=true \
 		yubico/developers/build
 
 build_noprojects: docker-build
 	@docker run --rm \
-		-u $(shell id -u):$(shell id -g) \
-		-v $(shell pwd):/developers \
+		-v $(shell pwd):/developers:z \
 		-e NORELEASES=true \
 		-e NOPROJECTS=true \
 		yubico/developers/build
@@ -42,7 +40,7 @@ docker-httpd:
 
 httpd: docker-httpd
 	@docker run --rm \
-		-v $(shell pwd)/htdocs/dist:/var/www/localhost/htdocs \
+		-v $(shell pwd)/htdocs/dist:/var/www/localhost/htdocs:z \
 		-p 8080:8080 \
 		yubico/developers/httpd
 
