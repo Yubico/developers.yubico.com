@@ -10,14 +10,33 @@ The YubiKey supports various methods to enable hardware-backed SSH authenticatio
 === PIV 
 The YubiKey stores and manages RSA and Elliptic Curve (EC) asymmetric keys within its PIV module. It will work with SSH clients that can communicate with smart cards through the PKCS#11 interface.
 
+.Pros:
+* Centeralized management of keys
+* Standardized security policies across endpoints
+* Wide Support for PKCS#11
+* Ideal for organizations with an existing PKI deployment
+
+.Cons:
+* No chain validation of certificates
+* Each key must be revoked individually
+
 * Read about the link:/PIV/Guides/Securing_SSH_with_OpenPGP_or_PIV.html#piv[advantages and considerations of configuring OpenSSH with the YubiKey with PIV] 
 * Follow the link:/PIV/Guides/SSH_user_certificates.html[step-by-step instructions to configure OpenSSH with the YubiKey]
 
 === PGP
 The YubiKey stores and manages OpenPGP keys within its OpenPGP module. It will work with SSH clients that have integrated with the OpenPGP standard.
 
-* Read about the link:/PIV/Guides/Securing_SSH_with_OpenPGP_or_PIV.html[advantages and considerations of configuring OpenSSH with the YubiKey with OpenPGP]
-* Follow the link:/PGP/SSH_authentication/index.html[step-by-step configuration instructions to enable SSH authentication with the YubiKey and OpenPGP]
+.Pros:
+* Simple to manage keys on a single locally controlled machine
+* Easy to export and share public Key
+* Ideal for individual users
+
+.Cons:
+* No key recovery in event of lost YubiKeys
+* OpenPGP is not widely supported by credential management services
+
+Read about the link:/PIV/Guides/Securing_SSH_with_OpenPGP_or_PIV.html[advantages and considerations of configuring OpenSSH with the YubiKey with OpenPGP]
+Follow the link:/PGP/SSH_authentication/index.html[step-by-step configuration instructions to enable SSH authentication with the YubiKey and OpenPGP]
 
 === FIDO2
 OpenSSH version 8.2p1 added support for FIDO hardware authenticators. FIDO devices are supported by the public key types “ecdsa-sk” and “ed25519-sk", along with corresponding
@@ -25,9 +44,25 @@ certificate types.
 
 ssh-keygen may be used to generate a FIDO token-backed SSH key, after which such keys may be used much like any other key type supported by OpenSSH, provided that the YubiKey is plugged in when the keys are used. YubiKeys require the user to explicitly authorize operations by touching or tapping them.
 
-* Follow the link:/Securing_SSH_with_FIDO2.html[step-by-step configuration instructions to enable SSH authentication with the YubiKey and FIDO2]
+.Pros:
+* Easy to register and use keys quickly
+* Configurations for both public and secured endpoints
+* Does not require a dedicated YubiKey for just SSH authentication; can use the same device with other FIDO2/WebAuthn services
+
+.Cons:
+* Not supported on Windows as of the last update to this page
+* No credential management support as of the last update to this page
+
+Follow the link:/Securing_SSH_with_FIDO2.html[step-by-step configuration instructions to enable SSH authentication with the YubiKey and FIDO2]
 
 === OTP
 Systems administrators can configure two factor authentication for SSH authentication using the YubiKey through the link:/yubico-pam/[Yubico PAM module].
 
-* Follow the link:/yubico-pam/YubiKey_and_SSH_via_PAM.html[step-by-step instructions to configure the Yubico PAM module for SSH with OTP].
+.Pros:
+* Legacy solution with support for older versions of SSH.
+
+.Cons:
+* Not as secure as an asymmetric key based solution
+* Supporting frameworks approaching end of life in many cases
+
+Follow the link:/yubico-pam/YubiKey_and_SSH_via_PAM.html[step-by-step instructions to configure the Yubico PAM module for SSH with OTP].
