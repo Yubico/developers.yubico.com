@@ -6,7 +6,7 @@ If you use the *OpenPGP* option for SSH, the same key will be used for both auth
 
 The *PIV* option is easier for those who have no reason to use the same key for both authentication and signing. The PIV option also offers the ability to authenticate/communicate with the YubiKey through the PKCS#11 interface using the opensc-pkcs11 module, or Yubico's own ykcs11 module, which is a lighter software package than the OpenSC software.
 
-As of OpenSSH 8.2p1, FIDO Credentials may also be used to secure SSH, using both Non-Discoverable and (with OpenSSH 8.3) Discoverable credentials. While this is currently supported only on Linux and MacOS, FIDO credentials offer an easy to register and use experience for users on both secured and public endpoints. Read about using FIDO credentials to secure SSH link:../../SSH/Securing_SSH_with_FIDO2.html[here.]
+As of OpenSSH 8.2p1, *FIDO* Credentials may also be used to secure SSH, using both Non-Discoverable and (with OpenSSH 8.3) Discoverable credentials. While this is currently supported only on Linux and MacOS, FIDO credentials offer an easy to register and use experience for users on both secured and public endpoints. Read about using FIDO credentials to secure SSH link:../../SSH/Securing_SSH_with_FIDO2.html[here.]
 
 === OpenPGP
 OpenPGP keys are managed on the OpenPGP function of the YubiKey. OpenPGP for SSH supports a more direct flow between
@@ -31,9 +31,9 @@ YubiKey can also enable SSH authentication across all platforms as well.
 
 * Credential management services and certificate authorities have not added native support for OpenPGP credentials because:
 
-  * OpenPGP does not have the framework to support a credential authority and therefore certificate-based authentication is not supported.
+  ** OpenPGP does not have the framework to support a credential authority and therefore certificate-based authentication is not supported.
 
-  * OpenPGP on a smart card YubiKey is limited to a single masterkey (split into 3 sub-keys).
+  ** OpenPGP on a smart card YubiKey is limited to a single masterkey (split into 3 sub-keys).
 
 ++++
 <p><a name="piv"></a></p>
@@ -58,3 +58,22 @@ Using PIV for SSH enables a centrally managed PKI framework to be extended to th
 
 * There is no chain validation. Unlike the case with X.509 certificates, wherein a certificate chain is used to verify the authenticity of a key, with the OpenSSH public key authentication method, each public key must be individually imported into the server and marked as an authorized key.
 * To deny access, keys must be individually revoked.
+
+
+=== FIDO2
+Staring with 8.2p1, OpenSSH has added support for registering and authenticating with FIDO2 Credentials. With support for both Discoverable and Non-Discoverable Credentials, OpenSSH allows for the uses of both Security Keys and YubiKeys, including the YubiKey Bio keys. FIDO2 credentials allow for a streamlined experience with the registration and authentication of YubiKeys.
+
+Instructions for setting up SSH with FIDO2  and the YubiKey are available here:
+link:../../SSH/Securing_SSH_with_FIDO2.html[Securing SSH with FIDO2]
+
+==== Advantages to FIDO2
+
+* FIDO2 allows for the direct generation of keys within the YubiKey itself, removing the need for a PKI framework or other applications for the generation of keys. OpenSSH directly interfaces with the FIDO2 function on the YubiKey, allowing it to select the key algorithm, as well as generating both discoverable as well as non-discoverable credentials.
+
+* With the support for both discoverable and non-discoverable FIDO2 credentials, FIDO2 allows SSH options for both local, secured endpoints with expidated ease of uses in addition to public open endpoints where credentials should remain on the YubiKey.
+
+==== Drawbacks to FIDO2
+
+* Windows does not yet support FIDO2 on SSH as of the last update to this page.
+
+* FIDO2 is based around a decentalized deployment, with no central server issuing or revoking keys. Keys must be indivdually deleted to revoke access in the event of lost or stolen YubiKeys.
