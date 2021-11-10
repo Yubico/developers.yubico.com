@@ -22,7 +22,8 @@
 <div class="manual-text">
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
 <code class="Nm" title="Nm">fido_cred_verify</code> &#x2014;
-<div class="Nd" title="Nd">verifies the signature of a FIDO 2 credential</div>
+<div class="Nd" title="Nd">verifies the attestation signature of a FIDO 2
+  credential</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
   &lt;<a class="In" title="In">fido.h</a>&gt;</code>
@@ -33,37 +34,38 @@
   fido_cred_t *cred</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 The <code class="Fn" title="Fn">fido_cred_verify</code>() function verifies
-  whether the signature contained in <var class="Fa" title="Fa">cred</var>
-  matches the attributes of the credential. Before using
-  <code class="Fn" title="Fn">fido_cred_verify</code>() in a sensitive context,
-  the reader is strongly encouraged to make herself familiar with the FIDO 2
-  credential attestation process as defined in the Web Authentication (webauthn)
-  standard.
+  whether the attestation signature contained in
+  <var class="Fa" title="Fa">cred</var> matches the attributes of the
+  credential. Before using <code class="Fn" title="Fn">fido_cred_verify</code>()
+  in a sensitive context, the reader is strongly encouraged to make herself
+  familiar with the FIDO 2 credential attestation process as defined in the Web
+  Authentication (webauthn) standard.
 <div class="Pp"></div>
 A brief description follows:
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_verify</code>() function verifies
-  whether the client data hash, relying party ID, credential ID, type, and
-  resident/discoverable key and user verification attributes of
-  <var class="Fa" title="Fa">cred</var> have been attested by the holder of the
-  private counterpart of the public key contained in the credential's x509
-  certificate.
+  whether the client data hash, relying party ID, credential ID, type,
+  protection policy, minimum PIN length, and resident/discoverable key and user
+  verification attributes of <var class="Fa" title="Fa">cred</var> have been
+  attested by the holder of the private counterpart of the public key contained
+  in the credential's x509 certificate.
 <div class="Pp"></div>
 Please note that the x509 certificate itself is not verified.
 <div class="Pp"></div>
 The attestation statement formats supported by
   <code class="Fn" title="Fn">fido_cred_verify</code>() are
-  <i class="Em" title="Em">packed</i> and <i class="Em" title="Em">fido-u2f</i>.
-  The attestation type implemented by
+  <i class="Em" title="Em">packed</i>, <i class="Em" title="Em">fido-u2f</i>,
+  and <i class="Em" title="Em">tpm</i>. The attestation type implemented by
   <code class="Fn" title="Fn">fido_cred_verify</code>() is
-  <i class="Em" title="Em">Basic Attestation</i>. The attestation key pair is
-  assumed to be of the type ES256. Other attestation formats and types are not
-  supported.
+  <i class="Em" title="Em">Basic Attestation</i>. Other attestation formats and
+  types are not supported.
 <h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
   VALUES</a></h1>
 The error codes returned by
   <code class="Fn" title="Fn">fido_cred_verify</code>() are defined in
   <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>.
+  If <var class="Fa" title="Fa">cred</var> does not contain attestation data,
+  then <code class="Dv" title="Dv">FIDO_ERR_INVALID_ARGUMENT</code> is returned.
   If <var class="Fa" title="Fa">cred</var> passes verification, then
   <code class="Dv" title="Dv">FIDO_OK</code> is returned.
 <h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE

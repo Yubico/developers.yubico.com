@@ -23,13 +23,17 @@
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
 <code class="Nm" title="Nm">fido_cred_set_authdata</code>,
   <code class="Nm" title="Nm">fido_cred_set_authdata_raw</code>,
+  <code class="Nm" title="Nm">fido_cred_set_attstmt</code>,
   <code class="Nm" title="Nm">fido_cred_set_x509</code>,
   <code class="Nm" title="Nm">fido_cred_set_sig</code>,
+  <code class="Nm" title="Nm">fido_cred_set_id</code>,
+  <code class="Nm" title="Nm">fido_cred_set_clientdata</code>,
   <code class="Nm" title="Nm">fido_cred_set_clientdata_hash</code>,
   <code class="Nm" title="Nm">fido_cred_set_rp</code>,
   <code class="Nm" title="Nm">fido_cred_set_user</code>,
   <code class="Nm" title="Nm">fido_cred_set_extensions</code>,
   <code class="Nm" title="Nm">fido_cred_set_blob</code>,
+  <code class="Nm" title="Nm">fido_cred_set_pin_minlen</code>,
   <code class="Nm" title="Nm">fido_cred_set_prot</code>,
   <code class="Nm" title="Nm">fido_cred_set_rk</code>,
   <code class="Nm" title="Nm">fido_cred_set_uv</code>,
@@ -66,6 +70,13 @@ typedef enum {
 <div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
+<code class="Fn" title="Fn">fido_cred_set_attstmt</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
 <code class="Fn" title="Fn">fido_cred_set_x509</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   unsigned char *ptr</var>,
@@ -74,6 +85,20 @@ typedef enum {
 <var class="Ft" title="Ft">int</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_set_sig</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_set_id</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_set_clientdata</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   unsigned char *ptr</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
@@ -120,6 +145,12 @@ typedef enum {
 <div class="Pp"></div>
 <var class="Ft" title="Ft">int</var>
 <br/>
+<code class="Fn" title="Fn">fido_cred_set_pin_minlen</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">size_t
+  len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
 <code class="Fn" title="Fn">fido_cred_set_prot</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">int
   prot</var>);
@@ -159,21 +190,48 @@ The <code class="Nm" title="Nm">fido_cred_set_authdata</code> set of functions
   constituent parts, please refer to the Web Authentication (webauthn) standard.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_authdata</code>(),
+  <code class="Fn" title="Fn">fido_cred_set_attstmt</code>(),
   <code class="Fn" title="Fn">fido_cred_set_x509</code>(),
-  <code class="Fn" title="Fn">fido_cred_set_sig</code>(), and
+  <code class="Fn" title="Fn">fido_cred_set_sig</code>(),
+  <code class="Fn" title="Fn">fido_cred_set_id</code>(), and
   <code class="Fn" title="Fn">fido_cred_set_clientdata_hash</code>() functions
-  set the authenticator data, attestation certificate, signature and client data
-  hash parts of <var class="Fa" title="Fa">cred</var> to
-  <var class="Fa" title="Fa">ptr</var>, where
-  <var class="Fa" title="Fa">ptr</var> points to
+  set the authenticator data, attestation statement, attestation certificate,
+  attestation signature, id, and client data hash parts of
+  <var class="Fa" title="Fa">cred</var> to <var class="Fa" title="Fa">ptr</var>,
+  where <var class="Fa" title="Fa">ptr</var> points to
   <var class="Fa" title="Fa">len</var> bytes. A copy of
   <var class="Fa" title="Fa">ptr</var> is made, and no references to the passed
-  pointer are kept. The authenticator data passed to
+  pointer are kept.
+<div class="Pp"></div>
+The authenticator data passed to
   <code class="Fn" title="Fn">fido_cred_set_authdata</code>() must be a
   CBOR-encoded byte string, as obtained from
   <code class="Fn" title="Fn">fido_cred_authdata_ptr</code>(). Alternatively, a
   raw binary blob may be passed to
-  <code class="Fn" title="Fn">fido_cred_set_authdata_raw</code>().
+  <code class="Fn" title="Fn">fido_cred_set_authdata_raw</code>(). An
+  application calling
+  <code class="Fn" title="Fn">fido_cred_set_authdata</code>() does not need to
+  call <code class="Fn" title="Fn">fido_cred_set_id</code>(). The latter is
+  meant to be used in contexts where the credential's authenticator data is not
+  available.
+<div class="Pp"></div>
+The attestation statement passed to
+  <code class="Fn" title="Fn">fido_cred_set_attstmt</code>() must be a
+  CBOR-encoded map, as obtained from
+  <code class="Fn" title="Fn">fido_cred_attstmt_ptr</code>(). An application
+  calling <code class="Fn" title="Fn">fido_cred_set_attstmt</code>() does not
+  need to call <code class="Fn" title="Fn">fido_cred_set_x509</code>() or
+  <code class="Fn" title="Fn">fido_cred_set_sig</code>(). The latter two are
+  meant to be used in contexts where the credential's complete attestation
+  statement is not available or required.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_cred_set_clientdata</code>() function
+  allows an application to set the client data hash of
+  <var class="Fa" title="Fa">cred</var> by specifying the credential's unhashed
+  client data. This is required by Windows Hello, which calculates the client
+  data hash internally. For compatibility with Windows Hello, applications
+  should use <code class="Fn" title="Fn">fido_cred_set_clientdata</code>()
+  instead of <code class="Fn" title="Fn">fido_cred_set_clientdata_hash</code>().
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_rp</code>() function sets the
   relying party <var class="Fa" title="Fa">id</var> and
@@ -206,7 +264,8 @@ The <code class="Fn" title="Fn">fido_cred_set_extensions</code>() function sets
   <var class="Fa" title="Fa">flags</var>. At the moment, only the
   <code class="Dv" title="Dv">FIDO_EXT_CRED_BLOB</code>,
   <code class="Dv" title="Dv">FIDO_EXT_CRED_PROTECT</code>,
-  <code class="Dv" title="Dv">FIDO_EXT_HMAC_SECRET</code>, and
+  <code class="Dv" title="Dv">FIDO_EXT_HMAC_SECRET</code>,
+  <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code>, and
   <code class="Dv" title="Dv">FIDO_EXT_LARGEBLOB_KEY</code> extensions are
   supported. If <var class="Fa" title="Fa">flags</var> is zero, the extensions
   of <var class="Fa" title="Fa">cred</var> are cleared.
@@ -217,8 +276,20 @@ The <code class="Fn" title="Fn">fido_cred_set_blob</code>() function sets the
   <var class="Fa" title="Fa">ptr</var>, which must be
   <var class="Fa" title="Fa">len</var> bytes long.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_cred_set_prot</code>() function sets the
-  protection of <var class="Fa" title="Fa">cred</var> to the scalar
+The <code class="Fn" title="Fn">fido_cred_set_pin_minlen</code>() function
+  enables the FIDO 2.1 <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code>
+  extension on <var class="Fa" title="Fa">cred</var> and sets the expected
+  minimum PIN length of <var class="Fa" title="Fa">cred</var> to
+  <var class="Fa" title="Fa">len</var>, where
+  <var class="Fa" title="Fa">len</var> is greater than zero. If
+  <var class="Fa" title="Fa">len</var> is zero, the
+  <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code> extension is disabled on
+  <var class="Fa" title="Fa">cred</var>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_cred_set_prot</code>() function enables the
+  FIDO 2.1 <code class="Dv" title="Dv">FIDO_EXT_CRED_PROTECT</code> extension on
+  <var class="Fa" title="Fa">cred</var> and sets the protection of
+  <var class="Fa" title="Fa">cred</var> to the scalar
   <var class="Fa" title="Fa">prot</var>. At the moment, only the
   <code class="Dv" title="Dv">FIDO_CRED_PROT_UV_OPTIONAL</code>,
   <code class="Dv" title="Dv">FIDO_CRED_PROT_UV_OPTIONAL_WITH_ID</code>, and
@@ -235,11 +306,12 @@ The <code class="Fn" title="Fn">fido_cred_set_rk</code>() and
   authenticator to use its default settings.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_fmt</code>() function sets the
-  format of <var class="Fa" title="Fa">cred</var> to
+  attestation format of <var class="Fa" title="Fa">cred</var> to
   <var class="Fa" title="Fa">fmt</var>, where
-  <var class="Fa" title="Fa">fmt</var> must be either
-  <var class="Vt" title="Vt">packed</var> (the format used in FIDO2) or
-  <var class="Vt" title="Vt">fido-u2f</var> (the format used by U2F). A copy of
+  <var class="Fa" title="Fa">fmt</var> must be
+  <var class="Vt" title="Vt">packed</var> (the format used in FIDO2),
+  <var class="Vt" title="Vt">fido-u2f</var> (the format used by U2F), or
+  <var class="Vt" title="Vt">none</var>. A copy of
   <var class="Fa" title="Fa">fmt</var> is made, and no references to the passed
   pointer are kept. Note that not all authenticators support FIDO2 and therefore
   may not be able to generate <var class="Vt" title="Vt">packed</var>.
