@@ -26,27 +26,31 @@ from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 SIG_SUFFIXES = ['sig', 'asc']
 SUFFIXES = SIG_SUFFIXES + \
     ['tar', 'gz', 'tgz', 'xz', 'zip', 'exe', 'pkg', 'cap', 'apk', 'msi', 'pdf', 'AppImage']
-CLASSIFIERS = ['amd64', 'win', 'win32', 'win64', 'mac', 'mac-amd64', 'mac-arm64', 'mac-universal', 'linux']
+#CLASSIFIERS = ['amd64', 'win', 'win32', 'win64', 'mac', 'mac-amd64', 'mac-arm64', 'mac-universal', 'linux']
 
 
-def remove_suffixes(part):
-    split = part.rsplit('.', 1)
-    if len(split) == 2 and split[1] in SUFFIXES:
-        part = remove_suffixes(split[0])
-    return part
-
-
-def remove_classifier(part):
-    for c in CLASSIFIERS:
-        if part.endswith("-" + c):
-            return  part[:-(len(c) + 1)], c
-    return part, None
+# def remove_suffixes(part):
+#     split = part.rsplit('.', 1)
+#     if len(split) == 2 and split[1] in SUFFIXES:
+#         part = remove_suffixes(split[0])
+#     return part
+#
+#
+# def remove_classifier(part):
+#     for c in CLASSIFIERS:
+#         if part.endswith("-" + c):
+#             return  part[:-(len(c) + 1)], c
+#     return part, None
 
 
 def version(filename):
-    part = remove_suffixes(filename)
-    part, classifier = remove_classifier(part)
-    version = part.rsplit('-', 1)[1]
+    #part = remove_suffixes(filename)
+    #part, classifier = remove_classifier(part)
+    cp = re.compile('amd64|win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux')
+    classifier =cp.findall(filename)
+    #version = part.rsplit('-', 1)[1]
+    vp = re.compile('\d+[.]\d+[.]\d+[a-z]*')
+    version = vp.findall(filename)
     return version, classifier
 
 
