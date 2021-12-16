@@ -44,7 +44,8 @@ def remove_suffixes(part):
 #     return part, None
 
 def classifier(filename):
-    cp = re.compile('win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux|amd64')
+    # Make sure that the specific classifiers come before the general ones so they are matched first. Tex 'win32' should come before 'win'
+    cp = re.compile(r'\bwin32\b|\bwin64\b|\bwin\b|\bmac-amd64\b|\bmac-arm64\b|\bmac-universal\b|\bmac\b|\blinux\b|\bamd64\b')
     classifiers = cp.findall(filename)
     if(len(classifiers) > 0):
         return classifiers[0]
