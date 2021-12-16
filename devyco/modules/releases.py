@@ -20,6 +20,7 @@ import json
 import heapq
 import time
 import re
+import sys
 
 from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 
@@ -29,11 +30,11 @@ SUFFIXES = SIG_SUFFIXES + \
 #CLASSIFIERS = ['amd64', 'win', 'win32', 'win64', 'mac', 'mac-amd64', 'mac-arm64', 'mac-universal', 'linux']
 
 
-# def remove_suffixes(part):
-#     split = part.rsplit('.', 1)
-#     if len(split) == 2 and split[1] in SUFFIXES:
-#         part = remove_suffixes(split[0])
-#     return part
+def remove_suffixes(part):
+    split = part.rsplit('.', 1)
+    if len(split) == 2 and split[1] in SUFFIXES:
+        part = remove_suffixes(split[0])
+    return part
 #
 #
 # def remove_classifier(part):
@@ -42,16 +43,22 @@ SUFFIXES = SIG_SUFFIXES + \
 #             return  part[:-(len(c) + 1)], c
 #     return part, None
 
+def classifier(filename):
+    cp = re.compile('win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux|amd64')
+    classifiers = cp.findall(filename)
+    if(len(classifiers) > 0):
+        return classifiers[0]
+    else:
+        return None
 
 def version(filename):
-    #part = remove_suffixes(filename)
+    part = remove_suffixes(filename)
+    #print >> sys.stderr, "------------- version: filename: ", part
     #part, classifier = remove_classifier(part)
-    cp = re.compile('amd64|win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux')
-    classifier =cp.findall(filename)
     #version = part.rsplit('-', 1)[1]
-    vp = re.compile('\d+[.]\d+[.]\d+[a-z]*')
-    version = vp.findall(filename)
-    return version, classifier
+    vp = re.compile('\d+[.]{1}\d+[.]?\d*[a-z]*')
+    version = vp.findall(part)[0]
+    return version, classifier(part)
 
 
 def version_with_classifier(filename):
