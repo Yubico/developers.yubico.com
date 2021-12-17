@@ -28,26 +28,19 @@ SUFFIXES = SIG_SUFFIXES + \
     ['tar', 'gz', 'tgz', 'xz', 'zip', 'exe', 'pkg', 'cap', 'apk', 'msi', 'pdf', 'AppImage']
 
 
-def remove_suffixes(part):
-    split = part.rsplit('.', 1)
-    if len(split) == 2 and split[1] in SUFFIXES:
-        part = remove_suffixes(split[0])
-    return part
-
 def classifier(filename):
     # Make sure that the specific classifiers come before the general ones so they are matched first. Tex 'win32' should come before 'win'
     cp = re.compile(r'\b(win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux|amd64)\b')
-    classifiers = cp.findall(filename)
-    if(len(classifiers) > 0):
-        return classifiers[0]
+    m = cp.search(filename)
+    if m:
+        return m.group()
     else:
         return None
 
 def version(filename):
-    part = remove_suffixes(filename)
-    vp = re.compile('\d+[.]{1}\d+[.]?\d*[a-z]*')
-    version = vp.findall(part)[0]
-    return version, classifier(part)
+    vp = re.compile(r"\b\d+\.\d+(\.\d+)?[a-z]?\b")
+    version = vp.search(filename).group()
+    return version, classifier(filename)
 
 def version_with_classifier(filename):
     vers, classifier = version(filename)
