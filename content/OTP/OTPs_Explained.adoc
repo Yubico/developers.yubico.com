@@ -1,12 +1,12 @@
 == OTPs Explained
 
-A Yubico OTP is a 44-character, one use, secure, 128-bit encrypted Public ID and
-Password, near impossible to spoof. The OTP is comprised of two major parts:
+A Yubico OTP is a 44-character, single-use, secure, 128-bit encrypted Public ID and
+Password that is nearly impossible to spoof. The OTP is comprised of two major parts:
 the first 12 characters remain constant and represent the Public ID of the YubiKey
-device itself.  The remaining 32 characters make up a unique passcode for each OTP
+device itself. The remaining 32 characters make up a unique passcode for each OTP
 generated.
 
-.Example output from a YubiKey where the button has been pressed three times
+.Example output from a YubiKey whose button has been pressed three times
 ====
 +++<code><b>cccjgjgkhcbb</b>irdrfdnlnghhfgrtnnlgedjlftrbdeut</code>+++
 
@@ -24,21 +24,21 @@ will allow the validation server to know which OTPs have already been used.
 
 image:otp_details.png[]
 
-The outputed OTP of the YubiKey OTP is provided in the Modhex characterset. The Modhex characterset uses characters common across the majority of latin alphabet QWERTY keyboard layouts, allowing for functionality regardless of the language set.
+The YubiKey OTP is encoded in modhex (Modified Hexadecimal), a format that mostly allows for functionality regardless of the language set. Modhex uses only characters whose position on the keyboard does not change across the majority of latin-script keyboard layouts that are similar to QWERTY.
 
-.Hex to Modhex Substitution
+.Translation between hexadecimal and modhex
 [cols="2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"]
 |===
-|Hex |a |b |c |d |e |f |0 |1 |2 |3 |4 |5 |6 |7 |8 |9
+|Hexadecimal |a |b |c |d |e |f |0 |1 |2 |3 |4 |5 |6 |7 |8 |9
 |Modhex |l |n |r |t |u |v |c |b |d |e |f |g |h |i |j |k
 |===
 
-This substitution can easily be scripted. For example, in Linux, converting a random 6 hex character string to modhex can be accompished with the command:
+It is easy to script the conversion from hexadecimal to modhex. For example, in Linux and POSIX systems, the command `tr` does the job:
 
 `openssl rand -hex 6 | tr abcdef0123456789 lnrtuvcbdefghijk`
 
 == The Yubico OTP generation algorithm
-The YubiKey OTP generation is made up of the following fields, encrypted with a unique AES-128 bit key. The result is the 32 character modhex string included after the 12 character public ID.
+The YubiKey OTP generation is made up of the following fields, encrypted with a unique AES-128 bit key. The result is the 32-character modhex string included after the 12-character public ID.
 
 |===
 |Mnemonic |Byte offset |Size |Description
@@ -72,39 +72,38 @@ The YubiKey OTP generation is made up of the following fields, encrypted with a 
 
 
 === Private ID
-The private id field comprises 6 bytes copied from the private id field configuration value. This field can be used to store a private identity which can be accessed when the OTP is decrypted in a Yubico OTP validation server holding the AES key used to encrypt the OTP.
+The private-id field comprises 6 bytes copied from the private-id configuration value. This field can be used to store a private identity which can be accessed when the OTP is decrypted in a Yubico OTP validation server holding the AES key used to encrypt the OTP.
 
 [Note]
 ======
-Yubico has declared end-of-life for the YubiKey Validation Server (YK-VAL) and YubiKey Key Storage Module (YK-KSM). These have been moved to link://github.com/YubicoLabs/yubikey-ksm[YubicoLabs] as a reference architecture. See article, link:/support.yubico.com/hc/en-us/articles/360021227000[YK-VAL, YK-KSM and YubiHSM 1 End-of-Life].
+Yubico has declared end-of-life for the YubiKey Validation Server (YK-VAL) and the YubiKey Key Storage Module (YK-KSM). These have been moved to link://github.com/YubicoLabs/yubikey-ksm[YubicoLabs] as a reference architecture. See article, link:/support.yubico.com/hc/en-us/articles/360021227000[YK-VAL, YK-KSM and YubiHSM 1 End-of-Life].
 ======
 
-
-The verifying instance should verify this field against the expected value. If an OTP is encrypted with a non-matching AES key, this field will be invalid and the OTP shall in this case be rejected.
+The verifying instance should verify the private-id field against the expected value. If an OTP is encrypted with a non-matching AES key, this field will be invalid and the OTP shall be rejected.
 
 === Session usage counter
-At power up, the session usage counter is initiated to zero. After each new OTP has been generated, this field is incremented by one. If this field wraps from 0xff to 0, the usage counter field is automatically incremented.
+The session usage counter is initiated to zero at power-up and is incremented by one every time a new OTP is generated. When this field wraps from 0xff to 0, the usage counter field is automatically incremented.
 
 === Usage counter
-The usage counter is a non-volatile counter which value is preserved even when the device is unplugged. The first time the device is used after a power-up or reset, this value is incremented by 1 and the session counter is set to zero.
+The usage counter is a non-volatile counter whose value is preserved even when the device is unplugged. The first time the device is used after a power-up or reset, this value is incremented by 1 and the session counter is set to zero.
 
-This field is only 15 bits wide, giving a usable range of 1 – 0x7fff. When this counter reaches 0x7fff it stops there. One could think that this could lead to a YubiKey being practically useless during its lifetime if this occurs. However, considering a YubiKey being used five times a day, 365 days per year, it will take 18 years for the counter to get stuck. Furthermore, as this counter only increment the first time after power up / reset, the practical lifetime is even longer.
+This field is only 15 bits wide, giving a usable range from 1 to 0x7fff. When this counter reaches 0x7fff, it stops there. One might think that this constraint gives YubiKeys a short lifetime. However, if a YubiKey is used every day, five times a day, it will take 18 years for the counter to get stuck. In practice, the lifetime is even longer than that since this counter only increments each time the Yubikey powers up or resets. Finally, even when the usage counter reaches the final value, it is still possible to re-configure the device and reset the counter.
 
-If the counter reaches the final value, the device can still be re-configured which would cause the counter to be reset.
-The field is stored in little-endian format, i.e. the least significant byte being stored first.
+The usage counter is stored in little-endian format, i.e. the least significant byte is stored first.
 
 === Timestamp
-The timestamp is a 24-bit field incremented with a rate of approximately 8 Hz. The timestamp value is set to a random value after startup from the internal random number generator.
+The timestamp is a 24-bit field incremented at a rate of approximately 8 Hz. At startup, it is set to a random value using the internal random number generator.
 
-This field may be used by the verifying party to determine the time elapsed between two subsequent OTPs received during a session.
+The timestamp may be used by the verifying party to determine the time elapsed between two consecutive OTPs received during a single session.
 
-This field wraps from 0xffffff to 0 without any further action. If used by the verifying party, this condition must be taken into account. Given an 8 Hz rate, the timer will wrap approximately every 24 days. The field is stored in little-endian format, i.e. the least significant byte being stored first.
+This field automatically wraps from 0xffffff to 0. The verifying party must take this constraint into account. Given an 8 Hz rate, the timer will wrap approximately every 24 days.
+
+The timestamp is stored in little-endian format.
 
 === Random number
 A 16-bit random number is picked from the internal random number generator to add some additional entropy to the final result.
 
 === Checksum
-A 16-bit ISO13239 1st complement checksum is added to the end. The checksum spans all bytes except the checksum itself. The checksum is
-verified by calculating the checksum of all bytes, including the checksum field. This shall give a fixed residual of 0xf0b8 if the checksum is valid. If the checksum is invalid, the OTP shall be rejected.
+A 16-bit, ISO13239, 1's-complement checksum is added at the end. The checksum spans all bytes except the checksum itself. It is verified by calculating the checksum of all bytes, including the checksum field, where a valid checksum produces a fixed residual of 0xf0b8. If the checksum is invalid, the OTP shall be rejected.
 
-The field is stored in little-endian format, i.e. the least significant byte being stored first.
+The checksum is stored in little-endian format (the least significant byte comes first).
