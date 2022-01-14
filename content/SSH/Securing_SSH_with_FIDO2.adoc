@@ -6,7 +6,7 @@ Using FIDO2 credentials requires configuring OpenSSH on both the client and the 
 
 
 == Discoverable vs Non-Discoverable Credentials
-Before configuring an OpenSSH server or client to use FIDO2 credentials, one must first decide whether to use discoverable or non-discoverable credentials. Each option has different strengths, and the best option depends on the environment that SSH is being used in. Non-discoverable credentials require that the private key is stored in the folder ~/.ssh as well as the presence of the YubiKey. For this reason, it is not recommended to use non-discoverable credentials with a publicly accessible endpoint.
+Before configuring an OpenSSH server or client to use FIDO2 credentials, one must first decide whether to use discoverable or non-discoverable credentials. Each option has different strengths, and the best option depends on the environment that SSH is being used in. Non-discoverable credentials require that the private key is stored in the folder `~/.ssh` as well as the presence of the YubiKey. For this reason, it is not recommended to use non-discoverable credentials with a publicly accessible endpoint.
 
 .*Benefits of non-discoverable keys:*
 * They cannot be used by another person in case the YubiKey is lost.
@@ -25,12 +25,12 @@ Regardless of which type of credential is used, some prerequisites must be met:
 
 === Instructions for Discoverable Credentials
 . Insert a YubiKey into the computer.
-. Open a Terminal window and type the following command to generate a key using the `ecdsa` curve:
+. Open a Terminal window and type the following command to generate a key using the ECDSA signature:
 +
 --
 `ssh-keygen -t ecdsa-sk -O resident -O application=ssh:YourTextHere`
 
-To use the `ed25519` curve, use the following command instead:
+To use the Ed25519 signature, use the following command instead:
 
 `ssh-keygen -t ed25519-sk -O resident -O application=ssh:YourTextHere`
 
@@ -62,7 +62,7 @@ _For both commands, replace_ `YourTextHere` _with anything that helps you identi
 . If this is the only credential on the system, you may rename the exported credentials as `id_ecdsa_sk` and `id_ecdsa_sk.pub` to allow seamless authentication.  
 +
 --
-When multiple credentials exist in the directory ~/.ssh, the proper command to authenticate to a remote system is:
+When multiple credentials exist in the directory `~/.ssh`, the proper command to authenticate to a remote system is:
 `ssh -i ~/.ssh/id_ecdsa_sk user@host` (replace `id_ecdsa_sk` with the correct identity file corresponding to the remote server).
 
 SSH can be made to use specific credentials with the help of the config file. The SSH config file `~/.ssh/config` may not exist and so may need to be created. For example, adding the following two lines to `~/.ssh/config` will tell SSH to always use the key `id_ecdsa_sk_rk_credential_example_com` when accessing example.demo.com.
@@ -101,7 +101,7 @@ To use the `ed25519` curve, use the following command instead:
 ==== Using an existing non-discoverable credential on a new computer
 . After following the previous instructions, insert the configured YubiKey into the new computer.
 
-. Copy the two files `id_ecdsa_sk` and `id_ecdsa_sk.pub` from step 4 in the previous instructions to the folder ~/.ssh on the new computer.
+. Copy the two files `id_ecdsa_sk` and `id_ecdsa_sk.pub` from step 4 in the previous instructions to the folder `~/.ssh` on the new computer.
 
 . To ensure that the migration was successful, SSH into the remote system from the new computer and touch the key when prompted.
 
@@ -111,7 +111,7 @@ If you are prompted for a password instead of the YubiKey, the remote system may
 
 * Restart the system or log out and back in again.
 * Check the OpenSSH version with the command `ssh -V`. The OpenSSH version must be at least 8.2p1 to use non-discoverable keys and at least 8.3 to use discoverable keys.
-* If the remote system is Linux-based, then check the logs:
+* If the remote system is Linux-based, then check the system logs:
 ** Ubuntu/Debian: `tail /var/log/syslog | grep sshd`
 ** Fedora: `journalctl -r /usr/sbin/sshd`
 * Run debug mode from the local computer with `ssh -vvvv username@host.com` and review the output for any errors.
