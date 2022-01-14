@@ -1,35 +1,30 @@
 = FIDO2 SSH Authentication
 
-Staring with 8.2p1, OpenSSH has added support for registering and authenticating with FIDO2 Credentials. With support for both Discoverable and Non-Discoverable Credentials, OpenSSH allows for the uses of both Security Keys and YubiKeys.
+Starting with version 8.2p1, OpenSSH has added support for registering and authenticating using FIDO2 Credentials. With support for both _discoverable_ and _non-discoverable_ credentials, OpenSSH thus allows using both Security Keys and YubiKeys. OpenSSH with support for FIDO2 credentials is available on Linux and MacOS, but not yet on Windows.
 
-Configuring OpenSSH to support FIDO2 credentials requires configuration on both the client and server. Further, slightly different settings are required depending if a Discoverable or Non-Discoverable credential is being used.
+Using FIDO2 credentials requires configuring OpenSSH on both the client and the server. Slightly different settings are required depending on whether discoverable or non-discoverable credentials are used.
 
-OpenSSH with support for FIDO2 credentials is avalible on Linux and MacOS, but not yet on Windows.
 
 == Discoverable vs Non-Discoverable Credentials
-Before configurating an OpenSSH server or Client for FIDO2 credentials, the decision must be reached as whether to use Discoverable or Non-Discoverable credentials. Either option has different strengths, and the best option depends on the environment SSH is being used in.
+Before configuring an OpenSSH server or client to use FIDO2 credentials, one must first decide whether to use discoverable or non-discoverable credentials. Each option has different strengths, and the best option depends on the environment that SSH is being used in. Non-discoverable credentials require that the private key is stored in the folder ~/.ssh as well as the presence of the YubiKey. For this reason, it is not recommended to use non-discoverable credentials with a publicly accessible endpoint.
 
-Depending on the version of OpenSSH in use, the choice between Discoverable and non-Discoverable keys may not exist. Discoverable credentials require OpenSSH 8.3, while non-discoverable credentials only require OpenSSH 8.2p1. Non-Discoverable credentials will also require the private key to be stored within the ~/.ssh folder of the logged in user as well as the YubiKey. If using a publicly accesable endpoint, it is not recommened to use non-Discoverable credentials for this reason.
+.*Benefits of non-discoverable keys:*
+* They cannot be used by another person in case the YubiKey is lost.
+* Ideal for systems that require higher levels of security.
 
-.*Benefits of Non-discoverable keys:*
-* Cannot be used by another person if the YubiKey is found 
-* Ideal for higher security systems
-
-.*Benefits of Discoverable keys:*
-* Can be taken to any compatible workstation and used to authenticate by touch and FIDO2 PIN
-* Ideal for ease of access where the PIN is known
+.*Benefits of discoverable keys:*
+* They can be moved to any compatible workstation and used to authenticate with touch and a FIDO2 PIN.
+* Ideal for ease of access where the PIN is known.
 
 == Setting up OpenSSH for FIDO2 Authentication
-Regardless of which credential options is selected, there are some prerequisites:
+Regardless of which type of credential is used, some prerequisites must be met:
 
-* Local and Remote systems must be running OpenSSH 8.2p1 or higher for non-resident keys
-* Local and Remote systems must be running OpenSSH 8.3 or higher for resident keys
-* FIDO2 PIN must be set on the YubiKey. This can be accomplished using YubiKey Manager or local tools
-* The words `anything`, `homedirectory` or `username` below are for example purposes only 
+* Both the local and remote systems must be running OpenSSH version 8.2p1 or higher in order to use non-discoverable credentials.
+* Both the local and remote systems must be running OpenSSH version 8.3 or higher in order to use discoverable credentials.
+* A FIDO2 PIN must be set on the YubiKey. This can be done using YubiKey Manager, for instance.
 
-=== Discoverable Key Instructions
-==== Local system configuration
-. Insert YubiKey into the system
+=== Instructions for Discoverable Credentials
+. Insert a YubiKey into the computer.
 . Open a Terminal window and type the following command to generate a key using the `ecdsa` curve:
 +
 --
@@ -39,26 +34,20 @@ To use the `ed25519` curve, use the following command instead:
 
 `ssh-keygen -t ed25519-sk -O resident -O application=ssh:YourTextHere`
 
-_For both commands,_ `YourTextHere` _can be replaced by anything which helps you identify where this key is being used, for example a server name.  This is not a mandatory option._
+_For both commands, replace_ `YourTextHere` _with anything that helps you identify where this key is being used, for example a server name. This option is not mandatory and may be omitted._
 --
-. SSH will request the user to enter their PIN and touch the device. When this request occurs, the YubiKey will flash.
+. SSH will ask the user to enter their PIN and touch the device. At the same time, the YubiKey will flash. _Note that some systems do not ask the user to touch the YubiKey, requiring only the PIN._
 
-.. _Note that not all systems may ask for the user to touch their YubiKey, but only require the PIN_
+. SSH will save two files with default names `id_ecdsa_sk` and `id_ecdsa_sk.pub`. The user can always choose different filenames when prompted for a save location. The first file, `id_ecdsa_sk`, contains information about the private key credential stored on the YubiKey. The second file, `id_ecdsa_sk.pub`, is the public key required for authentication to a remote system.  
 
-. SSH will save two files. A user can check their console and to display the actual filenames. By default, these filenames will be `id_ecdsa_sk` & `id_ecdsa_sk.pub`, but may be different dependent on whether or not it was changed to something else when prompted for a save location. In the example below, the default names are used.
-+
---
-The first file, `id_ecdsa_sk`, contains the private key credential stored on the YubiKey.  The second file ,`id_ecdsa_sk.pub`, contains the public key which is required to complete authentication with a remote system.  
---
-
-. The public key can be added to a remote server with the following command:
+. The following command adds the public key to a remote server:
 +
 --
 `ssh-copy-id -i ~/.ssh/id_ecdsa_sk user@host`
 --
 
-==== Using a discoverable credential on a new local system
-. Follow the previous instructions and insert the configured YubiKey into the new system
+==== Using an existing discoverable credential on a new computer
+. After following the previous instructions, insert the configured YubiKey into the new computer.
 
 . Open a Terminal window and type the following commands:
 +
@@ -68,18 +57,15 @@ The first file, `id_ecdsa_sk`, contains the private key credential stored on the
 `ssh-keygen -K`
 --
 
-. SSH will ask the user to enter your PIN and touch the device.  Some systems may not ask for a touch. When this request occurs, the YubiKey will flash.
+. SSH will ask the user to enter their PIN and touch the device. At the same time, the YubiKey will flash. However, some systems may not ask for a touch.
 
-. If this is the only credential on the  system, you can rename the exported credentials as `id_ecdsa_sk` and `id_ecdsa_sk.pub` to allow seamless authentication.  
+. If this is the only credential on the system, you may rename the exported credentials as `id_ecdsa_sk` and `id_ecdsa_sk.pub` to allow seamless authentication.  
 +
 --
-If there is a need to keep multiple credentials in an .ssh folder, the command to authenticate to a remote system is:
-`ssh -i ~/.ssh/id_ecdsa_sk user@host`
-_(Where you have checked and confirmed_ `id_ecdsa_sk` _is the actual filename written by ssh-keygen)_
+When multiple credentials exist in the directory ~/.ssh, the proper command to authenticate to a remote system is:
+`ssh -i ~/.ssh/id_ecdsa_sk user@host` (replace `id_ecdsa_sk` with the correct identity file corresponding to the remote server).
 
-It is also possible to configure ssh to always use a specific credential by creating a config file. To do this set the `IdentityFile` in the user SSH config (This file may need to be created). 
-
-For example, in `~/.ssh/config` adding the following two lines will direct ssh to always use `id_ecdsa_sk_rk_credential_example_com` as the identity file when accessing example.demo.com
+SSH can be made to use specific credentials with the help of the config file. The SSH config file `~/.ssh/config` may not exist and so may need to be created. For example, adding the following two lines to `~/.ssh/config` will tell SSH to always use the key `id_ecdsa_sk_rk_credential_example_com` when accessing example.demo.com.
 
 ----
 Host example.demo.com 
@@ -88,11 +74,10 @@ IdentityFile ~/.ssh/id_ecdsa_sk_rk_credential_example_com
 
 --
 
-. SSH to the remote system and touch the key when prompted. When this request occurs, the YubiKey will flash.
+. To ensure that the migration was successful, SSH into the remote system from the new computer and touch the key when prompted.
 
-=== Non Discoverable Key Instructions
-==== Local system configuration
-. Insert YubiKey into the system
+=== Instructions for Non-Discoverable Credentials
+. Insert a YubiKey into the computer.
 
 . Open a Terminal window and type the following command to generate a key using the `ecdsa` curve:
 +
@@ -103,41 +88,33 @@ To use the `ed25519` curve, use the following command instead:
 `ssh-keygen -t ed25519-sk`
 --
 
-. SSH will request the user to enter their PIN and touch the device. When this request occurs, the YubiKey will flash.
+. SSH will ask the user to enter their PIN and touch the device. At the same time, the YubiKey will flash. _Note that some systems do not ask the user to touch the YubiKey, requiring only the PIN._
 
-.. _Note that not all systems may ask for the user to touch their YubiKey, but only require the PIN_
+. As was the case with discoverable credentials above, SSH will save two files with default names `id_ecdsa_sk` (the private key) and `id_ecdsa_sk.pub` (the public key). With non-discoverable credentials, however, nothing is actually stored on the YubiKey itself.
 
-. SSH will save two files. A user can check their console and to display the actual filenames. By default, these filenames will be `id_ecdsa_sk` & `id_ecdsa_sk.pub`, but may be different dependent on whether or not it was changed to something else when prompted for a save location. In the example below, the default names are used.
-+
---
-The first file, `id_ecdsa_sk`, contains the private key credential stored on the YubiKey.  The second file ,`id_ecdsa_sk.pub`, contains the public key which is required to complete authentication with a remote system.  
---
-
-. The public key can be added to a remote server with the following command:
+. The following command adds the public key to a remote server:
 +
 --
 `ssh-copy-id -i ~/.ssh/id_ecdsa_sk user@host`
 --
 
-==== Using non-discoverable keys on another local system configuration
-. Follow the previous instructions and insert the configured YubiKey into system.  
+==== Using an existing non-discoverable credential on a new computer
+. After following the previous instructions, insert the configured YubiKey into the new computer.
 
-. Copy the `id_ecdsa_sk` file and `id_ecdsa_sk.pub` from step 4 in the previous instructions to the` ~/.ssh` folder on the new local system.
+. Copy the two files `id_ecdsa_sk` and `id_ecdsa_sk.pub` from step 4 in the previous instructions to the folder ~/.ssh on the new computer.
 
-. SSH to the remote system and touch the key when prompted.
+. To ensure that the migration was successful, SSH into the remote system from the new computer and touch the key when prompted.
+
 
 == Troubleshooting
-.In the event you are prompted for a password instead of the YubiKey, further configuration of the remote system may be required.  Some areas to consider investigating are:
-* Restart/log out and back in again
-* Check the version of ssh is 8.2p1 minimum with ssh -V (for non-discoverable keys)
-* Check the version of ssh is 8.3 minimum with ssh -V where discoverable keys are used
-* If the remote system is Linux based check the logs:
-+
---
-Ubuntu/Debian: `tail /var/log/syslog | grep sshd`
-Fedora: `journalctl -r /usr/sbin/sshd`
---
-* Run debug mode from the local system `ssh -vvvv username@host.com` and review the debug output for any errors
-* Sometimes when logging on to the remote system an error saying `/home/username/.ssh/id_ecdsa_sk` cannot be read will be displayed.  This may be because it can’t see the YubiKey properly, remove and re-insert
-* SSH Public Keys will be rejected if the permissions on the `id_ecdsa_sk` file are incorrect.  This can be corrected with `chmod 600 id_ecdsa_sk`
-* Due to inconsistencies between Operating Systems, the key may not flash or prompt for touch
+If you are prompted for a password instead of the YubiKey, the remote system may need reconfiguring. Here are a few things to try out or check:
+
+* Restart the system or log out and back in again.
+* Check the OpenSSH version with the command `ssh -V`. The OpenSSH version must be at least 8.2p1 to use non-discoverable keys and at least 8.3 to use discoverable keys.
+* If the remote system is Linux-based, then check the logs:
+** Ubuntu/Debian: `tail /var/log/syslog | grep sshd`
+** Fedora: `journalctl -r /usr/sbin/sshd`
+* Run debug mode from the local computer with `ssh -vvvv username@host.com` and review the output for any errors.
+* Sometimes, when logging on to the remote system, an error will be displayed saying that `/home/username/.ssh/id_ecdsa_sk` cannot be read. This may happen because SSH cannot see the YubiKey properly, so just unplug and reinsert the YubiKey.
+* SSH public keys will be rejected when the private key has incorrect file permissions. Correct this situation by issuing the command `chmod 600 ~/.ssh/id_ecdsa_sk` (assuming the private key is located at `~/.ssh/id_ecdsa_sk`).
+* The YubiKey may not flash or prompt for touch due to inconsistencies between different operating systems.
