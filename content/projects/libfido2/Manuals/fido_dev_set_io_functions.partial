@@ -23,8 +23,10 @@
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
 <code class="Nm" title="Nm">fido_dev_set_io_functions</code>,
   <code class="Nm" title="Nm">fido_dev_set_sigmask</code>,
-  <code class="Nm" title="Nm">fido_dev_set_timeout</code> &#x2014;
-<div class="Nd" title="Nd">FIDO 2 device I/O interface</div>
+  <code class="Nm" title="Nm">fido_dev_set_timeout</code>,
+  <code class="Nm" title="Nm">fido_dev_set_transport_functions</code>,
+  <code class="Nm" title="Nm">fido_dev_io_handle</code> &#x2014;
+<div class="Nd" title="Nd">FIDO2 device I/O interface</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
   &lt;<a class="In" title="In">fido.h</a>&gt;</code>
@@ -47,9 +49,20 @@ typedef struct fido_dev_io {
 typedef int fido_sigset_t; 
 #else 
 typedef sigset_t fido_sigset_t; 
-#endif
+#endif 
+ 
+typedef int   fido_dev_rx_t(struct fido_dev *, 
+                  uint8_t, unsigned char *, size_t, int); 
+typedef int   fido_dev_tx_t(struct fido_dev *, 
+                  uint8_t, const unsigned char *, size_t); 
+ 
+typedef struct fido_dev_transport { 
+	fido_dev_rx_t *rx; 
+	fido_dev_tx_t *tx; 
+} fido_dev_transport_t;
 </pre>
 </div>
+<div class="Pp"></div>
 <br/>
 <var class="Ft" title="Ft">int</var>
 <br/>
@@ -68,6 +81,17 @@ typedef sigset_t fido_sigset_t;
 <code class="Fn" title="Fn">fido_dev_set_timeout</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
   *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">int
   ms</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_set_transport_functions</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_dev_transport_t *t</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">void *</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_io_handle</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_dev_t *dev</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 The <code class="Fn" title="Fn">fido_dev_set_io_functions</code>() function sets
   the I/O handlers used by <i class="Em" title="Em">libfido2</i> to talk to
@@ -137,15 +161,62 @@ The <code class="Fn" title="Fn">fido_dev_set_timeout</code>() function informs
   default behaviour. When using the Windows Hello backend,
   <var class="Fa" title="Fa">ms</var> is used as a guidance and may be
   overwritten by the platform.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_set_transport_functions</code>()
+  function sets the transport functions used by
+  <i class="Em" title="Em">libfido2</i> to talk to
+  <var class="Fa" title="Fa">dev</var>. While the I/O handlers are responsible
+  for sending and receiving transmission units of initialization and
+  continuation packets already formatted by
+  <i class="Em" title="Em">libfido2</i>, the transport handlers are responsible
+  for sending and receiving the CTAPHID commands and data directly, as defined
+  in the FIDO Client to Authenticator Protocol (CTAP) standard. They are defined
+  as follows:
+<dl class="Bl-tag">
+  <dt><var class="Vt" title="Vt">fido_dev_tx_t</var></dt>
+  <dd>Receives a device, a CTAPHID command to transmit, a data buffer to
+      transmit, and the length of the data buffer. On success, 0 is returned. On
+      error, -1 is returned.</dd>
+  <dt><var class="Vt" title="Vt">fido_dev_rx_t</var></dt>
+  <dd>Receives a device, a CTAPHID command whose response the caller expects to
+      receive, a data buffer to receive into, the size of the data buffer
+      determining the maximum length of a response, and the maximum number of
+      milliseconds to wait for a response. On success, the number of bytes read
+      into the data buffer is returned. On error, -1 is returned.</dd>
+</dl>
+<div class="Pp"></div>
+When transport functions are specified, <i class="Em" title="Em">libfido2</i>
+  will use them instead of the <code class="Dv" title="Dv">read</code> and
+  <code class="Dv" title="Dv">write</code> functions of the I/O handlers.
+  However, the I/O handlers must still be specified to open and close the
+  device.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_io_handle</code>() function returns the
+  opaque pointer returned by the <code class="Dv" title="Dv">open</code>
+  function of the I/O handlers. This is useful mainly for the transport
+  functions, which unlike the I/O handlers are passed the
+  <var class="Vt" title="Vt">fido_dev_t</var> pointer instead of the opaque I/O
+  handle.
 <h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
   VALUES</a></h1>
 On success, <code class="Fn" title="Fn">fido_dev_set_io_functions</code>(),
+  <code class="Fn" title="Fn">fido_dev_set_transport_functions</code>(),
   <code class="Fn" title="Fn">fido_dev_set_sigmask</code>(), and
   <code class="Fn" title="Fn">fido_dev_set_timeout</code>() return
   <code class="Dv" title="Dv">FIDO_OK</code>. On error, a different error code
   defined in
   <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>
-  is returned.</div>
+  is returned.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="fido_dev_info_manifest.html">fido_dev_info_manifest(3)</a>,
+  <a class="Xr" title="Xr" href="fido_dev_open.html">fido_dev_open(3)</a>
+<div class="Pp"></div>
+<cite class="Rs" title="Rs"><span class="RsR">Client to Authenticator Protocol
+  (CTAP)</span>,
+  <a class="RsU" href="https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html">https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html</a>,
+  <span class="RsQ">FIDO Alliance</span>, <span class="RsD">2021-06-15</span>,
+  <span class="RsO">Proposed Standard, Version 2.1</span>.</cite></div>
 <table class="foot">
   <tr>
     <td class="foot-date">May 25, 2018</td>

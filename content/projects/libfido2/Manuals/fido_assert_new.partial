@@ -46,7 +46,7 @@
   <code class="Nm" title="Nm">fido_assert_id_len</code>,
   <code class="Nm" title="Nm">fido_assert_sigcount</code>,
   <code class="Nm" title="Nm">fido_assert_flags</code> &#x2014;
-<div class="Nd" title="Nd">FIDO 2 assertion API</div>
+<div class="Nd" title="Nd">FIDO2 assertion API</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
   &lt;<a class="In" title="In">fido.h</a>&gt;</code>
@@ -194,7 +194,9 @@
   fido_assert_t *assert</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
-FIDO 2 assertions are abstracted in <i class="Em" title="Em">libfido2</i> by the
+A FIDO2 assertion is a collection of statements, each statement a map between a
+  challenge, a credential, a signature, and ancillary attributes. In
+  <i class="Em" title="Em">libfido2</i>, a FIDO2 assertion is abstracted by the
   <var class="Vt" title="Vt">fido_assert_t</var> type. The functions described
   in this page allow a <var class="Vt" title="Vt">fido_assert_t</var> type to be
   allocated, deallocated, and inspected. For other operations on
@@ -234,65 +236,69 @@ The <code class="Fn" title="Fn">fido_assert_user_display_name</code>(),
   <var class="Fa" title="Fa">assert</var>. If not NULL, the values returned by
   these functions point to NUL-terminated UTF-8 strings.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_assert_user_id_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_authdata_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_blob_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_hmac_secret_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_largeblob_key_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_sig_ptr</code>(), and
-  <code class="Fn" title="Fn">fido_assert_id_ptr</code>() functions return
-  pointers to the user ID, CBOR-encoded authenticator data, cred blob,
-  hmac-secret, &#x201C;largeBlobKey&#x201D;, signature, and credential ID
-  attributes of statement <var class="Fa" title="Fa">idx</var> in
+The <code class="Fn" title="Fn">fido_assert_authdata_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_clientdata_hash_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_id_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_user_id_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_sig_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_sigcount</code>(), and
+  <code class="Fn" title="Fn">fido_assert_flags</code>() functions return
+  pointers to the CBOR-encoded authenticator data, client data hash, credential
+  ID, user ID, signature, signature count, and authenticator data flags of
+  statement <var class="Fa" title="Fa">idx</var> in
   <var class="Fa" title="Fa">assert</var>.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_assert_user_id_len</code>(),
-  <code class="Fn" title="Fn">fido_assert_authdata_len</code>(),
-  <code class="Fn" title="Fn">fido_assert_blob_len</code>(),
-  <code class="Fn" title="Fn">fido_assert_hmac_secret_len</code>(),
-  <code class="Fn" title="Fn">fido_assert_largeblob_key_len</code>(),
-  <code class="Fn" title="Fn">fido_assert_sig_len</code>(), and
-  <code class="Fn" title="Fn">fido_assert_id_len</code>() functions can be used
-  to retrieve the corresponding length of a specific attribute.
-<div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_assert_sigcount</code>() function can be
-  used to obtain the signature counter of statement
+The <code class="Fn" title="Fn">fido_assert_hmac_secret_ptr</code>() function
+  returns a pointer to the hmac-secret attribute of statement
   <var class="Fa" title="Fa">idx</var> in
-  <var class="Fa" title="Fa">assert</var>.
+  <var class="Fa" title="Fa">assert</var>. The HMAC Secret Extension
+  (hmac-secret) is a CTAP 2.0 extension.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_assert_flags</code>() function returns the
-  authenticator data flags of statement <var class="Fa" title="Fa">idx</var> in
-  <var class="Fa" title="Fa">assert</var>.
+The <code class="Fn" title="Fn">fido_assert_blob_ptr</code>() and
+  <code class="Fn" title="Fn">fido_assert_largeblob_key_ptr</code>() functions
+  return pointers to the &#x201C;credBlob&#x201D; and
+  &#x201C;largeBlobKey&#x201D; attributes of statement
+  <var class="Fa" title="Fa">idx</var> in
+  <var class="Fa" title="Fa">assert</var>. Credential Blob (credBlob) and Large
+  Blob Key (largeBlobKey) are CTAP 2.1 extensions.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_assert_authdata_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_clientdata_hash_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_id_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_user_id_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_sig_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_hmac_secret_len</code>(),
+  <code class="Fn" title="Fn">fido_assert_blob_len</code>(), and
+  <code class="Fn" title="Fn">fido_assert_largeblob_key_len</code>() functions
+  return the length of a given attribute.
 <div class="Pp"></div>
 Please note that the first statement in <var class="Fa" title="Fa">assert</var>
   has an <var class="Fa" title="Fa">idx</var> (index) value of 0.
 <div class="Pp"></div>
 The authenticator data and signature parts of an assertion statement are
-  typically passed to a FIDO 2 server for verification.
-<div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_assert_clientdata_hash_ptr</code>()
-  function returns a pointer to the client data hash of
-  <var class="Fa" title="Fa">assert</var>. The corresponding length can be
-  obtained by
-  <code class="Fn" title="Fn">fido_assert_clientdata_hash_len</code>().
+  typically passed to a FIDO2 server for verification.
 <h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
   VALUES</a></h1>
 The authenticator data returned by
   <code class="Fn" title="Fn">fido_assert_authdata_ptr</code>() is a
   CBOR-encoded byte string, as obtained from the authenticator.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_assert_user_display_name</code>(),
+The <code class="Fn" title="Fn">fido_assert_rp_id</code>(),
+  <code class="Fn" title="Fn">fido_assert_user_display_name</code>(),
   <code class="Fn" title="Fn">fido_assert_user_icon</code>(),
   <code class="Fn" title="Fn">fido_assert_user_name</code>(),
   <code class="Fn" title="Fn">fido_assert_authdata_ptr</code>(),
   <code class="Fn" title="Fn">fido_assert_clientdata_hash_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_id_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_user_id_ptr</code>(),
+  <code class="Fn" title="Fn">fido_assert_sig_ptr</code>(),
   <code class="Fn" title="Fn">fido_assert_hmac_secret_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_largeblob_key_ptr</code>(),
-  <code class="Fn" title="Fn">fido_assert_user_id_ptr</code>(), and
-  <code class="Fn" title="Fn">fido_assert_sig_ptr</code>() functions return NULL
-  if the respective field in <var class="Fa" title="Fa">assert</var> is not set.
-  If not NULL, returned pointers are guaranteed to exist until any API function
-  that takes <var class="Fa" title="Fa">assert</var> without the
+  <code class="Fn" title="Fn">fido_assert_blob_ptr</code>(), and
+  <code class="Fn" title="Fn">fido_assert_largeblob_key_ptr</code>() functions
+  may return NULL if the respective field in
+  <var class="Fa" title="Fa">assert</var> is not set. If not NULL, returned
+  pointers are guaranteed to exist until any API function that takes
+  <var class="Fa" title="Fa">assert</var> without the
   <i class="Em" title="Em">const</i> qualifier is invoked.
 <h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h1>
