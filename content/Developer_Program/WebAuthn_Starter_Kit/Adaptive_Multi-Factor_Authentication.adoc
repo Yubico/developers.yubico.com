@@ -1,0 +1,169 @@
+== Adaptive Multi-Factor Authentication
+
+=== Introduction
+
+The username and password combination has long been entrenched as the primary form of authentication for better or worse, and it has placed strict limits on the flexibility of user authentication flows. With the advent of WebAuthn, and as its adoption gains momentum as an authentication scheme, an opportunity to remove user friction without compromising security or being dependent on a federated identity arises. While account security can be entirely protected by WebAuthn, there are cases where additional methods of authentication should be considered due to a variety of factors such as:
+* The browser or platform being used by the user
+* The protocol of the users authenticator
+* The users recurrent use of a specific device
+ 
+Adaptive Multi-Factor Authentication should be considered as a way to provide the highest degree of account security with flexibility to ensure the proper amount of friction is presented to the user depending on the current context of their session. Many services offer Adaptive Multi-Factor Authentication using multiple authentication types, such as Security keys paired with smartphone apps. However, it is possible to offer a similar level of user ease of use paired with security with just the features included in WebAuthn.
+
+There is no single way to perform Adaptive Multi-Factor Authentication, as the flow will be determined by the requirements of your application. As the authentication process is architected, it is important to keep in mind that you shouldn't overwhelm the user with choices as they go down any path of an Adaptive Multi-Factor Authentication flow. A service should only provide prompts that are relevant to a user, and only direct the user to select a different authentication route if the nominal option is not supported. The Yubico WebAuthn Starter Kit has implemented an Adaptive Multi-Factor Authentication flow using WebAuthn which can be used as a reference architecture if you are looking to develop a new solution or to transition from legacy username and password authentication.
+
+=== Leading with WebAuthn
+
+At this point you may be asking yourself "If WebAuthn is so secure, then why does it require other authentication factors?" As mentioned before, other factors may be required based on the context of the user's session, including the authenticator and host environment that they are using. In the WebAuthn Starter Kit we lead with the requirement that the user primarily authenticates with WebAuthn. If a user successfully authenticates with a FIDO2 credential with User Verification (UV), such as a PIN or Biometric, then this application deems the user as fully authenticated. While you can authenticate to WebAuthn using a U2F credential, that credential is missing one key component; the User Verification which demonstrates the user has been authorized to use that particular authenticator. UV protects FIDO2 devices from theft or misuse by allowing the option to set a PIN or Biometric on the authenticator. This provides a higher degree of certainty that the user attempting to use the authenticator is the owner (similar to how you may have a PIN set on your debit card).
+ 
+At the moment a user attempts to authenticate to WebAuthn with a U2F credential, they will be prompted to provide a U2F Password. This is the area where the Adaptive Multi-Factor Authentication kicks in. Because the U2F authenticator does not have UV, we want our application to prompt the user to provide a "something they know" such as a password. Unlike a traditional password, this U2F Password is not used to directly authenticate the user, instead it is used to verify that the authentication originates from a legitimate user of the authenticator. The key to all of this is to provide a seamless WebAuthn experience, while also accounting for the reality that in the real world people will be using a variety of different WebAuthn authenticators.
+
+=== Overview
+
+When implementing an Adaptive Multi-Factor Authentication with WebAuth, there are impacts on everything from new account creation to login to credential management. Many of these changes will reduce user friction, and allow for strong authentication to be offered alongside increased ease of use. For clarity, each element will be discussed in the sections below.
+
+==== User Registration
+[%header,cols="1,1,1,1,1"]
+|===
+| *WebAuthn authenticator* | *Examples* | *Provide identifier* | *Register a WebAuthn credential* | *Create U2F Password*
+
+| FIDO2
+a| 
+* Yubikey 5 Series
+* YubiKey BIO
+* Face ID
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+|
+
+| U2F
+a| 
+* Android Biometrics and Security Key
+* YubiKey 4 Series
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+
+| Usernameless - FIDO2 with a Resident Credential
+a| 
+* YubiKey 5 Series
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+|
+|===
+
+As the user accesses the WebAuthn Starter Kit for the first time they are prompted for their username, which represents a unique identifier for the user’s account. The username can be defined by the user, or based on a user’s email or phone number. For the WebAuthn Starter Kit, the username is separate from the user’s email or phone number to demonstrate a basic flow and provide code focused on the WebAuthn implementation. Note that using an identifier such as username or telephone number may reduce privacy, as users can enter known values to see if an account is associated with them - it is up to the architect to decide if this is a concern for their service.
+ 
+Optionally, the username can be stored on a local client or via a cookie or token for a web app to remove this requirement after the user has logged in once. If this method is implemented, options should be provided in the login page to allow a user to enter a new username.
+ 
+Once a username is submitted to the app, a decision point is reached. If the username already exists in the user store, the user is directed to the user login flow. If the username does not exist, the user is directed to the new account creation flow.
+ 
+If a username does not already exist, the user is directed to the new account creation flow. The first step is to start the create account process - displaying the username and offering the user an opportunity to return to the previous dialog if they entered the name incorrectly.
+ 
+Once the user affirms the username is correct, they click on a link to start the WebAuthn Make Credential / Registration event. The WebAuthn Starter kit is configured to prefer Discoverable Credentials and User Verification. The user is allowed to select which authenticator (platform or roaming, if available) to register. If no WebAuthn authenticators are available, the user cannot proceed.
+ 
+If the WebAuthn Authenticator supports both Discoverable Credentials and User Verification, the process proceeds as normal down a User-Verified registration flow; the WebAuthn framework will prompt the user for the WebAuthn Authenticator PIN or biometric, and upon successful authentication, create the profile for the user account.
+ 
+If the WebAuthn Authenticator does not support Discoverable Credentials or User Verification, then the secondary path is used, and the user is directed down the U2F with Verification registration flow. The WebAuthn framework will follow the standard flow, but not prompt for a user verification. However, the WebAuthn Starter kit will prompt the user to enter a U2F Password  for the user account. The user will then be prompted to enter the provided U2F Password again to confirm. Note that the user will need to provide the U2F Password every time that authenticator is used to access their account. The U2F Password is then saved, and will be used with all U2F authenticators for that account. Upon the successful authentication and confirmation of the U2F Password, the user’s profile is created.
+ 
+Once the user’s profile is created, the WebAuthn Starter kit will direct the user back to the first dialog. Upon entering the username, the user will be able to log into their account - the WebAuthn Starter kit will issue their client (browser or client app) an Auth token, as defined in the OpenID connect flow. Finally, on first login, the user will be presented with a list of recovery codes generated by the WebAuthn Starter Kit, used for regaining access to their account in the event they loose their WebAuthn Authenticator. Following that dialog, the user will be passed to the main profile page, and be logged in to the application proper.
+ 
+The figure below demonstrates different types of authenticators, examples of those devices, and the Adaptive Multi-Factor Authentication prompts that they will be required to complete
+ 
+The Starter Kit does not provide an example for a user creating a resident credential upon the initial account registration. Some platform authenticators, like Touch ID and Face ID, will automatically create a resident credential once registered. Other authenticators may require you to explicitly state for one to be created based on the public key options presented by the WebAuthn Server
+
+==== User Login
+[%header,cols="1,1,1,1,1,1"]
+|===
+| *WebAuthn authenticator* | *Examples* | *Provide identifier* | *Authenticate with WebAuthn credential* | *Provide U2F Password* | *Present recovery code*
+
+| FIDO2
+a| 
+* Yubikey 5 Series
+* YubiKey BIO
+* Face ID
+* Windows Hello
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+|
+|
+
+| U2F
+a| 
+* Android Biometrics
+* YubiKey 4 Series
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+|
+
+| Usernameless - FIDO2 with a resident credential
+a| 
+* YubiKey 5 Series
+|
+a|image::Images/group-4.png[]
+|
+|
+
+| Lost or misplaced credential
+a| 
+* YubiKey 5 Series
+a|image::Images/group-4.png[]
+|
+|
+a|image::Images/group-4.png[]
+|===
+
+If a username does exist, the user is directed to the login flow. The entry dialog is a simple page directing them to plug in their authenticator (if using a roaming authenticator), before proceeding. This page also has a link to the account recovery login flow.
+ 
+Once the user proceeds to the authentication, the WebAuthn Authentication flow proceeds as normal. If the authentication event returns a User-Verified authentication by entering a PIN or biometric, the user is allowed to proceed directly. If the Authentication event returns a U2F with Verification authentication, the user is then directed to a new dialog prompting them to enter their U2F Password. If the U2F Password is entered incorrectly, the user is returned to the start of the login flow, and prompted to authenticate with their WebAuthn Authenticator again. Entering a correct U2F Password will allow the user to proceed.
+ 
+As with the New Account, once the user is authenticated, they will be issued an Auth token as defined by the OpenID connect flow and be directed to the profile page.
+
+==== Account Recovery
+
+Should the user select the Account recovery option, they will be taken to a dialog allowing them to provide a Recovery code. Upon entering the Recovery Code, the user will be issued an Auth Token and be directed to the profile page. Each Recovery code may only be used once - after which, it is flagged as “used” in the database. While not implemented in the WebAuthn Starter kit, it is recommended to log as much information about the session where a Recovery Code is used as possible, in order to identify fraudulent attempts to access a protected account.
+ 
+It should be noted that the use of Recovery Codes in the WebAuthn Starter Kit was to demonstrate the possibility of adding account recovery to your   Adaptive Multi-Factor Authentication experience. For a production deployment please consider other alternatives for account recovery.
+
+==== Adding an Authenticator
+[%header,cols="1,1,1,1,1"]
+|===
+| *WebAuthn authenticator* | *Examples* | *Register a WebAuthn credential* | *Provide U2F Password* | *Set option to create resident credential*
+
+| FIDO2
+a| 
+* Yubikey 5 Series
+* YubiKey BIO
+* Face ID
+a|image::Images/group-4.png[]
+|
+|
+
+| U2F
+a| 
+* Android Biometrics and Security Key
+* YubiKey 4 Series
+a|image::Images/group-4.png[]
+a|image::Images/group-4.png[]
+|
+
+| Usernameless - FIDO2 with a Resident Credential
+a| 
+* YubiKey 5 Series
+a|image::Images/group-4.png[]
+|
+a|image::Images/group-4.png[]
+|===
+
+When adding a new authenticator to the user profile, the username associated with the account will automatically be used, without prompting the user to enter it again. When the authenticator registration begins, the WebAuthn Starter kit will first check to ensure the authenticator has not already been associated with the user account. Reused authenticators will have the registration rejected.
+ 
+As with the new account creation flow, if the authenticator supports both Discoverable Credentials and User Verification, the registration will proceed as normal down a User-Verified registration flow, with the user entering their PIN or biometric. If the authenticator does not support either Discoverable Credentials or User Verification, but a U2F Password has already been set for the user’s account, the registration will proceed, and the U2F Password will be associated with the authenticator. In the event a U2F Password has not already been provided, the user will be requested to provide one.
+ 
+Once the registration has completed, the user will be allowed to name the authenticator. Once the authenticator has been named, it will be associated with the user’s account, be able to authenticate the user during login, and be listed in the user’s profile.
+
+==== Account Management
+When a User is logged in and can access their profile page, they should be able to manage features for accessing their account, including adding, renaming or removing Authenticators, allowing users to manage their devices without requiring admin oversight. It is recommended that logic is included to prevent a user from removing all of their authenticators, leaving them unable to access their account. Further, for higher security, implementations should consider requiring an authentication event from a valid authenticator prior to adding new devices or removing existing ones.
+ 
+In addition, the user may change their U2F Password. It is not recommended to enforce a rotation of the U2F Password as it leads to unnecessary user friction, and unlike a password, the U2F Password cannot grant access to a user’s account without a registered authenticator.
+ 
+Finally, users are also given the option to view and regenerate their backup codes. For higher security, consider requiring an authentication event prior to viewing or regenerating the recovery codes.
