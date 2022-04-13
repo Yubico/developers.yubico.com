@@ -28,9 +28,9 @@ Regardless of which credential options is selected, there are some prerequisites
 * The words `anything`, `homedirectory` or `username` below are for example purposes only 
 
 === OpenSSH Remote system Configuration
-While OpenSSH does support FIDO2 Authentication by default it does not check for User Verification (PIN or Biometric). It is recommend to enable User Verification in the sshd_config file on the remote system. This can be done by adding `+PubkeyAuthOptions verify-required+` to the file.
+While OpenSSH does support FIDO2 Authentication by default it does not check for User Verification (PIN or Biometric). It is recommend to enable User Verification in the sshd_config file on the remote system. This can be done by adding `+PubkeyAuthOptions verify-required+` to the file. Note that the verify-required option requires a FIDO key signature; it does not affect other keys. For more details, refer to link:https://man.openbsd.org/sshd_config#PubkeyAuthOptions[OpenSSH manual pages]
 
-Alternatively, you can append 'verify-required' to a ~/.ssh/authorized_keys entry to have sshd check the UV flag for that credential only:
+On the client side, you can also append 'verify-required' to a ~/.ssh/authorized_keys entry to have sshd check the UV flag for that credential only:
 [source]
 $ cat .ssh/authorized_keys
 sk-ssh-ed25519@openssh.com <EntryID> verify-required
@@ -41,11 +41,11 @@ sk-ssh-ed25519@openssh.com <EntryID> verify-required
 . Open a Terminal window and type the following command to generate a key using the `ecdsa` curve:
 +
 --
-`ssh-keygen -t ecdsa-sk -O resident -O application=ssh:YourTextHere`
+`ssh-keygen -t ecdsa-sk -O resident -O application=ssh:YourTextHere -O verify-required`
 
 To use the `ed25519` curve, use the following command instead:
 
-`ssh-keygen -t ed25519-sk -O resident -O application=ssh:YourTextHere`
+`ssh-keygen -t ed25519-sk -O resident -O application=ssh:YourTextHere -O verify-required`
 
 _For both commands,_ `YourTextHere` _can be replaced by anything which helps you identify where this key is being used, for example a server name.  This is not a mandatory option._
 --
