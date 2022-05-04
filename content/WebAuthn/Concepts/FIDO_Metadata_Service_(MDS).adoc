@@ -176,15 +176,15 @@ There may be cases where you do not want your WebAuthn server to trust certain a
 
 You can add a filtering mechanism when defining the FidoMetadataService object to only include authenticators that have specific characteristics based on your business requirements. 
 
-The sample below will demonstrate how to filter for only authenticators that are FIDO Certified for Level 1.
+The sample below will demonstrate how to filter for only platform authenticators (metadata statements where the Attachment Hint entry is "Internal").
 
 ----
 FidoMetadataService.builder()
-  .useDownloader(downloader)
-  .filter(blobEntry => 
-    blobEntry.getStatusReports.stream()
-      .anyMatch(statusReport => statusReport.getStatus == AuthenticatorStatus.FIDO_CERTIFIED_L1))
-  .build()
+  .useBlob(downloader)
+  .filter(blobEntry -> 
+    blobEntry.getMetadataEntry().getMetadataStatement().get()
+    .getAttachmentHint().get().contains(AttachmentHint.ATTACHMENT_HINT_INTERNAL))
+  .build();
 ----
 
 == Considerations
