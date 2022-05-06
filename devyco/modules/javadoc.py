@@ -155,13 +155,18 @@ class JavaDocModule(Module):
         corresponding `override_artifact_ids`. If no pattern matches, return
         `artifact_ids` unchanged.
 
+        In addition to the syntax documented in `semver.match()`, the `pattern`
+        may contain semicolons to separate multiple patterns. In this case the
+        version must match all the constituent patterns in `patterns` to be
+        considered to match `pattern`.
+
         The set of `pattern`s must be disjoint - `version` must match zero or one `pattern`.
         """
         result = artifact_ids
         version_pattern_matches = 0
 
         for version_pattern, version_artifact_ids in conf.get('artifactIdVersions', {}).items():
-            if semver.match(version, version_pattern):
+            if all(semver.match(version, vp) for vp in version_pattern.split(';')):
                 version_pattern_matches += 1
                 if version_pattern_matches > 1:
                     raise AssertionError(
