@@ -4,12 +4,12 @@ Staring with 8.2p1, OpenSSH has added support for registering and authenticating
 
 Configuring OpenSSH to support FIDO2 credentials requires configuration on both the client and server. Further, slightly different settings are required depending if a Discoverable or Non-Discoverable credential is being used.
 
-OpenSSH with support for FIDO2 credentials is avalible on Linux, but not yet on Windows. MacOS does not currently support FIDO2 credentials in the bundled version of OpenSSH, but this feature may be enabled via installing OpenSSH via homebrew.
+OpenSSH with support for FIDO2 credentials is available on Linux, but not yet on Windows. MacOS does not currently support FIDO2 credentials in the bundled version of OpenSSH, but this feature may be enabled via installing OpenSSH via homebrew.
 
 == Discoverable vs Non-Discoverable Credentials
-Before configurating an OpenSSH server or Client for FIDO2 credentials, the decision must be reached as whether to use Discoverable or Non-Discoverable credentials. Either option has different strengths, and the best option depends on the environment SSH is being used in.
+Before configuring an OpenSSH server or Client for FIDO2 credentials, the decision must be reached as whether to use Discoverable or Non-Discoverable credentials. Either option has different strengths, and the best option depends on the environment SSH is being used in.
 
-Depending on the version of OpenSSH in use, the choice between Discoverable and non-Discoverable keys may not exist. Discoverable credentials require OpenSSH 8.3, while non-discoverable credentials only require OpenSSH 8.2p1. Non-Discoverable credentials will also require the private key to be stored within the ~/.ssh folder of the logged in user as well as the YubiKey. If using a publicly accesable endpoint, it is not recommened to use non-Discoverable credentials for this reason.
+Depending on the version of OpenSSH in use, the choice between Discoverable and non-Discoverable keys may not exist. Discoverable credentials require OpenSSH 8.3, while non-discoverable credentials only require OpenSSH 8.2p1. Non-Discoverable credentials will also require the private key to be stored within the ~/.ssh folder of the logged in user as well as the YubiKey. If using a publicly accessible endpoint, it is not recommended to use non-Discoverable credentials for this reason.
 
 .*Benefits of Non-discoverable keys:*
 * Cannot be used by another person if the YubiKey is found 
@@ -31,9 +31,11 @@ Regardless of which credential options is selected, there are some prerequisites
 While OpenSSH does support FIDO2 Authentication by default it does not check for User Verification (PIN or Biometric). It is recommend to enable User Verification in the sshd_config file on the remote system. This can be done by adding `+PubkeyAuthOptions verify-required+` to the file. Note that the verify-required option requires a FIDO key signature; it does not affect other keys. For more details, refer to link:https://man.openbsd.org/sshd_config#PubkeyAuthOptions[OpenSSH manual pages]
 
 On the client side, you can also append 'verify-required' to a ~/.ssh/authorized_keys entry to have sshd check the UV flag for that credential only:
-[source]
+
+----
 $ cat .ssh/authorized_keys
 sk-ssh-ed25519@openssh.com <EntryID> verify-required
+----
 
 === Discoverable Key Instructions
 ==== Local system configuration
