@@ -237,6 +237,13 @@ cc.run({
                 col4: "This is a pattern type cookie set by Google Tag Manager.",
                 is_regex: true,
               },
+              {
+                col1: "^hj",
+                col2: "hotjar.com",
+                col3: "1 year",
+                col4: "This is a pattern type cookie set by the hotjar feedback widget.",
+                is_regex: true,
+              }
             ],
           },
           {
