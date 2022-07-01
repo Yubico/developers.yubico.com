@@ -238,7 +238,14 @@ cc.run({
                 is_regex: true,
               },
               {
-                col1: "^hj",
+                col1: "^ajs_",
+                col2: "hotjar.com",
+                col3: "1 year",
+                col4: "This is a pattern type cookie set by the hotjar feedback widget.",
+                is_regex: true,
+              },
+              {
+                col1: "^_hj",
                 col2: "hotjar.com",
                 col3: "1 year",
                 col4: "This is a pattern type cookie set by the hotjar feedback widget.",
