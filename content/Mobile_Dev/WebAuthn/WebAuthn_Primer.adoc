@@ -1,0 +1,54 @@
+== WebAuthn primer for mobile development
+This section should be referenced if you are looking to begin development for a mobile application, but are unfamiliar with WebAuthn concepts and development. The goal of this page is threefold:
+
+* Point you in the direction of  resources to learn more about the WebAuthn protocol
+* Provide additional considerations for developing WebAuthn on mobile devices
+* Guide developers on how to deploy an example WebAuthn application.
+
+=== Where can I learn more about WebAuthn?
+Below are a variety of resources for you to continue to learn more about WebAuthn 
+
+* link:/WebAuthn/WebAuthn_Developer_Guide/[Yubico WebAuthn Developer Guide] - Overview of a variety of topics to help you become familiar with WebAuthn concepts
+* link:https://www.edx.org/course/introduction-to-web-authentication[Introduction to WebAuthn] - Course developed by W3C and Yubico meant to introduce developers to the WebAuthn API and concepts
+* link:https://www.w3.org/TR/webauthn-2/[WebAuthn specification] - W3C specification for the WebAuthn protocol.
+* link:https://github.com/YubicoLabs/WebAuthnKit[WebAuthn Starter Kit] - Open source project for you to create your own test environment
+
+=== Important concepts to consider
+The following subsections will outline considerations to take during the implementation of your application. While the concepts below aren’t inherently specific to mobile applications with WebAuthn, it’s worth reinforcing them to help you frame your implementation and UX strategy.
+
+==== Platform vs Cross Platform authenticators
+The WebAuthn standard supports two types of authenticators:
+
+Platform authenticators, also known as internal authenticators, such as a fingerprint scanner built into a smartphone. Platform authenticators are limited to authenticating a user via a specific device (in the case of Windows Hello, the laptop running it). To support platform authenticators, a device must include both:
+
+* A Trusted Platform Module (TPM) security chip to handle public and private keys. Most recent business-grade laptops, desktops, and smartphones have TPMs.
+* A camera or biometric reader that supports the types of input required; for example, to scan a fingerprint, a fingerprint reader is required. Note that a biometric sensor is not required for a platform authenticator. The point is that the authenticator must support the type of input required, which could just as well be PIN for user verification, or indeed, in the case where there is no user verification at all, the TPM would be used as a U2F style second factor authenticator.
+
+Roaming authenticators, also known as cross-platform or external authenticators, such as a hardware security key. These authenticators can be used with a laptop or mobile device, etc., and are thus cross-platform. This characteristic enables their use to establish a secure source for verifying the user’s identity (the "root of trust") and for delegating trust to specific devices in the user’s control. The user can therefore authorize other devices as needed ("bootstrap" them). Should one of those other devices be lost or become corrupted, the roaming authenticator is used to authorize a new device. For these reasons, it is a roaming authenticator such as a security key that should be the primary authenticator.
+
+==== What is a trusted device?
+In the realm of traditional authentication the concept of Trusted Devices was introduced as a form of 2FA to make the login experience easier for a user who frequents a device. This often included the storage of a device identifier as a cookie, in cache, or in local storage. This presents an attack avenue, if an attacker gains access to a user's computer, or finds a way to spoof the machine, then all they require is a compromised password to gain access to a user's account. A Platform Authenticator can act as a Trusted Device by relying on the WebAuthn credential already built into the device. For an attacker it’s not just as easy as having access to the users device, they will also need knowledge of the users PIN, or access to the users biometrics (Fingerprint for Android Biometrics, Face for Face ID, etc.)
+
+==== Hardware backed vs copyable credentials
+Some technology providers have begun to implement copyable credentials within their operating systems/ecosystems, oftentimes this is branded as passkeys. You should be aware of the difference between the two credential types so that you can guide your authentication strategy.
+
+Hardware backed credentials are credentials where the private key never leaves the piece of hardware that they were originally created on. This greatly minimizes the risk of your credential being exposed to attackers as they would need the physical device in order to access any of your accounts. These credentials allow for the highest degree of security.
+
+Copayable credentials are credentials that can be leveraged from one device to another. These credentials typically reside in a shared/cloud environment where an authenticated user is able to access all of their credentials from a single location. A user may also be able to pass their credentials to other users for shared access. While these credentials offer a high degree of usability, there is often a huge trade off in the degree of security offered.
+
+=== How do I deploy a WebAuthn relying party?
+The first major step in implementing and deploying a WebAuthn enabled application is to create a WebAuthn relying party. The relying party is the server-side component of your application, which contains the FIDO2 app. This FIDO2 app will be used to store and manage user credentials, as well as validating the registration and authentication ceremonies. The FIDO2 app typically requires an interface to your user store (identity provider) in order to help the authentication/registration processes. 
+
+For this step you will have two options. Your first option will walk you through how to stand up a local instance of a WebAuthn server for you to test with a simple application. Your second option will deploy a full reference architecture using Yubico’s recommended best practices that includes both a relying party and full client application.
+
+* link:https://developers.yubico.com/WebAuthn/WebAuthn_Walk-Through.html[Yubico java-webauthn-server demo] - Walkthrough on how to deploy a local instance of a WebAuthn server
+* link:https://developers.yubico.com/Developer_Program/WebAuthn_Starter_Kit/[Yubico WebAuthn Starter Kit] - Full reference architecture with both a relying party and client application. More information will be given in the next section
+
+=== How do I deploy an example WebAuthn application?
+The next major component needed for a WebAuthn application is the client application. This is what your end user will see when they attempt to use your application. The client should facilitate the authentication, registration, and account management processes. In order to enable this in your specific application you will need a way to communicate with the relying party provisioned in the previous section.
+
+Below is a link to the Yubico WebAuthn Starter Kit. This will provide a full reference architecture where you will deploy a live WebAuthn application using AWS. The Starter Kit includes examples for the server side application, user experience and communicating to the relying party for the client application, and how to integrate into a widely used identity provider for user storage. 
+
+* link:https://developers.yubico.com/Developer_Program/WebAuthn_Starter_Kit/[Yubico WebAuthn Starter Kit] - Full reference architecture with both a relying party and client application. More information will be given in the next section
+
+Note that the Starter Kit should not be used as your production application - Feel free to copy code snippets and flows from the examples, but you must ensure that the application meets your specific application requirements. 

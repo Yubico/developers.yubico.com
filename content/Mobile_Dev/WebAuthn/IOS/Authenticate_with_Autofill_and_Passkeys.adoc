@@ -1,0 +1,189 @@
+= Authenticate with Autofill and Passkeys on IOS Safari
+
+== I want my users to authenticate by auto filling their passkeys
+You may have seen recent announcements from Apple and Google around their passkey experience. Their passkey experience is essentially WebAuthn with the ability to sync credentials across multiple devices. During the Introducing Passkeys presentation at WWDC22, Apple introduced a new feature called “conditional mediation”, which helps to facilitate an autofill type experience for users who are using WebAuthn credentials. This introduces a new flow for WebAuthn applications looking to utilize copyable credentials in the iOS ecosystem.
+
+How does autofill enhance the WebAuthn experience? In order to preserve privacy, the RP should not be able to self-determine if the client has discoverable credentials available for authentication - This could be used to track users who want to remain anonymous for a session. Conditional mediation allows the client to search itself for credentials, without ever making the results visible to the RP. If there is a result, the user can make the choice to send their selected credential to the RP. This is also a more seamless UX for users who may have forgotten that they have a discoverable credential available on their client.
+
+This page will provide implementation guidance for developers looking to enable the autofill/mediation flow in their mobile applications.
+
+**Note** - The full release of iOS 16, where this feature will be introduced, is still a few months out. This guidance was developed using the iOS 16 Beta. We will attempt to update this document as more information becomes available.
+
+
+=== Application demo
+Before we proceed to the implementation guidance, let’s first take a look at what will be created. The following video demonstrates an autofill flow on an iOS device. A major difference between this flow, and the standard WebAuthn experience is where the user is immediately prompted with possible credentials to authenticate with. In a standard WebAuthn flow, a user would typically instigate an authentication flow by providing an identifier, or by prompting the site to begin a usernameless login flow.
+
+video::videos/auth_autofill_1.mp4[height=600]
+
+=== Checking if Conditional Mediation is available
+One of the main drivers of this experience is the use of the “conditional mediation” feature. This is the feature that allows your platform to determine if a discoverable credential exists on the device that you are attempting to use to authenticate. In this case your platform will allow you to autofill the users credential. This allows your client to determine whether or not your user has an existing credential, without signaling this information to the relying party. 
+
+The first step in utilizing conditional mediation is to check if the feature is available from your client. This is important as this is a new feature for browsers, so your browser of choice may not allow for this flow. You can use the method below to determine if conditional mediation is available.
+
+Figure 1 demonstrates sample code that can be used to check if conditional mediation is available
+
+[source,javascript]
+----
+  const mediationAvailable = () => {
+    const pubKeyCred = PublicKeyCredential;
+    // Check if the function exists on the browser - Not safe to assume as the page will crash if the function is not available
+    //typeof check is used as browsers that do not support mediation will not have the 'isConditionalMediationAvailable' method available
+    if (
+      typeof pubKeyCred.isConditionalMediationAvailable === "function" &&
+      pubKeyCred.isConditionalMediationAvailable()
+    ) {
+      console.log("Mediation is available");
+      return true;
+    }
+    console.log("Mediation is not available");
+    return false;
+  };
+----
+**Figure 1**
+
+Until the method isConditionalMediationAvailable() is present in all browsers, you will first need to check if the function exists as part of the PublicKeyCredential object, then you can invoke the method to get a response. You can assume if the function is not available on the browser then that means the feature is not available. 
+
+The next step is to determine what to do with this information. This is important as you will not want to prevent users who cannot use conditional mediation from authenticating into your app. You should route users to another login flow, where they can use their existing credentials without the need for conditional mediation.
+
+Figure 2 demonstrates sample code to route users based on the features availability.
+
+[source,javascript]
+----
+  useEffect(() => {
+    if (!mediationAvailable()) {
+      history.push("/login");
+    } else {
+      setAC("");
+      passkeySignIn().catch(console.error);
+    }
+  }, [passkeySignIn]);
+----
+**Figure 2**
+
+For now please ignore the method for passkeySignin() and setAC() - Those will be covered in the following sections.
+
+**Note** that our application is leveraging React, explaining the use of useEffect. The main point to take-away is that lines 2-7 should be invoked on the initial loading of your page. If conditional mediation is not available, then route the user to another page that can invoke the modal WebAuthn authentication experience.
+
+
+=== Enabling autofill on my UI
+Now that you have determined that your page can support conditional mediation, let’s configure your login page to use the autofill feature to search for existing credentials, and to prompt the user with a credential if one exists.
+
+Figure 3 shows sample code on how to enable WebAuthn autofill in your username input field
+
+[source,html]
+----
+<input type="text" id="username-field" autoComplete="username webauthn" />
+----
+**Figure 3**
+
+**Note** - The casing for autoComplete is typically just autocomplete, but our example has the capital C due to behaviors from React.
+
+This will prompt the user with a credential if one is discovered on the device that matches the current origin of the webpage. 
+
+=== Initiating the authentication ceremony
+The next step is to trigger the WebAuthn ceremony that is configured to use conditional mediation. While the logic looks extremely close to a standard WebAuthn authentication request, there are a few nuances that need to be highlighted. 
+
+Figure 4 demonstrates the method passkeySignIn() that was introduced in 
+Figure 2. This is the method that will handle authentication, if a user selects one of their passkeys.
+
+[source,javascript]
+----
+  const passkeySignIn = useCallback(async () => {
+    console.log("In passkeySignIn");
+
+    try {
+      // Reaching out to Cognito for auth challenge
+      let requestOptions = await WebAuthnClient.getPublicKeyRequestOptions();
+
+      const credential = await get({
+        publicKey: requestOptions.publicKeyCredentialRequestOptions,
+        mediation: "conditional",
+      });
+
+      const userData = await WebAuthnClient.sendChallengeAnswer(credential);
+      navigation.go("InitUserStep");
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+----
+**Figure 4**
+
+In this example assume that WebAuthnClient is a set of methods used to communicate with your RP. getPublicKeyRequestOptions() will be used to get the authentication challenge, while sendChallengeAnswer() will pass your credential to your relying party. In our example we also opt to use the @gihub/webauthn-json get() method, rather than the traditional navigator.credentials.get() call.
+
+As with any WebAuthn authentication request your first step will be to call out to the relying party for a challenge to be signed by your credential. 
+
+Here is where the primary deviation occurs. Instead of directly passing in an object that contains the public key, you will add a new field to the object. This field is named “mediation”. You will attach the value “conditional” value to the mediation property. This configuration will trigger the conditional mediation WebAuthn flow.
+
+**Note** - Removing the mediation property will trigger that traditional “modal” experience that has been utilized for WebAuthn ceremonies.
+
+You will pass the public key into the WebAuthn get() method. If successful then you will send your assertion to the relying party. 
+
+=== Consideration for autofill tag
+During the development of this demo it was noticed that a race condition occurs between the autofill menu appearing, and the challenge being ready to trigger the mediated get() call. As of iOS 16 Beta 2, selecting an autofill option before the get() method is invoked will cause the authentication ceremony not to complete. In order to combat this, we will set the autocomplete property in the input field to empty until the challenge is ready to be used to initiate the authentication ceremony. 
+
+At the beginning you will create a state variable for the autocomplete property. The initial value should be set to an empty string.
+
+Figure 5 demonstrates how to create the state variable.
+
+[source,javascript]
+----
+const [autoComplete, setAC] = useState("");
+----
+**Figure 5**
+
+You may also recall setAC() from Figure 2. The state is set as empty in Figure 3 in order to ensure that the autofill property can be reset to trigger the autofill menu to appear again for the auth ceremony.
+
+Next we will add the state variable to the input tags autocomplete property.
+
+Figure 6 demonstrates your new input tag, with the autocomplete state variable.
+
+[source,html]
+----
+<input type="text" id="username-field" autoComplete={autoComplete} />
+----
+**Figure 6**
+
+Next we will edit our passkeySignIn method to set the autofill property to “username webauthn” once a challenge is ready to be presented.
+
+Figure 7 demonstrates an updated passkeySignIn() method, with the ability to set the autoComplete state variable.
+
+[source,javascript]
+----
+  const passkeySignIn = useCallback(async () => {
+    console.log("In passkeySignIn");
+
+    try {
+      // Reaching out to Cognito for auth challenge
+      let requestOptions = await WebAuthnClient.getPublicKeyRequestOptions();
+      setAC("username webuathn");
+
+      const credential = await get({
+        publicKey: requestOptions.publicKeyCredentialRequestOptions,
+        mediation: "conditional",
+      });
+
+      const userData = await WebAuthnClient.sendChallengeAnswer(credential);
+      navigation.go("InitUserStep");
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+----
+**Figure 7**
+
+This will trigger the autofill menu to appear just in time with the get() request beginning. If your user selects their credential before the get() request is initiated, then the request may be blocked, and the user’s authentication ceremony will be suspended.
+
+Another consideration may be to add loading indicators to demonstrate to the user that their credential is being validated, to prevent them from taking an interrupting action.
+
+=== Closing thoughts and other considerations.
+If you are using this guide, please be aware that the autofill and copyable passkey features on iOS and Android will not be available publicly until later in the year. Apple has noted that this will release with iOS16, and Google has not yet indicated when their release will be. 
+
+Also remember to consider your other WebAuthn flows when beginning to roll out this feature in your applications. This includes flows for users whose devices do not support discoverable credentials as passkeys, or users who want to utilize security keys for a higher degree of security for their accounts. 
+
+A full sample of the code used to create this page can be found link:https://github.com/YubicoLabs/WebAuthnKit/blob/0f9a026f9a66f8b7b214c735bc24b1f1ebe19638/clients/web/react/src/Passkey/PasskeyLogin.jsx[here].
+
+
+This flow will allow any of your users to successfully authenticate into their account using a copyable passkey. Refer back to the WebAuthn iOS and Web guide for more user scenarios.
+
+link:/Mobile_Dev/WebAuthn/IOS[Return to the WebAuthn using iOS and Safari guide]
