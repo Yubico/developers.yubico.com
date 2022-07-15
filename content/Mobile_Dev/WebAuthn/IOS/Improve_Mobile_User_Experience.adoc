@@ -1,6 +1,6 @@
 = Improve Mobile User Experience on IOS Safari
 
-== I want to improve my mobile user experience
+== User experience improvements for mobile
 Other sections of this guide noted how to invoke specific authenticator types for your mobile registration process. This included specifically invoking Face ID, security keys, or for allowing a user to select them both. Now that we know how to use the WebAuthn API to invoke specific authenticators, let’s use that knowledge to improve our user experience. This section wil outline some UX best practices for WebAuthn applications. These best practices are taken from Yubico’s experience with consumer and enterprise applications.
 This page will include a few tips that you could build into your own applications.
 
@@ -37,12 +37,14 @@ We can improve this experience by separating the above screen into two different
 image::images/mobile_ux_2.jpg[width=250]
 **Figure 2**
 
-As noted in previous sections, the RP has no inherent way to tell if you’re wanting to invoke a platform or cross-platform authenticator. Each button should trigger a request to the RP indicating the type of request that is needed. The RP will then attach an authenticatorAttachment property to the authenticatorSelection object in the PublicKeyCreationOptions. 
+As noted in previous sections, the RP has no inherent way to tell if you’re wanting to invoke a platform or cross-platform authenticator. Each button should trigger a request to the RP indicating the type of request that is needed. The RP will then attach an `authenticatorAttachment` property to the `authenticatorSelection` object in the `PublicKeyCreationOptions`. 
 
 Let’s break the previous paragraph into chunks. First let’s take a look at how the UI reacts to each button click.
 
 Figure 3 includes sample code to demonstrate how each button can invoke a call to the RP, while indicating the preference for platform or cross-platform authenticators.
 
+[role="dark"]
+--
 [source,javascript]
 ----
 // Triggered when "Add Touch ID now" is clicked
@@ -57,8 +59,7 @@ async function onClickSecurityKey() {
 
 // The only parameter is meant to represent the authenticatorAttachment
 // The default will be cross-platform if one is not provided
-async function registerNewCredential( authType = "cross-platform"
-) {
+async function registerNewCredential( authType = "cross-platform") {
   try {
     // Begin the registration, requesting the RP use a specific authenticatorAttachment
     const startRegistrationResponse = await axios.post(
@@ -90,9 +91,10 @@ async function registerNewCredential( authType = "cross-platform"
   }
 }
 ----
+--
 **Figure 3**
 
-For example, if a user clicks on ‘Add Face ID now’, the event handler for the button should call to onClickPlatform. onClickPlatform will invoke the registerNewCredential method, and will pass in “platform” as the desired authenticatorAttachment. You will need to modify your RP’s start registration API to accept this new parameter. The RP will send the PublicKeyCreationOptions with your chosen authenticatorAttachment (see here for an example for platform, and here for an example for cross platform). The rest of the logic remains consistent regardless of the user's choice. 
+For example, if a user clicks on ‘Add Face ID now’, the event handler for the button should call to `onClickPlatform`. `onClickPlatform` will invoke the `registerNewCredential` method, and will pass in `platform` as the desired `authenticatorAttachment`. You will need to modify your RP’s start registration API to accept this new parameter. The RP will send the `PublicKeyCreationOptions` with your chosen `authenticatorAttachment`. The rest of the logic remains consistent regardless of the user's choice. 
 
 === Provide registration guidance for each flow
 One of the most important aspects to consider about WebAuthn is that many users will be unaware of what it is, and how it works. While authenticators like Face ID have done a good job of introducing WebAuthn to the broad consumer market, you shouldn’t assume that all users will know how to use authenticators. 
@@ -119,6 +121,8 @@ This flow could be implemented using a simple pop up modal when the user clicks 
 
 Figure 6 shows a code sample that includes a method that when invoked uses the browser’s user agent to determine the operating system. The OS is then mapped to a predefined list which includes the assumed platform authenticator.
 
+[role="dark"]
+--
 [source,javascript]
 ----
 const platformEnums = {
@@ -168,7 +172,13 @@ const DetectBrowser = { getPlatform, platformEnums };
 
 export default DetectBrowser;
 ----
+--
 
+[NOTE]
+====
 It should be noted that this method isn’t always perfect. A user could manually change their user agent, leading to the incorrect user agent being assumed. This will not affect the usability, or ability for users to register with WebAuthn - Though there may be some confusion. 
+====
+
+Click below to return to the iOS and Safari development guide for additional implementation guidance.
 
 link:/Mobile_Dev/WebAuthn/IOS[Return to the WebAuthn using iOS and Safari guide]

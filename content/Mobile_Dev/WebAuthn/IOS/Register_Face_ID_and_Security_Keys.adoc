@@ -1,9 +1,9 @@
 = Register Face ID and Security Key on IOS Safari
 
-== I want to allow my users to register using both Face ID and a security key
+== Register using both Face ID and a security key
 In this section we are going to walk through implementing an experience where a user is able to register a WebAuthn credential to their account using either Face ID or a security key. This will typically be the default experience in most applications as explicitly invoking Face ID or a security key requires the RP to explicitly note the option for creating the credential.
 
-If your user is using iOS 16, Face ID will create a copyable passkey. This credential will be synced across all of the users devices. While this has usability advantages for moving across devices, and is more secure than passwords, it’s not as secure as a device bound credential such as a security key.
+If your user is using iOS 16, Face ID will create a copyable passkey. This credential will be synced across all of the users devices. While this has usability advantages for moving across devices, and is more secure than passwords, it does not have the high assurance as a device bound credential such as a security key.
 
 Security keys registered on iOS 16 will NOT create a credential that syncs across the users devices, and is bound to the hardware of the security key.
 
@@ -37,9 +37,12 @@ Figure 4 shows what happens when a user selects Use Security Key. A modal appear
 image::images/reg_faceid_seckey_4.jpg[width=500]
 **Figure 4**
 
-Behind the scenes, the button is triggering a call to your relying party in order to retrieve the PublicKeyCreationOptions that are used to create the new credential.
-Figure 5 demonstrates an example of the PublicKeyCreationOptions that were used in the ceremony above. 
+Behind the scenes, the button is triggering a call to your relying party in order to retrieve the `PublicKeyCreationOptions` that are used to create the new credential. This flow allows you to use both security keys and Face ID because the `authenticatorAttachment` property was not set in the `authenticatorSelection` object. More information on the `authenticatorAttachment` can be found in the link:https://www.w3.org/TR/webauthn-2/#enum-attachment[authenticator attachment enumeration section] of the WebAuthn specification.
 
+Figure 5 demonstrates an example of the `PublicKeyCreationOptions` that were used in the ceremony above. 
+
+[role="dark"]
+--
 [source, json]
 ----
 {
@@ -72,16 +75,18 @@ Figure 5 demonstrates an example of the PublicKeyCreationOptions that were used 
   }
 }
 ----
+--
 **Figure 5**
 
-Once the PublicKeyCreationOptions are sent back to your application, your application will pass the options into the navigate.credentials.create() method to begin the registration process.
+Once the `PublicKeyCreationOptions` are sent back to your application, your application will pass the options into the `navigator.credentials.create()` method to begin the registration process.
 
-Figure 6 demonstrates sample Javascript code used by your client application to ask the RP to begin a registration ceremony, using the PublicKeyCreationOptions to invoke the create() API, and if successful send the response back to the RP.
+Figure 6 demonstrates sample Javascript code used by your client application to ask the RP to begin a registration ceremony, using the `PublicKeyCreationOptions` to invoke the `create()` API, and if successful send the response back to the RP.
 
+[role="dark"]
+--
 [source,javascript]
 ----
-async function registerNewCredential(
-) {
+async function registerNewCredential() {
   try {
     // Begin the registration, requesting the RP use a specific authenticatorAttachment
     const startRegistrationResponse = await axios.post(
@@ -112,8 +117,9 @@ async function registerNewCredential(
   }
 }
 ----
+--
 **Figure 6**
 
-This flow will allow your user to register to your application using both Face ID and their security keys. Below are additional links to continue this series on WebAuthn implementation for web based iOS applications.
+This flow will allow your user to register to your application using both Face ID and their security keys. Click below to return to the iOS and Safari development guide for additional implementation guidance.
 
 link:/Mobile_Dev/WebAuthn/IOS[Return to the WebAuthn using iOS and Safari guide]

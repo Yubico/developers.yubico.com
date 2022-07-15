@@ -1,6 +1,6 @@
 = Register Only Face ID on IOS Safari
 
-== I only want my user to register using Face ID
+== Register using only Face ID
 In this section we are going to walk through implementing an experience where a user is required to use Face ID to register a WebAuthn credential to their account. While it is best practice to be highly permissive in the types of authenticators you allow in your application, there may be instances where you want to only permit the use of a platform authenticator.
 
 Note that this implementation guide will work for any flavor of platform authenticator across different devices. The Face ID nomenclature is used as it is the primary platform authenticator present on iOS devices.
@@ -29,10 +29,12 @@ image::images/reg_faceid_2.jpg[width=500]
 
 This is different from the standard modal pop-ups. Previously the user would have been asked if they wanted to use Face ID, with an option to register a security key. Instead they are now only given the option to register using Face ID(an example of the default flow can be seen on link:/Mobile_Dev/WebAuthn/IOS/Register_Face_ID_and_Security_Keys.html[this page]).
 
-Behind the scenes, the button is triggering a call to your relying party in order to retrieve the PublicKeyCreationOptions that are used to create the new credential.
+Behind the scenes, the button is triggering a call to your relying party in order to retrieve the `PublicKeyCreationOptions` that are used to create the new credential.
 
-Figure 3 demonstrates an example of the PublicKeyCreationOptions that were used in the ceremony above. 
+Figure 3 demonstrates an example of the `PublicKeyCreationOptions` that were used in the ceremony above. 
 
+[role="dark"]
+--
 [source, json]
 ----
 {
@@ -66,23 +68,24 @@ Figure 3 demonstrates an example of the PublicKeyCreationOptions that were used 
   }
 }
 ----
+--
 **Figure 3**
 
-While this sample looks very similar to the options that allow for both Face ID and security keys, the primary difference can be noted in line 25. The authenticatorSelection object in the PublicKeyCreationnOptions contains a property titled authenticatorAttachment. 
+While this sample looks very similar to the options that allow for both Face ID and security keys, the primary difference can be noted in line 25. The `authenticatorSelection` object in the `PublicKeyCreationOptions` contains a property titled `authenticatorAttachment`. 
 
-Setting authenticatorAttachment to platform will force the user to register their platform authenticator, in this case it's Face ID. This behavior will remove the initial prompt that included an option for security keys. Instead Safari's WebAuthn prompt will immediately ask a user to invoke Face ID, as seen in Figure 2.
+Setting `authenticatorAttachment` to platform will force the user to register their platform authenticator, in this case it's Face ID. This behavior will remove the initial prompt that included an option for security keys. Instead Safari's WebAuthn prompt will immediately ask a user to invoke Face ID, as seen in Figure 2.
 
-More information on the authenticatorAttachment can be found in link:https://www.w3.org/TR/webauthn-2/#enum-attachment[this section] of the WebAuthn specification.
+More information on the `authenticatorAttachment` can be found in the link:https://www.w3.org/TR/webauthn-2/#enum-attachment[authenticator attachment enumeration section] of the WebAuthn specification.
 
-Once the PublicKeyCreationOptions are sent back to your application, your application will pass the options into the navigate.credentials.create() method to begin the registration process.
+Once the `PublicKeyCreationOptions` are sent back to your application, your application will pass the options into the `navigator.credentials.create()` method to begin the registration process.
 
-Figure 4 demonstrates sample Javascript code used by your client application to ask the RP to begin a registration ceremony, using the PublicKeyCreationOptions to invoke the create() API, and if successful send the response back to the RP.
+Figure 4 demonstrates sample Javascript code used by your client application to ask the RP to begin a registration ceremony, using the `PublicKeyCreationOptions` to invoke the `create()` API, and if successful send the response back to the RP.
 
-
+[role="dark"]
+--
 [source,javascript]
 ----
-async function registerNewCredential(
-) {
+async function registerNewCredential() {
   try {
     // Begin the registration, requesting the RP use a specific authenticatorAttachment
     const startRegistrationResponse = await axios.post(
@@ -113,6 +116,7 @@ async function registerNewCredential(
   }
 }
 ----
+--
 **Figure 4**
 
 Another feature you may want to leverage is removing the ‘Add Face ID now’ button once Face ID has successfully been added. Continuing to show the button may confuse users who may try and register their Face ID multiple times. Our guidance is to leverage a cookie, or flag in local storage to indicate to the application that Face ID has been registered using the browser. You will want to avoid storing the public key itself, these flags are only meant to act as indicators, and not a mechanism to bypass the WebAuthn ceremony. 
@@ -124,6 +128,6 @@ Figure 5 demonstrates a sample of how we indicate that Face ID has been register
 image::images/reg_faceid_3.jpg[width=500]
 **Figure 5**
 
-This flow will allow your user to register to your application using only Face ID. Below are additional links to continue this series on WebAuthn implementation for web based iOS applications.
+This flow will allow your user to register to your application using only Face ID. Click below to return to the iOS and Safari development guide for additional implementation guidance.
 
 link:/Mobile_Dev/WebAuthn/IOS[Return to the WebAuthn using iOS and Safari guide]
