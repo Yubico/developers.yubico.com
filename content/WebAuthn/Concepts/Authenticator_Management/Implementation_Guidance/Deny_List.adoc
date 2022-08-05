@@ -4,8 +4,7 @@ A deny list is a curated list of authenticators that should **not** be allowed t
 
 This scenario works best when:
 
-* Your organization has a security organization actively monitoring for authenticator issues
-* You want to prevent users from registering authenticators like copyable passkeys
+* You want to prevent users from registering authenticators with certain properties, e.g. authenticators that can create copyable aka multi-device passkeys
 * Your organization has decided not to trust certain authenticator manufacturers
 * You want your application to automatically remediate rather than send user alerts for authenticators with vulnerabilities
 
@@ -27,7 +26,7 @@ One major decision point you need to make is whether or not to accept untrusted 
 
 If the deny list is for a consumer facing/low assurance application then it might be fine to allow users to opt out of the need to send attestation.
 
-If the deny list is for a high risk application then you should always require the user to send attestation in order to establish the make/model of the device. This will also work well for scenarios where you want to prevent copyable passkeys from being used in your application
+If the deny list is for an application that requires a high level of authentication assurance then you should always require the user to send attestation in order to establish the make/model of the device. This will also work well for scenarios where you want to prevent copyable passkeys from being used in your application
 ====
 
 Here are some considerations for this flow:
@@ -48,7 +47,7 @@ link:https://github.com/Yubico/java-webauthn-server[Link to the java-webauthn-se
 
 ==== Allow only trusted attestation
 
-One immediate modification will be needed from the code introduced in the MDS guidance linked above. In this flow you should opt to **only** accept registrations from trusted attestation sources. This means that any registration sent to your application should include an attestation statement. If a user opts not to send an attestation statement, then their registration should be rejected. A user request may also be rejected if the authenticator they are using is not included in the MDS.
+One immediate modification will be needed from the code introduced in the MDS guidance linked above. In this flow you should opt to **only** accept registrations from trusted attestation sources. This means that any registration sent to your application must include an attestation statement. If a user opts not to send an attestation statement, then their registration must be rejected. A user request may also be rejected if the authenticator they are using is not included in the MDS.
 
 To achieve this using the java-webauthn-server, ensure that you set `allowUntrustedAttestation()` to `false`. This will ensure that any registration sent without an attestation statement, or an attestation statement not found in the MDS is rejected. 
 
@@ -70,15 +69,13 @@ RelyingParty rp =RelyingParty.builder()
 
 Rejecting untrusted attestation will also help when attempting to block copyable passkeys. This is due to the fact that the copyable passkey implementations announced from Microsoft, Apple, and Google will not send attestation data during registration. By this logic, if you block any credential missing attestation data, then there’s a good chance that you’re blocking a copyable passkey.
 
-Allow only specific authenticators
-
 ==== Deny specific authenticators
 
 Next up is to create a list of the authenticators that you want to deny from registering in your application. There are a few different identifiers that you can use from a metadata statement, but your two safest bets will be by AAGUID or the attestation root certificate. In this example we are going to leverage the AAGUID as the device identifier. An AAGUID is the unique identifier given to every authenticator in the MDS.
 
 link:https://support.yubico.com/hc/en-us/articles/360016648959-YubiKey-Hardware-FIDO2-AAGUIDs[AAGUID mappings for Yubikeys can be found in this support article]. For non YubiKey AAGUIDs you can search the MDS manually or work with your authenticator manufacturer to find your specific AAGUIDs. 
 
-For this example we are going to be leveraging the AAGUID for the YubiKey 5Ci, snf YubiKey 5NFC.
+For this example we are going to be leveraging the AAGUID for the YubiKey 5Ci, and YubiKey 5NFC.
 
 You can declare this list in a variety of different ways, in this example we will declare it as an `ArrayList` of strings.
 

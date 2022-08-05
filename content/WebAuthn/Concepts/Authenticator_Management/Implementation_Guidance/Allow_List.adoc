@@ -4,8 +4,8 @@ An allow list is a curated list of authenticators that should be permitted to re
 
 This scenario works best when:
 
-* You are an organization that only uses a small set of specific authenticators
-* You want to prevent users from registering authenticators like copyable passkeys
+* Your organization requires the use of a set of approved authenticators
+* You want to prevent users from registering authenticators like copyable aka multi-device passkeys
 * You are required to limit registrations to high assurance devices
 
 === User experience
@@ -36,7 +36,9 @@ link:https://github.com/Yubico/java-webauthn-server[Link to the java-webauthn-se
 
 ==== Allow only trusted attestation
 
-One immediate modification will be needed from the code introduced in the MDS guidance linked above. In this flow you should opt to **only** accept registrations from trusted attestation sources. This means that any registration sent to your application should include an attestation statement. If a user opts not to send an attestation statement, then their registration should be rejected. A user request may also be rejected if the authenticator they are using is not included in the MDS.
+One immediate modification will be needed from the code introduced in the MDS guidance linked above. In this flow you must opt to **only** accept registrations from trusted attestation sources. This means that any registration sent to your application must include an attestation statement. If a user opts not to send an attestation statement, then their registration should be rejected. A user request may also be rejected if the authenticator they are using is not included in the MDS.
+
+Some authenticators may also send attestation in the form of link:https://www.w3.org/TR/webauthn-2/#sctn-apple-anonymous-attestation[Anonymous Attestation]. While this is a form of attestation, it's often not possible to determine the device of origin from these statements. In the case of our example any authenticator sending anonymous attestation will be rejected. 
 
 To achieve this using the java-webauthn-server, ensure that you set `allowUntrustedAttestation()` to `false`. This will ensure that any registration sent without an attestation statement, or an attestation statement not found in the MDS is rejected. 
 
@@ -66,7 +68,7 @@ Next up is to create a list of the authenticators that you want to allow in your
 
 link:https://support.yubico.com/hc/en-us/articles/360016648959-YubiKey-Hardware-FIDO2-AAGUIDs[AAGUID mappings for Yubikeys can be found in this support article]. For non YubiKey AAGUIDs you can search the MDS manually or work with your authenticator manufacturer to find your specific AAGUIDs. 
 
-For this example we are going to be leveraging the AAGUIDs for the YubiKey 5Ci and YubiKey 5 NFC.
+For this example we are going to be leveraging the AAGUIDs for the YubiKey 5Ci FIPS and YubiKey 5 FIPS Series with NFC.
 
 You can declare this list in a variety of different ways, in this example we will declare it as an `ArrayList` of strings.
 
@@ -78,8 +80,8 @@ Figure 3 demonstrates how to declare a new array with your curated list of AAGUI
 ----
 private final ArrayList<String> aaguids = 
   new ArrayList<String>(
-    Arrays.asList("c5ef55ff-ad9a-4b9f-b580-adebafe026d0", 
-      "2fc0579f-8113-47ea-b116-bb5a8db9202a"
+    Arrays.asList("85203421-48f9-4355-9bc8-8a53846e5083	", 
+      "c1f9a0bc-1dd2-404a-b27f-8e29047a43fd"
   ));
 ----
 --
