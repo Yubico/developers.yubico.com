@@ -1,0 +1,93 @@
+== Authenticator management guidance for developers (allow lists, and deny lists) 
+
+From security keys, to mobile biometric sensors, to passkeys, FIDO2 authenticators are becoming increasingly part of our everyday lives. Adoption of WebAuthn in consumer and enterprise applications will continue to rise as convenient access to these authenticators become more available. It’s worth noting that not all authenticators are built equally, and the security of your application, or your user’s accounts may be put at risk if you do not consider the types of authenticators you want to allow in your ecosystem. Through this series we are going to explore a variety of different  authenticator management scenarios to cover when you should limit certain devices in your application. By the end of this series you should have the tools, and knowledge to ensure that you have chosen the best strategy to maximize the security and usability of WebAuthn in your application.
+
+=== Reasons for imposing authenticator limitations
+WebAuthn is commonly branded as a replacement for passwords, mainly due to it having more secure elements, and ease of use. Standard guidance is for your application to err towards being more permissive with the authenticators it allows, because any form of WebAuthn is still more secure than not using WebAuthn. With that being said there are scenarios where you should choose not to trust an authenticator due to your business requirements, or risk profile of your application. In this section we are going to outline some scenarios.
+
+==== High assurance vs low assurance credentials
+
+Regulatory or business requirements may require you to use high assurance security devices. Our use of assurance levels are defined by the link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63-3.pdf[NIST Digital Identity Guidelines].   
+
+High assurance provides very high confidence that the user attempting to make the authentication claim is the owner of the authenticator registered to the desired account. This is done by providing proof of an authenticator with at least two different authentication factors, and that the credential is hardware bound to the device as a means of impersonation resistance.
+
+Low assurance has less strict requirements, where the authenticator only needs to provide a single authentication factor, and the hardware bound aka single device credential aspect is not necessary. 
+
+Low assurance FIDO2 authenticators may include copyable aka multi-device passkeys where the credential can be moved across multiple devices, or account holders. This is in contrast to a high assurance device, like a security key, where the root of trust of the credential is bound to the single device that it was generated on, ensuring that the credential can’t be exported. 
+
+==== Only specific authenticators exist in your ecosystem
+
+You may be an enterprise who purchased and deployed a specific set of authenticators into your ecosystem. This means that any registration or authentication requests should be coming from that set of authenticators, and you should deny any authenticators that your application does not deem as trusted. 
+
+==== Vulnerabilities in authenticators 
+
+There are cases where vulnerabilities are identified in authenticators. You may want to conduct mitigating efforts to protect not only user accounts, but also your ecosystem. Mitigation could be as simple as alerting an account holder who is utilizing a vulnerable authenticator, or completely restricting that authenticator from being used in your environment. 
+
+=== Methods for limiting authenticators
+
+Now that you have an understanding of when to limit specific authenticators, let’s discuss some common mechanisms that can be used.
+
+==== Allow list
+
+Curated list of authenticators that should be allowed to register and authenticate to your application. Any authenticator that is not identifiable, or part of your curated list should be rejected
+
+This method works well for situations where you’re an enterprise and you want to limit your application to only use the authenticators that you purchased from a trusted manufacturer. 
+
+Figure 1 gives an example flow for an allow list
+
+image::./images/allowlist1.jpg[]
+**Figure 1**
+
+==== Deny list
+
+Curated list of authenticators that should **not** be allowed to register and authenticate to your application. Any authenticator should be able to register to your application, but if an authenticator is identified in your curated list then it should be rejected.
+
+This method works well for situations where you want to prevent or limit the use of a vulnerable authenticator in your application.
+
+Figure 2 gives an example flow for a deny list
+
+image::./images/denylist1.jpg[]
+**Figure 2**
+
+==== Adding an additional factor
+
+Most FIDO2 authenticators come packaged as two authentication factors: something you have (which is typically the authenticator), and either a something you know (like a device PIN), or something you are (like a biometric scanner). There are some legacy CTAP/U2F authenticators that are backwards compatible with WebAuthn, but are typically missing the something you know or something you are factor, often referred to as ‘user verification’.  In these cases you may want to build that factor into your application; if a user did not perform user verification then prompt them for a password that they registered to the website. 
+
+While this isn’t preventing the authenticator from being used in your application, it is adding an additional hurdle that acts as a limiting factor for devices missing the user verification feature. 
+
+Figure 3 gives an example flow adding an additional authentication factor
+
+image::./images/addfact1.jpg[]
+**Figure 3**
+
+==== Step up authentication  
+
+This method is good for adding additional restrictions to sensitive or critical actions or information in an application. Step up authentication works well for situations where your user is authenticated with a low assurance device, but needs to perform a sensitive action. In this case you would require your user to reauthenticate with a higher assurance device. Once re-authenticated your user should be able to perform an action. 
+
+An example of this flow; Your user authenticates into their banking application with a low assurance device. They can see their account information, balances, and approve purchases up to $1000. If the user wants to send more than $1000 they will need to perform step-up authentication with a high assurance authenticator to confirm that the user is not using a compromised credential. 
+
+Figure 4 gives an example flow adding an additional authentication factor
+
+image::./images/stepup1.jpg[]
+**Figure 4**
+
+
+=== Choosing your authenticator strategy
+
+Now that we’ve covered why and how you can limit certain types of authenticators in your environment, let’s discuss how you can determine what strategy works best based on your requirements. 
+
+You want to gauge the risk level of your application to determine what types of authenticators you want enrolled in your environment. If your application falls under a regulatory body, is responsible for financial transactions, or contains sensitive information then you may want to consider not only limiting your application to a high assurance device, but also consider putting constraints on specific high assurance devices that can be used. 
+
+The lower risk your application is, the more lenient and permissive you can be in the kinds of authenticators that you allow. For instance if you are making a consumer facing application, such as a social media application, then you can allow for low assurance authenticators for users as it’s already an improvement over passwords, and the repercussions of a compromised account aren’t always severe. 
+
+If you are having trouble determining what assurance level you should be using, NIST provides guidance in link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63-3.pdf[Figure 6-2 of their Digital Identity Guidelines].
+
+Figure 5 demonstrates a diagram to help you determine what limitation strategy you should employ based on the needed assurance level of your application.
+
+image::images/index1.jpg[]
+**Figure 5**
+
+=== Getting started on implementation
+At this stage you hopefully have an understanding of why it’s important to have a strategy in place for the types of FIDO2 authenticators that will be used in your environment. In the next section we are going to go further in depth into the strategies listed in Figure 5, and how they relate to common user scenarios to help you determine your authenticator strategy. 
+
+link:/WebAuthn/Concepts/Authenticator_Management/Use_Cases_and_Scenarios.html[Authenticator management use cases and scenarios]
