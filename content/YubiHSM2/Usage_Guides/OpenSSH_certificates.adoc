@@ -45,7 +45,7 @@ The YubiHSM 2 also has specific support for signing SSH Certificates
 using an RSA CA key.  This guide will also describe how to leverage
 that.
 
-=== Example: OpenSSH builtin support for Signing SSH certificates
+==== Example: OpenSSH builtin support for Signing SSH certificates
 
 Signing SSH certificates is performed with OpenSSH's `ssh-keygen`
 command using the `-s ca_key` option.  The `ca_key` specifies the
@@ -61,8 +61,7 @@ OpenSSH:
 
 [source, bash]
 ----
-$ make init
-yubihsm-shell -a generate-asymmetric-key  --authkey=0x0001 -p password -i 0x000a -l "SSH_CA_Key" -c "sign-pkcs" -A rsa2048
+$ yubihsm-shell -a generate-asymmetric-key  --authkey=0x0001 -p password -i 0x000a -l "SSH_CA_Key" -c "sign-pkcs" -A rsa2048
 Using default connector URL: http://127.0.0.1:12345
 Session keepalive set up to run every 15 seconds
 Created session 1
@@ -179,14 +178,7 @@ certificate will not be issued.
 
 ==== Example template
 
-A hex-dump example of a template file is shown below, containing:
-
-- Timestamp Key Algorithm 9 (RSA 2048)
-- Timestamp public key (256 bytes)
-- CA Key whitelist containing the single Key ID 0x000a
-- A Not before offset of 300 seconds (5 minutes)
-- A Not before offset of 36000 seconds (10 hours)
-- A principal blacklist containing the principal `root`
+A hex-dump of an example template file is shown below:
 
 ----
 01 0001 09
@@ -197,8 +189,17 @@ A hex-dump example of a template file is shown below, containing:
 06 0005 726f6f7400
 ----
 
+This template file contains, in order:
+
+- Timestamp Key Algorithm 9 (RSA 2048)
+- Timestamp public key (256 bytes)
+- CA Key whitelist containing the single Key ID 0x000a
+- A Not before offset of 300 seconds (5 minutes)
+- A Not before offset of 36000 seconds (10 hours)
+- A principal blacklist containing the principal `root`
+
 Although not officially supported, templates can be generated using 
-link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool]
+link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool].
 
 For instance, the above template file and the embedded timestamp
 key are generated using:
@@ -207,8 +208,8 @@ key are generated using:
 ----
 $ openssl genrsa -out timestamp.pem
 Generating RSA private key, 2048 bit long modulus
-..............................................................................................................................+++
-.............+++
+.................................+++
+........................................+++
 e is 65537 (0x10001)
 $ openssl rsa -pubout -in timestamp.pem -out timestamp_pub.pem
 writing RSA key
@@ -219,7 +220,7 @@ Here, the file `timestamp_pub.pem` contains the timestamp certificate
 public key, the CA key ID is 10, certificates should only be issued
 if their validity is at most 5 minutes in the past (to accomodate
 for clock skew) and at most 10 hours in the future. Also, certificates
-for user root are not allowed.
+for user `root` are not allowed.
 
 === SSH Certificate Request
 
@@ -293,14 +294,14 @@ Certificate.
 ==== Example request
 
 Although not officially supported, requests can be generated using 
-link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool]
+link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool]:
 
 [source, bash]
 ----
 $ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
 ----
 
-=== Example: Signing SSH certificates using templates and signing requests
+==== Example: Signing SSH certificates using templates and signing requests
 
 Below is an example of signing SSH certificates using templates and
 certificate requests.
@@ -360,7 +361,7 @@ The signed SSH certificate is generated in the file `id_rsa-cert.pub`
 
 ==== Example: constraint violation
 
-To illustrate what happens when the constrains specified in the
+To illustrate what happens when the constraints specified in the
 certificate template are violated, for instance when a certificate
 is requested for the `root` user:
 
