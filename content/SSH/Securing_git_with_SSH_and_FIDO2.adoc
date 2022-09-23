@@ -45,24 +45,24 @@ To sign Git tags or Git commits, you will need to configure your
 Git client to use the SSH key format instead of the default PGP key
 format. This can be done as follows:
 
----
+....
 $ git config gpg.format ssh
----
+....
 
 Next, you need to tell Git what SSH key to sign with.
 Let's assume you generated a ECDSA key, using your security key with
 something like:
 
----
+....
 $ ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk
 ...
----
+....
 
 Then instruct Git to use the generated key for signing:
 
----
+....
 $ git config user.signingKey ~/.ssh/id_ecdsa_sk
----
+....
 
 To verify the signatures, we also need to tell git what SSH public
 keys are trusted for verification.
@@ -76,16 +76,16 @@ The file contents is similar to an  `authorized_keys` file, with
 entries starting with a signer's email address.
 For instance:
 
----
+....
 $ cat ~/.ssh/allowed_signers
 user@example.com sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIJhUXYvdwz3Dx45bWNmxHs1R21mlUm0o63+s4iCzRoFeAAAACnNzaDpnaXRodWI= user@host
----
+....
 
 Add this file to your Git configuration using:
 
----
+....
 $ git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
----
+....
 
 See the
 link:https://git-scm.com/docs/git-config[git-config]
@@ -95,20 +95,20 @@ manpage for more details.
 
 Signing a Git commit using SSH is no different than signing with PGP:
 
----
+....
 $ git commit -S -m'initial import'
 [main (root-commit) 519ccdd] initial import
  1 file changed, 0 insertions(+), 0 deletions(-)
  create mode 100644 README
----
+....
 
 The Git log can show and verify signatures:
 
----
+....
 $ git log --oneline --show-signature 
 519ccdd (HEAD -> main) Good "git" signature for user@example.com with ED25519-SK key SHA256:FpybChVXHU/MnwIvOszDxV2yFSbDp9ZkYXxjQ2E+8x0
 initial import
----
+....
 
 You can also instruct git to reject commits without valid signatures
 when merging.  See the 
@@ -119,15 +119,15 @@ for more details.
 
 Similarly, you can sign tags using your security key:
 
----
+....
 $ git tag -s v1.0 -m'signed v1.0 tag'
----
+....
 
 Your security key will blink, prompting for you to touch it.
 
 To view the tag signature:
 
----
+....
 $ git show v1.0
 tag v1.0
 Tagger: User <user@example.com>
@@ -144,11 +144,11 @@ P6M6meusDwEAAAAu
 
 commit 519ccdda4ad0bdf6b4790a6a0d0972b12df0ef9c (HEAD -> main, tag: v1.0)
 ...
----
+....
 
 The git signature can now be verified:
 
----
+....
 $ git tag -v v1.0
 object 519ccdda4ad0bdf6b4790a6a0d0972b12df0ef9c
 type commit
@@ -157,7 +157,7 @@ tagger User <user@example.com> 1663942241 +0200
 
 signed v1.0 tag
 Good "git" signature for user@example.com with ED25519-SK key SHA256:FpybChVXHU/MnwIvOszDxV2yFSbDp9ZkYXxjQ2E+8x0
----
+....
 
 See the 
 link:https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work[Git documentation]
@@ -188,12 +188,12 @@ link:https://github.com/settings/keys[personal profile]
 
     ssh -T git@github.com
 
----
+....
 $ ssh -T git@github.com
 Confirm user presence for key ECDSA-SK SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU
 User presence confirmed
 Hi user! You've successfully authenticated, but GitHub does not provide shell access.
----
+....
 
 You should now be able to perform Git operations using your FIDO
 credential on your security key.
@@ -218,12 +218,12 @@ link:https://gitlab.com/-/profile/keys[GitLab profile keys].
 
 As before, you can test access using your security key by initiating an SSH connection:
 
----
+....
 $ ssh -T git@gitlab.com
 Confirm user presence for key ECDSA-SK SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU
 User presence confirmed
 Welcome to GitLab, @user!
----
+....
 
 At the time of writing, GitLab doesn't show verified tags or commits in their web interface.
 
@@ -250,13 +250,13 @@ When generating SSH keys backed by security keys, consider using additional opti
 This way, when listing the credentials stored on your security key,
 it becomes more easy to tell which is which:
 
----
+....
 $ ykman fido credentials list
 Enter your PIN: 
 ssh: 0000000000000000000000000000000000000000000000000000000000000000 openssh
 ssh:github 0000000000000000000000000000000000000000000000000000000000000000 openssh
 ssh:gitlab 0000000000000000000000000000000000000000000000000000000000000000 openssh
----
+....
 
 TODO:
 versions ssh, yk fw, git
