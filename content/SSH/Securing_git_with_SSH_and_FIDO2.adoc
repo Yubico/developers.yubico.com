@@ -1,0 +1,264 @@
+== Securing Git with SSH and security keys
+
+Git is currently the most popular version control system.
+It supports both HTTPS and SSH for accessing remote repositories.
+SSH is often preferred as it is more convenient and more secure.
+
+As OpenSSH supports FIDO security keys, and Git supports SSH, their
+combination can be used effectively to increase the security of
+your Git repositories.
+
+=== Git operations over SSH with a security key
+
+As the Git protocol uses a normal SSH connection, using a FIDO
+security key to authenticate Git operations works exactly the same
+as when setting up SSH for other connections.
+
+Follow the
+link:/SSH/Securing_SSH_with_FIDO2.html[step-by-step configuration instructions to enable SSH authentication with the YubiKey and FIDO2]
+for your clients.
+
+If you are hosting a remote Git repository yourself, you will need
+to install and configure an OpenSSH server that supports FIDO.
+See below if you are using a cloud service like Github or Gitlab.
+
+=== Git tag and commit signing
+
+Because anyone can spoof a Git committer or author name with a
+simple `git config` command, many developers like to sign their
+tags and commits.
+Traditionally, this is done using PGP.
+As YubiKeys can be used as an OpenPGP SmartCard, you can generate
+PGP keys on your YubiKeyfor working with Git, as is demonstrated
+link:https://youtu.be/Y3mLBTCiccs[in this video].
+
+TODO link:https://developers.yubico.com/PIV/Guides/Securing_SSH_with_OpenPGP_or_PIV.html
+
+Since versions 2.34, Git also supports signing tags and commits using
+SSH keys.
+This means that SSH keys can be used that are backed by FIDO
+security keys.
+
+==== Configuring your Git client
+
+To sign Git tags or Git commits, you will need to configure your
+Git client to use the SSH key format instead of the default PGP key
+format. This can be done as follows:
+
+---
+$ git config gpg.format ssh
+---
+
+Next, you need to tell Git what SSH key to sign with.
+Let's assume you generated a ECDSA key, using your security key with
+something like:
+
+---
+$ ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk
+...
+---
+
+Then instruct Git to use the generated key for signing:
+
+---
+$ git config user.signingKey ~/.ssh/id_ecdsa_sk
+---
+
+To verify the signatures, we also need to tell git what SSH public
+keys are trusted for verification.
+In PGP this is done using your PGP key ring.
+For SSH signatures, trusted public keys are collected in a file,
+similar to an `authorized_keys` file for accessing hosts over an
+SSH connection.
+
+This file can be located anywhere on a verifier's system.
+The file contents is similar to an  `authorized_keys` file, with
+entries starting with a signer's email address.
+For instance:
+
+---
+$ cat ~/.ssh/allowed_signers
+user@example.com sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIJhUXYvdwz3Dx45bWNmxHs1R21mlUm0o63+s4iCzRoFeAAAACnNzaDpnaXRodWI= user@host
+---
+
+Add this file to your Git configuration using:
+
+---
+$ git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+---
+
+See the
+link:https://git-scm.com/docs/git-config[git-config]
+manpage for more details.
+
+==== Signing a Git commit
+
+Signing a Git commit using SSH is no different than signing with PGP:
+
+---
+$ git commit -S -m'initial import'
+[main (root-commit) 519ccdd] initial import
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 README
+---
+
+The Git log can show and verify signatures:
+
+---
+$ git log --oneline --show-signature 
+519ccdd (HEAD -> main) Good "git" signature for user@example.com with ED25519-SK key SHA256:FpybChVXHU/MnwIvOszDxV2yFSbDp9ZkYXxjQ2E+8x0
+initial import
+---
+
+You can also instruct git to reject commits without valid signatures
+when merging.  See the 
+link:https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work[Git documentation]
+for more details.
+
+==== Signing a Git tag
+
+Similarly, you can sign tags using your security key:
+
+---
+$ git tag -s v1.0 -m'signed v1.0 tag'
+---
+
+Your security key will blink, prompting for you to touch it.
+
+To view the tag signature:
+
+---
+$ git show v1.0
+tag v1.0
+Tagger: User <user@example.com>
+Date:   Fri Sep 23 16:10:41 2022 +0200
+
+signed v1.0 tag
+-----BEGIN SSH SIGNATURE-----
+U1NIU0lHAAAAAQAAAFAAAAAac2stc3NoLWVkMjU1MTlAb3BlbnNzaC5jb20AAAAgmFRdi9
+3DPcPHjltY2bEezVHbWaVSbSjrf6ziILNGgV4AAAAKc3NoOmdpdGh1YgAAAANnaXQAAAAA
+AAAABnNoYTUxMgAAAGcAAAAac2stc3NoLWVkMjU1MTlAb3BlbnNzaC5jb20AAABA2TkoFS
+os9OiTRdHLWc+TyefMQ+Bl6cDFMOBQQsEkemcmzVb8n6IaaDYPMrsZ6OJBwosyGHbOx88H
+P6M6meusDwEAAAAu
+-----END SSH SIGNATURE-----
+
+commit 519ccdda4ad0bdf6b4790a6a0d0972b12df0ef9c (HEAD -> main, tag: v1.0)
+...
+---
+
+The git signature can now be verified:
+
+---
+$ git tag -v v1.0
+object 519ccdda4ad0bdf6b4790a6a0d0972b12df0ef9c
+type commit
+tag v1.0
+tagger User <user@example.com> 1663942241 +0200
+
+signed v1.0 tag
+Good "git" signature for user@example.com with ED25519-SK key SHA256:FpybChVXHU/MnwIvOszDxV2yFSbDp9ZkYXxjQ2E+8x0
+---
+
+See the 
+link:https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work[Git documentation]
+for more details.
+
+
+=== Using FIDO with GitHub
+
+GitHub supports FIDO security keys both for 
+link:https://github.blog/2019-08-21-github-supports-webauthn-for-security-keys/[logging on using your browwer],
+as well as for
+link:https://github.blog/2021-05-10-security-keys-supported-ssh-git-operations/[SSH Git operations using a git client].
+
+The GitHub 
+link:https://docs.github.com/en/authentication/connecting-to-github-with-ssh/about-ssh[documentation]
+doesn't specifically mention FIDO security keys, but they support both ECDSA and ED25519 keys stored on a security key such as the YubiKey.
+
+In short:
+
+* generate a FIDO credential on your security key:
+
+    ssh-keygen -t ecdsa-sk
+
+* upload your the public key to GitHub in your
+link:https://github.com/settings/keys[personal profile]
+
+* test access with
+
+    ssh -T git@github.com
+
+---
+$ ssh -T git@github.com
+Confirm user presence for key ECDSA-SK SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU
+User presence confirmed
+Hi user! You've successfully authenticated, but GitHub does not provide shell access.
+---
+
+You should now be able to perform Git operations using your FIDO
+credential on your security key.
+
+GitHub also support SSH commit verification for commits that are
+signed using FIDO security keys.
+See
+link:https://github.blog/changelog/2022-08-23-ssh-commit-verification-now-supported/[SSH commit verification]
+and
+link:https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#ssh-commit-verification[commit signature verification]
+
+=== GitLab
+
+Like GitHub, GitLab supports FIDO security keys both for access
+using a browser (as a second factor) or when using a Git client.
+
+* To register your hardware-backed SSH pubkey for two factor authentication, edit your
+link:https://gitlab.com/-/profile/two_factor_auth[GitLab profile settings].
+
+* To register your hardware-backed SSH pubkey for Git operations, edit your
+link:https://gitlab.com/-/profile/keys[GitLab profile keys].
+
+As before, you can test access using your security key by initiating an SSH connection:
+
+---
+$ ssh -T git@gitlab.com
+Confirm user presence for key ECDSA-SK SHA256:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU
+User presence confirmed
+Welcome to GitLab, @user!
+---
+
+At the time of writing, GitLab doesn't show verified tags or commits in their web interface.
+
+=== Final remarks
+
+When generating SSH keys backed by security keys, consider using additional options.
+
+* When you want to easily replicate the SSH key files for use on
+  different systems, consider generating resident keys:
+
+    ssh-keygen -t ecdsa-sk -O resident
+
+* For extra security whenever your credential is used for signing
+  operations, consider requiring to always enter the FIDO PIN:
+
+    ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk -O verify-required
+
+* When storing multiple credentials on your security key, they can
+  be hard to distinguish from each other. Consider adding an application
+  name that starts with `ssh:` to tell them apart:
+
+    ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk -O resident -O application=ssh:gitlab
+
+This way, when listing the credentials stored on your security key,
+it becomes more easy to tell which is which:
+
+---
+$ ykman fido credentials list
+Enter your PIN: 
+ssh: 0000000000000000000000000000000000000000000000000000000000000000 openssh
+ssh:github 0000000000000000000000000000000000000000000000000000000000000000 openssh
+ssh:gitlab 0000000000000000000000000000000000000000000000000000000000000000 openssh
+---
+
+TODO:
+versions ssh, yk fw, git
+ref pgp, piv
+
