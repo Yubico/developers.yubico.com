@@ -1,4 +1,4 @@
-== Securing Git with SSH and security keys
+== Securing Git with SSH and FIDO security keys
 
 Git is currently the most popular version control system.
 It supports both HTTPS and SSH for accessing remote repositories.
@@ -11,14 +11,14 @@ your Git repositories.
 This document describes
 
 * how to protect SSH access to your repositories using a security key
-* how to sign Git commits and tags using your SSH keys which are
-  protected using a security key
+* how to sign Git commits and tags with SSH keys that are
+  protected with a security key
 
 === Protecting Git operations over SSH with a security key
 
-As the Git protocol uses a normal SSH connection, using a FIDO
+When using git with SSH as its transport protocol, using a FIDO
 security key to authenticate Git operations works exactly the same
-as when setting up SSH for other connections.
+as when setting up SSH for any other SSH connections.
 
 Follow the
 link:/SSH/Securing_SSH_with_FIDO2.html[step-by-step configuration instructions to enable SSH authentication with the YubiKey and FIDO2]
@@ -26,6 +26,8 @@ for your clients.
 
 If you are hosting a remote Git repository yourself, you will need
 to install and configure an OpenSSH server that supports FIDO.
+A default install will work fine, just make sure you enable SSH
+publik key authentication.
 
 If you are using a cloud service like Github or Gitlab, see below.
 
@@ -38,7 +40,7 @@ Traditionally, this is done using PGP, and you can
 link:/PGP/Git_signing.html[use a YubiKey for that as well].
 
 However, it may be simpler to use SSH for this, as since versions
-2.34, Git also supports signing tags and commits using SSH keys.
+2.34  Git also supports signing tags and commits using SSH keys.
 This means that SSH keys can be used that are backed by FIDO
 security keys.
 
@@ -52,8 +54,8 @@ format:
 $ git config gpg.format ssh
 ....
 
-Next, you need to tell Git what SSH key to sign with.
-Let's assume you generated a ECDSA key, using your security key with
+In addition, you need to tell Git what SSH key to sign with.
+Let's assume you generated an ECDSA key, using your security key with
 something like:
 
 ....
@@ -61,20 +63,19 @@ $ ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk
 ...
 ....
 
-In that csse, instruct Git to use the generated key for signing:
+In that case, instruct Git to use the generated key for signing:
 
 ....
 $ git config user.signingKey ~/.ssh/id_ecdsa_sk
 ....
 
-To verify the signatures, we also need to tell Git what SSH public
+To verify signatures, we also need to tell Git what SSH public
 keys are trusted for verification.
 In PGP this is done using your PGP key ring.
-For SSH signatures, trusted public keys are collected in a file,
-similar to an `authorized_keys` file for accessing hosts over an
-SSH connection.
+For SSH signatures, trusted public keys are typically collected
+in an `allowed_signers` file.
 
-The file contents is similar to an  `authorized_keys` file, with
+The file contents is similar to an `authorized_keys` file, with
 entries starting with a signer's email address.
 For instance:
 
@@ -83,7 +84,10 @@ $ cat ~/.ssh/allowed_signers
 user@example.com sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIJhUXYvdwz3Dx45bWNmxHs1R21mlUm0o63+s4iCzRoFeAAAACnNzaDpnaXRodWI= user@host
 ....
 
-Add this file to your Git configuration using:
+The file format is described 
+link:https://man.openbsd.org/ssh-keygen#ALLOWED_SIGNERS[here.]
+
+Add this file to your Git configuration:
 
 ....
 $ git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
@@ -175,7 +179,7 @@ for more details on signing Git tags and commits.
 === Using FIDO security keys with GitHub
 
 GitHub supports FIDO security keys both for 
-link:https://github.blog/2019-08-21-github-supports-webauthn-for-security-keys/[logging on using your browwer],
+link:https://github.blog/2019-08-21-github-supports-webauthn-for-security-keys/[logging on using your browser],
 as well as for
 link:https://github.blog/2021-05-10-security-keys-supported-ssh-git-operations/[SSH Git operations using a git client].
 
@@ -185,12 +189,12 @@ doesn't specifically mention FIDO security keys, but they support both ECDSA and
 
 In short, to access your GitHub repositories over SSH with your security key:
 
-* generate a FIDO credential on your security key:
+* generate an SSH key pair backed by your security key:
 
     ssh-keygen -t ecdsa-sk
 
-* upload your the public key to GitHub in your
-link:https://github.com/settings/keys[personal profile]
+* upload the public key to GitHub in your
+link:https://github.com/settings/keys[personal profile].
 
 * test access with
 
@@ -204,14 +208,14 @@ User presence confirmed
 Hi user! You've successfully authenticated, but GitHub does not provide shell access.
 ....
 
-You should now be able to perform Git operations using your FIDO
+You should now be able to perform Git operations protected with the FIDO
 credential on your security key.
 
 If it doesn't, verify that the SSH public keys on your security key match your registered GitHub SSH keys, available at the URL 
 https://github.com/username.keys
 where `username` is your GitHub username.
 
-GitHub also support SSH commit verification for commits that are
+GitHub also supports SSH commit verification for commits that are
 signed using FIDO security keys.
 See
 link:https://github.blog/changelog/2022-08-23-ssh-commit-verification-now-supported/[SSH commit verification]
@@ -219,12 +223,12 @@ and
 link:https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#ssh-commit-verification[commit signature verification]
 for more details.
 
-For commit and tag signing, upload your SSH key as a Signing Key, instead of an Authentication Key.
+For commit and tag signing, upload your SSH key as a _Signing Key_, instead of an _Authentication Key_.
 
 === Using FIDO security keys with GitLab
 
 Like GitHub, GitLab supports FIDO security keys both for access
-using a browser (as a second factor) or when using a Git client.
+using a browser (as a second factor) and when using a Git client.
 
 * To register your hardware-backed SSH pubkey for two factor authentication, edit your
 link:https://gitlab.com/-/profile/two_factor_auth[GitLab profile settings].
@@ -241,7 +245,7 @@ User presence confirmed
 Welcome to GitLab, @user!
 ....
 
-At the time of writing, GitLab doesn't show verified tags or commits in their web interface.
+At the time of writing, GitLab doesn't show verified tags or commits on their web interface.
 
 === Final remarks
 
@@ -253,12 +257,12 @@ When generating SSH keys backed by security keys, consider using additional opti
     ssh-keygen -t ecdsa-sk -O resident
 
 * For extra security whenever your credential is used for signing
-  operations, consider requiring to always enter the FIDO PIN:
+  operations, consider requiring to always require the FIDO PIN:
 
     ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk -O verify-required
 
 * When storing multiple credentials on your security key, they can
-  be hard to distinguish from each other. Consider adding an application
+  be hard to distinguish from one another. Consider adding an application
   name that starts with `ssh:` to tell them apart:
 
     ssh-keygen -t ecdsa-sk -f ~/.ssh/id_ecdsa_sk -O resident -O application=ssh:gitlab
@@ -274,7 +278,7 @@ ssh:github 0000000000000000000000000000000000000000000000000000000000000000 open
 ssh:gitlab 0000000000000000000000000000000000000000000000000000000000000000 openssh
 ....
 
-This approach also prevents you from accidentally overwriting your SSH credentials.
+This approach also protects you from accidentally overwriting your SSH credentials.
 
 === Supported Versions
 
@@ -294,4 +298,5 @@ Also note that:
 
 * the version of OpenSSH available on Windows does not support FIDO keys at the time this page was last updated.
 
-* the version of OpenSSH shipped with MacOS does not support FIDO keys. Use `brew.sh` to install a version that does.
+* the version of OpenSSH shipped with MacOS does not support FIDO keys. Use
+link:https://brew.sh[Homebrew] to install a version that does.
