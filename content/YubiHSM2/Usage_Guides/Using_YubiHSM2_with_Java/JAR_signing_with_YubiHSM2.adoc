@@ -1,0 +1,61 @@
+== Generating digital signatures with YubiHSM 2 and the Java PKCS#11 bridge
+
+....
+$ yubihsm-shell -p password --authkey=0x0001 -a put-asymmetric-key -i 0x0002 -d 1 -l MyKey1 -A rsa2048 -c "sign-pkcs,sign-pss,sign-attestation-certificate" --informat=PEM --in signing-key.pem
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+Stored Asymmetric key 0x0002
+$ yubihsm-shell -p password --authkey=0x0001 -a put-opaque -i 0x0002 -d 1 -l MyKey1 -A opaque-x509-certificate -c sign-pkcs,sign-pss,sign-attestation-certificate --informat=PEM --in signing-crt.pem
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+Stored 700 bytes to Opaque object 0x0002
+....
+
+=== Signing jar files
+
+Example java source file
+
+....
+$ cat HelloWorld.java 
+public class HelloWorld {
+	public static void main(String [] args) {
+		System.out.println("Hello, world");
+	}
+}
+....
+
+Compile the java source file and create an (unsigned) .jar file
+
+....
+$ javac HelloWorld.java 
+$ jar cfe unsigned.jar HelloWorld HelloWorld.class
+....
+
+Sign the unsigned .jar file and create a signed jar file
+
+....
+$ jarsigner -tsa http://timestamp.digicert.com -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yhsm_pkcs11_java.cfg -keystore NONE -storetype PKCS11 -storepass 0001password -signedjar signed.jar ./unsigned.jar MyKey1
+jar signed.
+
+Warning: 
+The signer's certificate is self-signed.
+
+The timestamp will expire on 2031-11-10.
+....
+
+Verify the signature on the signed jar
+
+....
+$ jarsigner -verify -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yhsm_pkcs11_java.cfg -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar 
+
+jar verified.
+....
+
+Run the signed jar:
+
+....
+java -jar signed.jar 
+Hello, world
+....
