@@ -1,0 +1,91 @@
+== Implementing a simple autofill / conditional UI flow for passkeys 
+
+In this section we are going to explore how to add autofill to a simple login page. We are going to provide code examples, and additional considerations that should be taken when enabling this feature. At the end of this section you should be able to create a simple login form that can read passkeys from your device.
+
+=== Application demo
+Before we proceed to the implementation guidance, let’s first take a look at what will be created. A major difference between this flow, and the standard WebAuthn experience is where the user is immediately prompted with possible credentials to authenticate with. In a standard WebAuthn flow, a user would typically instigate an authentication flow by providing an identifier, or by prompting the site to begin a usernameless login flow. A side-by-side comparison of both flows can be found on our link:/WebAuthn/Concepts/Passkey_Autofill[Introduction to Autofill page].
+
+Figure 1 will demonstrate an example of the flow we will be building, where a passkey is read from a user's device from the browser. 
+
+video::../Videos/autofill_1.mp4[height=600] 
+**Figure 1**
+
+=== Prerequisites 
+In order to leverage autofill and passkeys in your application, you need to ensure that your browser supports autofill and that your operating system supports passkeys.
+
+To see if your browser supports autofill you can:
+
+* Check programmatically using the code found in our guidance link:/WebAuthn/Concepts/Passkey_Autofill/Implementation_Guidance/Autofill_-_Conditional_UI_Browser_Feature_Detection.html[Autofill / Conditional UI browser feature detection for passkeys]
+* Consult this link:https://passkeydeveloper.github.io/passkeys.dev/device-support/[Device Support Matrix] created by the WebAuthn Community Adoption Group 
+
+The link:https://passkeydeveloper.github.io/passkeys.dev/device-support/[Device Support Matrix] linked above can also be used to verify if an operating system supports passkeys. 
+
+You will also need a WebAuthn Relying Party to provide the `PublicKeyCredentialRequestOptions` to trigger and verify the authentication ceremony. Please see our link:https://developers.yubico.com/Mobile_Dev/WebAuthn/WebAuthn_Primer.html#:~:text=How%20do%20I%20deploy%20an%20example%20WebAuthn%20application%3F[WebAuthn primer for developers] for options to deploy a WebAuthn RelyingParty. 
+
+=== Enabling autofill on the UI
+The first step will be to introduce an input tag on your page for the user to enter in their username, that also supports autofill for WebAuthn. This step is as straightforward as creating an input tag and adding the autocomplete attribute with the value of `username webauthn`.
+
+Figure 2 shows sample code on how to enable WebAuthn autofill in your username input field 
+
+[role="dark"]
+--
+[source,html]
+----
+<input type="text" id="username-field" autoComplete="username webauthn" />
+----
+--
+**Figure 2**
+
+[NOTE]
+======
+The casing for autoComplete is typically just autocomplete, but our example has the capital C due to behaviors from React.
+======
+
+This will prompt the user with a credential if one is discovered on the device that matches the current origin of the webpage. 
+
+
+=== Initiating the authentication ceremony
+The next step is to trigger a WebAuthn ceremony that is configured to use conditional mediation. While the logic looks extremely close to a standard WebAuthn authentication request, there are a few nuances that need to be highlighted. 
+
+Figure 3 demonstrates the method `passkeySignIn()`. This is the method that will handle authentication, if a user selects one of their passkeys.
+
+[role="dark"]
+--
+[source,javascript]
+----
+async function passkeySignIn() {
+  try {
+    // Reaching out to Cognito for auth challenge
+    let requestOptions = await WebAuthnClient.getPublicKeyRequestOptions();
+
+    const credential = await get({
+      publicKey: requestOptions.publicKeyCredentialRequestOptions,
+      mediation: "conditional",
+    });
+
+    const userData = await WebAuthnClient.sendChallengeAnswer(credential);
+    navigation.go("InitUserStep");
+  } catch (error) {
+    console.log(error);
+  }
+};
+----
+--
+**Figure 3**
+
+In this example assume that `WebAuthnClient` is a set of methods used to communicate with your RP. `getPublicKeyRequestOptions()` will be used to get the authentication challenge, while `sendChallengeAnswer()` will pass your credential to your relying party. In our example we also opt to use the `@github/webauthn-json get()` method, rather than the traditional `navigator.credentials.get()` call.
+
+As with any WebAuthn authentication request your first step will be to call out to the relying party for a challenge to be signed by your credential. 
+
+Here is where the primary deviation occurs in relation to the modal flow. Instead of directly passing in an object that contains the `publicKey` property, you will add a new field to the object. This field is named `mediation`. You will attach the value `conditional` to the mediation property. This configuration will trigger the conditional mediation WebAuthn flow.
+
+[NOTE]
+======
+Removing the mediation property will trigger the modal experience
+======
+
+You will pass the public key into the WebAuthn `get()` method. If successful then you will send your assertion to the relying party. 
+
+Now that we have an understanding on how to create a simple autofill flow, let’s explore a more complicated use case - Supporting both the modal and autofill experience on the same login page. Click the link below to learn how to implement a combination modal and autofill UI flow.
+
+link:/WebAuthn/Concepts/Passkey_Autofill/Implementation_Guidance/Modal_and_Autofill_Flow.html[Implementing a combination autofill / conditional UI + modal flow]
