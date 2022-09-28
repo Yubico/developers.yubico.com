@@ -27,28 +27,83 @@ By using these, only one OpenSSH CA public key has to be copied onto
 the target host. At that point any user can be granted access to any
 such host by giving them a file that contains the following
 information: their own public key, a validity period, a list of
-usernames that the user it allowed to login as and a digital signature
+usernames that the user is allowed to login as and a digital signature
 over the whole content created using the private key of an SSH CA.
 
 This file, the SSH Certificate, is then automatically presented to
 the SSH server by the SSH client of the user as part of the login
 process.
 
-=== OpenSSH Certificates with YubiHSM
+=== OpenSSH Certificates with YubiHSM 2
 
 The private key of an SSH CA is a regular private key and can be stored
 on a YubiHSM 2. OpenSSH has builtin support for signing SSH Certificates
 using CA private keys that reside on a hardware token through the PKCS#11
-interface. The YubiHSM 2 supports signing SSH Certificates using a RSA CA key.
-This guide will describe how to leverage that.
+interface.
+
+The YubiHSM 2 also has specific support for signing SSH Certificates
+using an RSA CA key.  This guide will also describe how to leverage
+that.
+
+==== Example: OpenSSH builtin support for Signing SSH certificates
+
+Signing SSH certificates is performed with OpenSSH's `ssh-keygen`
+command using the `-s ca_key` option.  The `ca_key` specifies the
+key file containing the signing key.  The signing key can be stored
+in an HSM, in which case the key file only contains the public part
+of the signing key.  The public key is used to locate the corresponding
+private key on the HSM through the PKCS#11 interface.  The PKCS#11
+module to use is specified with the `-D` option.
+
+As an example, create an SSH CA key on the HSM, export the CA public
+key, and convert the public key into PKCS8 format for use with
+OpenSSH:
+
+[source, bash]
+----
+$ yubihsm-shell -a generate-asymmetric-key  --authkey=0x0001 -p password -i 0x000a -l "SSH_CA_Key" -c "sign-pkcs" -A rsa2048
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+Generated Asymmetric key 0x000a
+$ yubihsm-shell -p password --authkey=0x0001 -a get-public-key -i 0x000a --out ca_pub.pem
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+$ ssh-keygen -i -f ca_pub.pem -m PKCS8 > ca.pub
+----
+
+Note that the CA key needs capability `sign-pkcs` in order to sign
+SSH pubkeys.
+
+Next, sign the user's pubkey in the file `id_rsa.pub`, using the
+signing key stored in the HSM
+
+[source, bash]
+----
+$ ssh-keygen -s ca.pub -D /usr/local/lib/pkcs11/yubihsm_pkcs11.dylib -I key_id id_rsa.pub
+Enter PIN for 'YubiHSM': 
+Signed user key id_rsa-cert.pub: id "key_id" serial 0 valid forever
+----
+
+Note that the PIN needs to be prefixed with the ID of the
+authentication-key in order for `ssh-keygen` to authenticate.
+
+The signed SSH certificate is generated in the file `id_rsa-cert.pub`
+
+=== Signing SSH Certificate Requests
+
+Instead of directly signing a user's SSH pubkey directly, the YubiHSM 2
+can also be used to sign SSH pubkeys only when a number of conditions
+are met.  This scenario is discussed in the rest of this document.
 
 === High-level Description and components
 
-A YubiHSM device is able to sign OpenSSH public keys when those are
+A YubiHSM 2 device is able to sign OpenSSH public keys when those are
 submitted to the device as part of a specific format that we call
 `OpenSSH Certificate Request`.
 
-Such a request is granted (i.e., the signature is computed and
+Such a request is granted (i.e. the signature is computed and
 released), if and only if the following two requirements are
 fulfilled:
 
@@ -121,6 +176,52 @@ an error will be returned.
 The `nul`-separated, `nul`-terminated list of Principals (user names) for which a
 certificate will not be issued.
 
+==== Example template
+
+A hex-dump of an example template file is shown below:
+
+----
+01 0001 09
+02 0100 cb2702...d71081f1d1
+03 0002 000a
+04 0004 000012c0
+05 0004 00008ca0
+06 0005 726f6f7400
+----
+
+This template file contains, in order:
+
+- Timestamp Key Algorithm 9 (RSA 2048)
+- Timestamp public key (256 bytes)
+- CA Key whitelist containing the single Key ID 0x000a
+- A Not before offset of 300 seconds (5 minutes)
+- A Not after offset of 36000 seconds (10 hours)
+- A principal blacklist containing the principal `root`
+
+Although not officially supported, templates can be generated using 
+link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool].
+
+For instance, the above template file and the embedded timestamp
+key are generated using:
+
+[source, bash]
+----
+$ openssl genrsa -out timestamp.pem
+Generating RSA private key, 2048 bit long modulus
+.................................+++
+........................................+++
+e is 65537 (0x10001)
+$ openssl rsa -pubout -in timestamp.pem -out timestamp_pub.pem
+writing RSA key
+$ pipenv run yubihsm-ssh-tool templ -T timestamp_pub.pem -k 10 -b 300 -a 36000 -p root
+----
+
+Here, the file `timestamp_pub.pem` contains the timestamp certificate
+public key, the CA key ID is 10, certificates should only be issued
+if their validity is at most 5 minutes in the past (to accomodate
+for clock skew) and at most 10 hours in the future. Also, certificates
+for user `root` are not allowed.
+
 === SSH Certificate Request
 
 An SSH certificate format is defined by OpenSSH but it is not too
@@ -129,13 +230,17 @@ of attributes, a time period, a public key and a signature over all
 the data.
 
 An SSH Certificate Request is the set of information that must be sent
-to a YubiHSM so that it can generate the aforementioned signature.
+to a YubiHSM 2 so that it can generate the aforementioned signature.
 This consists of all the data present in the certificate (excluding
 the signature).
 
+For a description, see
+the `ssh-rsa-cert-v01@openssh.com` key format in the 
+link:https://github.com/openssh/openssh-portable/blob/master/PROTOCOL.certkeys[the OpenSSH specs].
+
 ==== Signing an SSH Certificate Request
 
-Once an SSH Template has been stored on the YubiHSM and an SSH
+Once an SSH Template has been stored on the YubiHSM 2 and an SSH
 Certificate Request has been created, it can be sent to the device for
 signing.
 
@@ -160,7 +265,7 @@ Command. The parameters required are:
 - the SSH Certificate Request
 
 After the command is issued, the following steps take place in the
-YubiHSM. First the the signature `S~T~` is verified using the public
+YubiHSM 2. First the the signature `S~T~` is verified using the public
 key present within the specified SSH Template. If the verification is
 successful, the value of `Now` is recorded. Next the SSH Certificate
 Request is parsed to extract the `Not Before` and `Not After`
@@ -181,7 +286,104 @@ are then performed:
 - none of the Principals specified in the SSH Certificate Request must
   appear in the Principals black-list SSH Template
 
-If all the constraints were fulfilled, the YubiHSM will produce a
+If all the constraints were fulfilled, the YubiHSM 2 will produce a
 signature using the Algorithm specified in the command. This signature
 can be appended to the SSH Certificate Request to produce a valid SSH
 Certificate.
+
+==== Example request
+
+Although not officially supported, requests can be generated using 
+link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool]:
+
+[source, bash]
+----
+$ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
+----
+
+==== Example: Signing SSH certificates using templates and signing requests
+
+Below is an example of signing SSH certificates using templates and
+certificate requests.
+
+Again, start with creating an SSH CA key on the HSM, and export the
+CA public key:
+
+[source, bash]
+----
+$ yubihsm-shell -a generate-asymmetric-key  --authkey=0x0001 -p password -i 10 -l "SSH_CA_Key" -c "sign-ssh-certificate" -A rsa2048
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+Generated Asymmetric key 0x000a
+$ yubihsm-shell -p password --authkey=0x0001 -a get-public-key -i 10 --out ca_pub.pem
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+----
+
+Note that this time, the CA key needs capability `sign-ssh-certificate`
+in order to sign SSH certificate signing requests.
+
+Next, create the template file and store the template in the HSM
+as an object of type `template-ssh` with object ID 20 and label
+`SSH_Template`:
+
+[source, bash]
+----
+$ pipenv run yubihsm-ssh-tool templ -T timestamp_pub.pem -k 10 -b 36000 -a 36000 -p root
+$ yubihsm-shell -a put-template -p password -i 20 -l "SSH_Template" -A template-ssh --in templ.dat
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+Stored Template object 0x0014
+----
+
+Generate a certificate signing request for user `username`:
+
+[source, bash]
+----
+$ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
+Hash is: b'95dd317189b5e392481de896e7f111228b76d6efe3daa344c2da2819927a05cb'
+----
+
+Sign the certificate request using the CA key on the HSM:
+
+[source, bash]
+----
+$ yubihsm-shell -a sign-ssh-certificate -p password -i 10 --template-id 20 -A rsa-pkcs1-sha256 --in req.dat --out id_rsa-cert.pub
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+----
+
+The signed SSH certificate is generated in the file `id_rsa-cert.pub`
+
+==== Example: constraint violation
+
+To illustrate what happens when the constraints specified in the
+certificate template are violated, for instance when a certificate
+is requested for the `root` user:
+
+[source, bash]
+----
+$ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n root -V -5h:+5h id_rsa.pub
+Hash is: b'b75d30392a5ea5887affceb593154d2cc860f76f7bbc82757ec3fa20cd2a4d63'
+$ yubihsm-shell -a sign-ssh-certificate -p password -i 10 --template-id 20 -A rsa-pkcs1-sha256 --in req.dat --out id_rsa-cert.pub
+Using default connector URL: http://127.0.0.1:12345
+Session keepalive set up to run every 15 seconds
+Created session 1
+Failed to get certificate signature: SSH CA constraint violation
+Unable to get ssh certificate
+----
+
+=== Final notes
+
+The certificate template is used to put restrictions on the SSH certificates issued.
+It is also recommended to restrict the privileges of the client submitting the signing requests.
+This can be done by stripping the capabilities of both the signing key and
+the authentication key that the client uses to connect to the HSM.
+
+This page is about securely storing the CA signing key in a YubiHSM 2.
+The private key of an issued SSH user certificate can also be 
+link:/SSH/Securing_SSH_with_FIDO2.html[stored securely on a YubiKey].
