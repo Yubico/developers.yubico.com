@@ -213,7 +213,7 @@ Generating RSA private key, 2048 bit long modulus
 e is 65537 (0x10001)
 $ openssl rsa -pubout -in timestamp.pem -out timestamp_pub.pem
 writing RSA key
-$ pipenv run yubihsm-ssh-tool templ -T timestamp_pub.pem -k 10 -b 300 -a 36000 -p root
+$ yubihsm-ssh-tool templ -T timestamp_pub.pem -k 10 -b 300 -a 36000 -p root
 ----
 
 Here, the file `timestamp_pub.pem` contains the timestamp certificate
@@ -298,7 +298,7 @@ link:https://github.com/YubicoLabs/yubihsm-ssh-tool[yubihsm-ssh-tool]:
 
 [source, bash]
 ----
-$ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
+$ yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
 ----
 
 ==== Example: Signing SSH certificates using templates and signing requests
@@ -331,7 +331,7 @@ as an object of type `template-ssh` with object ID 20 and label
 
 [source, bash]
 ----
-$ pipenv run yubihsm-ssh-tool templ -T timestamp_pub.pem -k 10 -b 36000 -a 36000 -p root
+$ yubihsm-ssh-tool templ -T timestamp_pub.pem -k 10 -b 36000 -a 36000 -p root
 $ yubihsm-shell -a put-template -p password -i 20 -l "SSH_Template" -A template-ssh --in templ.dat
 Using default connector URL: http://127.0.0.1:12345
 Session keepalive set up to run every 15 seconds
@@ -343,7 +343,7 @@ Generate a certificate signing request for user `username`:
 
 [source, bash]
 ----
-$ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
+$ yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n username -V -5h:+5h id_rsa.pub
 Hash is: b'95dd317189b5e392481de896e7f111228b76d6efe3daa344c2da2819927a05cb'
 ----
 
@@ -367,7 +367,7 @@ is requested for the `root` user:
 
 [source, bash]
 ----
-$ pipenv run yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n root -V -5h:+5h id_rsa.pub
+$ yubihsm-ssh-tool req -s ca_pub.pem -t timestamp.pem -I user-identity -n root -V -5h:+5h id_rsa.pub
 Hash is: b'b75d30392a5ea5887affceb593154d2cc860f76f7bbc82757ec3fa20cd2a4d63'
 $ yubihsm-shell -a sign-ssh-certificate -p password -i 10 --template-id 20 -A rsa-pkcs1-sha256 --in req.dat --out id_rsa-cert.pub
 Using default connector URL: http://127.0.0.1:12345
