@@ -1,15 +1,20 @@
 == PIV Attestation
 
+
 === Introduction
-This document describes the attestation feature added to the PIV module in YubiKey 4.3 and 5. For actual commands to work with the attestation feature, please see the yubico-piv-tool link:../../yubico-piv-tool/Attestation.adoc[documentation].
+This document describes the attestation feature added to the PIV module in YubiKey 4.3 and above. For the process and commands used to acquire an attestation, please see the yubico-piv-tool link:../../yubico-piv-tool/Attestation.adoc[documentation].
+
 
 === Purpose
-The concept of attestation is used to show that a certain asymmetric key has been generated on device and not imported. Typically this would be used before creating a certificate.
+Attestation is used to prove that a certain asymmetric key has been generated on device and not imported. With additional constraints, other characteristics of that asymmetric key can also be proven. 
+
 
 === Implementation
-Attestation is implemented by creating a X.509 certificate for the key that is to be attested, this is only done if the key has been generated on device. This certificate should be used for the purpose of verifying that the key was generated in device. Additional information included in the Attestation Certificate can be used to provide information about the device the attested key was generated on.
+PIV attestation is implemented by returning a signed X.509 certificate for the key that is attested. The certificate is only returned if the key has been generated on-device. 
 
-Some features of the generated certificate:
+
+=== Certificate features:
+Some characteristics of the generated certificate are :
 
 * Serial will be a random 16 byte integer
 * Issuer will be the subject of the attesting certificate
@@ -18,7 +23,7 @@ Some features of the generated certificate:
 * If the attesting key is RSA the signature will be SHA256-PKCS#1v1.5
 * If the attesting key is EC the signature will be ECDSA-SHA256
 
-Extensions in the generated certificate:
+X.509 Extensions are used in the generated certificate to pass additional information about the key. Details on these extensions are below:
 
 * +1.3.6.1.4.1.41482.3.3+: Firmware version, encoded as 3 bytes, like: 040300 for 4.3.0
 * +1.3.6.1.4.1.41482.3.7+: Serial number of the YubiKey, encoded as an integer.
@@ -27,17 +32,36 @@ Extensions in the generated certificate:
 ** Touch policy: 01 - never, 02 - always, 03 - cached for 15s
 * +1.3.6.1.4.1.41482.3.9+: Formfactor, encoded as one byte
 ** USB-A Keychain: 01 (81 for FIPS Devices)
-** USB-A Nano: 02 (82 for FIPS Devices)
-** USB-C Keychain: 03 (83 for FIPS Devices)
+** USB-A Nano: 02 (83 for FIPS Devices)
+** USB-C Keychain: 03 (84 for FIPS Devices)
 ** USB-C Nano: 04 (84 for FIPS Devices)
 ** Lightning and USB-C: 05 (85 for FIPS Devices)
+* +1.3.6.1.4.1.41482.3.9+: Formfactor, encoded as one byte
 * +1.3.6.1.4.1.41482.3.10+: FIPS Certified YubiKey
 * +1.3.6.1.4.1.41482.3.11+: CSPN Certified YubiKey
 
-The YubiKey comes with a pre-loaded attestation certificate signed by a link:piv-attestation-ca.pem[Yubico PIV CA]. This can be overwritten by loading a new key and certificate to slot f9. After the Yubico key is overwritten it can not be brought back. The attestation key and certificate will not be cleared out by a reset of the device.
+The YubiKey comes factory-loaded with an attestation key and certificate signed by the link:piv-attestation-ca.pem[Yubico root PIV CA]. 
 
-NOTE: If you have a YubiKey Preview device, the attestation certificate will
-instead be signed by our link:piv-attestation-preview-ca.pem[Yubico PIV Preview CA].
+If desired, the signing key and certificate in slot f9 can be customized by overwriting the factory-issued key with a new key and certificate.
+
+[NOTE]
+====
+Once the Yubico factory-issued key or certificate is overwritten, they cannot be restored. The attestation key and certificate are not modified by a reset of the device.
+====
+
+
+In addition to its base functionality, the attestation can also be used to verify the device was authentically produced by Yubico. 
+
+However, verification of device authenticity is contingent on all of the following:
+
+. The attestation key and certificate in slot f9 must be unmodified.
+. The slot under attestation must have a key present that was generated on-device. 
+. The attestation, including certificates chaining up to the link:piv-attestation-ca.pem[Yubico root PIV CA], must be properly verified.
+
+[NOTE]
+====
+If you have a YubiKey Preview device, the attestation certificate will instead be signed by our link:piv-attestation-preview-ca.pem[Yubico PIV Preview CA].
+====
 
 [NOTE]
 ====
