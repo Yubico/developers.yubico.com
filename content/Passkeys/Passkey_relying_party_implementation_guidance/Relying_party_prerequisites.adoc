@@ -1,0 +1,43 @@
+= Relying party prerequisites
+:description: Prerequisites to begin implementing a passkey relying party
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, relying party
+
+Prerequisites to begin implementing a passkey relying party
+
+In this section we are going to discuss some common requirements that are needed in order to begin building a relying party. We will highlight the specific technologies that are used through this guide, as well as providing alternatives if required. 
+
+== Application layer
+We’ll begin by addressing the application layer. You don’t need to build all of the functionality required to read, parse, and process passkey related data. There are a number of prebuilt libraries that can help facilitate these transactions, and we highly recommend that you leverage one of them.
+
+In this guide we will be utilizing link:https://github.com/Yubico/java-webauthn-server[Yubico’s java-webauthn-server library]. 
+
+If you are not familiar with Java, or wish to utilize another library, link:https://webauthn.io[webauthn.io] has a collection of libraries in a variety of programming languages.
+
+Another aspect that you should consider is around where your application will be deployed (infrastructure) and how it will be accessed (API). 
+
+In this guide we will be using link:https://aws.amazon.com/lambda/[AWS Lambda] and link:https://aws.amazon.com/api-gateway/[AWS API Gateway]  as our application’s infrastructure.
+
+== Identity provider
+Next is the service that is going to be used to manage user profiles, and to issue authorization tokens if the user successfully passes the authentication checks. Similar to the application layer, you don’t need to fully build the functionality by scratch; you can leverage a pre-built service that allows for custom authentication flows, that can trigger the business logic in your application layer. 
+
+In this guide we will be utilizing a custom flow in link:https://aws.amazon.com/cognito/[AWS Cognito].
+
+== Credential repository
+This is the component that will store and manage user credentials, and will be referenced whenever a user attempts to authenticate with their passkey. Two things need to be considered for your credential repository: the database  that will be used, and how your application layer communicates with it.
+
+The link:https://github.com/Yubico/java-webauthn-server[java-webauthn-server library] has an interface that can be used to create a custom class that you can customize to interact with your selected datasource. These interactions will need to utilize the API’s provided by your chosen database; so while we demonstrate code samples using the interface, the core logic will be out of scope of this guide.
+
+In terms of storing credentials, we will be utilizing an link:https://aws.amazon.com/rds/aurora/[AWS Aurora] database.
+
+It should also be noted that you will need a repository to store registration and authentication requests. You are free to utilize the same database provider as above, but note that each will require a separate table with its own fields
+
+== Metadata repository
+Lastly we will need a repository that contains metadata of different passkey and WebAuthn authenticators. This will be used to identify the make and model of an authenticator that was utilized during the registration ceremony. This component is primarily used for high assurance applications, but still has some nice user experience benefits for low assurance scenarios.
+
+We will be using the link:https://fidoalliance.org/metadata/[FIDO Metadata Service] for this repository
+
+The link:https://github.com/Yubico/java-webauthn-server[java-webauthn-server library] has built-in functionality to support connections to the BLOB containing the FIDO metadata service.
+
+Now that we have the foundational components in place, let’s initialize our new passkey application.
+
+link:/Passkeys/Passkey_relying_party_implementation_guidance/Initialize_a_passkey_relying_party.html[Initializing a passkey relying party]

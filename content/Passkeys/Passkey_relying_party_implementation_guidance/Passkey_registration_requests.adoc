@@ -1,0 +1,387 @@
+= Passkey registration requests
+:description: Send registration requests and handle the response from the client application to create and store passkeys
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, relying party
+
+Send registration requests and handle the response from the client application to create and store passkeys
+
+Now that we have declared the preliminary configurations of our application, let’s dive into the methods that can be used to facilitate the passkey ceremonies. We will begin by taking a look at the methods that will be used to initiate and process registration requests. 
+
+The guidance given in this page is intended for common, low assurance passkey scenarios. We will extend this guidance later in this guide to account for high assurance scenarios, through the use of attestation. 
+
+== Issuing a registration request
+This first method will be used to provide the client application with the necessary information in order to register a new credential using the `navigator.credentials.create()` method.
+
+In terms of the WebAuthn specification, the object that is returned from the relying party, that is given to the client application to begin registration is called the link:https://www.w3.org/TR/webauthn-2/#dictionary-makecredentialoptions[`PublicKeyCredentialCreationOptions`]. We are going to begin by creating the method that the relying party will use to issue the create options. 
+
+In this initial section we are going to create a `PublicKeyCredentialCreationOptions` object that will be highly permissive in the type of credential that is allowed to be created. This means that it will allow for :
+
+* Both platform and cross platform authenticators
+* Authenticators with or without user verification
+* Will attempt to create a discoverable credential but won’t require it
+
+Figure 1 will demonstrate a method that will create a generic `PublicKeyCredentialCreationOptions` - Please note that some of the code leverages methods/class from the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library].
+
+[role="dark"]
+--
+[source,java]
+----
+Object startRegistration(JsonObject jsonRequest) {
+        //Step 1
+        String username = jsonRequest.get("username").getAsString();
+        String displayName = jsonRequest.get("displayName").getAsString();
+        String uid = jsonRequest.get("uid").getAsString();
+
+        ByteArray id;
+        try {
+                id = ByteArray.fromBase64Url(uid);
+        } catch (Base64UrlException e) {
+                return e;
+        }
+        //Step 2
+        final Collection<CredentialRegistration> registrations = userStorage.getRegistrationsByUsername(username);
+        final Optional<UserIdentity> existingUser = registrations.stream().findAny()
+            .map(CredentialRegistration::getUserIdentity);
+
+        final UserIdentity registrationUserId = existingUser.orElseGet(() -> UserIdentity.builder()
+                .name(username)
+                .displayName(displayName)
+                .id(id)
+                .build());
+        //Step 3
+        PublicKeyCredentialCreationOptions pubKey = rp.startRegistration(
+                StartRegistrationOptions.builder()
+                    .user(registrationUserId)
+                    .authenticatorSelection(AuthenticatorSelectionCriteria.builder()
+                        .residentKey(ResidentKeyRequirement.PREFERRED)
+                        .userVerification(UserVerificationRequirement.PREFERRED)
+                        .build())
+                    .build());
+        RegistrationRequest request = new RegistrationRequest(
+                "startRegistration",
+                username,
+                displayName,
+                "New Credential",
+                generateRandom(32), 
+                pubKey);
+
+        registerRequestStorage.put(request.getRequestId(), request);
+
+        //Step 4
+        return pubKey.toCredentialsCreateJson();
+}
+----
+--
+**Figure 1**
+
+**Step 1**
+
+The first thing to note are the inputs that need to be received by the method. The inputs should be:
+
+* Username
+* Display name
+* Identity providers unique ID for the user (uid)
+
+The java-webauthn-server library utilizes the `ByteArray` class to denote different identifiers in the request. We will start by transforming the `uid` into a `ByteArray`.
+
+**Step 2**
+
+Next we will attempt to build a user identity based on existing credentials. This is done to ensure that the user identity is consistent if they have already registered a credential. Otherwise we will build this identity from scratch for use in the initial registration.
+
+**Step 3**
+
+Next we will create and store the actual registration request that will be issued to the user. 
+`new RegistrationRequest()` refers to the registration request object that we denoted in the prerequisites section. The important aspect of this object builder is the final parameter, which will help you to build your `PublicKeyRequestCreationOptions`. 
+In this step you will leverage `rp.startRegistration(StartRegistrationOptions.builder())` to build your object. 
+The parameters set within are as follow:
+
+* `.user()` will be used to note the user handle of the associated credential
+* `.authenticatorSelection()` is a list of requirements that need to be true of an authenticator attempting to register 
+* `residentKey()` is the option to set if you are looking to enforce the creation of a discoverable credential. We will go over other options for this parameter in a later section
+* `userVerification()` is the option to set if you are looking to enforce that the user utilizes link:/passkeys/passkey_concepts/User_verification.html[user verification]. The current option will prompt the user for their PIN/Biometric if the feature is available, but will allow a user to continue if the feature is not available. We will go over other options for this parameter in a later section
+
+Once we are finished with creating our registration request, we will store it in the registration request repository.
+
+**Step 4**
+
+Lastly, before we return the object to the client, we will encode it as a JSON string for use by Javascript in the web browser. 
+
+This method will give you all you need in order to issue a `PublicKeyCredentialCreationOptions` to your client application in order to create a new credential. 
+
+Below we will cover a variety of different configuration options that you can set in order to invoke different behaviors using the creation options. 
+
+=== Setting user verification requirement
+There are instances where you want to set the ability for a user to leverage user verification (UV) when they register a new credential. The WebAuthn specification has a list of options that can be chosen in order to invoke different behaviors by client applications. 
+
+For high assurance applications, you may want to enforce that your users **always** leverage UV. Some low assurance applications might not want the additional friction for users, so they may opt to remove the requirement. 
+
+Below are the different options that can be chosen, and how to set them in the example given in Figure 1.
+
+==== Required
+This indicates that the relying party requires UV, and will not allow for the creation of a credential if UV was not performed
+
+Figure 2 demonstrates sample code to change the UV requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.userVerification(UserVerificationRequirement.REQUIRED)
+----
+--
+**Figure 2**
+
+==== Preferred
+This indicates that the relying party prefers UV, if possible, but will not fail the operation if UV was not performed
+
+Figure 3 demonstrates sample code to change the UV requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.userVerification(UserVerificationRequirement.PREFERRED)
+----
+--
+**Figure 3**
+
+==== Discouraged
+This indicates that the relying party does not want UV invoked during registration
+
+Figure 4 demonstrates sample code to change the UV requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.userVerification(UserVerificationRequirement.DISCOURAGED)
+----
+--
+**Figure 4**
+
+=== Setting authenticator attachment requirement
+The authenticator attachment refers to the modality of the authenticator that should be allowed during registration. The modality refers to the two link:/passkeys/passkey_concepts/Authenticator_types.html[authenticator types]: cross platform or platform.
+
+There may be instances where during a registration ceremony, you want to force the user to use one modality over the other. 
+
+In terms of the UX, you could use a guided prompt that indicates to the user steps for registering their mobile device, or their security key.
+
+In a high assurance application, you may not want the user to accidentally invoke the authenticator on their personal device such as Face ID, or Android Biometrics.
+
+In consumer scenarios, we DO NOT advise setting this parameter as it could lead to confusion, and exclusion for users attempting to use cross platform authenticators like security keys. 
+
+Below are the different options that can be chosen, and how to set them in the example given in Figure 1.
+
+For either of these options, you will need to add the method `.authenticatorAttachment()` into the `StartRegistrationOptions.builder()` flow.
+
+==== Cross platform
+This indicates that the relying party prefers that the user leverage a cross platform authenticator, and will not allow any other modality to be used
+
+Figure 5 demonstrates sample code to change the authenticator attachment requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM)
+----
+--
+**Figure 5**
+
+==== Platform
+This indicates that the relying party prefers that the user leverage a platform authenticator, and will not allow any other modality to be used
+
+Figure 6 demonstrates sample code to change the authenticator attachment requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.authenticatorAttachment(AuthenticatorAttachment.PLATFORM)
+----
+--
+**Figure 6**
+
+==== Not setting the option
+If you do not set the option, as we did in Figure 1, then your users will be allowed to leverage any modality of authenticator that they chose. 
+
+=== Setting discoverable credential requirement 
+There is an option to set the preference for the creation of a link:/passkeys/passkey_concepts/Discoverable_vs_non-discoverable_credentials.html[discoverable credential] for a newly created registration. As you may recall, WebAuthn credentials are only considered passkeys, if they are discoverable. 
+
+There are a few important considerations that you may want to take into account before you set this option. 
+
+Some authenticators may have discoverable credential limits, meaning that they can only store up to a certain amount of discoverable credentials. This will be primarily true for hardware authenticators like security keys, as they don’t have expansive storage. You don’t always want to enforce discoverable credentials as the user's device might not have enough memory for it.
+
+Discouraging the creation of a discoverable credential does not always mean that one will not be created. For instance, with multi-device credentials, like Face Id/Touch ID, a discoverable credential is created regardless of the relying party’s preference. 
+
+Note the use of the term “resident key”. Resident key was the original term for the concept, before the adoption of the term discoverable credential. Resident key remains part of the WebAuthn language to maintain backward compatibility.
+
+Below are the different options that can be chosen, and how to set them in the example given in Figure 1.
+
+==== Discouraged
+This indicates that the relying party prefers that the user leverages a non-discoverable credential. This will not force the authenticator to use a non-discoverable credential, and will allow one to be created if needed
+
+Figure 7 demonstrates sample code to change the resident key requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.residentKey(ResidentKeyRequirement.DISCOURAGED)
+----
+--
+**Figure 7**
+
+==== Preferred
+This indicates that the relying party prefers that the user creates a discoverable credential, and will attempt to create one if possible. If the creation of a discoverable credential is not available, the relying party will still accept the provided credential
+
+Figure 8 demonstrates sample code to change the resident key requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.residentKey(ResidentKeyRequirement.PREFERRED)
+----
+--
+**Figure 8**
+
+==== Required
+This indicates that the relying party requires the creation of a discoverable credential, and will not allow the user to complete registration if one is not created
+
+Figure 9 demonstrates sample code to change the resident key requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.residentKey(ResidentKeyRequirement.REQUIRED)
+----
+--
+**Figure 9**
+
+== Completing registration 
+At this stage you have created your `PublicKeyCredentialCreationOptions`, sent them to the client application, and now the client has returned a passkey that it wants registered for the user. This next method will demonstrate how to store this credential in your repository for later use during authentication ceremonies. 
+
+This step will validate that the credential follows the rules that were set by the `PublicKeyCredentialCreationOptions`, adds the registration to the database, and will invalidate the registration request to prevent replay attacks or repeated registration attempts. 
+
+Figure 10 will demonstrate a method that will finalize a registration to store the passkey in a credential repository - Please note that some of the code leverages methods/class from the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library].
+
+[role="dark"]
+--
+[source,java]
+----
+Object finishRegistration(JsonObject responseJson) {
+    //Step 1
+    RegistrationResponse response;
+    try {
+    response = jsonMapper.readValue(responseJson.toString(), RegistrationResponse.class);
+    } catch (Exception e) {
+    return e;
+    }
+
+    //Step 2
+    RegistrationRequest request = registerRequestStorage.getIfPresent(response.getRequestId());
+    registerRequestStorage.invalidate(response.getRequestId());
+
+    if (request == null) {
+        String msg = "fail finishRegistration - no such registration in progress: {}" + response.getRequestId();
+        return new Exception(msg);
+    } else {
+        //Step 3
+        try {
+            com.yubico.webauthn.RegistrationResult registration = rp.finishRegistration(
+                FinishRegistrationOptions.builder()
+                .request(request.getPublicKeyCredentialCreationOptions())
+                .response(response.getCredential())
+                .build());
+            //Step 4
+            return addRegistration(
+                request.getPublicKeyCredentialCreationOptions().getUser(),
+                response,
+                registration,
+                request);
+        } catch (RegistrationFailedException e) {
+            return e;
+        } catch (Exception e) {
+            return e;
+        }
+    }
+}
+
+private CredentialRegistration addRegistration(
+    UserIdentity userIdentity,
+    RegistrationResponse response,
+    RegistrationResult result,
+    RegistrationRequest request) {
+    Optional<String> nickname = Optional.empty();
+    nickname = Optional.ofNullable("My Security Key");
+    return addRegistration(
+        userIdentity,
+        nickname,
+        response.getCredential().getResponse().getAttestation().getAuthenticatorData().getSignatureCounter(),
+        RegisteredCredential.builder()
+        .credentialId(result.getKeyId().getId())
+        .userHandle(userIdentity.getId())
+        .publicKeyCose(result.getPublicKeyCose())
+        .signatureCount(response.getCredential().getResponse().getParsedAuthenticatorData()
+        .getSignatureCounter())
+        .build(),
+        request);
+}
+
+private CredentialRegistration addRegistration(
+    UserIdentity userIdentity,
+    Optional<String> nickname,
+    long signatureCount,
+    RegisteredCredential credential,
+    RegistrationRequest request) {
+    CredentialRegistration reg = CredentialRegistration.builder()
+        .userIdentity(userIdentity)
+        .credentialNickname(nickname)
+        .registrationTime(clock.instant())
+        .lastUsedTime(clock.instant())
+        .lastUpdatedTime(clock.instant())
+        .credential(credential)
+        .signatureCount(signatureCount)
+        .registrationRequest(request)
+        .build();
+
+    userStorage.addRegistrationByUsername(userIdentity.getName(), reg);
+    return reg;
+}
+----
+--
+**Figure 9**
+
+**Step 1**
+
+First we will format the response sent by the client application. This will ensure that it was formatted correctly for processing by our relying party. If the response is not in a standard format, then it’s possible that the browser or authenticator were not implemented correctly.
+
+We will return an error if the response cannot be properly formatted.
+
+**Step 2**
+
+Next we will ensure that this response was part of a valid registration request. Our relying party will not process just any credential that is sent to it - it must match a request that it issued. If no request was found, then an error is returned. If there is a matching registration request, then we will invalidate it in the database so that it cannot be used again; for this reason if this registration fails, the user will need to reinvoke a new registration request 
+
+**Step 3**
+
+Next, we will use the java-webauthn-server library’s `RelyingParty.FinishRegistration()` method to ensure that the credential is valid, and is able to correctly sign the initial challenge that was offered during registration. 
+Once the credential is finalized, we can add the registration to our credential repository. 
+
+**Step 4**
+
+This final step includes a call to a method `addRegistration()`. This will take in some information that will be formatted for storage in the credential repository. The value in the credential repository will be stored as a link:https://github.com/YubicoLabs/WebAuthnKit/blob/main/backend/lambda-functions/JavaWebAuthnLib/src/main/java/com/yubicolabs/data/CredentialRegistration.java[`CredentialRegistration`], which is a custom class that was developed for our example; what is important is that it can store a `RegisteredCredential` object, defined by the java-webauth-server library. Overall our credential will be stored to include;
+
+* The identity of the user who owns it
+* Credential nickname
+* Time based metadata such as last use, creation date, and last update
+* The credential itself
+* Registration request that was used to create the credential
+
+Once the object has been formatted, we can store it in the credential repository.
+
+Note, that this example did not cover how to use attestation to determine the make and model, and storing additional metadata along with the credential. This will be covered in the link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation[attestation] guide in an upcoming page.
+
+Now that we're familiar with how to create a passkey, let's understand how to use that passkey to authenticate into your account
+
+link:/Passkeys/Passkey_relying_party_implementation_guidance/Passkey_authentication_requests.html[Continue to passkey authentication requests]
