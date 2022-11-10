@@ -8,6 +8,30 @@ In this section we will be discussing how to initialize your relying party with 
 
 As noted in the prerequisites section, this guide will be utilizing the link:https://github.com/Yubico/java-webauthn-server[Yubico’s java-webauthn-server library], but the core concepts can still be used regardless of the library being utilized. 
 
+Before you begin, ensure that you have included the following dependencies in your Java application
+
+[role="dark"]
+--
+[source,xml]
+----
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>webauthn-server-core</artifactId>
+    <version>2.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>webauthn-server-attestation</artifactId>
+    <version>2.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>yubico-util</artifactId>
+    <version>2.0.0</version>
+</dependency>
+----
+--
+
 == Identity provider connections
 First, ensure that your identity provider is able to send requests to your application. This can be done through APIs, webhooks, or custom triggers offered by your relying party. This will vary greatly depending on your application stack. For the rest of this guide we will assume that your application can receive requests from your identity provider.
 
@@ -63,8 +87,6 @@ Next you will want a way to store the registration requests that have been issue
 * Block registrations that send a challenge that does not match what was issued
 * Invalidate registration requests that have been used or have exceeded a timeout period
 
-Next, let’s define our table schema for our registration request repository.
-
 Figure 3 provides sample code demonstrating the table schema used to store registration requests.
 
 [role="dark"]
@@ -104,8 +126,6 @@ The assertion request repository is similar to the registration request reposito
 * Refer to the original challenge that was issued in order to verify signed challenges 
 * Invalidate authentication requests that have been used or have exceeded a timeout period
 
-Next, let’s define our table schema for our assertion request repository.
-
 Figure 5 provides sample code demonstrating the table schema used to store assertion requests.
 
 [role="dark"]
@@ -139,31 +159,8 @@ private final AssertionRequestStorage assertRequestStorage = new AssertionReques
 
 == Initialize relying party object
 The link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library] has the notion of a `RelyingParty` class. This class will help support the registration and authentication ceremonies by providing configurations such as the relying party ID, allowed origins, and much more. Below we are going to provide a walkthrough of a standard configuration, and some additional options that you can include based on your applications requirements.
-Before you begin, ensure that you have included the following dependencies in your Java application
 
-[role="dark"]
---
-[source,xml]
-----
-<dependency>
-    <groupId>com.yubico</groupId>
-    <artifactId>webauthn-server-core</artifactId>
-    <version>2.0.0</version>
-</dependency>
-<dependency>
-    <groupId>com.yubico</groupId>
-    <artifactId>webauthn-server-attestation</artifactId>
-    <version>2.0.0</version>
-</dependency>
-<dependency>
-    <groupId>com.yubico</groupId>
-    <artifactId>yubico-util</artifactId>
-    <version>2.0.0</version>
-</dependency>
-----
---
-
-Let’s start with declaring a `RelyingParty` object. Don’t get overwhelmed with what’s provided below, we will go over each property in more detail.
+Let’s start with declaring a `RelyingParty` object
 
 Figure 7 demonstrates sample code to initialize a `RelyingParty` object.
 
@@ -191,7 +188,7 @@ private final RelyingParty rp = RelyingParty.builder()
 --
 **Figure 7**
 
-The first step is to declare an ID that will be used by the relying party. This ID is used to bind credentials to a specific domain and origin, belonging to the application. This means that the credential can only be utilized within the context of the application that it was created on. 
+The first step is to declare an ID that will be used by the relying party. This ID is used to bind credentials to a specific domain and origin, belonging to your application. This means that the credential can only be utilized within the context of the application that it was created on. 
 
 This ID will be used in the authentication and registration requests sent by the relying party under the form of an link:https://www.w3.org/TR/webauthn-2/#relying-party-identifier[rpID]. In Figure 7, the ID is declared by providing an ID that correlates to the origin of your application, along with a descriptive name of the application.
 
@@ -201,7 +198,7 @@ Next we will list the origins that are allowed to register with this application
 
 The next two options refer to attestation. We will cover this concept in further detail later in this guide. For now what you need to understand is that during registration, a credential can include information that can be used to identify the make and model of the authenticator that it was created on. 
 
-The settings that we provide above will allow an authenticator to send attestation data, while still allowing registrations to be completed if attestation is not provided. These options will be changed when we address high assurance scenarios that need to invoke some form of link:https://developers.yubico.com/WebAuthn/Concepts/Authenticator_Management/[authenticator management strategy].
+The settings that we provide above will allow an authenticator to send attestation data, and will still allowing registrations to be completed if attestation is not provided.
 
 Lastly we note to the relying party that we want to check the signature counter during authentication. This will help to prevent replay attacks, or mitigate risks in the case that a private key is compromised.  
 

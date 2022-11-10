@@ -1,0 +1,81 @@
+= Passkey client application registration implementation guidance
+:description: Add registration flows to your passkey application
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, client application, registration
+
+Add registration flows to your passkey application
+
+In this section we are going to outline implementation guidance in order to register a new passkey for a user’s account.
+
+It is assumed that you have the link:/Passkeys/Passkey_client_application_implementation_guidance/Passkey_client_application_prerequisites.html[prerequisites] in place that were outlined in the previous page.
+
+== Creating a passkey
+In this section we are going to outline how a passkey is created using browser APIs. This is a common pattern that can be used across a wide variety of user scenarios. 
+
+The creation of passkeys are done in combination with a `PublicKeyCredentialCreationOptions` and the browser `navigator.credentials.create()` API.
+
+The `PublicKeyCredentialCreationOptions` is an object that is provided by your backend application that provides the configuration options that are required to create a new credential.
+
+The `navigator.credentials.create()` method is a browser API that will work with the operating system to create a passkey, either through a connected device (like a security key), or using the built in authenticator (like Face ID / Windows Hello).
+
+Figure 1 demonstrates sample code that can be used to create a new passkey.
+
+[role="dark"]
+--
+[source,javascript]
+----
+async function getRegOptions() {
+ /**
+  * API or SDK call to your relying party
+  * Should return a `PublicKeyCredentialCreationOptions`
+  */
+}
+ 
+const createOptions = await getRegOptions();
+const newPasskey = await navigator.credentials.create(createOptions);
+----
+--
+**Figure 1**
+
+Note that your implementation of `getRegOptions()` will vary depending on the solution that you are leveraging. All this method needs to do is reach out to the relying party to retrieve a `PublicKeyCredentialCreationOptions`. 
+
+Now that we have the logic to create a passkey, let’s trigger the request from a button on our frontend application.
+
+This can be done simply by invoking a method with the logic above from a user gesture, such as a button. Another action that will need to be added to the code in Figure 1 is a method that will send the response of the `create()` method back to the relying party to be stored for the user.
+
+Figure 2 demonstrates a button that invokes the code in Figure 1, and sends the `create()` result back to the relying party.
+
+[role="dark"]
+--
+[source,javascript]
+----
+async function getRegOptions() {
+ /**
+  * API or SDK call to your relying party
+  * Should return a `PublicKeyCredentialCreationOptions`
+  */
+}
+ 
+async function sendNewPasskey(newPasskey) {
+ /**
+  * API or SDK call to your relying party
+  * Should send newPasskey to your relying party for storage
+  */
+}
+ 
+async function createPasskey() {
+ const createOptions = await getRegOptions();
+ const newPasskey = await navigator.credentials.create(createOptions);
+ await sendNewPasskey(newPasskey);
+} 
+----
+[source,html]
+----
+<button onClick="createPasskey()">Click me to create a passkey</button>
+----
+--
+**Figure 2**
+
+== Authentication flows
+Now that we have created a passkey, let's implement a flow that will allow us to use it in order to authenticate.
+
+link:/Passkeys/Passkey_client_application_implementation_guidance/Passkey_authentication_implementation_guidance.html[Continue to passkey client application prerequisites]

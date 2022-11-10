@@ -4,7 +4,7 @@
 
 Send registration requests and handle the response from the client application to create and store passkeys
 
-Now that we have declared the preliminary configurations of our application, let’s dive into the methods that can be used to facilitate the passkey ceremonies. We will begin by taking a look at the methods that will be used to initiate and process registration requests. 
+Let’s dive into the methods that will be used to initiate and process registration requests. 
 
 The guidance given in this page is intended for common, low assurance passkey scenarios. We will extend this guidance later in this guide to account for high assurance scenarios, through the use of attestation. 
 
@@ -85,14 +85,17 @@ The java-webauthn-server library utilizes the `ByteArray` class to denote differ
 
 **Step 2**
 
-Next we will attempt to build a user identity based on existing credentials. This is done to ensure that the user identity is consistent if they have already registered a credential. Otherwise we will build this identity from scratch for use in the initial registration.
+Next we will attempt to build a user identity based on existing passkeys. This is done to ensure that the user identity is consistent if the user has already registered a passkey. Otherwise we will build this identity from scratch for use in the initial registration.
 
 **Step 3**
 
-Next we will create and store the actual registration request that will be issued to the user. 
-`new RegistrationRequest()` refers to the registration request object that we denoted in the prerequisites section. The important aspect of this object builder is the final parameter, which will help you to build your `PublicKeyRequestCreationOptions`. 
+Next we will create and store the registration request that will be issued to the user. 
+`new RegistrationRequest()` refers to the registration request object that we denoted in the prerequisites section. 
+
+The important aspect of this object builder is the final parameter, which will help you to build your `PublicKeyRequestCreationOptions`. 
+
 In this step you will leverage `rp.startRegistration(StartRegistrationOptions.builder())` to build your object. 
-The parameters set within are as follow:
+The parameters are as follow:
 
 * `.user()` will be used to note the user handle of the associated credential
 * `.authenticatorSelection()` is a list of requirements that need to be true of an authenticator attempting to register 
@@ -163,15 +166,15 @@ The authenticator attachment refers to the modality of the authenticator that sh
 
 There may be instances where during a registration ceremony, you want to force the user to use one modality over the other. 
 
-In terms of the UX, you could use a guided prompt that indicates to the user steps for registering their mobile device, or their security key.
+In terms of the UX, you could use a guided prompt that indicates steps to the user for registering their mobile device, or their security key.
 
 In a high assurance application, you may not want the user to accidentally invoke the authenticator on their personal device such as Face ID, or Android Biometrics.
 
-In consumer scenarios, we DO NOT advise setting this parameter as it could lead to confusion, and exclusion for users attempting to use cross platform authenticators like security keys. 
+**In consumer scenarios, we DO NOT advise setting this parameter as it could lead to confusion, and exclusion for users attempting to use cross platform authenticators like security keys.**
 
 Below are the different options that can be chosen, and how to set them in the example given in Figure 1.
 
-For either of these options, you will need to add the method `.authenticatorAttachment()` into the `StartRegistrationOptions.builder()` flow.
+For either of these options, you will need to add the property `.authenticatorAttachment()` into the `StartRegistrationOptions.builder()` flow.
 
 ==== Cross platform
 This indicates that the relying party prefers that the user leverage a cross platform authenticator, and will not allow any other modality to be used
@@ -205,7 +208,7 @@ Figure 6 demonstrates sample code to change the authenticator attachment require
 If you do not set the option, as we did in Figure 1, then your users will be allowed to leverage any modality of authenticator that they chose. 
 
 === Setting discoverable credential requirement 
-There is an option to set the preference for the creation of a link:/passkeys/passkey_concepts/Discoverable_vs_non-discoverable_credentials.html[discoverable credential] for a newly created registration. As you may recall, WebAuthn credentials are only considered passkeys, if they are discoverable. 
+There is an option to set the preference for the creation of a link:/Passkeys/Passkey_concepts/Discoverable_vs_non-discoverable_credentials.html[discoverable credential] for a newly created registration. As you may recall, WebAuthn credentials are only considered passkeys, if they are discoverable. 
 
 There are a few important considerations that you may want to take into account before you set this option. 
 
@@ -213,7 +216,10 @@ Some authenticators may have discoverable credential limits, meaning that they c
 
 Discouraging the creation of a discoverable credential does not always mean that one will not be created. For instance, with multi-device credentials, like Face Id/Touch ID, a discoverable credential is created regardless of the relying party’s preference. 
 
+[NOTE]
+======
 Note the use of the term “resident key”. Resident key was the original term for the concept, before the adoption of the term discoverable credential. Resident key remains part of the WebAuthn language to maintain backward compatibility.
+======
 
 Below are the different options that can be chosen, and how to set them in the example given in Figure 1.
 
@@ -361,7 +367,7 @@ We will return an error if the response cannot be properly formatted.
 
 **Step 2**
 
-Next we will ensure that this response was part of a valid registration request. Our relying party will not process just any credential that is sent to it - it must match a request that it issued. If no request was found, then an error is returned. If there is a matching registration request, then we will invalidate it in the database so that it cannot be used again; for this reason if this registration fails, the user will need to reinvoke a new registration request 
+Next we will ensure that this response was part of a valid registration request. Our relying party will not process just any passkey that is sent to it - it must match a request that it issued. If no request was found, then an error is returned. If there is a matching registration request, then we will invalidate it in the database so that it cannot be used again; for this reason if this registration fails, the user will need to reinvoke a new registration request 
 
 **Step 3**
 
@@ -373,15 +379,15 @@ Once the credential is finalized, we can add the registration to our credential 
 This final step includes a call to a method `addRegistration()`. This will take in some information that will be formatted for storage in the credential repository. The value in the credential repository will be stored as a link:https://github.com/YubicoLabs/WebAuthnKit/blob/main/backend/lambda-functions/JavaWebAuthnLib/src/main/java/com/yubicolabs/data/CredentialRegistration.java[`CredentialRegistration`], which is a custom class that was developed for our example; what is important is that it can store a `RegisteredCredential` object, defined by the java-webauth-server library. Overall our credential will be stored to include;
 
 * The identity of the user who owns it
-* Credential nickname
+* Passkey nickname
 * Time based metadata such as last use, creation date, and last update
-* The credential itself
-* Registration request that was used to create the credential
+* The passkey itself
+* Registration request that was used to create the passkey
 
 Once the object has been formatted, we can store it in the credential repository.
 
 Note, that this example did not cover how to use attestation to determine the make and model, and storing additional metadata along with the credential. This will be covered in the link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation[attestation] guide in an upcoming page.
 
-Now that we're familiar with how to create a passkey, let's understand how to use that passkey to authenticate into your account
+Next let's understand how to use that passkey to authenticate into your account.
 
 link:/Passkeys/Passkey_relying_party_implementation_guidance/Passkey_authentication_requests.html[Continue to passkey authentication requests]
