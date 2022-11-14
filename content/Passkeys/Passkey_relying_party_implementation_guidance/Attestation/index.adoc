@@ -1,0 +1,52 @@
+= Attestation
+:description: Learn how to leverage attestation to ensure that your passkeys can secure high assurance scenarios
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, relying party
+
+Learn how to leverage attestation to ensure that your passkeys can secure high assurance scenarios
+
+Attestation refers to the ability of a security device to prove its own identity and for a relying party to attain details about the security device it was created on, and which manufacturer actually created said device.
+
+When it comes to high assurance scenarios, attestation will be the strongest mechanism that will allow a relying party to determine if it wants to allow a passkey to be used. 
+
+== Before you start
+It is important to be aware that requiring attestation is an invasive policy, especially when used to restrict users' choice of authenticator. For some applications this is necessary; for most it is not. Similarly, attestation does not automatically make your users more secure. Attestation gives you information, but you have to know what to do with that information in order to get a security benefit from it; it is a powerful tool but does very little on its own. Attestation can help retrieve and verify additional information about an authenticator, and enforce some very basic policy based on it, but it is your responsibility to further leverage that information into improved security.
+
+When in doubt, err towards being more permissive, because using a passkey is more secure than not using a passkey. It may still be useful to request and store attestation information for future reference - for example, to warn users if security issues are discovered in their authenticators - but we recommend that you do not require a trusted attestation unless you have specific reason to do so.
+
+== Types of attestation
+The WebAuthn specification notes a few different types of attestation that can be sent from a passkey authenticator. In this section we are going to provide a brief overview of the types that you may encounter. These are the options that can be conveyed by your relying party from the `PublicKeyCredentialCreationOptions` sent for registration ceremonies.
+
+=== Basic
+The authenticator’s attestation signature comes from a private key that belongs to authenticators of the same, or similar, model. This means that the manufacturer utilizes this attestation private key for specific models that they provide. This signature can be verified using the manufacturer's public key.
+
+=== Self
+The authenticator does not have a specific attestation key, and will rely on its own private key to create the attestation signature.
+
+=== Attestation CA
+This will typically reside on an authenticator's TPM (trusted platform module). This will hold an endorsement key, that can be used to communicate with a trusted third party, which is the attestation CA. This approach can generate multiple attestation keys for each passkey generated on the device. 
+
+=== Anonymization CA
+Attestation certificates are dynamically generated in order to remove all uniquely identifiable information for the authenticator from the passkey that is sent to the relying party
+
+=== None
+No attestation is available from the authenticator 
+
+For the purpose of this guide, we will primarily focus on Basic and Attestation CA as they both provide the ability to identify the make and model of the device. The signals presented by the other attestation types are not strong enough to make an informed decision on the authenticator, and should thus not be considered for high assurance applications.
+
+== Attestation metadata
+Developers should be aware that the attestation statement included with a passkey only sends the minimum amount of information needed to validate the root of trust present on the authenticator. This data includes:
+
+* The AAGUID, which is the unique identifier given to every FIDO2 authenticator
+* Attestation signature, which can be verified using a manufacturer's public key. 
+
+If this is the only data that is provided, then how does the relying party identify other device characteristics like model name, interfaces, manufacturer name, and other signals? Also, how is a developer supposed to manage all of this information, are they meant to maintain their own repository of device metadata?
+
+The FIDO Alliance provides, and maintains the link:https://fidoalliance.org/metadata/[FIDO Metadata Service (MDS)], which is a collection of metadata for authenticators. The MDS can be used to evaluate the root of trust sent with a credential during registration in order to identify the device, and correlate it to a metadata entry containing a variety of different data on the authenticator. 
+
+The repository is offered in the form of a BLOB hosted on a FIDO Alliance resource. If your application is connected to an external network, then you can download the BLOB using a cURL request, or you can download and self-host it for non-public facing resources hosted in your environment.
+
+The link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library] includes support for the MDS, where you are able to download the BLOB, and validate attestation statements.
+
+With our understanding of attestation, let’s learn how to implement it within our relying party, and different mechanisms you can use for your authenticator management strategy. 
+
+link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation/Adding_the_FIDO_MDS_to_your_passkey_relying_party.html[Continue to adding the FIDO MDS to your passkey relying party]
