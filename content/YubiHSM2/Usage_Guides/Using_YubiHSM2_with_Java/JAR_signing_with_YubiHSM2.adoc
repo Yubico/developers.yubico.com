@@ -1,21 +1,28 @@
-== Generating digital signatures with YubiHSM 2 and the Java PKCS#11 bridge
+== Java code signing using YubiHSM 2
+
+Java code can be signed using a tool called link:https://docs.oracle.com/en/java/javase/17/docs/specs/man/jarsigner.html[jarsigner], which is installed together with your Java Development Kit.
+
+To be able to sign a jar-file, we need to generate or load a signing key into the YubiHSM 2. For instance, we could import an RSA signing key and its corresponding certificate both with key ID `0x0002` and label `MyKey1` as follows:
 
 ....
-$ yubihsm-shell -p password --authkey=0x0001 -a put-asymmetric-key -i 0x0002 -d 1 -l MyKey1 -A rsa2048 -c "sign-pkcs,sign-pss,sign-attestation-certificate" --informat=PEM --in signing-key.pem
+$ yubihsm-shell -p password --authkey=0x0001 -a put-asymmetric-key -i 0x0002 -d 1 -l MyKey1 -A rsa2048 -c "sign-pkcs,sign-pss" --informat=PEM --in signing-key.pem
 Using default connector URL: http://127.0.0.1:12345
 Session keepalive set up to run every 15 seconds
 Created session 1
 Stored Asymmetric key 0x0002
-$ yubihsm-shell -p password --authkey=0x0001 -a put-opaque -i 0x0002 -d 1 -l MyKey1 -A opaque-x509-certificate -c sign-pkcs,sign-pss,sign-attestation-certificate --informat=PEM --in signing-crt.pem
+$ yubihsm-shell -p password --authkey=0x0001 -a put-opaque -i 0x0002 -d 1 -l MyKey1 -A opaque-x509-certificate -c sign-pkcs,sign-pss --informat=PEM --in signing-crt.pem
 Using default connector URL: http://127.0.0.1:12345
 Session keepalive set up to run every 15 seconds
 Created session 1
 Stored 700 bytes to Opaque object 0x0002
 ....
 
-=== Signing jar files
+Note that the key's capabilities should match the signature types we intend to use.
 
-Example java source file
+=== Creating JAR files
+
+Java code signing works with JAR files. 
+As an example, consider a simple java source file:
 
 ....
 $ cat HelloWorld.java 
@@ -26,14 +33,16 @@ public class HelloWorld {
 }
 ....
 
-Compile the java source file and create an (unsigned) .jar file
+Compile the java source file and create an (unsigned) .jar file:
 
 ....
 $ javac HelloWorld.java 
 $ jar cfe unsigned.jar HelloWorld HelloWorld.class
 ....
 
-Sign the unsigned .jar file and create a signed jar file
+=== Signing JAR files
+
+Now sign the unsigned .jar file and create a signed jar file:
 
 ....
 $ jarsigner -tsa http://timestamp.digicert.com -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yhsm_pkcs11_java.cfg -keystore NONE -storetype PKCS11 -storepass 0001password -signedjar signed.jar ./unsigned.jar MyKey1
@@ -45,7 +54,13 @@ The signer's certificate is self-signed.
 The timestamp will expire on 2031-11-10.
 ....
 
-Verify the signature on the signed jar
+In this case, a self-signed certificate was used, but for others to be able to verify you should use a public CA to sign your Java code.
+
+In the example above, time stamping is used so that in case the code signing certificate is ever revoked, when verifying the signature it is possible to determine if the signature was generated before or after the revocation of the certificate.
+
+=== Verifying signatures
+
+To verify the signature on a signed jar, use:
 
 ....
 $ jarsigner -verify -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yhsm_pkcs11_java.cfg -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar 
@@ -53,9 +68,16 @@ $ jarsigner -verify -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yh
 jar verified.
 ....
 
-Run the signed jar:
+If you trust the party that signed the JAR file (and the CA that issued the certificate), run the signed jar:
 
 ....
 java -jar signed.jar 
 Hello, world
 ....
+
+In case the signature is incorrect, for instance because a different signing key was used or because the JAR file was tampered with, we get an error message:
+
+....
+TODO
+....
+

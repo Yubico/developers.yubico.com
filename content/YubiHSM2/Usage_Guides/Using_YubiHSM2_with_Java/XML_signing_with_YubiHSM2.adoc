@@ -1,24 +1,51 @@
-== Signing XML files with YubiHSM 2
+== Signing XML files using YubiHSM 2
 
-Generate a simple XML file
+link:https://www.w3.org/XML/[Extensible Markup Language (XML)] is a markup language and file format. It is used in many different applications for storing, transmitting, and reconstructing data.
+For some of these applications, it is important to determine the the origin of these XML documents.
+For this reason, it is possible to associate an 
+link:https://www.w3.org/TR/xmldsig-core/[XML digital signature]
+with an XML document.
+
+XML documents can be signed using a tool called XMLSecTool, which is part of the link:https://www.shibboleth.net/[Shibboleth] Identity Management Suite.
+You can install XMLSecTool from its link:https://shibboleth.atlassian.net/wiki/spaces/XSTJ3/overview[project page], or using a package manager.
+
+=== Creating XML documents
+
+The way an XML document is generated depends on the specific application, but as a trivial example, 
+generate a minimal XML file:
 
 ....
 $ echo '<x/>' > unsigned.xml
 ....
 
-Sign the XML file using xmlsectool
+=== Signing XML documents
+
+To sign the XML file using XMLSecTool, assume we have a signing key available in a YubiHSM 2 with a key labeled `MyKey1`:
 
 ....
 $ xmlsectool --sign --pkcs11Config yhsm_pkcs11_java.cfg --inFile unsigned.xml --keyAlias MyKey1 --keyPassword 0001password --outFile signed.xml
 INFO  XMLSecTool - Reading XML document from file 'unsigned.xml'
 INFO  XMLSecTool - XML document parsed and is well-formed.
 INFO  XMLSecTool - XML document successfully signed
-INFO  XMLSecTool - XML document written to file /Users/jvdijk/YubiHSM/joostd/crypto-hardware/yubihsm2/signed.xml
+INFO  XMLSecTool - XML document written to file /home/user/signed.xml
 ....
 
-verify the signed XML file
+Note that here, we are using default credentials. The signed XML document is written to the file `signed.xml`:
 
-TODO export cert from hsm
+....
+TO DO
+....
+
+
+=== Verifying signed XML documents
+
+To verify a signed XML file, we first need to obtain the signing certificate from the YubiHSM 2, as the YubiHSM 2 only performs private key operations:
+
+....
+TO DO
+....
+
+To verify the signed XML document using the public key in the certificate stored in `signing-crt.pem`, use the XMLSecTool tool as follows:
 
 ....
 $ xmlsectool  --verifySignature --inFile signed.xml --certificate signing-crt.pem
@@ -27,3 +54,20 @@ INFO  XMLSecTool - XML document parsed and is well-formed.
 INFO  XMLSecTool - XML document signature verified.
 ....
 
+In case the signature is incorrect, for instance because a different signing key was used or because the XML document was tampered with, we get an error message:
+
+....
+TODO
+....
+
+=== Example Use Case: Signing SAML 2.0 metadata
+
+One example use case where it is important to sign XML files is with link:https://en.wikipedia.org/wiki/SAML_metadata[SAML 2.0 Metadata].
+
+....
+TODO
+....
+
+See also the Shibboleth documentation on
+link:https://shibboleth.atlassian.net/wiki/spaces/XSTJ3/pages/2369683715/Signing+SAML+Metadata[Signing SAML Metadata] and
+link:https://shibboleth.atlassian.net/wiki/spaces/XSTJ3/pages/2369683717/Using+PKCS11+Credentials[Using PKCS11 Credentials].

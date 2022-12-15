@@ -1,0 +1,105 @@
+== Example Java code using YubiHSM 2
+
+
+....
+$ openssl genrsa -out key.pem
+Generating RSA private key, 2048 bit long modulus
+ ............................................+++++
+ .............+++++
+e is 65537 (0x10001)
+$ openssl req -new -x509 -subj '/CN=my' -outform der -out cert.der -key key.pem
+$ yubihsm-shell --config-file=yubihsm.conf -p password -a put-asymmetric-key --object-id=0x0101 --label=rsaSign --capabilities=sign-pkcs:sign-pss --in=key.pem
+Session keepalive set up to run every 15 seconds
+Created session 0
+Stored Asymmetric key 0x0101
+$ yubihsm-shell --config-file=yubihsm.conf -p password -a put-opaque --object-id=0x0101 --label=rsaSign --algorithm opaque-x509-certificate --in=./cert.der
+Session keepalive set up to run every 15 seconds
+Created session 0
+Stored 666 bytes to Opaque object 0x0101
+....
+
+
+
+....
+$ echo "connector=yhusb://" > yubihsm.conf
+export YUBIHSM_PKCS11_CONF=yubihsm.conf
+....
+
+....
+$ keytool -list -keystore NONE -storetype PKCS11 -providerClass sun.security.pkcs11.SunPKCS11 -providerArg ./sunpkcs11.conf -storepass 0001password 
+Keystore type: PKCS11
+Keystore provider: SunPKCS11-yubihsm-pkcs11
+
+Your keystore contains 1 entry
+
+rsaSign, PrivateKeyEntry, 
+Certificate fingerprint (SHA-256): B0:63:35:95:74:5E:AC:B5:79:4D:5E:BD:BA:D3:16:5C:D7:64:52:CC:76:7A:1C:3D:10:2E:D9:55:7E:24:C8:8C
+....
+
+....
+$ openssl rsa -in key.pem -pubout -out pubkey.pem
+writing RSA key
+....
+
+....
+
+Java equivalent of
+
+....
+openssl dgst -sha256 -sign key.pem datatosign -out signature.bin
+....
+
+For general SunPKCS11 provider debugging info:
+	-Djava.security.debug=sunpkcs11
+For PKCS#11 keystore specific debugging info:
+	-Djava.security.debug=pkcs11keystore
+....
+
+....
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.io.FileOutputStream;
+import java.security.*;
+
+public class RsaSignP11 {
+    public static void main(String... argv) throws Exception {
+
+        String pkcs11Conf = "sunpkcs11.conf";
+        String userPin = "0001password";
+        String keyAlias = "rsaSign";
+        String infile = "datatosign";
+        String outfile = "signature.bin";
+
+        Provider provider = Security.getProvider("SunPKCS11");
+        provider = provider.configure(pkcs11Conf);
+        Security.addProvider(provider);
+        KeyStore ks = KeyStore.getInstance("PKCS11", provider);
+        ks.load(null, userPin.toCharArray());
+        PrivateKey privateKey = (PrivateKey) (ks.getKey(keyAlias, null));
+
+        Signature rsaSig = Signature.getInstance("SHA256withRSA");
+        rsaSig.initSign(privateKey);
+        byte[] datatosign = Files.readAllBytes(Path.of(infile));
+        rsaSig.update(datatosign);
+        byte[] sigBytes = rsaSig.sign();
+        new FileOutputStream(outfile).write(sigBytes);
+    }
+}
+....
+
+....
+$ javac RsaSignP11.java
+....
+
+....
+$ date > datatosign
+....
+
+....
+$ java RsaSignP11
+....
+
+....
+$ openssl dgst -sha256 -verify pubkey.pem -signature signature.bin datatosign 
+Verified OK
+....
