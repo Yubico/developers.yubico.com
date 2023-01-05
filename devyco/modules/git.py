@@ -53,21 +53,31 @@ class GitModule(Module):
 
     def _fix_mtimes(self, repo_dir):
         print "Preserving mtimes for:", repo_dir
-        proc = subprocess.Popen(['git', 'log', '--pretty=%at', '--name-status'],
+        proc = subprocess.Popen(['git', 'log', '--pretty=%at', '--name-status', '--reverse'],
                                 cwd=repo_dir, stdout=subprocess.PIPE)
         stdout, stderr = proc.communicate()
 
         mtime = 0
-        added = set([''])
+        added = {}
         for line in stdout.splitlines():
-            try:
-                mtime = int(line)
-            except:
-                if line not in added and line[0] in ['A', 'M']:
-                    added.add(line)
-                    fname = os.path.join(repo_dir, line[2:])
-                    if os.path.isfile(fname):
-                        os.utime(fname, (mtime, mtime))
+            if line:
+                try:
+                    mtime = int(line)
+                except:
+                    parts = line.split()
+                    if parts[1] not in added:
+                        if parts[0] in ['A', 'M']:
+                            added[parts[1]] = mtime
+                            fname = os.path.join(repo_dir, parts[1])
+                            if os.path.isfile(fname):
+                                os.utime(fname, (mtime, mtime))
+                    elif parts[0] == 'R100' and parts[2] not in added:
+                        old_mtime = added[parts[1]]
+                        added[parts[2]] = old_mtime
+                        fname = os.path.join(repo_dir, parts[2])
+                        if os.path.isfile(fname):
+                            os.utime(fname, (old_mtime, old_mtime))
+
 
     def _clone(self, conf):
         url = conf['url']

@@ -1,0 +1,146 @@
+= Adding the FIDO MDS to your passkey relying party
+:description: Learn how to integrate the FIDO MDS into your relying party to provide attestation metadata in your application
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, relying party
+
+Learn how to integrate the FIDO MDS into your relying party to provide attestation metadata in your application
+
+The FIDO Metadata Service (MDS) is a collection of Metadata statements that can be used by a relying party to validate authenticator attestation. Each metadata statement contains data that outlines different characteristics of an authenticator, and to prove the authenticity of the device where the credential was generated, and who manufactured the device.
+As noted in the previous section, the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library] has prebuilt support for the FIDO MDS. In this section we are going to add the methods and classes necessary to use the FIDO MDS in our application.
+
+== Prerequisites
+First, ensure that you have the correct dependencies in your Java application. If you have been following along with this guide, then your application should already be configured using the dependencies found in the link:/Passkeys/Passkey_relying_party_implementation_guidance/Initialize_a_passkey_relying_party.html[initializing a passkey relying party]. 
+
+Figure 1 includes the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library] dependencies needed to add the FIDO MDS to your application. 
+
+[role="dark"]
+--
+[source,xml]
+----
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>webauthn-server-core</artifactId>
+    <version>2.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>webauthn-server-attestation</artifactId>
+    <version>2.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>yubico-util</artifactId>
+    <version>2.0.0</version>
+</dependency>
+
+----
+--
+**Figure 1**
+
+== Downloading the FIDO MDS Repository
+Your FIDO Server will need to download the MDS directly from the FIDO Alliance. 
+
+Figure 2 demonstrates a code sample can be used to initialize the MDS in your application.
+
+[role="dark"]
+--
+[source,java]
+----
+MetadataBLOB downloader = FidoMetadataDownloader.builder()
+    .expectLegalHeader("Put the legal header here (get exact wording from BLOB)")
+    .useDefaultTrustRoot()
+    .useTrustRootCache(new File("/tmp/fido-mds-trust-root-cache.bin"))
+    .useDefaultBlob()
+    .useBlobCache(new File("/tmp/fido-mds-blob-cache.bin"))
+    .build();
+----
+--
+**Figure 2**
+
+[NOTE]
+====
+By default, `FidoMetadataDownloader` will probably use the SUN provider for the `PKIX` certificate path validation algorithm. This requires the `com.sun.security.enableCRLDP` system property set to true in order to verify the BLOB signature. For example, this can be done on the JVM command line using a -Dcom.sun.security.enableCRLDP=true option. See the link:https://docs.oracle.com/javase/9/security/java-pki-programmers-guide.htm#JSSEC-GUID-EB250086-0AC1-4D60-AE2A-FC7461374746[Java PKI Programmers Guide] for details.
+====
+
+Let’s explore this code in more detail. The first point of interest is `.expectLegalHeader()`. By using the FIDO MDS, you will be held to its terms of service. This is a way to alert the developer and code reviewers that you are acknowledging the terms of the MDS, and any implications that may have on your application. The input into this method is the Legal Header that exists within the BLOB.
+
+Figure 3 includes the statement required to populate the `.expectLegalHeader()` method
+
+[role="dark"]
+--
+[source,java]
+----
+"Retrieval and use of this BLOB indicates acceptance of the appropriate agreement located at https://fidoalliance.org/metadata/metadata-legal-terms/"
+----
+--
+**Figure 3**
+
+Next you will get the Trust Root Certificates for the MDS. You can proceed with the default method using `useDefaultTrustRoot()` while building your downloader. Next is `useTrustRootCache()` - the FIDO Spec notes that when grabbing the Trust Root Certificate, your app should have some sort of caching logic. Our example above is writing this to a file in a directory named "tmp"
+
+The next two lines are used to download the BLOB repository. In this example we are pulling the default BLOB, and telling the downloader to cache it in the "tmp" directory.
+
+Figure 4 will be used to create a `FidoMetadataService` object
+
+[role="dark"]
+--
+[source,java]
+----
+FidoMetadataService mds = FidoMetadataService.builder()
+    .useDownloader(downloader)
+    .build();
+----
+--
+**Figure 4**
+
+== Configuring your relying party object
+In our section, link:/Passkeys/Passkey_relying_party_implementation_guidance/Initialize_a_passkey_relying_party.html[initializing a passkey relying party], we configured a `RelyingParty` object that is used by our application to set some configurations and rules around our registration and authentication ceremonies. In this section we are going to initialize this object with the FIDO MDS BLOB that we have downloaded. 
+
+Figure 5 includes the method call required to add an attestation trust source to our `RelyingParty` object.
+
+[role="dark"]
+--
+[source,java]
+----
+.attestationTrustSource(mds);
+----
+--
+**Figure 5**
+
+Figure 6 demonstrates your new `RelyingParty` object, that now includes access to the FIDO MDS BLOB.
+
+[role="dark"]
+--
+[source,java]
+----
+RelyingPartyIdentity rpID = RelyingPartyIdentity.builder()
+    .id("Passkey App")
+    .name("passkey.app.com")
+    .build()
+
+Set<Strings> allowedOrigins = new HashSet<String>;
+allowedOrigins.add("https://passkey.app.com");
+
+private final RelyingParty rp = RelyingParty.builder()
+    .identity(rpID)
+    .credentialRepository(this.userStorage)
+    .origins(allowedOrigins)
+    .attestationConveyancePreference(Optional.of(AttestationConveyancePreference.DIRECT))
+    .attestationTrustSource(mds)
+    .allowUntrustedAttestation(true)
+    .validateSignatureCounter(true)
+    .build();
+----
+--
+**Figure 6**
+
+== Considerations
+
+=== Caching and Updating the Blob
+The FIDO specification mentions the recommendation to cache the metadata BLOB object. The download example above will only grab the metadata BLOB when the WebAuthn Server is initially started. You may modify this behavior to grab an updated version of the repository on a cadence specified by your business requirements. The FIDO Alliance’s recommendation is to download the updated BLOB once a month. Caching will also help with performance as it may cut down on the time needed to grab the full repository in the case that the server requires a restart before the next scheduled update.
+
+=== High Security Environments
+Some applications, especially in the enterprise space, may require the use of specific authenticators. In this case instead of adding all of the repository into a Trusted Attestation group (and additionally filtering to get a subset of the entire BLOB), it might make more sense to construct your own BLOB with the limited authenticators that you plan to allow. MDS acts as a baseline for most Relying Parties, so it’s up to you to determine the effect on your users if you were to deny certain authenticators.
+
+== Using the MDS during registration ceremonies
+In the next section we will explore how to utilize the MDS to verify attestation statements to attach the relevant metadata to the newly registered passkey.
+
+link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation/Utilizing_passkey_attestation_during_registration.html[Continue to utilizing passkey attestation during registration]

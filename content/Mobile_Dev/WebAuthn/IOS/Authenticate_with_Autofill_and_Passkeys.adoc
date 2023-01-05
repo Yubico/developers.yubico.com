@@ -1,7 +1,7 @@
 = Authenticate with Autofill and Passkeys on IOS Safari
 
 == Authenticate by auto filling a passkey
-You may have seen recent announcements from Apple and Google around their passkey experience. Their passkey experience is essentially WebAuthn with the ability to sync credentials across multiple devices. During the link:https://developer.apple.com/videos/play/wwdc2022/10092/[Meet Passkeys presentation at WWDC22], Apple introduced a new feature called “conditional mediation”, which helps to facilitate an autofill type experience for users who are using WebAuthn credentials. This introduces a new flow for WebAuthn applications looking to utilize copyable credentials in the iOS ecosystem.
+You may have seen recent announcements from Apple and Google around their passkey experience. Their passkey experience is essentially WebAuthn with the ability to sync credentials across multiple devices. During the link:https://developer.apple.com/videos/play/wwdc2022/10092/[Meet Passkeys presentation at WWDC22], Apple demonstrated a new feature called “conditional mediation”, which helps to facilitate an autofill type experience for users who are using WebAuthn credentials. This introduces a new flow for WebAuthn applications looking to utilize copyable credentials in the iOS ecosystem.
 
 How does autofill enhance the WebAuthn experience? In order to preserve privacy, the RP should not be able to self-determine if the client has discoverable credentials available for authentication - This could be used to track users who want to remain anonymous for a session. Conditional mediation allows the client to search itself for credentials, without ever making the results visible to the RP. If there is a result, the user can make the choice to send their selected credential to the RP. This is also a more seamless UX for users who may have forgotten that they have a discoverable credential available on their client.
 
@@ -36,10 +36,10 @@ Figure 1 demonstrates sample code that can be used to check if conditional media
       typeof pubKeyCred.isConditionalMediationAvailable === "function" &&
       pubKeyCred.isConditionalMediationAvailable()
     ) {
-      console.log("Mediation is available");
+      console.log("Conditional Mediation is available");
       return true;
     }
-    console.log("Mediation is not available");
+    console.log("Conditional Mediation is not available");
     return false;
   };
 ----
@@ -131,11 +131,11 @@ In this example assume that WebAuthnClient is a set of methods used to communica
 
 The first step will be to call out to the relying party for a challenge to be signed by your credential. 
 
-Here is where the primary deviation occurs. Instead of directly passing in an object that contains the public key, you will add a new field to the object. This field is named `mediation`. You will attach the value `conditional` to the `mediation` property. This configuration will trigger the conditional mediation WebAuthn flow.
+Here is where the primary deviation occurs. Instead of directly passing in an object that contains the `publicKey` property, you will add a new field to the object. This field is named `mediation`. You will attach the value `conditional` to the `mediation` property. This configuration will trigger the conditional mediation WebAuthn flow.
 
 Removing the mediation property will trigger that traditional “modal” experience that has been utilized for WebAuthn ceremonies.
 
-You will pass the public key into the WebAuthn `get()` method. If successful then you will send your assertion to the relying party. 
+You will pass the object that contains the `publicKey` property into the WebAuthn `get()` method. If successful then you will send your assertion to the relying party. 
 
 === Consideration for autofill tag
 During the development of this demo it was noticed that a race condition occurs between the autofill menu appearing, and the challenge being ready to trigger the mediated `get()` call. As of iOS 16 Beta 2, selecting an autofill option before the `get()` method is invoked will cause the authentication ceremony not to complete. In order to combat this, we will set the autocomplete property in the input field to empty until the challenge is ready to be used to initiate the authentication ceremony. 
