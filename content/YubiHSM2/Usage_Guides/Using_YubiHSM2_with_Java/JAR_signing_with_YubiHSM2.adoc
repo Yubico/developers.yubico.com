@@ -1,28 +1,22 @@
 == Java code signing using YubiHSM 2
 
-Java code can be signed using a tool called link:https://docs.oracle.com/en/java/javase/17/docs/specs/man/jarsigner.html[jarsigner], which is installed together with your Java Development Kit.
+Java code can be signed using a tool called link:https://docs.oracle.com/en/java/javase/17/docs/specs/man/jarsigner.html[jarsigner],
+which is installed together with your Java Development Kit.
 
-To be able to sign a jar-file, we need to generate or load a signing key into the YubiHSM 2. For instance, we could import an RSA signing key and its corresponding certificate both with key ID `0x0002` and label `MyKey1` as follows:
+As an example, generate an RSA key pair and a self-signed certificate stored on the YubiHSM 2:
 
 ....
-$ yubihsm-shell -p password --authkey=0x0001 -a put-asymmetric-key -i 0x0002 -d 1 -l MyKey1 -A rsa2048 -c "sign-pkcs,sign-pss" --informat=PEM --in signing-key.pem
-Using default connector URL: http://127.0.0.1:12345
-Session keepalive set up to run every 15 seconds
-Created session 1
-Stored Asymmetric key 0x0002
-$ yubihsm-shell -p password --authkey=0x0001 -a put-opaque -i 0x0002 -d 1 -l MyKey1 -A opaque-x509-certificate -c sign-pkcs,sign-pss --informat=PEM --in signing-crt.pem
-Using default connector URL: http://127.0.0.1:12345
-Session keepalive set up to run every 15 seconds
-Created session 1
-Stored 700 bytes to Opaque object 0x0002
+$ keytool -keystore NONE -storetype PKCS11 -storepass 0001password -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -genkey -alias rsaSign -keyalg RSA -dname CN=rsaSign
+Generating 2,048 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 90 days
+	for: CN=rsaSign
 ....
 
-Note that the key's capabilities should match the signature types we intend to use.
+As before, we are using the SunPKCS11 provider to interface with the YubiHSM2, similar to other examples.
+See link:Usage_Guides/Using_YubiHSM2_with_Java/example_signing_with_YubiHSM2.adoc[] for more details.
 
-=== Creating JAR files
+=== Signing jar files
 
-Java code signing works with JAR files. 
-As an example, consider a simple java source file:
+Consider the following minimal Java source file:
 
 ....
 $ cat HelloWorld.java 
@@ -40,12 +34,10 @@ $ javac HelloWorld.java
 $ jar cfe unsigned.jar HelloWorld HelloWorld.class
 ....
 
-=== Signing JAR files
-
-Now sign the unsigned .jar file and create a signed jar file:
+We can now sign this .jar file with the RSA signing key we have stored in our YubiHSM 2 and create a signed jar file:
 
 ....
-$ jarsigner -tsa http://timestamp.digicert.com -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yhsm_pkcs11_java.cfg -keystore NONE -storetype PKCS11 -storepass 0001password -signedjar signed.jar ./unsigned.jar MyKey1
+$ jarsigner -tsa http://timestamp.digicert.com -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password -signedjar signed.jar ./unsigned.jar rsaSign
 jar signed.
 
 Warning: 
@@ -56,28 +48,22 @@ The timestamp will expire on 2031-11-10.
 
 In this case, a self-signed certificate was used, but for others to be able to verify you should use a public CA to sign your Java code.
 
-In the example above, time stamping is used so that in case the code signing certificate is ever revoked, when verifying the signature it is possible to determine if the signature was generated before or after the revocation of the certificate.
+Note that we are using a timestamp server to record the current time in the signed jar file.
+This way we do not need to resign the .jar file when the signing certificate expires.
 
-=== Verifying signatures
+=== Verifying signed jar files
 
-To verify the signature on a signed jar, use:
+To verify the signature on the signed jar, we use the public key certificate stored on the YubiHSM 2.
 
 ....
-$ jarsigner -verify -providerClass sun.security.pkcs11.SunPKCS11 -providerArg yhsm_pkcs11_java.cfg -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar 
+jarsigner -verify -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar
 
 jar verified.
 ....
 
-If you trust the party that signed the JAR file (and the CA that issued the certificate), run the signed jar:
+If we trust the signer and the Certificate Authority that issued the signer's certificate, we can decide to run the software in the .jar file:
 
 ....
 java -jar signed.jar 
 Hello, world
 ....
-
-In case the signature is incorrect, for instance because a different signing key was used or because the JAR file was tampered with, we get an error message:
-
-....
-TODO
-....
-
