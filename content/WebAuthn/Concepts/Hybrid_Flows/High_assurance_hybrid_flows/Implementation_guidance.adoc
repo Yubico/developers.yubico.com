@@ -190,3 +190,40 @@ The user will scan the QR code with their phone, and complete the necessary user
 ======
 There is an option for a Pixel 7 Pro, the device used to generate the original credential. If the user has used this laptop before, they can prompt the previously used device, rather than invoking the QR code, as trust has already been established between the two devices.
 ======
+
+== Privacy considerations
+
+The WebAuthn specification includes the section
+link:https://w3c.github.io/webauthn/#sctn-privacy-considerations[§14. Privacy Considerations]. This section describes in depth the privacy aspects of WebAuthn.
+
+For this use case that is leveraging an identifier-first flow in particular, the privacy concerns addressed in section
+link:https://w3c.github.io/webauthn/#sctn-username-enumeration[§14.6.2. Username Enumeration] in conjunction with
+link:https://w3c.github.io/webauthn/#sctn-credential-id-privacy-leak[§14.6.3. Privacy leak via credential IDs] need to be considered.
+
+=== Username Enumeration
+
+Below is an excerpt from the section on the Username Enumeration consideration.
+
+=====
+While initiating a registration or authentication ceremony, there is a risk that the WebAuthn Relying Party might leak sensitive information about its registered users. For example, if a Relying Party uses e-mail addresses as usernames and an attacker attempts to initiate an authentication ceremony for `alex.p.mueller@example.com` and the Relying Party responds with a failure, but then successfully initiates an authentication ceremony for `j.doe@example.com`, then the attacker can conclude that `j.doe@example.com` is registered and `alex.p.mueller@example.com` is not.
+=====
+
+For authentication ceremonies:
+
+ * If, when initiating an authentication ceremony, there is no account matching the provided username, continue the ceremony by invoking `navigator.credentials.get()` using a syntactically valid `PublicKeyCredentialRequestOptions` object that is populated with plausible imaginary values.
+ * This approach could also be used to mitigate information leakage via `allowCredentials`; see link:https://w3c.github.io/webauthn/#sctn-unprotected-account-detection[§13.5.6 Unprotected account detection] and link:https://w3c.github.io/webauthn/#sctn-credential-id-privacy-leak[§14.6.3 Privacy leak via credential IDs]."
+
+=== Privacy leak via credential IDs
+
+Below is an excerpt from the section on the Privacy leak via credential IDs consideration.
+
+=====
+This privacy consideration applies to Relying Parties that support authentication ceremonies with a non- empty `allowCredentials` argument as the first authentication step. For example, if using authentication with server-side credentials as the first authentication step.
+=====
+
+In order to prevent such information leakage, the Relying Party could for example:
+
+ * Perform a separate authentication step, such as username and password authentication or session cookie authentication, before initiating the WebAuthn authentication ceremony and exposing the user's credential IDs.
+ * Use client-side discoverable credentials, so the `allowCredentials` argument is not needed.
+
+If the above prevention measures are not available, i.e., if `allowCredentials` needs to be exposed given only a username, the  Relying Party could mitigate the privacy leak using the same approach of returning imaginary credential IDs as discussed in link:https://w3c.github.io/webauthn/#sctn-username-enumeration[§14.6.2 Username Enumeration]."
