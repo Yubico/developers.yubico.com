@@ -14,7 +14,7 @@ Generating 2,048 bit RSA key pair and self-signed certificate (SHA256withRSA) wi
 As before, we are using the SunPKCS11 provider to interface with the YubiHSM2, similar to other examples.
 See link:Usage_Guides/Using_YubiHSM2_with_Java/example_signing_with_YubiHSM2.adoc[] for more details.
 
-=== Signing jar files
+=== Signing JAR files
 
 Consider the following minimal Java source file:
 
@@ -34,7 +34,7 @@ $ javac HelloWorld.java
 $ jar cfe unsigned.jar HelloWorld HelloWorld.class
 ....
 
-We can now sign this .jar file with the RSA signing key we have stored in our YubiHSM 2 and create a signed jar file:
+We can now sign this JAR file with the RSA signing key we have stored in our YubiHSM 2 and create a signed JAR file:
 
 ....
 $ jarsigner -tsa http://timestamp.digicert.com -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password -signedjar signed.jar ./unsigned.jar rsaSign
@@ -48,22 +48,25 @@ The timestamp will expire on 2031-11-10.
 
 In this case, a self-signed certificate was used, but for others to be able to verify you should use a public CA to sign your Java code.
 
-Note that we are using a timestamp server to record the current time in the signed jar file.
-This way we do not need to resign the .jar file when the signing certificate expires.
+Note that we are using a timestamp server to record the current time in the signed JAR file.
+This way we do not need to resign the JAR file when the signing certificate expires.
 
-=== Verifying signed jar files
+=== Verifying signed JAR files
 
-To verify the signature on the signed jar, we use the public key certificate stored on the YubiHSM 2.
+To verify the signature on the signed JAR, we use the public key certificate stored on the YubiHSM 2.
 
 ....
-jarsigner -verify -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar
+$ jarsigner -verify -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar
 
 jar verified.
 ....
 
-If we trust the signer and the Certificate Authority that issued the signer's certificate, we can decide to run the software in the .jar file:
+If we trust the signer and the Certificate Authority that issued the signer's certificate, we can decide to run the software in the JAR file:
 
 ....
-java -jar signed.jar 
+$ java -jar signed.jar 
 Hello, world
 ....
+
+Note that access to the YubiHSM2 is not required when verifying a signature on a signed JAR file as the certificate is included in the JAR file itself.
+Verification will fail however unless the certificate was signed by a trusted Certification Authority.
