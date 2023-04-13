@@ -6,7 +6,7 @@ to generate HTTPS certificates for internal servers.
 === Considerations
 For our example, we have chosen to use one root CA with a private key
 stored in an offline machine, that signs sub-CAs with private keys
-stored on YubiKeys, which signs end-entity (EE) certs.  We'll
+stored on YubiKeys, which signs end-entity (EE) certificates.  We'll
 generate the Sub-CA private keys on an offline host and save a copy of
 those keys.
 
@@ -71,8 +71,9 @@ counter as follows:
   permitted;DNS=yubico.com
   permitted;URI.0=yubico.com
   permitted;URI.1=.yubico.com
-  permitted;IP.0=0.0.0.0/255.255.255.255
-  permitted;IP.1=::/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+  excluded;IP.0=0.0.0.0/0.0.0.0
+  excluded;IP.1=0:0:0:0:0:0:0:0/0:0:0:0:0:0:0:0
+
   EOF
   $ datefudge "2014-01-01 UTC" openssl req -new -sha256 -x509 -set_serial 1 -days 1000000 -config yubico-internal-https-ca.conf -key yubico-internal-https-ca-key.pem -out yubico-internal-https-ca-crt.pem
   $ echo 01 > yubico-internal-https-ca-crt.srl
@@ -141,7 +142,7 @@ Generate the Sub-CA certificate:
   $ openssl x509 -sha256 -CA yubico-internal-https-ca-crt.pem -CAkey yubico-internal-https-ca-key.pem -req -in yubico-internal-https-subca-$user-csr.pem -extfile yubico-internal-https-subca-$user-crt.conf -out yubico-internal-https-subca-$user-crt.pem
   $ echo 00 > yubico-internal-https-subca-$user-crt.srl
 
-You may inspect the newly generated EE cert with this command:
+You may inspect the newly generated Sub-CA certificate with this command:
 
   $ openssl x509 -text < yubico-internal-https-subca-$user-crt.pem
 
@@ -149,7 +150,7 @@ Import Sub-CA key to the YubiKey:
 
   $ yubico-piv-tool -k $key -a import-key -s 9c < yubico-internal-https-subca-$user-key.pem
 
-Import Sub-CA cert to the YubiKey:
+Import Sub-CA certificate to the YubiKey:
 
   $ yubico-piv-tool -k $key -a import-certificate -s 9c < yubico-internal-https-subca-$user-crt.pem
 
@@ -189,6 +190,6 @@ Then sign the certificate using the:
   x509 -engine pkcs11 -CAkeyform engine -CAkey slot_1-id_2 -sha256 -CA yubico-internal-https-subca-$user-crt.pem -req -passin pass:$pin -in yubico-internal-https-ee-$host-csr.pem -extfile yubico-internal-https-ee-$host-crt.conf -out yubico-internal-https-ee-$host-crt.pem
   EOF
 
-You may inspect the newly generated EE cert with this command:
+You may inspect the newly generated EE certificate with this command:
 
   $ openssl x509 -text < yubico-internal-https-ee-$host-crt.pem
