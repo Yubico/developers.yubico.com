@@ -82,7 +82,7 @@ behaves exactly like `LoadLibrary`.
 
 === PKCS#11 with JAVA
 
-The following applies when using the PKCS11 module that comes with YubiHSM Shell 2.3.2 or earlier.
+==== Version 2.3.2 or earlier
 
 When using SunPKCS11 provider, it's important to know that generating asymmetric keys using `C_GenerateKeyPair` will
 not work. This is because of incompatibilities between SunPKCS11 implementation and YubiHSM2 design. In order for
@@ -95,6 +95,21 @@ problem whatsoever to use and manage the key using PKCS#11, including deleting i
 
 To generate asymmetric keys on the YubiHSM2 so that they are accessible by SunPKCS11 provider, either `yubihsm-setup` or
 `yubihsm-shell` can be used.
+
+==== Version 2.4.0 or later
+
+In version 2.4.0, the use of Meta Objects is introduced. Meta Objects are opaque objects with algorithm `opaque-data`
+that store the values for `CKA_ID` and `CKA_LABEL` attributes of another object on the YubiHSM2, thus working around the
+hard limit on the length of those values. The label of a Meta Object is always `Meta object for` followed by a
+HEX value representing the ID, type and sequence of the actual object it is tied to (referred to as an Original Object).
+
+Meta Objects are created as needed when the function to create an object is called with `CKA_ID` and/or `CKA_LABEL`
+values that are longer than 2 and 40 bytes respectively, or when the function to change one of those values is called.
+Meta Objects store these values as unecrypted raw data. When an Original Object is deleted, its corresponding Meta
+Object is also deleted automatically.
+
+Meta Objects are only used within PKCS11 context and their existence and use is invisible to PKCS11 clients or users.
+They are, however, visible to `yubihsm-shell` users.
 
 ==== yubihsm-setup
 
