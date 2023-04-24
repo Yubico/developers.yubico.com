@@ -4,6 +4,9 @@
 
 The YubiHSM 2 supports encrypted export and import of objects using a symmetric AES-CCM based scheme.
 
+The examples below assume the default authentication key (0x0001). If you use some other authentication key make sure that it has the capability `put-wrap-key` and has the correct delegated capabilities,
+otherwise you will get a "wrong permissions for operation" error.
+
 === Backup Using YubiHSM Shell
 
 Make sure you have a Wrap Key with the Capabilities `export-wrapped`, `import-wrapped` and applicable Delegated Capabilities set:
@@ -12,7 +15,7 @@ Make sure you have a Wrap Key with the Capabilities `export-wrapped`, `import-wr
 ----
 $ yubihsm-shell -a get-pseudo-random --count=32 --out=wrap.key
 ...
-$ yubihsm-shell -a put-wrap-key -c export-wrapped,import-wrapped --delegated=sign-pkcs,decrypt-pkcs,exportable-under-wrap --in=wrap.key
+$ yubihsm-shell -a put-wrap-key --capabilities export-wrapped,import-wrapped --delegated=sign-pkcs,decrypt-pkcs,exportable-under-wrap --in=wrap.key
 ...
 Stored Wrap key 0xd581
 ----
@@ -21,7 +24,7 @@ When this Wrap Key is present, any Object in the same Domain and with the Capabi
 
 [source, bash]
 ----
-$ yubihsm-shell -a generate-asymmetric-key -A rsa2048 -c exportable-under-wrap,sign-pkcs,decrypt-pkcs
+$ yubihsm-shell -a generate-asymmetric-key -A rsa2048 --capabilities exportable-under-wrap,sign-pkcs,decrypt-pkcs
 ...
 Generated Asymmetric key 0x6e77
 $ yubihsm-shell -a get-wrapped --wrap-id=0xd581 --object-id=0x6e77 -t asymmetric-key --out=key_6e77.yhw
@@ -59,7 +62,7 @@ Object imported as 0x6e77 of type asymmetric-key
 
 == Backup and Restore of Keys Managed via YubiHSM Key Storage Provider
 
-ADCS does not set the `NCRYPT_ALLOW_EXPORT_FLAG` when generating a key neither through the setup UI, nor the `Install-ADCSCertificationAuthority` PowerShell module.  When creating an ADCS root CA key via the YubiHSM 2, we add the `exportable-under-wrap´ Capability by default, so that backup and restore functionality is available through the following manual process:
+ADCS does not set the `NCRYPT_ALLOW_EXPORT_FLAG` when generating a key neither through the setup UI, nor the `Install-ADCSCertificationAuthority` PowerShell module.  When creating an ADCS root CA key via the YubiHSM 2, we add the `exportable-under-wrap` Capability by default, so that backup and restore functionality is available through the following manual process:
 
 === Identify Your Private Key Container Name
 
