@@ -1,0 +1,110 @@
+= WebAuthn hybrid flows for high assurance scenarios
+:description: Learn how to utilize a combination of security keys and platform authenticators to allow for seamless hybrid authentication 
+:keywords: hybrid, android, high assurance, FIDO2, CTAP, WebAuthn
+
+Learn how to utilize a combination of security keys and platform authenticators to allow for seamless hybrid authentication 
+
+== Authenticators for high assurance scenarios
+
+With the introduction of passkeys, a new paradigm exists where many of the platform authenticators on popular devices will have a preference to create link:/Passkeys/Passkey_concepts/Single_device_vs_multi_device_credentials.html#:~:text=account%20recovery%20flows.-,Multi%20device%20passkeys,-Multi%20device%20passkeys[multi-device credentials (MDC)]. 
+
+Why is this important? Because MDC’s cannot be utilized for high assurance scenarios. High assurance authenticators require that there are two different authentication factors AND that the device is a hard authenticator; providing impersonation resistance. This means that the private key is only present on one device, and can’t be copied or synced to another authenticator.
+
+Another limiting factor is that MDC’s cannot provide link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation[attestation], as there can be no guarantee that the credential will be leveraged from the same device that it is attempting to authenticate from.
+
+As noted above, many of the platform authenticators on mainstream devices have a preference for MDC’s, but that doesn’t mean that they cannot create a link:/Passkeys/Passkey_concepts/Single_device_vs_multi_device_credentials.html#:~:text=Single%20device%20passkeys[single device credential (SDC)]. An example of this is the Android platform; which is the only mainstream mobile operating system that is capable of generating SDCs, and providing attestation data to demonstrate the root of trust. 
+
+=== Utilizing the best of security keys and platform authenticators
+
+In many cases, the immediate answer to any high assurance scenario is to leverage security keys. This answer works well for enterprise scenarios where security teams can manage the end-to-end process of a key's lifecycle. While security keys can be used in the consumer space, there may be issues mandating them for non-technical or non-security conscious users.
+
+Mandating only security keys for your high assurance consumer application can be tricky. You don’t want to require your users to
+
+* Purchase specialty hardware
+* Purchase backup hardware
+* Always carry around another item with them
+
+Drawbacks aren't only present for security keys in the consumer space. SDCs on platform authenticators run into issues as well. A user will be unable to get into their accounts if:
+
+* The device is stolen
+* The device is lost
+* The user purchases another device
+
+There is a common trend in both of the issues outlined above. Both relate to account recovery when the primary authenticator is not present. The scenarios above are not only limited to the consumer space. Both consumer and enterprise applications will need ways to allow for seamless authentication, and account recovery, without introducing vulnerabilities into user accounts, such as email or code based recovery.
+
+At first glance, it may seem obvious that MDCs are the answer to both issues; but recall that **MDCs are not appropriate for high assurance scenarios**.
+
+In the space of WebAuthn, users are not constrained to a single option for their authentication needs. Instead of looking at this as security keys vs platform authenticators, we should instead explore the ways the two technologies complement each other, through the use of hybrid flows. 
+
+== Introduction to WebAuthn hybrid flows
+
+In the context of WebAuthn, the hybrid transport relates to the ability for an authenticator to leverage data-transport and proximity mechanisms to perform registration and authentication ceremonies across different devices. For example, a smartphone having the ability to authenticate for an account to be used on a desktop. 
+
+While the term hybrid is a new addition to the WebAuthn specification, the concept and mechanism itself is not new. In previous versions of the specification, this type of flow was commonly referred to as caBLE; where the BLE indicates the use of Bluetooth. 
+
+=== Credential registration
+
+In the case of registration, both traditional and hybrid flows can be used to create credentials that can be used for hybrid authentication.
+
+==== Standard registration
+
+The first video will demonstrate the ability to register a credential directly on a device. This is the traditional way that credentials have been generated on smartphones. Note that while this is not a hybrid flow, it is worth demonstrating as there is a key difference that we will outline in the coming section.
+
+video::../videos/standard_reg.mp4[height=600]
+
+==== Hybrid registration
+
+The next video will demonstrate the ability to register a credential through a hybrid flow. The user will display the QR code from their laptop, but use their smartphone to create the credential. Note that in our example we are creating a SDC. This means that the credential will not be synced across devices - implying that the credential only exists on the smartphone, and not on the laptop. 
+
+[NOTE]
+======
+There are scenarios where the credential will be synced between the laptop and the smartphone, if a MDC were created - such as a credential that is created between an iOS and macOS device, leveraging passkeys on the Apple Keychain.
+======
+
+[role="videoConst"]
+--
+video::../videos/hybrid_reg.mp4[]
+--
+
+[NOTE]
+=====
+You may have noticed that in the standard registration flow, the credential appeared under "Trusted Devices", while the hybrid credential appeared under the "Security key" section.
+
+In our example application, all credentials created with an `authenticatorAttachment` value of **platform** get treated as a trusted device, where a credential created with the value of **cross-platform** is a security key.
+
+Most browsers will treat hybrid registration as a **cross-platform** credential - We will cover this topic in more detail in the following section on implementation guidance.
+=====
+
+=== Hybrid authentication
+
+The video below demonstrates an example of hybrid authentication being done between an Android smartphone, and MacBook. 
+
+[role="videoConst"]
+--
+video::../videos/hybrid_auth.mp4[]
+--
+
+=== Attestation from hybrid registrations
+
+In the videos above, there was a major difference between the resulting credentials that were created in each scenario. The credential that was created directly on the smartphone device was denoted as **Android Authenticator with SafetyNet Attestation**. This is in contrast to the credential that was created in the hybrid flow, that is denoted with a generic identifier.
+
+This occurs as the hybrid flow does not send link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation[attestation] data when a new credential is created.
+
+This creates a point of concern, as high assurance scenarios will often require that every registration have an attestation statement present.
+
+So how do we overcome this?
+
+=== Security keys and hybrid flows
+
+At this point, you may be asking yourself; how do security keys fit into hybrid flows? Security keys can help to complement hybrid flows by:
+
+* Providing a high assurance root of trust
+* Account recovery for lost, stolen, or misplaced smartphones
+
+The first aspect is to utilize the security key as the original root of trust - meaning that for high assurance scenarios, the first registration should always come from a security key. This will give the security key the power to “bless” other devices using its strongly attested credential. 
+
+The next aspect is around lost, stolen, or misplaced smartphones. Because we are utilizing SDCs, the credentials on the smartphone are not transferable. Without a security key, the smartphone with the credential will need to be present in order to create a new credential on a new smartphone - which will not be possible if the user does not possess the device. With a security key, the user has the piece of mind that they can recover their accounts from the security key that is (hopefully) stored somewhere secure and retrievable. 
+
+In the next section we are going to outline a user flow that leverages both security keys, and SDCs from a platform authenticator to facilitate hybrid authentication flows.
+
+link:/WebAuthn/Concepts/Hybrid_Flows/High_assurance_hybrid_flows/User_flows.html[Click continue for examples of high assurance hybrid WebAuthn flows]
