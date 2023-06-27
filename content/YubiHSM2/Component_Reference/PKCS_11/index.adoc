@@ -82,33 +82,55 @@ behaves exactly like `LoadLibrary`.
 
 === PKCS#11 with JAVA
 
+Due to design and implementation choices, there are some peculiarities when generating or importing keys into the
+YubiHSM 2 using SunPKCS#11 provider and YubiHSM 2 PKCS#11 module. JAVA SunPKCS#11 provider requires the ability to
+change a key's properties after creation in order for it to be able to use the keys later on. However, YubiHSM 2 does
+not allow such operation (All key properties have to be set at the time of creation and cannot be changed after the
+fact). The key information here is that the asymmetric key and its corresponding X509Certificate need to be accessed
+via the same ID on the device. Later versions of YubiHSM 2 PKCS#11 module provide a way to achieve this via the use of
+Meta Objects, but it could be worth it to make sure that this requirement is met manually, especially if the number of
+objects created on the YubiHSM 2 needs to be limited.
+
+==== Version 2.4.0 or later
+
+In version 2.4.0, the use of Meta Objects is introduced. Meta Objects are opaque objects with algorithm `opaque-data`
+that store the values of `CKA_ID` and `CKA_LABEL` attributes of another object on the YubiHSM 2, thus working around the
+hard limit on the length of those values and the inability to change those attributes after the fact. The label of a
+Meta Object is always `Meta object for` followed by a HEX value representing the ID, type and sequence of the actual
+object it is tied to (referred to as an Original Object).
+
+Meta Objects are created as needed when the function to create an object is called with `CKA_ID` and/or `CKA_LABEL`
+values that are longer than 2 and 40 bytes respectively, or when the function to change one of those values is called.
+Meta Objects store these values as unencrypted raw data. When an Original Object is deleted, its corresponding Meta
+Object is also deleted automatically.
+
+Meta Objects are only used within PKCS#11 context and their existence and use are invisible to PKCS#11 clients or users.
+They are, however, visible to `yubihsm-shell` users.
+
+==== Version 2.3.2 or earlier
+
 When using SunPKCS11 provider, it's important to know that generating asymmetric keys using `C_GenerateKeyPair` will
-not work. This is because of incompatibilities between SunPKCS11 implementation and YubiHSM2 design. In order for
-SunPKCS11 to be able to use asymmetric keys on the YubiHSM2 device, both the asymmetric key and its X509Certificate
-must be stored under the same ObjectID. The way SunPKCS11 provider ensures that is by first storing the X509Certificate
-with a random ObjectID, then change that value to the same ObjectID as the asymmetric key. On the YubiHSM2, however, an
-object's properties are not possible to change after the fact, which causes the `C_GenerateKeyPair` function to fail. However,
-once an asymmetric key and its X509Certificate are stored in on the YubiHSM2 under the same ObjectID, there is no
-problem whatsoever to use and manage the key using PKCS#11, including deleting it.
+not work. In order for SunPKCS11 to be able to use asymmetric keys on the YubiHSM2 device, both the asymmetric key and
+its X509Certificate must be stored under the same ObjectID. Once an asymmetric key and its X509Certificate are stored
+in the YubiHSM 2 under the same ObjectID, there is no problem whatsoever to use and manage the key using PKCS#11,
+including deleting it.
 
-To generate asymmetric keys on the YubiHSM2 so that they are accessible by SunPKCS11 provider, either `yubihsm-setup` or
-`yubihsm-shell` can be used.
+To generate asymmetric keys on the YubiHSM 2 so that they are accessible by SunPKCS11 provider, either `yubihsm-setup`
+or `yubihsm-shell` can be used.
 
-==== yubihsm-setup
+===== yubihsm-setup
 
 Use the subcommand `ejbca` to generate an asymmetric key on the YubiHSM2 and store it and its X509Certificate under the
 same ObjectID
 
-```
-$ yubihsm-setup -d ejbca
-```
+  $ yubihsm-setup -d ejbca
 
-==== yubihsm-shell
+===== yubihsm-shell
 
 Using `yubihsm-shell`, the attestation functionality can be leveraged to produce a self-signed X509Certificate that can
 then be imported using the same ObjectID as the generated asymmetric key.
 
-```
+....
 # Generate asymmetric key and note its ObjectID
 $ yubihsm-shell -a generate-asymmetric-key -i <KEY_OBJECT_ID> -l <OBJECT_LABEL> -d <OBJECT_DOMAINS> -c <KEY_CAPABILITIES> -A <KEY_ALGORITHM>
 
@@ -126,11 +148,14 @@ $ yubihsm-shell -a delete-object -i <KEY_OBJECT_ID> -t opaque
 
 # Import the self-signed certificate using the same ObjectID as the generated key
 $ yubihsm-shell -a put-opaque -i <KEY_OBJECT_ID> -l <OBJECT_LABEL> -A opaque-x509-certificate --informat=PEM --in selfsigned_cert.pem
-```
+....
 
-Note that if a YubiHSM2 device does not come with an attestation key with ObjectID 0, any other asymmetric key
-can be used instead. Since the whole purpose of signing the first attestation certificate is to produce and X509Certificate
-to use as a template, any X509Certificate with the desired attributes present can be imported instead.
+Note that if a YubiHSM 2 device does not come with an attestation key with ObjectID 0, any other asymmetric key
+can be used instead. Since the whole purpose of signing the first attestation certificate is to produce an X509Certificate
+to use as a template, any X509Certificate with the desired attributes present can be used as a template instead.
+
+Also note that when using a key for signing an attestation certificate, the signing key's capabilities must include
+`sign-attestation-certificate`.
 
 === Software Operations
 
