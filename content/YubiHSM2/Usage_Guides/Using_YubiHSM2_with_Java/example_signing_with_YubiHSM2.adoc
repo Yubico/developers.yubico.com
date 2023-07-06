@@ -1,0 +1,192 @@
+== Example Java code using YubiHSM 2
+
+To interface to cryptographic keys stored on a YubiHSM 2 from Java code,
+we can use the SunPKCS11 provider.
+
+This has the added benefit that we can write code that is independent of the specific HSM used,
+as long as the HSM has a PKCS#11 module available.
+
+Apart from writing code, we need to configure all components correctly in order for the code to work correctly.
+This includes the configuration of the YubiHSM 2 connector, Java `keytool`, and the SunPKCS11 provider.
+
+To illustrate, we will code a simple RSA signing example below.
+
+=== Setup
+
+Let's assume we have a single YubiHSM 2 connected locally via USB.
+Store the connector configuration in a file named `yubihsm.conf`
+and point to it via the `YUBIHSM_PKCS11_CONF` environment variable
+so that the YubiHSM 2 PKCS#11 module will be able to find it:
+
+....
+$ echo "connector=yhusb://" > yubihsm.conf
+export YUBIHSM_PKCS11_CONF=yubihsm.conf
+....
+
+We will be using Java's `keytool` to manage keys and certificates on the YubiHSM 2.
+For convenience, store the PKCS#11 configuration options in a file named `keytool.config`:
+
+....
+$ cat keytool.config 
+keytool.all = -keystore NONE -storetype PKCS11 -storepass 0001password -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf
+....
+
+The file `sunpkcs11.conf` is used to configure the PKCS#11 module we want to use,
+and the PKCS#11 attributes we want to define for objects created or imported via the SunPKCS11 provider:
+
+....
+$ cat sunpkcs11.conf 
+name = YubiHSM2
+library = /usr/local/lib/pkcs11/yubihsm_pkcs11.dylib
+attributes(*, CKO_PRIVATE_KEY, CKK_RSA) = {
+  CKA_SIGN=true
+}
+....
+
+Finally, we can create an RSA key pair and a self-signed certificate using Java's `keytool`.
+
+....
+$ keytool -conf keytool.config -genkey -alias rsaSign -keyalg RSA -dname CN=rsaSign
+Generating 2,048 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 90 days
+	for: CN=rsaSign
+....
+
+Note that when using `keytool`, the keys are generated in software and subsequently imported into the YubiHSM 2.
+To generate keys on the YubiHSM 2 itself, use the `yubihsm-shell` tool.
+
+The generated certificate should now be visible from `keytool`.
+For example:
+
+....
+$ keytool -conf keytool.config -list
+Keystore type: PKCS11
+Keystore provider: SunPKCS11-YubiHSM2
+
+Your keystore contains 1 entry
+
+rsaSign, PrivateKeyEntry, 
+Certificate fingerprint (SHA-256): 02:50:E4:1B:D8:FB:1B:07:AB:8C:05:85:37:BD:FB:89:6F:57:1F:CC:86:EC:E5:F2:BE:61:76:68:38:58:F0:39
+....
+
+=== Code
+
+Now, let's turn to coding.
+In this example, we will be signing files using the RSA private key stored on our YubiHSM 2.
+
+The data to be signed is a simple text file, for instance:
+
+....
+$ date > datatosign
+....
+
+The code will need to do some file I/O, and use the JCA and JCE standards to generate and verify signatures.
+Let's start with the necessary imports:
+
+....
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.io.FileOutputStream;
+import java.security.cert.X509Certificate;
+import java.security.*;
+....
+
+To keep things simple, we will not handle Exceptions here and define some hardcoded parameters:
+
+....
+public class RsaSignP11 {
+    public static void main(String... argv) throws Exception {
+
+        String pkcs11Conf = "sunpkcs11.conf";
+        String userPin = "0001password";
+        String keyAlias = "rsaSign";
+        String infile = "datatosign";
+        String outfile = "signature.bin";
+
+      // see below ...
+    }
+}
+....
+
+Using hard-coded parameters is only to keep the example concise. Normally these would be command-line parameters or read from a configuration file.
+Passwords should never be hard-coded and are typically read from a terminal on demand.
+
+To continue with our example code, first load and configure the SunPKCS11 provider:
+
+....
+        Provider provider = Security.getProvider("SunPKCS11");
+        provider = provider.configure(pkcs11Conf);
+        Security.addProvider(provider);
+....
+
+Load the PKCS11 KeyStore, authenticating with the User PIN:
+
+....
+        KeyStore ks = KeyStore.getInstance("PKCS11", provider);
+        ks.load(null, userPin.toCharArray());
+....
+
+Retrieve the private key, and sign the data read from the `datatosign` file using the `SHA256withRSA` algorithm:
+
+....
+        PrivateKey privateKey = (PrivateKey) (ks.getKey(keyAlias, null));
+        Signature rsaSig = Signature.getInstance("SHA256withRSA");
+        rsaSig.initSign(privateKey);
+        byte[] datatosign = Files.readAllBytes(Path.of(infile));
+        rsaSig.update(datatosign);
+        byte[] sigBytes = rsaSig.sign();
+....
+
+Optionally, the signature can be stored in a signature file for others to verify:
+
+....
+        new FileOutputStream(outfile).write(sigBytes);
+....
+
+While we are at it, let's also verify if the signature generated in `sigBytes` can be verified using the corresponding public Key.
+
+First we need to extract the public key from the certificate pointed to by our `rsaSign` alias:
+
+....
+        X509Certificate cert = (X509Certificate) ks.getCertificate(keyAlias);
+        PublicKey publicKey = cert.getPublicKey();
+....
+
+Again using the `SHA256withRSA` algorithm, verify that the signature in `sigBytes` matches
+the data in `datatosign` using our `publicKey`:
+
+....
+        rsaSig = Signature.getInstance("SHA256withRSA");
+        rsaSig.initVerify(publicKey);
+        rsaSig.update(datatosign);
+        assert rsaSig.verify(sigBytes) == true : "verify failed";
+....
+
+To test, compile the source:
+
+....
+$ javac RsaSignP11.java
+....
+
+Run the program:
+
+....
+$ java RsaSignP11
+$ 
+....
+
+There is no output, meaning the `assert` was passed without issues and the signatures verifies.
+
+=== Troubleshooting
+
+Debugging issues with HSM's can be difficult. It may help to enable logging using the following JVM system properties:
+
+For PKCS#11 keystore specific debugging info:
+
+	-Djava.security.debug=pkcs11keystore
+
+For general SunPKCS11 provider debugging info:
+
+	-Djava.security.debug=sunpkcs11
+
+Also, refer to the documentation on link:https://developers.yubico.com/YubiHSM2/Component_Reference/PKCS_11/[PKCS#11 with YubiHSM 2]
+for generating debug logs from the PKCS#11 module itself.

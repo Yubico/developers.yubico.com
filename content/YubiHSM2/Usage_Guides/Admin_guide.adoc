@@ -113,3 +113,15 @@ Public Key Object; RSA 2048 bits
   ID:         e77d
   Usage:      none
 ----
+
+=== Note about meta objects and PKCS11
+
+After an object is created on the YubiHSM2, whether by generation or import, it is not possible to change any of its
+properties. However, when using PKCS11, it is possible to change the attributes CKA_ID and CKA_LABEL. This is done by
+having the new values of those attributes stored in a separate object of type opaque. This opaque object is referred
+to as a meta object and is marked by its label that starts with "Meta object for" followed by a hex value representing
+the sequence number, type and object ID of the original object these attribute values belong to. Meta objects are
+automatically deleted when the original object it belongs to is deleted.
+
+This feature is only available when using the PKCS11 module yubihsm_pkcs11 that comes with yubihsm-shell 2.4.0 and for
+the following object types: Asymmetric key, Opaque object with algorithm opaque-x509-certificate, Wrap key and HMAC key.
