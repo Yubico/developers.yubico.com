@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ykman.scripting &mdash; yubikey-manager 5.2.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ykman.scripting</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ykman.scripting</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2021 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">YkmanDevice</span>
+<span class="kn">from</span> <span class="nn">.device</span> <span class="kn">import</span> <span class="n">list_all_devices</span><span class="p">,</span> <span class="n">scan_devices</span>
+<span class="kn">from</span> <span class="nn">.pcsc</span> <span class="kn">import</span> <span class="n">list_devices</span> <span class="k">as</span> <span class="n">list_ccid</span>
+
+<span class="kn">from</span> <span class="nn">yubikit.core</span> <span class="kn">import</span> <span class="n">TRANSPORT</span>
+<span class="kn">from</span> <span class="nn">yubikit.core.otp</span> <span class="kn">import</span> <span class="n">OtpConnection</span>
+<span class="kn">from</span> <span class="nn">yubikit.core.smartcard</span> <span class="kn">import</span> <span class="n">SmartCardConnection</span>
+<span class="kn">from</span> <span class="nn">yubikit.core.fido</span> <span class="kn">import</span> <span class="n">FidoConnection</span>
+<span class="kn">from</span> <span class="nn">yubikit.management</span> <span class="kn">import</span> <span class="n">DeviceInfo</span>
+<span class="kn">from</span> <span class="nn">yubikit.support</span> <span class="kn">import</span> <span class="n">get_name</span><span class="p">,</span> <span class="n">read_info</span>
+<span class="kn">from</span> <span class="nn">smartcard.Exceptions</span> <span class="kn">import</span> <span class="n">NoCardException</span><span class="p">,</span> <span class="n">CardConnectionException</span>
+
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Various helpers intended to simplify scripting.</span>
+
+<span class="sd">Add an import to your script:</span>
+
+<span class="sd">  from ykman import scripting as s</span>
+
+<span class="sd">Example usage:</span>
+
+<span class="sd">  yubikey = s.single()</span>
+<span class="sd">  print(&quot;Here is a YubiKey:&quot;, yubikey)</span>
+
+
+<span class="sd">  print(&quot;Insert multiple YubiKeys&quot;)</span>
+<span class="sd">  for yubikey in s.multi():</span>
+<span class="sd">      print(&quot;You inserted {yubikey}&quot;)</span>
+<span class="sd">  print(&quot;You pressed Ctrl+C, end of script&quot;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="ScriptingDevice"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.ScriptingDevice">[docs]</a><span class="k">class</span> <span class="nc">ScriptingDevice</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scripting-friendly proxy for YkmanDevice.</span>
+
+<span class="sd">    This wrapper adds some helpful utility methods useful for scripting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped</span> <span class="o">=</span> <span class="n">wrapped</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_info</span> <span class="o">=</span> <span class="n">info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">get_name</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span><span class="o">.</span><span class="n">yubikey_type</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wrapped</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">serial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="o">.</span><span class="n">serial</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">serial</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="n">serial</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceInfo</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+<div class="viewcode-block" id="ScriptingDevice.otp"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.ScriptingDevice.otp">[docs]</a>    <span class="k">def</span> <span class="nf">otp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OtpConnection</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish a OTP connection.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">OtpConnection</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ScriptingDevice.smart_card"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.ScriptingDevice.smart_card">[docs]</a>    <span class="k">def</span> <span class="nf">smart_card</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SmartCardConnection</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish a Smart Card connection.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">SmartCardConnection</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ScriptingDevice.fido"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.ScriptingDevice.fido">[docs]</a>    <span class="k">def</span> <span class="nf">fido</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FidoConnection</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish a FIDO connection.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">FidoConnection</span><span class="p">)</span></div></div>
+
+
+<span class="n">YkmanDevice</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ScriptingDevice</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="single"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.single">[docs]</a><span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScriptingDevice</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Connect to a YubiKey.</span>
+
+<span class="sd">    :param prompt: When set, you will be prompted to</span>
+<span class="sd">        insert a YubiKey.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pids</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="n">scan_devices</span><span class="p">()</span>
+    <span class="n">n_devs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pids</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">prompt</span> <span class="ow">and</span> <span class="n">n_devs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Insert YubiKey...&quot;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">n_devs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">pids</span><span class="p">,</span> <span class="n">new_state</span> <span class="o">=</span> <span class="n">scan_devices</span><span class="p">()</span>
+        <span class="n">n_devs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pids</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">devs</span> <span class="o">=</span> <span class="n">list_all_devices</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">devs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ScriptingDevice</span><span class="p">(</span><span class="o">*</span><span class="n">devs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to get single YubiKey&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="multi"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.multi">[docs]</a><span class="k">def</span> <span class="nf">multi</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">ignore_duplicates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">allow_initial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">ScriptingDevice</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Connect to multiple YubiKeys.</span>
+
+
+<span class="sd">    :param ignore_duplicates: When set, duplicates are ignored.</span>
+<span class="sd">    :param allow_initial: When set, YubiKeys can be connected</span>
+<span class="sd">        at the start of the function call.</span>
+<span class="sd">    :param prompt: When set, you will be prompted to</span>
+<span class="sd">        insert a YubiKey.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">handled_serials</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">pids</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scan_devices</span><span class="p">()</span>
+    <span class="n">n_devs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pids</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">n_devs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">prompt</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Insert YubiKeys, one at a time...&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">allow_initial</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;YubiKeys must not be present initially.&quot;</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># Run this until we stop the script with Ctrl+C</span>
+        <span class="n">pids</span><span class="p">,</span> <span class="n">new_state</span> <span class="o">=</span> <span class="n">scan_devices</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">new_state</span> <span class="o">!=</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">new_state</span>  <span class="c1"># State has changed</span>
+            <span class="n">serials</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">handled_serials</span><span class="p">:</span>
+                <span class="n">handled_serials</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># Allow one key without serial at a time</span>
+            <span class="k">for</span> <span class="n">device</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">list_all_devices</span><span class="p">():</span>
+                <span class="n">serials</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">serial</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">handled_serials</span><span class="p">:</span>
+                    <span class="n">handled_serials</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">serial</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">ScriptingDevice</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_duplicates</span><span class="p">:</span>  <span class="c1"># Reset handled serials to currently connected</span>
+                <span class="n">handled_serials</span> <span class="o">=</span> <span class="n">serials</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># No change, sleep for 1 second.</span>
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="k">return</span>  <span class="c1"># Stop waiting</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_reader</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">YkmanDevice</span><span class="p">:</span>
+    <span class="n">readers</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">list_ccid</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">readers</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No NFC reader found matching filter: &#39;</span><span class="si">{</span><span class="n">reader</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">readers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">fingerprint</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">readers</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Multiple NFC readers matching filter: &#39;</span><span class="si">{</span><span class="n">reader</span><span class="si">}</span><span class="s2">&#39; </span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">readers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="single_nfc"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.single_nfc">[docs]</a><span class="k">def</span> <span class="nf">single_nfc</span><span class="p">(</span><span class="n">reader</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScriptingDevice</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Connect to a YubiKey over NFC.</span>
+
+<span class="sd">    :param reader: The name of the NFC reader.</span>
+<span class="sd">    :param prompt: When set, you will prompted to place</span>
+<span class="sd">        a YubiKey on NFC reader.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">_get_reader</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">device</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">SmartCardConnection</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">read_info</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ScriptingDevice</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoCardException</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prompt</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Place YubiKey on NFC reader...&quot;</span><span class="p">)</span>
+                <span class="n">prompt</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="multi_nfc"><a class="viewcode-back" href="../../rst/ykman.html#ykman.scripting.multi_nfc">[docs]</a><span class="k">def</span> <span class="nf">multi_nfc</span><span class="p">(</span>
+    <span class="n">reader</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ignore_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_initial</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">ScriptingDevice</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Connect to multiple YubiKeys over NFC.</span>
+
+<span class="sd">    :param reader: The name of the NFC reader.</span>
+<span class="sd">    :param ignore_duplicates: When set, duplicates are ignored.</span>
+<span class="sd">    :param allow_initial: When set, YubiKeys can be connected</span>
+<span class="sd">        at the start of the function call.</span>
+<span class="sd">    :param prompt: When set, you will be prompted to place</span>
+<span class="sd">        YubiKeys on the NFC reader.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">_get_reader</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+    <span class="n">prompted</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">device</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">SmartCardConnection</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_initial</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;YubiKey must not be present initially.&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NoCardException</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">prompt</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Place YubiKey on NFC reader...&quot;</span><span class="p">)</span>
+            <span class="n">prompted</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">handled_serials</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">current</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># Run this until we stop the script with Ctrl+C</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">device</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">SmartCardConnection</span><span class="p">)</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">read_info</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span> <span class="ow">in</span> <span class="n">handled_serials</span> <span class="ow">or</span> <span class="n">current</span> <span class="o">==</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">prompt</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">prompted</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Remove YubiKey from NFC reader.&quot;</span><span class="p">)</span>
+                    <span class="n">prompted</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span>
+                <span class="k">if</span> <span class="n">ignore_duplicates</span><span class="p">:</span>
+                    <span class="n">handled_serials</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">ScriptingDevice</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+                <span class="n">prompted</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="n">NoCardException</span><span class="p">:</span>
+            <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">handled_serials</span><span class="p">:</span>
+                <span class="n">handled_serials</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># Allow one key without serial at a time</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">prompt</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">prompted</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Place YubiKey on NFC reader...&quot;</span><span class="p">)</span>
+                <span class="n">prompted</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">CardConnectionException</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># No change, sleep for 1 second.</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c1"># Stop waiting</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
