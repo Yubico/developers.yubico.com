@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yubikit.core.smartcard &mdash; yubikey-manager 5.2.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=0fa48458"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../core.html">yubikit.core</a></li>
+      <li class="breadcrumb-item active">yubikit.core.smartcard</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for yubikit.core.smartcard</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Version</span><span class="p">,</span>
+    <span class="n">TRANSPORT</span><span class="p">,</span>
+    <span class="n">USB_INTERFACE</span><span class="p">,</span>
+    <span class="n">Connection</span><span class="p">,</span>
+    <span class="n">CommandError</span><span class="p">,</span>
+    <span class="n">ApplicationNotAvailableError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ApduError"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.ApduError">[docs]</a><span class="k">class</span> <span class="nc">ApduError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Thrown when an APDU response has the wrong SW code&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">sw</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sw</span> <span class="o">=</span> <span class="n">sw</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;APDU error: SW=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sw</span><span class="si">:</span><span class="s2">04x</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="ApduFormat"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.ApduFormat">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">ApduFormat</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;APDU encoding format&quot;&quot;&quot;</span>
+
+    <span class="n">SHORT</span> <span class="o">=</span> <span class="s2">&quot;short&quot;</span>
+    <span class="n">EXTENDED</span> <span class="o">=</span> <span class="s2">&quot;extended&quot;</span></div>
+
+
+<div class="viewcode-block" id="AID"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.AID">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">AID</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey Application smart card AID values.&quot;&quot;&quot;</span>
+
+    <span class="n">OTP</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a0000005272001&quot;</span><span class="p">)</span>
+    <span class="n">MANAGEMENT</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000527471117&quot;</span><span class="p">)</span>
+    <span class="n">OPENPGP</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;d27600012401&quot;</span><span class="p">)</span>
+    <span class="n">OATH</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a0000005272101&quot;</span><span class="p">)</span>
+    <span class="n">PIV</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000308&quot;</span><span class="p">)</span>
+    <span class="n">FIDO</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a0000006472f0001&quot;</span><span class="p">)</span>
+    <span class="n">HSMAUTH</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000527210701&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SW"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SW">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">SW</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">NO_INPUT_DATA</span> <span class="o">=</span> <span class="mh">0x6285</span>
+    <span class="n">VERIFY_FAIL_NO_RETRY</span> <span class="o">=</span> <span class="mh">0x63C0</span>
+    <span class="n">WRONG_LENGTH</span> <span class="o">=</span> <span class="mh">0x6700</span>
+    <span class="n">SECURITY_CONDITION_NOT_SATISFIED</span> <span class="o">=</span> <span class="mh">0x6982</span>
+    <span class="n">AUTH_METHOD_BLOCKED</span> <span class="o">=</span> <span class="mh">0x6983</span>
+    <span class="n">DATA_INVALID</span> <span class="o">=</span> <span class="mh">0x6984</span>
+    <span class="n">CONDITIONS_NOT_SATISFIED</span> <span class="o">=</span> <span class="mh">0x6985</span>
+    <span class="n">COMMAND_NOT_ALLOWED</span> <span class="o">=</span> <span class="mh">0x6986</span>
+    <span class="n">INCORRECT_PARAMETERS</span> <span class="o">=</span> <span class="mh">0x6A80</span>
+    <span class="n">FUNCTION_NOT_SUPPORTED</span> <span class="o">=</span> <span class="mh">0x6A81</span>
+    <span class="n">FILE_NOT_FOUND</span> <span class="o">=</span> <span class="mh">0x6A82</span>
+    <span class="n">NO_SPACE</span> <span class="o">=</span> <span class="mh">0x6A84</span>
+    <span class="n">REFERENCE_DATA_NOT_FOUND</span> <span class="o">=</span> <span class="mh">0x6A88</span>
+    <span class="n">APPLET_SELECT_FAILED</span> <span class="o">=</span> <span class="mh">0x6999</span>
+    <span class="n">WRONG_PARAMETERS_P1P2</span> <span class="o">=</span> <span class="mh">0x6B00</span>
+    <span class="n">INVALID_INSTRUCTION</span> <span class="o">=</span> <span class="mh">0x6D00</span>
+    <span class="n">COMMAND_ABORTED</span> <span class="o">=</span> <span class="mh">0x6F00</span>
+    <span class="n">OK</span> <span class="o">=</span> <span class="mh">0x9000</span></div>
+
+
+<div class="viewcode-block" id="SmartCardConnection"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardConnection">[docs]</a><span class="k">class</span> <span class="nc">SmartCardConnection</span><span class="p">(</span><span class="n">Connection</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="n">usb_interface</span> <span class="o">=</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">CCID</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TRANSPORT</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the transport type of the connection (USB or NFC)&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SmartCardConnection.send_and_receive"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardConnection.send_and_receive">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_and_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">apdu</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a command APDU and returns the response&quot;&quot;&quot;</span></div></div>
+
+
+<span class="n">INS_SELECT</span> <span class="o">=</span> <span class="mh">0xA4</span>
+<span class="n">P1_SELECT</span> <span class="o">=</span> <span class="mh">0x04</span>
+<span class="n">P2_SELECT</span> <span class="o">=</span> <span class="mh">0x00</span>
+
+<span class="n">INS_SEND_REMAINING</span> <span class="o">=</span> <span class="mh">0xC0</span>
+<span class="n">SW1_HAS_MORE_DATA</span> <span class="o">=</span> <span class="mh">0x61</span>
+
+<span class="n">SHORT_APDU_MAX_CHUNK</span> <span class="o">=</span> <span class="mh">0xFF</span>
+
+
+<span class="k">def</span> <span class="nf">_encode_short_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBB&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
+    <span class="k">if</span> <span class="n">le</span><span class="p">:</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">buf</span>
+
+
+<span class="k">def</span> <span class="nf">_encode_extended_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBBH&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
+    <span class="k">if</span> <span class="n">le</span><span class="p">:</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">buf</span>
+
+
+<div class="viewcode-block" id="SmartCardProtocol"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol">[docs]</a><span class="k">class</span> <span class="nc">SmartCardProtocol</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of the Smart Card protocol.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">smartcard_connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">,</span>
+        <span class="n">ins_send_remaining</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">INS_SEND_REMAINING</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apdu_format</span> <span class="o">=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">SHORT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">smartcard_connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span> <span class="o">=</span> <span class="n">ins_send_remaining</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<div class="viewcode-block" id="SmartCardProtocol.close"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SmartCardProtocol.enable_touch_workaround"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.enable_touch_workaround">[docs]</a>    <span class="k">def</span> <span class="nf">enable_touch_workaround</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Touch workaround enabled=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SmartCardProtocol.select"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.select">[docs]</a>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aid</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a SELECT instruction.</span>
+
+<span class="sd">        :param aid: The YubiKey application AID value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_SELECT</span><span class="p">,</span> <span class="n">P1_SELECT</span><span class="p">,</span> <span class="n">P2_SELECT</span><span class="p">,</span> <span class="n">aid</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">FILE_NOT_FOUND</span><span class="p">,</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">APPLET_SELECT_FAILED</span><span class="p">,</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">INVALID_INSTRUCTION</span><span class="p">,</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">WRONG_PARAMETERS_P1P2</span><span class="p">,</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ApplicationNotAvailableError</span><span class="p">()</span>
+            <span class="k">raise</span></div>
+
+<div class="viewcode-block" id="SmartCardProtocol.send_apdu"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.send_apdu">[docs]</a>    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send APDU message.</span>
+
+<span class="sd">        :param cla: The instruction class.</span>
+<span class="sd">        :param ins: The instruction code.</span>
+<span class="sd">        :param p1: The instruction parameter.</span>
+<span class="sd">        :param p2: The instruction parameter.</span>
+<span class="sd">        :param data: The command data in bytes.</span>
+<span class="sd">        :param le: The maximum number of bytes in the data</span>
+<span class="sd">            field of the response.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">&lt;</span> <span class="mi">2</span>
+        <span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending dummy APDU as touch workaround&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
+                <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">)</span>  <span class="c1"># Dummy APDU, returns error</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apdu_format</span> <span class="ow">is</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">SHORT</span><span class="p">:</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">:</span>
+                <span class="n">chunk</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">:]</span>
+                <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
+                    <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="mh">0x10</span> <span class="o">|</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ApduError</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
+            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
+                <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">get_data</span> <span class="o">=</span> <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">apdu_format</span> <span class="ow">is</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span><span class="p">:</span>
+            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
+                <span class="n">_encode_extended_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">get_data</span> <span class="o">=</span> <span class="n">_encode_extended_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid ApduFormat set&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Read chained response</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+        <span class="k">while</span> <span class="n">sw</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span> <span class="o">==</span> <span class="n">SW1_HAS_MORE_DATA</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">+=</span> <span class="n">response</span>
+            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="n">get_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ApduError</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="n">response</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">54</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">buf</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

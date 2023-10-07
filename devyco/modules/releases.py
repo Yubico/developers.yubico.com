@@ -26,29 +26,21 @@ from feed.atom import Feed, Entry, new_xmldoc_feed, Link, Author
 SIG_SUFFIXES = ['sig', 'asc']
 SUFFIXES = SIG_SUFFIXES + \
     ['tar', 'gz', 'tgz', 'xz', 'zip', 'exe', 'pkg', 'cap', 'apk', 'msi', 'pdf', 'AppImage']
-CLASSIFIERS = ['win', 'win32', 'win64', 'mac', 'mac-amd64', 'mac-arm64', 'mac-universal', 'linux']
 
 
-def remove_suffixes(part):
-    split = part.rsplit('.', 1)
-    if len(split) == 2 and split[1] in SUFFIXES:
-        part = remove_suffixes(split[0])
-    return part
-
-
-def remove_classifier(part):
-    for c in CLASSIFIERS:
-        if part.endswith("-" + c):
-            return  part[:-(len(c) + 1)], c
-    return part, None
-
+def classifier(filename):
+    # Make sure that the specific classifiers come before the general ones so they are matched first. Tex 'win32' should come before 'win'
+    cp = re.compile(r'\b(win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux|amd64|android)\b')
+    m = cp.search(filename)
+    if m:
+        return m.group()
+    else:
+        return None
 
 def version(filename):
-    part = remove_suffixes(filename)
-    part, classifier = remove_classifier(part)
-    version = part.rsplit('-', 1)[1]
-    return version, classifier
-
+    vp = re.compile(r"\b\d+\.\d+(\.\d+)?[a-z]?\b")
+    version = vp.search(filename).group()
+    return version, classifier(filename)
 
 def version_with_classifier(filename):
     vers, classifier = version(filename)

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yubikit.core &mdash; yubikey-manager 5.2.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">yubikit.core</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for yubikit.core</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Hashable</span><span class="p">,</span>
+    <span class="n">NamedTuple</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">ClassVar</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+
+
+<span class="n">_VERSION_STRING_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\b(?P&lt;major&gt;\d+).(?P&lt;minor&gt;\d).(?P&lt;patch&gt;\d)\b&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Version"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Version">[docs]</a><span class="k">class</span> <span class="nc">Version</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;3-digit version tuple.&quot;&quot;&quot;</span>
+
+    <span class="n">major</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">minor</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">patch</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">.</span><span class="si">%d</span><span class="s2">.</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="Version.from_bytes"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Version.from_bytes">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Version&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Version.from_string"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Version.from_string">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Version&quot;</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">_VERSION_STRING_PATTERN</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;major&quot;</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;minor&quot;</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;patch&quot;</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No version found in string&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TRANSPORT"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.TRANSPORT">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TRANSPORT</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey physical connection transports.&quot;&quot;&quot;</span>
+
+    <span class="n">USB</span> <span class="o">=</span> <span class="s2">&quot;usb&quot;</span>
+    <span class="n">NFC</span> <span class="o">=</span> <span class="s2">&quot;nfc&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="USB_INTERFACE"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.USB_INTERFACE">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">USB_INTERFACE</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey USB interface identifiers.&quot;&quot;&quot;</span>
+
+    <span class="n">OTP</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">FIDO</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">CCID</span> <span class="o">=</span> <span class="mh">0x04</span></div>
+
+
+<div class="viewcode-block" id="YUBIKEY"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.YUBIKEY">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">YUBIKEY</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey hardware platforms.&quot;&quot;&quot;</span>
+
+    <span class="n">YKS</span> <span class="o">=</span> <span class="s2">&quot;YubiKey Standard&quot;</span>
+    <span class="n">NEO</span> <span class="o">=</span> <span class="s2">&quot;YubiKey NEO&quot;</span>
+    <span class="n">SKY</span> <span class="o">=</span> <span class="s2">&quot;Security Key by Yubico&quot;</span>
+    <span class="n">YKP</span> <span class="o">=</span> <span class="s2">&quot;YubiKey Plus&quot;</span>
+    <span class="n">YK4</span> <span class="o">=</span> <span class="s2">&quot;YubiKey&quot;</span>  <span class="c1"># This includes YubiKey 5</span></div>
+
+
+<div class="viewcode-block" id="Connection"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Connection">[docs]</a><span class="k">class</span> <span class="nc">Connection</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A connection to a YubiKey&quot;&quot;&quot;</span>
+
+    <span class="n">usb_interface</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">]</span> <span class="o">=</span> <span class="n">USB_INTERFACE</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Connection.close"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Connection.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the device, releasing any held resources.&quot;&quot;&quot;</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PID"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.PID">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">PID</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;USB Product ID values for YubiKey devices.&quot;&quot;&quot;</span>
+
+    <span class="n">YKS_OTP</span> <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">NEO_OTP</span> <span class="o">=</span> <span class="mh">0x0110</span>
+    <span class="n">NEO_OTP_CCID</span> <span class="o">=</span> <span class="mh">0x0111</span>
+    <span class="n">NEO_CCID</span> <span class="o">=</span> <span class="mh">0x0112</span>
+    <span class="n">NEO_FIDO</span> <span class="o">=</span> <span class="mh">0x0113</span>
+    <span class="n">NEO_OTP_FIDO</span> <span class="o">=</span> <span class="mh">0x0114</span>
+    <span class="n">NEO_FIDO_CCID</span> <span class="o">=</span> <span class="mh">0x0115</span>
+    <span class="n">NEO_OTP_FIDO_CCID</span> <span class="o">=</span> <span class="mh">0x0116</span>
+    <span class="n">SKY_FIDO</span> <span class="o">=</span> <span class="mh">0x0120</span>
+    <span class="n">YK4_OTP</span> <span class="o">=</span> <span class="mh">0x0401</span>
+    <span class="n">YK4_FIDO</span> <span class="o">=</span> <span class="mh">0x0402</span>
+    <span class="n">YK4_OTP_FIDO</span> <span class="o">=</span> <span class="mh">0x0403</span>
+    <span class="n">YK4_CCID</span> <span class="o">=</span> <span class="mh">0x0404</span>
+    <span class="n">YK4_OTP_CCID</span> <span class="o">=</span> <span class="mh">0x0405</span>
+    <span class="n">YK4_FIDO_CCID</span> <span class="o">=</span> <span class="mh">0x0406</span>
+    <span class="n">YK4_OTP_FIDO_CCID</span> <span class="o">=</span> <span class="mh">0x0407</span>
+    <span class="n">YKP_OTP_FIDO</span> <span class="o">=</span> <span class="mh">0x0410</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">yubikey_type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">YUBIKEY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">YUBIKEY</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">usb_interfaces</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">USB_INTERFACE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">USB_INTERFACE</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">USB_INTERFACE</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]))</span>
+
+<div class="viewcode-block" id="PID.of"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.PID.of">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">of</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key_type</span><span class="p">:</span> <span class="n">YUBIKEY</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">:</span> <span class="n">USB_INTERFACE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PID&quot;</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">USB_INTERFACE</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">[</span><span class="n">key_type</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="PID.supports_connection"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.PID.supports_connection">[docs]</a>    <span class="k">def</span> <span class="nf">supports_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Connection</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">connection_type</span><span class="o">.</span><span class="n">usb_interface</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">usb_interfaces</span></div></div>
+
+
+<span class="n">T_Connection</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T_Connection&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Connection</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="YubiKeyDevice"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.YubiKeyDevice">[docs]</a><span class="k">class</span> <span class="nc">YubiKeyDevice</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey device reference&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprint</span> <span class="o">=</span> <span class="n">fingerprint</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TRANSPORT</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the transport used to communicate with this YubiKey&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span>
+
+<div class="viewcode-block" id="YubiKeyDevice.supports_connection"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.YubiKeyDevice.supports_connection">[docs]</a>    <span class="k">def</span> <span class="nf">supports_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Connection</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a YubiKeyDevice supports a specific Connection type&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="c1"># mypy will not accept abstract types in Type[T_Connection]</span>
+<div class="viewcode-block" id="YubiKeyDevice.open_connection"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.YubiKeyDevice.open_connection">[docs]</a>    <span class="k">def</span> <span class="nf">open_connection</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">T_Connection</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">T_Connection</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_Connection</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens a connection to the YubiKey&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported Connection type&quot;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hashable</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Used to identify that device references from different enumerations represent</span>
+<span class="sd">        the same physical YubiKey. This fingerprint is not stable between sessions, or</span>
+<span class="sd">        after un-plugging, and re-plugging a device.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprint</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">fingerprint</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(fingerprint=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="si">!r}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="CommandError"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.CommandError">[docs]</a><span class="k">class</span> <span class="nc">CommandError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An error response from a YubiKey&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BadResponseError"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.BadResponseError">[docs]</a><span class="k">class</span> <span class="nc">BadResponseError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Invalid response data from the YubiKey&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="TimeoutError"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.TimeoutError">[docs]</a><span class="k">class</span> <span class="nc">TimeoutError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An operation timed out waiting for something&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ApplicationNotAvailableError"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.ApplicationNotAvailableError">[docs]</a><span class="k">class</span> <span class="nc">ApplicationNotAvailableError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The application is either disabled or not supported on this YubiKey&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="NotSupportedError"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.NotSupportedError">[docs]</a><span class="k">class</span> <span class="nc">NotSupportedError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Attempting an action that is not supported on this YubiKey&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="InvalidPinError"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.InvalidPinError">[docs]</a><span class="k">class</span> <span class="nc">InvalidPinError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An incorrect PIN/PUK was used, with the number of attempts now remaining.</span>
+
+<span class="sd">    WARNING: This exception currently inherits from ValueError for</span>
+<span class="sd">    backwards-compatibility reasons. This will no longer be the case with the next major</span>
+<span class="sd">    version of the library.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attempts_remaining</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Invalid PIN/PUK, </span><span class="si">{</span><span class="n">attempts_remaining</span><span class="si">}</span><span class="s2"> remaining&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attempts_remaining</span> <span class="o">=</span> <span class="n">attempts_remaining</span></div>
+
+
+<div class="viewcode-block" id="require_version"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.require_version">[docs]</a><span class="k">def</span> <span class="nf">require_version</span><span class="p">(</span>
+    <span class="n">my_version</span><span class="p">:</span> <span class="n">Version</span><span class="p">,</span> <span class="n">min_version</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure a version is at least min_version.&quot;&quot;&quot;</span>
+    <span class="c1"># Skip version checks for major == 0, used for development builds.</span>
+    <span class="k">if</span> <span class="n">my_version</span> <span class="o">&lt;</span> <span class="n">min_version</span> <span class="ow">and</span> <span class="n">my_version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;This action requires YubiKey </span><span class="si">%d</span><span class="s2">.</span><span class="si">%d</span><span class="s2">.</span><span class="si">%d</span><span class="s2"> or later&quot;</span> <span class="o">%</span> <span class="n">min_version</span>
+        <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="int2bytes"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.int2bytes">[docs]</a><span class="k">def</span> <span class="nf">int2bytes</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">min_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mh">0xFF</span><span class="p">:</span>
+        <span class="n">buf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">&gt;&gt;=</span> <span class="mi">8</span>
+    <span class="n">buf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">bytes</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="n">min_len</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="bytes2int"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.bytes2int">[docs]</a><span class="k">def</span> <span class="nf">bytes2int</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_tlv_parse</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">tag</span> <span class="o">&amp;</span> <span class="mh">0x1F</span> <span class="o">==</span> <span class="mh">0x1F</span><span class="p">:</span>  <span class="c1"># Long form</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">tag</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span> <span class="o">|</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="n">tag</span> <span class="o">&amp;</span> <span class="mh">0x80</span> <span class="o">==</span> <span class="mh">0x80</span><span class="p">:</span>  <span class="c1"># Additional bytes</span>
+                <span class="n">tag</span> <span class="o">=</span> <span class="n">tag</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span> <span class="o">|</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">ln</span> <span class="o">==</span> <span class="mh">0x80</span><span class="p">:</span>  <span class="c1"># Indefinite length</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">offset</span>
+            <span class="k">while</span> <span class="n">data</span><span class="p">[</span><span class="n">end</span><span class="p">]</span> <span class="ow">or</span> <span class="n">data</span><span class="p">[</span><span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>  <span class="c1"># Run until 0x0000</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">_tlv_parse</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">end</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># Skip over TLV</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">offset</span>
+            <span class="n">end</span> <span class="o">+=</span> <span class="mi">2</span>  <span class="c1"># End after 0x0000</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ln</span> <span class="o">&gt;</span> <span class="mh">0x80</span><span class="p">:</span>  <span class="c1"># Length spans multiple bytes</span>
+                <span class="n">n_bytes</span> <span class="o">=</span> <span class="n">ln</span> <span class="o">-</span> <span class="mh">0x80</span>
+                <span class="n">ln</span> <span class="o">=</span> <span class="n">bytes2int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">n_bytes</span><span class="p">])</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="n">n_bytes</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">ln</span>
+
+        <span class="k">return</span> <span class="n">tag</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">ln</span><span class="p">,</span> <span class="n">end</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid encoding of tag/length&quot;</span><span class="p">)</span>
+
+
+<span class="n">T_Tlv</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T_Tlv&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Tlv&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Tlv"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Tlv">[docs]</a><span class="k">class</span> <span class="nc">Tlv</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tag</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ln</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_value_offset</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ln</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tag_or_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This allows creation by passing either binary data, or tag and value.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tag_or_data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># Tag and (optional) value</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">tag_or_data</span>
+
+            <span class="c1"># Pack into Tlv</span>
+            <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+            <span class="n">buf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">int2bytes</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="mh">0x80</span><span class="p">:</span>
+                <span class="n">buf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ln_bytes</span> <span class="o">=</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+                <span class="n">buf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mh">0x80</span> <span class="o">|</span> <span class="nb">len</span><span class="p">(</span><span class="n">ln_bytes</span><span class="p">))</span>
+                <span class="n">buf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ln_bytes</span><span class="p">)</span>
+            <span class="n">buf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Binary TLV data</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;value can only be provided if tag_or_data is a tag&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">tag_or_data</span>
+
+        <span class="c1"># mypy thinks this is wrong</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Tlv</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ln</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">_tlv_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="n">end</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect TLV length&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Tlv(tag=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">, value=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="Tlv.parse_from"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Tlv.parse_from">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse_from</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_Tlv</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">T_Tlv</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+        <span class="n">tag</span><span class="p">,</span> <span class="n">offs</span><span class="p">,</span> <span class="n">ln</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">_tlv_parse</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="n">end</span><span class="p">]),</span> <span class="n">data</span><span class="p">[</span><span class="n">end</span><span class="p">:]</span></div>
+
+<div class="viewcode-block" id="Tlv.parse_list"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Tlv.parse_list">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse_list</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_Tlv</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">T_Tlv</span><span class="p">]:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">tlv</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">parse_from</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tlv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="Tlv.parse_dict"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Tlv.parse_dict">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_Tlv</span><span class="p">],</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">tlv</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">tlv</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">tlv</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span><span class="n">data</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Tlv.unpack"><a class="viewcode-back" href="../../rst/yubikit.core.html#yubikit.core.otp.Tlv.unpack">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">unpack</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_Tlv</span><span class="p">],</span> <span class="n">tag</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="n">tlv</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tlv</span><span class="o">.</span><span class="n">tag</span> <span class="o">!=</span> <span class="n">tag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrong tag, got 0x</span><span class="si">{</span><span class="n">tlv</span><span class="o">.</span><span class="n">tag</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2"> expected 0x</span><span class="si">{</span><span class="n">tag</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tlv</span><span class="o">.</span><span class="n">value</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

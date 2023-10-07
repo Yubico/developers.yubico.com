@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yubikit.core.otp &mdash; yubikey-manager 5.2.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=0fa48458"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../core.html">yubikit.core</a></li>
+      <li class="breadcrumb-item active">yubikit.core.otp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for yubikit.core.otp</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">CommandError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">,</span> <span class="n">Version</span><span class="p">,</span> <span class="n">USB_INTERFACE</span>
+<span class="kn">from</span> <span class="nn">yubikit.logging</span> <span class="kn">import</span> <span class="n">LOG_LEVEL</span>
+
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">MODHEX_ALPHABET</span> <span class="o">=</span> <span class="s2">&quot;cbdefghijklnrtuv&quot;</span>
+
+
+<div class="viewcode-block" id="CommandRejectedError"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.CommandRejectedError">[docs]</a><span class="k">class</span> <span class="nc">CommandRejectedError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The issues command was rejected by the YubiKey&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="OtpConnection"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpConnection">[docs]</a><span class="k">class</span> <span class="nc">OtpConnection</span><span class="p">(</span><span class="n">Connection</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="n">usb_interface</span> <span class="o">=</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">OTP</span>
+
+<div class="viewcode-block" id="OtpConnection.receive"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpConnection.receive">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads an 8 byte feature report&quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="OtpConnection.send"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpConnection.send">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes an 8 byte feature report&quot;&quot;&quot;</span></div></div>
+
+
+<span class="n">CRC_OK_RESIDUAL</span> <span class="o">=</span> <span class="mh">0xF0B8</span>
+
+
+<div class="viewcode-block" id="calculate_crc"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.calculate_crc">[docs]</a><span class="k">def</span> <span class="nf">calculate_crc</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">crc</span> <span class="o">=</span> <span class="mh">0xFFFF</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="n">crc</span> <span class="o">^=</span> <span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">crc</span> <span class="o">&amp;</span> <span class="mi">1</span>
+            <span class="n">crc</span> <span class="o">&gt;&gt;=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">crc</span> <span class="o">^=</span> <span class="mh">0x8408</span>
+    <span class="k">return</span> <span class="n">crc</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span></div>
+
+
+<div class="viewcode-block" id="check_crc"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.check_crc">[docs]</a><span class="k">def</span> <span class="nf">check_crc</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">calculate_crc</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">CRC_OK_RESIDUAL</span></div>
+
+
+<div class="viewcode-block" id="modhex_encode"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.modhex_encode">[docs]</a><span class="k">def</span> <span class="nf">modhex_encode</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode a bytes-like object using Modhex (modified hexadecimal) encoding.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">MODHEX_ALPHABET</span><span class="p">[</span><span class="n">b</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="n">MODHEX_ALPHABET</span><span class="p">[</span><span class="n">b</span> <span class="o">&amp;</span> <span class="mh">0xF</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="modhex_decode"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.modhex_decode">[docs]</a><span class="k">def</span> <span class="nf">modhex_decode</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the Modhex (modified hexadecimal) string.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Length must be a multiple of 2&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">bytes</span><span class="p">(</span>
+        <span class="n">MODHEX_ALPHABET</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span> <span class="o">|</span> <span class="n">MODHEX_ALPHABET</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">string</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<span class="n">FEATURE_RPT_SIZE</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">FEATURE_RPT_DATA_SIZE</span> <span class="o">=</span> <span class="n">FEATURE_RPT_SIZE</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="n">SLOT_DATA_SIZE</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">FRAME_SIZE</span> <span class="o">=</span> <span class="n">SLOT_DATA_SIZE</span> <span class="o">+</span> <span class="mi">6</span>
+
+<span class="n">RESP_PENDING_FLAG</span> <span class="o">=</span> <span class="mh">0x40</span>  <span class="c1"># Response pending flag</span>
+<span class="n">SLOT_WRITE_FLAG</span> <span class="o">=</span> <span class="mh">0x80</span>  <span class="c1"># Write flag - set by app - cleared by device</span>
+<span class="n">RESP_TIMEOUT_WAIT_FLAG</span> <span class="o">=</span> <span class="mh">0x20</span>  <span class="c1"># Waiting for timeout operation</span>
+<span class="n">DUMMY_REPORT_WRITE</span> <span class="o">=</span> <span class="mh">0x8F</span>  <span class="c1"># Write a dummy report to force update or abort</span>
+
+<span class="n">SEQUENCE_MASK</span> <span class="o">=</span> <span class="mh">0x1F</span>
+
+<span class="n">STATUS_OFFSET_PROG_SEQ</span> <span class="o">=</span> <span class="mh">0x4</span>
+<span class="n">STATUS_OFFSET_TOUCH_LOW</span> <span class="o">=</span> <span class="mh">0x5</span>
+<span class="n">CONFIG_STATUS_MASK</span> <span class="o">=</span> <span class="mh">0x1F</span>
+
+<span class="n">STATUS_PROCESSING</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">STATUS_UPNEEDED</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">def</span> <span class="nf">_should_send</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;All-zero packets are skipped, except for the very first and last packets&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">seq</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_format_frame</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">payload</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;BH&quot;</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">calculate_crc</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0\0\0</span><span class="s2">&quot;</span>
+
+
+<div class="viewcode-block" id="OtpProtocol"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpProtocol">[docs]</a><span class="k">class</span> <span class="nc">OtpProtocol</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of the OTP protocol.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">otp_connection</span><span class="p">:</span> <span class="n">OtpConnection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">otp_connection</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_receive</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># NEO, may have cached pgmSeq in arbitrator</span>
+            <span class="k">try</span><span class="p">:</span>  <span class="c1"># Force communication with applet to refresh pgmSeq</span>
+                <span class="c1"># Write an invalid scan map, does nothing</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="mh">0x12</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;c&quot;</span> <span class="o">*</span> <span class="mi">51</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">CommandRejectedError</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># This is expected</span>
+
+<div class="viewcode-block" id="OtpProtocol.close"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpProtocol.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="OtpProtocol.send_and_receive"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpProtocol.send_and_receive">[docs]</a>    <span class="k">def</span> <span class="nf">send_and_receive</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">slot</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a command to the YubiKey, and reads the response.</span>
+
+<span class="sd">        If the command results in a configuration update, the programming sequence</span>
+<span class="sd">        number is verified and the updated status bytes are returned.</span>
+
+<span class="sd">        :param slot:  The slot to send to.</span>
+<span class="sd">        :param data:  The data payload to send.</span>
+<span class="sd">        :param state: Optional CommandState for listening for user presence requirement</span>
+<span class="sd">            and for cancelling a command.</span>
+<span class="sd">        :return: Response data (including CRC) in the case of data, or an updated status</span>
+<span class="sd">            struct.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">SLOT_DATA_SIZE</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SLOT_DATA_SIZE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Payload too large for HID frame&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">on_keepalive</span><span class="p">:</span>
+            <span class="n">on_keepalive</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># noqa</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">_format_frame</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">LOG_LEVEL</span><span class="o">.</span><span class="n">TRAFFIC</span><span class="p">,</span> <span class="s2">&quot;SEND: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">hex</span><span class="p">())</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_frame</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_send_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">),</span> <span class="n">event</span> <span class="ow">or</span> <span class="n">Event</span><span class="p">(),</span> <span class="n">on_keepalive</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">LOG_LEVEL</span><span class="o">.</span><span class="n">TRAFFIC</span><span class="p">,</span> <span class="s2">&quot;RECV: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">hex</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">response</span></div>
+
+    <span class="k">def</span> <span class="nf">_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">receive</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="p">)</span> <span class="o">!=</span> <span class="n">FEATURE_RPT_SIZE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Incorrect reature report size (was </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;expected </span><span class="si">{</span><span class="n">FEATURE_RPT_SIZE</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">report</span>
+
+<div class="viewcode-block" id="OtpProtocol.read_status"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.otp.OtpProtocol.read_status">[docs]</a>    <span class="k">def</span> <span class="nf">read_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Receive status bytes from YubiKey.</span>
+
+<span class="sd">        :return: Status bytes (first 3 bytes are the firmware version).</span>
+<span class="sd">        :raises IOException: in case of communication error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_receive</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+    <span class="k">def</span> <span class="nf">_await_ready_to_write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sleep for up to ~1s waiting for the WRITE flag to be unset&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_receive</span><span class="p">()[</span><span class="n">FEATURE_RPT_DATA_SIZE</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">SLOT_WRITE_FLAG</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Timeout waiting for YubiKey to become ready to receive&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_send_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a 70 byte frame&quot;&quot;&quot;</span>
+        <span class="n">prog_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_receive</span><span class="p">()[</span><span class="n">STATUS_OFFSET_PROG_SEQ</span><span class="p">]</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">buf</span><span class="p">:</span>
+            <span class="n">report</span><span class="p">,</span> <span class="n">buf</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[:</span><span class="n">FEATURE_RPT_DATA_SIZE</span><span class="p">],</span> <span class="n">buf</span><span class="p">[</span><span class="n">FEATURE_RPT_DATA_SIZE</span><span class="p">:]</span>
+            <span class="k">if</span> <span class="n">_should_send</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+                <span class="n">report</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="mh">0x80</span> <span class="o">|</span> <span class="n">seq</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_await_ready_to_write</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+            <span class="n">seq</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">prog_seq</span>
+
+    <span class="k">def</span> <span class="nf">_read_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prog_seq</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads one frame&quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">needs_touch</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_receive</span><span class="p">()</span>
+                <span class="n">status_byte</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="n">FEATURE_RPT_DATA_SIZE</span><span class="p">]</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="n">RESP_PENDING_FLAG</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Response packet</span>
+                    <span class="k">if</span> <span class="n">seq</span> <span class="o">==</span> <span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="n">SEQUENCE_MASK</span><span class="p">):</span>
+                        <span class="c1"># Correct sequence</span>
+                        <span class="n">response</span> <span class="o">+=</span> <span class="n">report</span><span class="p">[:</span><span class="n">FEATURE_RPT_DATA_SIZE</span><span class="p">]</span>
+                        <span class="n">seq</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">elif</span> <span class="mi">0</span> <span class="o">==</span> <span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="n">SEQUENCE_MASK</span><span class="p">):</span>
+                        <span class="c1"># Transmission complete</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_state</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="n">response</span>
+                <span class="k">elif</span> <span class="n">status_byte</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Status response</span>
+                    <span class="n">next_prog_seq</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="n">STATUS_OFFSET_PROG_SEQ</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Incomplete transfer&quot;</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">next_prog_seq</span> <span class="o">==</span> <span class="n">prog_seq</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="n">prog_seq</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                        <span class="ow">and</span> <span class="n">next_prog_seq</span> <span class="o">==</span> <span class="mi">0</span>
+                        <span class="ow">and</span> <span class="n">report</span><span class="p">[</span><span class="n">STATUS_OFFSET_TOUCH_LOW</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">CONFIG_STATUS_MASK</span> <span class="o">==</span> <span class="mi">0</span>
+                    <span class="p">):</span>  <span class="c1"># Note: If no valid configurations exist, prog_seq resets to 0.</span>
+                        <span class="c1"># Sequence updated, return status.</span>
+                        <span class="k">return</span> <span class="n">report</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">needs_touch</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Timed out waiting for touch&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">CommandRejectedError</span><span class="p">(</span><span class="s2">&quot;No data&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># Need to wait</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="n">RESP_TIMEOUT_WAIT_FLAG</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">on_keepalive</span><span class="p">(</span><span class="n">STATUS_UPNEEDED</span><span class="p">)</span>
+                        <span class="n">needs_touch</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">timeout</span> <span class="o">=</span> <span class="mf">0.1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">on_keepalive</span><span class="p">(</span><span class="n">STATUS_PROCESSING</span><span class="p">)</span>
+                        <span class="n">timeout</span> <span class="o">=</span> <span class="mf">0.02</span>
+                    <span class="n">sleep</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_state</span><span class="p">()</span>
+                        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Command cancelled by Event&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Keyboard interrupt, reset state...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reset_state</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">_reset_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the state of YubiKey from reading&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xff</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="n">FEATURE_RPT_SIZE</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

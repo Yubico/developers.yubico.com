@@ -1,16 +1,36 @@
 == Attestation
-When creating the key pair, there is an option to request the attestation certificate. This optional information can be sent to the relying party as part of the registration process. The attestation is how authenticators prove to the relying party that the keys they generate originate from a genuine device with certified characteristics and establish a hardware root of trust.
 
-If your service does not have specific needs for attestation information, well defined policy for what to do with it and why, you should not verify authenticator attestations. The reasons for this is that it takes more work for the RP to do, your users may not be able to use the authenticator(s) they have, and you risk being incompatible with future authenticators unless you keep your attestation certificate store up to date. On the other hand, you should store the verbatim navigator.credentials.create() request and the PublicKeyCredential response, including the attestation statement, so that you can retroactively inspect registrations when policy changes.
+If a service does not have a specific need for attestation information, namely a well defined policy for what to do with it and why, it is not recommended to verify authenticator attestations. The reasons for include the increase in the amount of work for the RP to perform, users may not be able to use the authenticator(s) that they have, and finally, it increases the risk of incompatibility with future authenticators unless all attestation certificate information is always kept up to date. On the other hand, you should store the verbatim navigator.credentials.create() request and the PublicKeyCredential response, including the attestation statement, so that you can retroactively inspect registrations when policy changes.
 
-The rest of this section assumes that you need authenticator attestation. If you don’t, you can ignore the rest of this section.
+The rest of this section assumes that authenticator attestation is required. If this is not the case, the rest of this section may be skipped.
 
-Relying parties should collect, store, and validate attestation certificates. Attestation certificates contain metadata such as the device name, supported transports, image url, etc. This metadata can be retrieved by the RP to enable granular attestation certificate authority management, customize user experiences based on supported transports, and report authenticator metrics in your environment. Additionally, a trust store containing all registered attestation certificates provides an audit trail to support high assurance MFA.
+Attestation is built-in to the FIDO and WebAuthn protocols, which enables each relying party to use a cryptographically verified chain of trust from the device’s manufacturer to choose which security keys to trust, or to be more skeptical of, based on their individual needs and concerns.
 
-Attestation signatures are actually disabled by default in WebAuthn. The reason for this is that most sites probably just want something better than traditional single-factor password authentication and are not concerned with how the authenticator is implemented. This also means they do not need to maintain an up-to-date trust store in order to support new authenticators entering the market. So for these reasons, the browser will actually not return the attestation signature unless the relying party specifically asked for it. And as a relying party, if you do not need the higher guarantees that the attestation signature provides, it can be ignored.
+By default, attestation signatures are disabled in WebAuthn. To collect attestation data you must set the `PublicKeyCredentialCreationOptions.attestation` parameter to the value ‘direct’ when registering a credential.
 
-But it's important to note that if you ignore the attestation signature, there is no guarantees about the security properties of the authenticator. So if you need high assurance MFA, it is not appropriate to ignore the attestation signature, because then there is no guarantee that the authenticator actually does the multi-factor verification, even if it claims that it does.
+In order to enable the most flexibility and security, Yubico recommends that administrators and developers configure or build the following into their systems:
 
-The way you enable attestation signatures is by setting the `PublicKeyCredentialCreationOptions.attestation` parameter to the value ‘direct’ when you make the call to register a new credential.
+. Request “direct” attestation and store responses in your authentication system, but do not require it unless necessary.
++
+Direct attestation responses are provided only during credential registration, and allow your service to know the details (e.g. make, model, and version) of the devices being used with your service. Even if you don’t parse them now, you can store them and validate them for later use in risk-based and auditing decisions.
+
+. If you need to require direct attestation, validate the signature of the attestation when it is provided, and use a deny list of authenticators you know to cause issues or to be unsafe, rather than an allow list.
++
+Make sure to notify people who are using authenticators that you are more skeptical of, or are disallowing, in a way that informs them why this was done if possible.
++
+You can find the root certificates used to sign attestations by using the link:https://fidoalliance.org/metadata/[FIDO metadata service version 3]. Additional developer guidance on including the FIDO metadata service in your relying party can be found link:https://developers.yubico.com/WebAuthn/Concepts/FIDO_Metadata_Service_(MDS).html[here].
+
+. If you need to use an allow list, validate the signature of the attestation when it is provided as listed above. Make sure to allow all, or a subset based on your criteria, of the authenticators listed in the link:https://fidoalliance.org/metadata/[FIDO metadata service version 3], and stay up to date with changes in the metadata service’s list.
++
+Specifically, we recommend you notify administrators of changes in the MDS data so they can make informed decisions about what to do if a new device is added or if one is removed. Define a policy for user impact in the event a registered authenticator has been removed or otherwise flagged as unsafe, allowing for continued access to protected accounts while providing incentive for the user to remove suspect credentials and replace them with ones tied to approved authenticators.
++
+Automated addition of new devices might be reasonable depending on your requirements, but we recommend against automated removal in the unlikely event there are MDS issues or errors.
+
+[Note]
+======
+Passkeys used in used in high assurance scenarios may require the use of attestation to comply with regulatory or business requirements. Please use the link below to learn how to use attestation in your high assurance passkey application.
+
+link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation[Passkey attestation guidance]
+======
 
 link:Resident_Keys.html[Next: Discoverable Credentials]

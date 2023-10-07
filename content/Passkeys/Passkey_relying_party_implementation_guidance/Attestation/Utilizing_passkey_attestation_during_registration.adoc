@@ -1,0 +1,132 @@
+= Utilizing passkey attestation during registration 
+
+:description: Learn how attestation is captured when using a relying party connected to the FIDO MDS
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, relying party
+
+Learn how attestation is captured when using a relying party connected to the FIDO MDS
+
+In this section we will discuss how to leverage the attestation statement provided with a passkey registration in order to determine the make and model of the authenticator that generated the credential. We will also discuss how to store attestation metadata along with your credential. 
+
+== Prerequisites
+Before you begin, ensure that you have followed the guidance on our page, link:/Passkeys/Passkey_relying_party_implementation_guidance/Attestation/Adding_the_FIDO_MDS_to_your_passkey_relying_party.html[adding the FIDO MDS to your passkey relying party], to ensure that you have the necessary configurations in place to process attestation.
+Also ensure that you have a registration method that is capable of receiving and storing passkeys in your relying party. Implementation guidance for this was discussed earlier in this guide on the link:/Passkeys/Passkey_relying_party_implementation_guidance/Passkey_registration_requests.html[passkey registration requests] page.
+
+== Determine if passkey provided trusted attestation
+The first method we will demonstrate is determining if a registration result yielded trusted attestation. If you have configured your relying party with a trusted attestation store, the `RelyingParty` object will attempt to identify if the passkey registration included trusted attestation. 
+
+Trusted attestation will refer to any attestation statement that could be verified using your attestation trust store. In our instance this attestation trust store was configured with the FIDO MDS, thus meaning we will trust any entry in the FIDO MDS.
+
+Once a registration is complete, we can use the method `isAttestationTrusted()` to determine if attestation was provided, and verified. 
+
+Figure 1 demonstrates a shorthand example of a registration who will call the `isAttestationTrusted()` method.
+
+[role="dark"]
+--
+[source,java]
+----
+RegistrationResult result = rp.finishRegistration(/* ... */);
+
+if (result.isAttestationTrusted()) {
+  // Do something...
+} else {
+  // Do something else...
+}
+----
+--
+**Figure 1**
+
+Figure 2 demonstrates sample code that modified our `finishRegistration()` method to perform some action if attestation was trusted.
+
+[role="dark"]
+--
+[source,java]
+----
+Object finishRegistration(JsonObject responseJson) {
+    //Step 1
+    RegistrationResponse response;
+    try {
+    response = jsonMapper.readValue(responseJson.toString(), RegistrationResponse.class);
+    } catch (Exception e) {
+    return e;
+    }
+
+    //Step 2
+    RegistrationRequest request = registerRequestStorage.getIfPresent(response.getRequestId());
+    registerRequestStorage.invalidate(response.getRequestId());
+
+    if (request == null) {
+        String msg = "fail finishRegistration - no such registration in progress: {}" + response.getRequestId();
+        return new Exception(msg);
+    } else {
+        //Step 3
+        try {
+            com.yubico.webauthn.RegistrationResult registration = rp.finishRegistration(
+                FinishRegistrationOptions.builder()
+                .request(request.getPublicKeyCredentialCreationOptions())
+                .response(response.getCredential())
+                .build());
+            //Step 4
+
+            if (registration.isAttestationTrusted()) {
+              // Do something...
+            } else {
+              // Do something else...
+            }
+
+            return addRegistration(
+                request.getPublicKeyCredentialCreationOptions().getUser(),
+                response,
+                registration,
+                request);
+        } catch (RegistrationFailedException e) {
+            return e;
+        } catch (Exception e) {
+            return e;
+        }
+    }
+}
+----
+--
+**Figure 2**
+
+=== Registration without trusted attestation
+
+It should be noted that there may be instances where trusted attestation was not found with the passkey registration. Some reasons for this include:
+
+* User did not consent to send attestation
+* The attestation statement could not be verified with the MDS, because it is not included
+* Passkey did not contain attestation data, which is common for MDCs
+
+In the case of low assurance applications, this should be no issue. The user will just have to accept that their registration does not have a corresponding metadata entry.
+
+This will become more useful for high assurance applications that need to require trusted attestation for registration (there will be more on this in a following section).
+
+== Find corresponding metadata entry for a passkey registration
+Next we will be outlining a method that can use a passkey registration to find a corresponding entry in your instance of the FIDO MDS. This will be useful if you want to analyze the properties of an authenticator’s metadata, or if you want to store it along with the credential in your credential repository. 
+
+Figure 3 demonstrates sample code that can be used to identify the metadata statement that corresponds to the attestation statement offered in your passkey registration.
+
+[role="dark"]
+--
+[source,java]
+----
+RegistrationResult result = rp.finishRegistration(/* ... */);
+
+if (result.isAttestationTrusted()) {
+    Set<MetadataBLOBPayloadEntry> entries = mds.findEntries(result);
+    Optional<MetadataStatement> mdStatement = entries.stream().findFirst().flatMap(MetadataBLOBPayloadEntry::getMetadataStatement);
+} else {
+  // Do something else...
+}
+----
+--
+**Figure 13**
+
+In Figure 3, `mdStatement` will contain an object that includes a variety of different information about an authenticator, if one was detected. The use of `Optional<>` is to denote that this object may be `null` if a corresponding trusted attestation was not found. 
+
+The `findEntries()` method above will determine trusted attestation by finding MDS entries that include both the attestation statements AAGUID and a valid attestation signature that was signed by the manufacturer’s attestation private key, or attestation CA. 
+
+== Allowing only trusted attestation
+Now that we’ve demonstrated how to use attestation, and the FIDO MDS in our application, let’s uncover how to build a strategy for authenticator management using trusted attestation. This section will highlight how to build an allow list, deny list, and other mechanisms that you can use to further manage registrations in your passkey relying party.
+
+link:/WebAuthn/Concepts/Authenticator_Management[Continue to authenticator management strategy]

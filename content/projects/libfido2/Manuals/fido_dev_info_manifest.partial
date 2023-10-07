@@ -29,8 +29,9 @@
   <code class="Nm" title="Nm">fido_dev_info_product</code>,
   <code class="Nm" title="Nm">fido_dev_info_vendor</code>,
   <code class="Nm" title="Nm">fido_dev_info_manufacturer_string</code>,
-  <code class="Nm" title="Nm">fido_dev_info_product_string</code> &#x2014;
-<div class="Nd" title="Nd">FIDO 2 device discovery functions</div>
+  <code class="Nm" title="Nm">fido_dev_info_product_string</code>,
+  <code class="Nm" title="Nm">fido_dev_info_set</code> &#x2014;
+<div class="Nd" title="Nd">FIDO2 device discovery functions</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
   &lt;<a class="In" title="In">fido.h</a>&gt;</code>
@@ -83,10 +84,23 @@
 <br/>
 <code class="Fn" title="Fn">fido_dev_info_product_string</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_dev_info_t *di</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_info_set</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_info_t
+  *devlist</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">size_t
+  i</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *path</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  char *manufacturer</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *product</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_dev_io_t *io</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_dev_transport_t *transport</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 The <code class="Fn" title="Fn">fido_dev_info_manifest</code>() function fills
   <var class="Fa" title="Fa">devlist</var> with up to
-  <var class="Fa" title="Fa">ilen</var> FIDO devices found by the underlying
+  <var class="Fa" title="Fa">ilen</var> FIDO2 devices found by the underlying
   operating system. Currently only USB HID devices are supported. The number of
   discovered devices is returned in <var class="Fa" title="Fa">olen</var>, where
   <var class="Fa" title="Fa">olen</var> is an addressable pointer.
@@ -112,7 +126,7 @@ The <code class="Fn" title="Fn">fido_dev_info_ptr</code>() function returns a
   ensure that <var class="Fa" title="Fa">i</var> is bounded. Please note that
   the first slot has index 0.
 <div class="Pp"></div>
-The <code class="Fn" title="Fn">fido_dev_info_path</code>() returns the
+The <code class="Fn" title="Fn">fido_dev_info_path</code>() function returns the
   filesystem path or subsystem-specific identification string of
   <var class="Fa" title="Fa">di</var>.
 <div class="Pp"></div>
@@ -124,19 +138,48 @@ The <code class="Fn" title="Fn">fido_dev_info_vendor</code>() function returns
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_dev_info_manufacturer_string</code>()
   function returns the manufacturer string of
-  <var class="Fa" title="Fa">di</var>.
+  <var class="Fa" title="Fa">di</var>. If <var class="Fa" title="Fa">di</var>
+  does not have an associated manufacturer string,
+  <code class="Fn" title="Fn">fido_dev_info_manufacturer_string</code>() returns
+  an empty string.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_dev_info_product_string</code>() function
-  returns the product string of <var class="Fa" title="Fa">di</var>.
+  returns the product string of <var class="Fa" title="Fa">di</var>. If
+  <var class="Fa" title="Fa">di</var> does not have an associated product
+  string, <code class="Fn" title="Fn">fido_dev_info_product_string</code>()
+  returns an empty string.
 <div class="Pp"></div>
 An example of how to use the functions described in this document can be found
   in the <span class="Pa" title="Pa">examples/manifest.c</span> file shipped
   with <i class="Em" title="Em">libfido2</i>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_info_set</code>() function initializes
+  an entry in a device list allocated by
+  <code class="Fn" title="Fn">fido_dev_info_new</code>() with the specified
+  path, manufacturer, and product strings, and with the specified I/O handlers
+  and, optionally, transport functions, as described in
+  <a class="Xr" title="Xr" href="fido_dev_set_io_functions.html">fido_dev_set_io_functions(3)</a>.
+  The <var class="Fa" title="Fa">io</var> argument must be specified; the
+  <var class="Fa" title="Fa">transport</var> argument may be
+  <code class="Dv" title="Dv">NULL</code>. The path, I/O handlers, and transport
+  functions will be used automatically by
+  <a class="Xr" title="Xr" href="fido_dev_new_with_info.html">fido_dev_new_with_info(3)</a>
+  and
+  <a class="Xr" title="Xr" href="fido_dev_open_with_info.html">fido_dev_open_with_info(3)</a>.
+  An application can use this, for example, to substitute mock FIDO2 devices in
+  testing for the real ones that
+  <code class="Fn" title="Fn">fido_dev_info_manifest</code>() would discover.
 <h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
   VALUES</a></h1>
 The <code class="Fn" title="Fn">fido_dev_info_manifest</code>() function always
   returns <code class="Dv" title="Dv">FIDO_OK</code>. If a discovery error
   occurs, the <var class="Fa" title="Fa">olen</var> pointer is set to 0.
+<div class="Pp"></div>
+On success, the <code class="Fn" title="Fn">fido_dev_info_set</code>() function
+  returns <code class="Dv" title="Dv">FIDO_OK</code>. On error, a different
+  error code defined in
+  <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>
+  is returned.
 <div class="Pp"></div>
 The pointers returned by <code class="Fn" title="Fn">fido_dev_info_ptr</code>(),
   <code class="Fn" title="Fn">fido_dev_info_path</code>(),
@@ -147,7 +190,7 @@ The pointers returned by <code class="Fn" title="Fn">fido_dev_info_ptr</code>(),
   corresponding device list.</div>
 <table class="foot">
   <tr>
-    <td class="foot-date">May 25, 2018</td>
-    <td class="foot-os">Linux 5.3.12-arch1-1</td>
+    <td class="foot-date">March 30, 2022</td>
+    <td class="foot-os">Linux 5.17.4-200.fc35.x86_64</td>
   </tr>
 </table>

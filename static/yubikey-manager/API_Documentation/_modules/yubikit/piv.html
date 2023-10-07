@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yubikit.piv &mdash; yubikey-manager 5.2.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">yubikit.piv</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for yubikit.piv</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">require_version</span> <span class="k">as</span> <span class="n">_require_version</span><span class="p">,</span>
+    <span class="n">int2bytes</span><span class="p">,</span>
+    <span class="n">bytes2int</span><span class="p">,</span>
+    <span class="n">Version</span><span class="p">,</span>
+    <span class="n">Tlv</span><span class="p">,</span>
+    <span class="n">NotSupportedError</span><span class="p">,</span>
+    <span class="n">BadResponseError</span><span class="p">,</span>
+    <span class="n">InvalidPinError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.core.smartcard</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SW</span><span class="p">,</span>
+    <span class="n">AID</span><span class="p">,</span>
+    <span class="n">ApduError</span><span class="p">,</span>
+    <span class="n">ApduFormat</span><span class="p">,</span>
+    <span class="n">SmartCardConnection</span><span class="p">,</span>
+    <span class="n">SmartCardProtocol</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">hashes</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.ciphers</span> <span class="kn">import</span> <span class="n">Cipher</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">,</span> <span class="n">modes</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.constant_time</span> <span class="kn">import</span> <span class="n">bytes_eq</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.serialization</span> <span class="kn">import</span> <span class="n">Encoding</span><span class="p">,</span> <span class="n">PublicFormat</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">ec</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric.padding</span> <span class="kn">import</span> <span class="n">AsymmetricPadding</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric.utils</span> <span class="kn">import</span> <span class="n">Prehashed</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ALGORITHM"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.ALGORITHM">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">ALGORITHM</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">EC</span> <span class="o">=</span> <span class="s2">&quot;ec&quot;</span>
+    <span class="n">RSA</span> <span class="o">=</span> <span class="s2">&quot;rsa&quot;</span></div>
+
+
+<span class="c1"># Don&#39;t treat pre 1.0 versions as &quot;developer builds&quot;.</span>
+<div class="viewcode-block" id="require_version"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.require_version">[docs]</a><span class="k">def</span> <span class="nf">require_version</span><span class="p">(</span><span class="n">my_version</span><span class="p">:</span> <span class="n">Version</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">my_version</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>  <span class="c1"># Last pre 1.0 release of ykneo-piv</span>
+        <span class="n">my_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">_require_version</span><span class="p">(</span><span class="n">my_version</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KEY_TYPE"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.KEY_TYPE">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">KEY_TYPE</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">RSA1024</span> <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">RSA2048</span> <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">ECCP256</span> <span class="o">=</span> <span class="mh">0x11</span>
+    <span class="n">ECCP384</span> <span class="o">=</span> <span class="mh">0x14</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">EC</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ECC&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bit_len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+$&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No bit_len&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KEY_TYPE.from_public_key"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.KEY_TYPE.from_public_key">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_public_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;RSA</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="o">.</span><span class="n">key_size</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported RSA key size: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="o">.</span><span class="n">key_size</span><span class="p">)</span>
+                <span class="k">pass</span>  <span class="c1"># Fall through to ValueError</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">):</span>
+            <span class="n">curve_name</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">curve</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">if</span> <span class="n">curve_name</span> <span class="o">==</span> <span class="s2">&quot;secp256r1&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ECCP256</span>
+            <span class="k">elif</span> <span class="n">curve_name</span> <span class="o">==</span> <span class="s2">&quot;secp384r1&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ECCP384</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported EC curve: </span><span class="si">{</span><span class="n">curve_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported key type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="MANAGEMENT_KEY_TYPE"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.MANAGEMENT_KEY_TYPE">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">MANAGEMENT_KEY_TYPE</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">TDES</span> <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">AES128</span> <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">AES192</span> <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">AES256</span> <span class="o">=</span> <span class="mh">0x0C</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">key_len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TDES&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">24</span>
+        <span class="c1"># AES</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span> <span class="o">//</span> <span class="mi">8</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">challenge_len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TDES&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">8</span>
+        <span class="k">return</span> <span class="mi">16</span></div>
+
+
+<span class="k">def</span> <span class="nf">_parse_management_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">management_key</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="o">.</span><span class="n">TDES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">algorithms</span><span class="o">.</span><span class="n">TripleDES</span><span class="p">(</span><span class="n">management_key</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">management_key</span><span class="p">)</span>
+
+
+<span class="c1"># The card management slot is special, we don&#39;t include it in SLOT below</span>
+<span class="n">SLOT_CARD_MANAGEMENT</span> <span class="o">=</span> <span class="mh">0x9B</span>
+
+
+<div class="viewcode-block" id="SLOT"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.SLOT">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">SLOT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTHENTICATION</span> <span class="o">=</span> <span class="mh">0x9A</span>
+    <span class="n">SIGNATURE</span> <span class="o">=</span> <span class="mh">0x9C</span>
+    <span class="n">KEY_MANAGEMENT</span> <span class="o">=</span> <span class="mh">0x9D</span>
+    <span class="n">CARD_AUTH</span> <span class="o">=</span> <span class="mh">0x9E</span>
+
+    <span class="n">RETIRED1</span> <span class="o">=</span> <span class="mh">0x82</span>
+    <span class="n">RETIRED2</span> <span class="o">=</span> <span class="mh">0x83</span>
+    <span class="n">RETIRED3</span> <span class="o">=</span> <span class="mh">0x84</span>
+    <span class="n">RETIRED4</span> <span class="o">=</span> <span class="mh">0x85</span>
+    <span class="n">RETIRED5</span> <span class="o">=</span> <span class="mh">0x86</span>
+    <span class="n">RETIRED6</span> <span class="o">=</span> <span class="mh">0x87</span>
+    <span class="n">RETIRED7</span> <span class="o">=</span> <span class="mh">0x88</span>
+    <span class="n">RETIRED8</span> <span class="o">=</span> <span class="mh">0x89</span>
+    <span class="n">RETIRED9</span> <span class="o">=</span> <span class="mh">0x8A</span>
+    <span class="n">RETIRED10</span> <span class="o">=</span> <span class="mh">0x8B</span>
+    <span class="n">RETIRED11</span> <span class="o">=</span> <span class="mh">0x8C</span>
+    <span class="n">RETIRED12</span> <span class="o">=</span> <span class="mh">0x8D</span>
+    <span class="n">RETIRED13</span> <span class="o">=</span> <span class="mh">0x8E</span>
+    <span class="n">RETIRED14</span> <span class="o">=</span> <span class="mh">0x8F</span>
+    <span class="n">RETIRED15</span> <span class="o">=</span> <span class="mh">0x90</span>
+    <span class="n">RETIRED16</span> <span class="o">=</span> <span class="mh">0x91</span>
+    <span class="n">RETIRED17</span> <span class="o">=</span> <span class="mh">0x92</span>
+    <span class="n">RETIRED18</span> <span class="o">=</span> <span class="mh">0x93</span>
+    <span class="n">RETIRED19</span> <span class="o">=</span> <span class="mh">0x94</span>
+    <span class="n">RETIRED20</span> <span class="o">=</span> <span class="mh">0x95</span>
+
+    <span class="n">ATTESTATION</span> <span class="o">=</span> <span class="mh">0xF9</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">:</span><span class="s2">02X</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="OBJECT_ID"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.OBJECT_ID">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">OBJECT_ID</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">CAPABILITY</span> <span class="o">=</span> <span class="mh">0x5FC107</span>
+    <span class="n">CHUID</span> <span class="o">=</span> <span class="mh">0x5FC102</span>
+    <span class="n">AUTHENTICATION</span> <span class="o">=</span> <span class="mh">0x5FC105</span>  <span class="c1"># cert for 9a key</span>
+    <span class="n">FINGERPRINTS</span> <span class="o">=</span> <span class="mh">0x5FC103</span>
+    <span class="n">SECURITY</span> <span class="o">=</span> <span class="mh">0x5FC106</span>
+    <span class="n">FACIAL</span> <span class="o">=</span> <span class="mh">0x5FC108</span>
+    <span class="n">PRINTED</span> <span class="o">=</span> <span class="mh">0x5FC109</span>
+    <span class="n">SIGNATURE</span> <span class="o">=</span> <span class="mh">0x5FC10A</span>  <span class="c1"># cert for 9c key</span>
+    <span class="n">KEY_MANAGEMENT</span> <span class="o">=</span> <span class="mh">0x5FC10B</span>  <span class="c1"># cert for 9d key</span>
+    <span class="n">CARD_AUTH</span> <span class="o">=</span> <span class="mh">0x5FC101</span>  <span class="c1"># cert for 9e key</span>
+    <span class="n">DISCOVERY</span> <span class="o">=</span> <span class="mh">0x7E</span>
+    <span class="n">KEY_HISTORY</span> <span class="o">=</span> <span class="mh">0x5FC10C</span>
+    <span class="n">IRIS</span> <span class="o">=</span> <span class="mh">0x5FC121</span>
+
+    <span class="n">RETIRED1</span> <span class="o">=</span> <span class="mh">0x5FC10D</span>
+    <span class="n">RETIRED2</span> <span class="o">=</span> <span class="mh">0x5FC10E</span>
+    <span class="n">RETIRED3</span> <span class="o">=</span> <span class="mh">0x5FC10F</span>
+    <span class="n">RETIRED4</span> <span class="o">=</span> <span class="mh">0x5FC110</span>
+    <span class="n">RETIRED5</span> <span class="o">=</span> <span class="mh">0x5FC111</span>
+    <span class="n">RETIRED6</span> <span class="o">=</span> <span class="mh">0x5FC112</span>
+    <span class="n">RETIRED7</span> <span class="o">=</span> <span class="mh">0x5FC113</span>
+    <span class="n">RETIRED8</span> <span class="o">=</span> <span class="mh">0x5FC114</span>
+    <span class="n">RETIRED9</span> <span class="o">=</span> <span class="mh">0x5FC115</span>
+    <span class="n">RETIRED10</span> <span class="o">=</span> <span class="mh">0x5FC116</span>
+    <span class="n">RETIRED11</span> <span class="o">=</span> <span class="mh">0x5FC117</span>
+    <span class="n">RETIRED12</span> <span class="o">=</span> <span class="mh">0x5FC118</span>
+    <span class="n">RETIRED13</span> <span class="o">=</span> <span class="mh">0x5FC119</span>
+    <span class="n">RETIRED14</span> <span class="o">=</span> <span class="mh">0x5FC11A</span>
+    <span class="n">RETIRED15</span> <span class="o">=</span> <span class="mh">0x5FC11B</span>
+    <span class="n">RETIRED16</span> <span class="o">=</span> <span class="mh">0x5FC11C</span>
+    <span class="n">RETIRED17</span> <span class="o">=</span> <span class="mh">0x5FC11D</span>
+    <span class="n">RETIRED18</span> <span class="o">=</span> <span class="mh">0x5FC11E</span>
+    <span class="n">RETIRED19</span> <span class="o">=</span> <span class="mh">0x5FC11F</span>
+    <span class="n">RETIRED20</span> <span class="o">=</span> <span class="mh">0x5FC120</span>
+
+    <span class="n">ATTESTATION</span> <span class="o">=</span> <span class="mh">0x5FFF01</span>
+
+<div class="viewcode-block" id="OBJECT_ID.from_slot"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.OBJECT_ID.from_slot">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_slot</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">slot</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="PIN_POLICY"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PIN_POLICY">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">PIN_POLICY</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="mh">0x0</span>
+    <span class="n">NEVER</span> <span class="o">=</span> <span class="mh">0x1</span>
+    <span class="n">ONCE</span> <span class="o">=</span> <span class="mh">0x2</span>
+    <span class="n">ALWAYS</span> <span class="o">=</span> <span class="mh">0x3</span></div>
+
+
+<div class="viewcode-block" id="TOUCH_POLICY"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.TOUCH_POLICY">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TOUCH_POLICY</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="mh">0x0</span>
+    <span class="n">NEVER</span> <span class="o">=</span> <span class="mh">0x1</span>
+    <span class="n">ALWAYS</span> <span class="o">=</span> <span class="mh">0x2</span>
+    <span class="n">CACHED</span> <span class="o">=</span> <span class="mh">0x3</span></div>
+
+
+<span class="c1"># 010203040506070801020304050607080102030405060708</span>
+<span class="n">DEFAULT_MANAGEMENT_KEY</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04\x05\x06\x07\x08</span><span class="s2">&quot;</span>
+    <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04\x05\x06\x07\x08</span><span class="s2">&quot;</span>
+    <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x02\x03\x04\x05\x06\x07\x08</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+
+<span class="n">PIN_LEN</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="c1"># Instruction set</span>
+<span class="n">INS_VERIFY</span> <span class="o">=</span> <span class="mh">0x20</span>
+<span class="n">INS_CHANGE_REFERENCE</span> <span class="o">=</span> <span class="mh">0x24</span>
+<span class="n">INS_RESET_RETRY</span> <span class="o">=</span> <span class="mh">0x2C</span>
+<span class="n">INS_GENERATE_ASYMMETRIC</span> <span class="o">=</span> <span class="mh">0x47</span>
+<span class="n">INS_AUTHENTICATE</span> <span class="o">=</span> <span class="mh">0x87</span>
+<span class="n">INS_GET_DATA</span> <span class="o">=</span> <span class="mh">0xCB</span>
+<span class="n">INS_PUT_DATA</span> <span class="o">=</span> <span class="mh">0xDB</span>
+<span class="n">INS_GET_METADATA</span> <span class="o">=</span> <span class="mh">0xF7</span>
+<span class="n">INS_ATTEST</span> <span class="o">=</span> <span class="mh">0xF9</span>
+<span class="n">INS_SET_PIN_RETRIES</span> <span class="o">=</span> <span class="mh">0xFA</span>
+<span class="n">INS_RESET</span> <span class="o">=</span> <span class="mh">0xFB</span>
+<span class="n">INS_GET_VERSION</span> <span class="o">=</span> <span class="mh">0xFD</span>
+<span class="n">INS_IMPORT_KEY</span> <span class="o">=</span> <span class="mh">0xFE</span>
+<span class="n">INS_SET_MGMKEY</span> <span class="o">=</span> <span class="mh">0xFF</span>
+
+<span class="c1"># Tags for parsing responses and preparing requests</span>
+<span class="n">TAG_AUTH_WITNESS</span> <span class="o">=</span> <span class="mh">0x80</span>
+<span class="n">TAG_AUTH_CHALLENGE</span> <span class="o">=</span> <span class="mh">0x81</span>
+<span class="n">TAG_AUTH_RESPONSE</span> <span class="o">=</span> <span class="mh">0x82</span>
+<span class="n">TAG_AUTH_EXPONENTIATION</span> <span class="o">=</span> <span class="mh">0x85</span>
+<span class="n">TAG_GEN_ALGORITHM</span> <span class="o">=</span> <span class="mh">0x80</span>
+<span class="n">TAG_OBJ_DATA</span> <span class="o">=</span> <span class="mh">0x53</span>
+<span class="n">TAG_OBJ_ID</span> <span class="o">=</span> <span class="mh">0x5C</span>
+<span class="n">TAG_CERTIFICATE</span> <span class="o">=</span> <span class="mh">0x70</span>
+<span class="n">TAG_CERT_INFO</span> <span class="o">=</span> <span class="mh">0x71</span>
+<span class="n">TAG_DYN_AUTH</span> <span class="o">=</span> <span class="mh">0x7C</span>
+<span class="n">TAG_LRC</span> <span class="o">=</span> <span class="mh">0xFE</span>
+<span class="n">TAG_PIN_POLICY</span> <span class="o">=</span> <span class="mh">0xAA</span>
+<span class="n">TAG_TOUCH_POLICY</span> <span class="o">=</span> <span class="mh">0xAB</span>
+
+<span class="c1"># Metadata tags</span>
+<span class="n">TAG_METADATA_ALGO</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">TAG_METADATA_POLICY</span> <span class="o">=</span> <span class="mh">0x02</span>
+<span class="n">TAG_METADATA_ORIGIN</span> <span class="o">=</span> <span class="mh">0x03</span>
+<span class="n">TAG_METADATA_PUBLIC_KEY</span> <span class="o">=</span> <span class="mh">0x04</span>
+<span class="n">TAG_METADATA_IS_DEFAULT</span> <span class="o">=</span> <span class="mh">0x05</span>
+<span class="n">TAG_METADATA_RETRIES</span> <span class="o">=</span> <span class="mh">0x06</span>
+
+<span class="n">ORIGIN_GENERATED</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">ORIGIN_IMPORTED</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="n">INDEX_PIN_POLICY</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">INDEX_TOUCH_POLICY</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">INDEX_RETRIES_TOTAL</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">INDEX_RETRIES_REMAINING</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">PIN_P2</span> <span class="o">=</span> <span class="mh">0x80</span>
+<span class="n">PUK_P2</span> <span class="o">=</span> <span class="mh">0x81</span>
+
+
+<span class="k">def</span> <span class="nf">_pin_bytes</span><span class="p">(</span><span class="n">pin</span><span class="p">):</span>
+    <span class="n">pin</span> <span class="o">=</span> <span class="n">pin</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pin</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">PIN_LEN</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PIN/PUK must be no longer than 8 bytes&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pin</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">PIN_LEN</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xff</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_retries_from_sw</span><span class="p">(</span><span class="n">sw</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">AUTH_METHOD_BLOCKED</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">sw</span> <span class="o">&amp;</span> <span class="mh">0xFFF0</span> <span class="o">==</span> <span class="mh">0x63C0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sw</span> <span class="o">&amp;</span> <span class="mh">0x0F</span>
+    <span class="k">elif</span> <span class="n">sw</span> <span class="o">&amp;</span> <span class="mh">0xFF00</span> <span class="o">==</span> <span class="mh">0x6300</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sw</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="PinMetadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PinMetadata">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">PinMetadata</span><span class="p">:</span>
+    <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">total_attempts</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">attempts_remaining</span><span class="p">:</span> <span class="nb">int</span></div>
+
+
+<div class="viewcode-block" id="ManagementKeyMetadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.ManagementKeyMetadata">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">ManagementKeyMetadata</span><span class="p">:</span>
+    <span class="n">key_type</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span>
+    <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">touch_policy</span><span class="p">:</span> <span class="n">TOUCH_POLICY</span></div>
+
+
+<div class="viewcode-block" id="SlotMetadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.SlotMetadata">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">SlotMetadata</span><span class="p">:</span>
+    <span class="n">key_type</span><span class="p">:</span> <span class="n">KEY_TYPE</span>
+    <span class="n">pin_policy</span><span class="p">:</span> <span class="n">PIN_POLICY</span>
+    <span class="n">touch_policy</span><span class="p">:</span> <span class="n">TOUCH_POLICY</span>
+    <span class="n">generated</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">public_key_encoded</span><span class="p">:</span> <span class="nb">bytes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_parse_device_public_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">public_key_encoded</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_pad_message</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">EC</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hash_algorithm</span><span class="p">,</span> <span class="n">Prehashed</span><span class="p">):</span>
+            <span class="n">hashed</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">Hash</span><span class="p">(</span><span class="n">hash_algorithm</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="n">hashed</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+        <span class="n">byte_len</span> <span class="o">=</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span> <span class="o">//</span> <span class="mi">8</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hashed</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">byte_len</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hashed</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="n">byte_len</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hashed</span><span class="p">[:</span><span class="n">byte_len</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+        <span class="c1"># Sign with a dummy key, then encrypt the signature to get the padded message</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="mi">65537</span>
+        <span class="n">dummy</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">)</span>
+        <span class="c1"># Raw (textbook) RSA encrypt</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span><span class="o">.</span><span class="n">n</span>
+        <span class="k">return</span> <span class="n">int2bytes</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="n">signature</span><span class="p">),</span> <span class="n">e</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_unpad_message</span><span class="p">(</span><span class="n">padded</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="mi">65537</span>
+    <span class="n">dummy</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">padded</span><span class="p">)</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
+    <span class="c1"># Raw (textbook) RSA encrypt</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span><span class="o">.</span><span class="n">n</span>
+    <span class="n">encrypted</span> <span class="o">=</span> <span class="n">int2bytes</span><span class="p">(</span><span class="nb">pow</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="n">padded</span><span class="p">),</span> <span class="n">e</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">padded</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dummy</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">encrypted</span><span class="p">,</span> <span class="n">padding</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="check_key_support"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.check_key_support">[docs]</a><span class="k">def</span> <span class="nf">check_key_support</span><span class="p">(</span>
+    <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">,</span>
+    <span class="n">key_type</span><span class="p">:</span> <span class="n">KEY_TYPE</span><span class="p">,</span>
+    <span class="n">pin_policy</span><span class="p">:</span> <span class="n">PIN_POLICY</span><span class="p">,</span>
+    <span class="n">touch_policy</span><span class="p">:</span> <span class="n">TOUCH_POLICY</span><span class="p">,</span>
+    <span class="n">generate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a key type is supported by a specific YubiKey firmware version.</span>
+
+<span class="sd">    This method will return None if the key (with PIN and touch policies) is supported,</span>
+<span class="sd">    or it will raise a NotSupportedError if it is not.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">version</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="k">return</span>  <span class="c1"># Development build, skip version checks</span>
+
+    <span class="k">if</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ECCP384</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;ECCP384 requires YubiKey 4 or later&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">touch_policy</span> <span class="o">!=</span> <span class="n">TOUCH_POLICY</span><span class="o">.</span><span class="n">DEFAULT</span> <span class="ow">or</span> <span class="n">pin_policy</span> <span class="o">!=</span> <span class="n">PIN_POLICY</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;PIN/Touch policy requires YubiKey 4 or later&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">touch_policy</span> <span class="o">==</span> <span class="n">TOUCH_POLICY</span><span class="o">.</span><span class="n">CACHED</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;Cached touch policy requires YubiKey 4.3 or later&quot;</span><span class="p">)</span>
+
+    <span class="c1"># ROCA</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">generate</span> <span class="ow">and</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;RSA key generation not supported on this YubiKey&quot;</span><span class="p">)</span>
+
+    <span class="c1"># FIPS</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">RSA1024</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;RSA 1024 not supported on YubiKey FIPS&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pin_policy</span> <span class="o">==</span> <span class="n">PIN_POLICY</span><span class="o">.</span><span class="n">NEVER</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;PIN_POLICY.NEVER not allowed on YubiKey FIPS&quot;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_parse_device_public_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">encoded</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+        <span class="n">modulus</span> <span class="o">=</span> <span class="n">bytes2int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mh">0x81</span><span class="p">])</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="n">bytes2int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mh">0x82</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicNumbers</span><span class="p">(</span><span class="n">exponent</span><span class="p">,</span> <span class="n">modulus</span><span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ECCP256</span><span class="p">:</span>
+            <span class="n">curve</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurve</span><span class="p">]</span> <span class="o">=</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP256R1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">curve</span> <span class="o">=</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP384R1</span>
+
+        <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="o">.</span><span class="n">from_encoded_point</span><span class="p">(</span><span class="n">curve</span><span class="p">(),</span> <span class="n">data</span><span class="p">[</span><span class="mh">0x86</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="PivSession"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession">[docs]</a><span class="k">class</span> <span class="nc">PivSession</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A session with the PIV application.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">PIV</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_GET_VERSION</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">enable_touch_workaround</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">apdu_format</span> <span class="o">=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_pin_retries</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIV session initialized (version=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Version</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span>
+
+<div class="viewcode-block" id="PivSession.reset"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Preparing PIV reset&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Block PIN</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Verify PIN with invalid attempts until blocked&quot;</span><span class="p">)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pin_attempts</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">counter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">verify_pin</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">InvalidPinError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">counter</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">attempts_remaining</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;PIN is blocked&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Block PUK</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Verify PUK with invalid attempts until blocked&quot;</span><span class="p">)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">counter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_change_reference</span><span class="p">(</span><span class="n">INS_RESET_RETRY</span><span class="p">,</span> <span class="n">PIN_P2</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">InvalidPinError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">counter</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">attempts_remaining</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Reset</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending reset&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_RESET</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_pin_retries</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PIV application data reset performed&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.authenticate"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.authenticate">[docs]</a>    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">key_type</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">,</span> <span class="n">management_key</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Authenticate to PIV with management key.</span>
+
+<span class="sd">        :param key_type: The management key type.</span>
+<span class="sd">        :param management_key: The management key in raw bytes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Authenticating with key type: </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">INS_AUTHENTICATE</span><span class="p">,</span>
+            <span class="n">key_type</span><span class="p">,</span>
+            <span class="n">SLOT_CARD_MANAGEMENT</span><span class="p">,</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_DYN_AUTH</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_AUTH_WITNESS</span><span class="p">)),</span>
+        <span class="p">)</span>
+        <span class="n">witness</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">TAG_AUTH_WITNESS</span><span class="p">,</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">TAG_DYN_AUTH</span><span class="p">,</span> <span class="n">response</span><span class="p">))</span>
+        <span class="n">challenge</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="n">key_type</span><span class="o">.</span><span class="n">challenge_len</span><span class="p">)</span>
+
+        <span class="n">backend</span> <span class="o">=</span> <span class="n">default_backend</span><span class="p">()</span>
+        <span class="n">cipher_key</span> <span class="o">=</span> <span class="n">_parse_management_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">management_key</span><span class="p">)</span>
+        <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span><span class="n">cipher_key</span><span class="p">,</span> <span class="n">modes</span><span class="o">.</span><span class="n">ECB</span><span class="p">(),</span> <span class="n">backend</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">decryptor</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="n">decryptor</span><span class="p">()</span>
+        <span class="n">decrypted</span> <span class="o">=</span> <span class="n">decryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">witness</span><span class="p">)</span> <span class="o">+</span> <span class="n">decryptor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">INS_AUTHENTICATE</span><span class="p">,</span>
+            <span class="n">key_type</span><span class="p">,</span>
+            <span class="n">SLOT_CARD_MANAGEMENT</span><span class="p">,</span>
+            <span class="n">Tlv</span><span class="p">(</span>
+                <span class="n">TAG_DYN_AUTH</span><span class="p">,</span>
+                <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_AUTH_WITNESS</span><span class="p">,</span> <span class="n">decrypted</span><span class="p">)</span> <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_AUTH_CHALLENGE</span><span class="p">,</span> <span class="n">challenge</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">encrypted</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">TAG_AUTH_RESPONSE</span><span class="p">,</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">TAG_DYN_AUTH</span><span class="p">,</span> <span class="n">response</span><span class="p">))</span>
+        <span class="n">encryptor</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="n">encryptor</span><span class="p">()</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">challenge</span><span class="p">)</span> <span class="o">+</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bytes_eq</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">encrypted</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Device response is incorrect&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.set_management_key"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.set_management_key">[docs]</a>    <span class="k">def</span> <span class="nf">set_management_key</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">key_type</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">,</span>
+        <span class="n">management_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">require_touch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a new management key.</span>
+
+<span class="sd">        :param key_type: The management key type.</span>
+<span class="sd">        :param management_key: The management key in raw bytes.</span>
+<span class="sd">        :param require_touch: The touch policy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting management key of type: </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">key_type</span> <span class="o">!=</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="o">.</span><span class="n">TDES</span><span class="p">:</span>
+            <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">management_key</span><span class="p">)</span> <span class="o">!=</span> <span class="n">key_type</span><span class="o">.</span><span class="n">key_len</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Management key must be </span><span class="si">%d</span><span class="s2"> bytes&quot;</span> <span class="o">%</span> <span class="n">key_type</span><span class="o">.</span><span class="n">key_len</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">INS_SET_MGMKEY</span><span class="p">,</span>
+            <span class="mh">0xFF</span><span class="p">,</span>
+            <span class="mh">0xFE</span> <span class="k">if</span> <span class="n">require_touch</span> <span class="k">else</span> <span class="mh">0xFF</span><span class="p">,</span>
+            <span class="n">int2bytes</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span> <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">SLOT_CARD_MANAGEMENT</span><span class="p">,</span> <span class="n">management_key</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Management key set&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.verify_pin"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.verify_pin">[docs]</a>    <span class="k">def</span> <span class="nf">verify_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the PIN.</span>
+
+<span class="sd">        :param pin: The PIN.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Verifying PIN&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_VERIFY</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">PIN_P2</span><span class="p">,</span> <span class="n">_pin_bytes</span><span class="p">(</span><span class="n">pin</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_pin_retries</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">retries</span> <span class="o">=</span> <span class="n">_retries_from_sw</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">sw</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">retries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="n">retries</span>
+            <span class="k">raise</span> <span class="n">InvalidPinError</span><span class="p">(</span><span class="n">retries</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.get_pin_attempts"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_pin_attempts">[docs]</a>    <span class="k">def</span> <span class="nf">get_pin_attempts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get remaining PIN attempts.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting PIN attempts&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pin_metadata</span><span class="p">()</span><span class="o">.</span><span class="n">attempts_remaining</span>
+        <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_VERIFY</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">PIN_P2</span><span class="p">)</span>
+                <span class="c1"># Already verified, no way to know true count</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using cached value, may be incorrect.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span>
+            <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">retries</span> <span class="o">=</span> <span class="n">_retries_from_sw</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">sw</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">retries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="n">retries</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using value from empty verify&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">retries</span></div>
+
+<div class="viewcode-block" id="PivSession.change_pin"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.change_pin">[docs]</a>    <span class="k">def</span> <span class="nf">change_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the PIN.</span>
+
+<span class="sd">        :param old_pin: The current PIN.</span>
+<span class="sd">        :param new_pin: The new PIN.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Changing PIN&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_change_reference</span><span class="p">(</span><span class="n">INS_CHANGE_REFERENCE</span><span class="p">,</span> <span class="n">PIN_P2</span><span class="p">,</span> <span class="n">old_pin</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New PIN set&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.change_puk"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.change_puk">[docs]</a>    <span class="k">def</span> <span class="nf">change_puk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_puk</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_puk</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the PUK.</span>
+
+<span class="sd">        :param old_puk: The current PUK.</span>
+<span class="sd">        :param new_puk: The new PUK.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Changing PUK&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_change_reference</span><span class="p">(</span><span class="n">INS_CHANGE_REFERENCE</span><span class="p">,</span> <span class="n">PUK_P2</span><span class="p">,</span> <span class="n">old_puk</span><span class="p">,</span> <span class="n">new_puk</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New PUK set&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.unblock_pin"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.unblock_pin">[docs]</a>    <span class="k">def</span> <span class="nf">unblock_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">puk</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset PIN with PUK.</span>
+
+<span class="sd">        :param puk: The PUK.</span>
+<span class="sd">        :param new_pin: The new PIN.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using PUK to set new PIN&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_change_reference</span><span class="p">(</span><span class="n">INS_RESET_RETRY</span><span class="p">,</span> <span class="n">PIN_P2</span><span class="p">,</span> <span class="n">puk</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New PIN set&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.set_pin_attempts"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.set_pin_attempts">[docs]</a>    <span class="k">def</span> <span class="nf">set_pin_attempts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">puk_attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set PIN retries for PIN and PUK.</span>
+
+<span class="sd">        Both PIN and PUK will be reset to default values when this is executed.</span>
+
+<span class="sd">        Requires authentication with management key and PIN verification.</span>
+
+<span class="sd">        :param pin_attempts: The PIN attempts.</span>
+<span class="sd">        :param puk_attempts: The PUK attempts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting PIN/PUK attempts (</span><span class="si">{</span><span class="n">pin_attempts</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">puk_attempts</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_SET_PIN_RETRIES</span><span class="p">,</span> <span class="n">pin_attempts</span><span class="p">,</span> <span class="n">puk_attempts</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_pin_retries</span> <span class="o">=</span> <span class="n">pin_attempts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="n">pin_attempts</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PIN/PUK attempts set&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">INVALID_INSTRUCTION</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span>
+                    <span class="s2">&quot;Setting PIN attempts not supported on this YubiKey&quot;</span>
+                <span class="p">)</span>
+            <span class="k">raise</span></div>
+
+<div class="viewcode-block" id="PivSession.get_pin_metadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_pin_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_pin_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PinMetadata</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get PIN metadata.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting PIN metadata&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_pin_puk_metadata</span><span class="p">(</span><span class="n">PIN_P2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.get_puk_metadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_puk_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_puk_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PinMetadata</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get PUK metadata.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting PUK metadata&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_pin_puk_metadata</span><span class="p">(</span><span class="n">PUK_P2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.get_management_key_metadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_management_key_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_management_key_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ManagementKeyMetadata</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get management key metadata.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting management key metadata&quot;</span><span class="p">)</span>
+        <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_GET_METADATA</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SLOT_CARD_MANAGEMENT</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_POLICY</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ManagementKeyMetadata</span><span class="p">(</span>
+            <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_METADATA_ALGO</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x03</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_IS_DEFAULT</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">TOUCH_POLICY</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="n">INDEX_TOUCH_POLICY</span><span class="p">]),</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.get_slot_metadata"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_slot_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_slot_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SlotMetadata</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get slot metadata.</span>
+
+<span class="sd">        :param slot: The slot to get metadata from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Getting metadata for slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_GET_METADATA</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">slot</span><span class="p">))</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_POLICY</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">SlotMetadata</span><span class="p">(</span>
+            <span class="n">KEY_TYPE</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_ALGO</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">PIN_POLICY</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="n">INDEX_PIN_POLICY</span><span class="p">]),</span>
+            <span class="n">TOUCH_POLICY</span><span class="p">(</span><span class="n">policy</span><span class="p">[</span><span class="n">INDEX_TOUCH_POLICY</span><span class="p">]),</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_ORIGIN</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">ORIGIN_GENERATED</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_PUBLIC_KEY</span><span class="p">],</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.sign"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.sign">[docs]</a>    <span class="k">def</span> <span class="nf">sign</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
+        <span class="n">key_type</span><span class="p">:</span> <span class="n">KEY_TYPE</span><span class="p">,</span>
+        <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">hash_algorithm</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span><span class="p">,</span>
+        <span class="n">padding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsymmetricPadding</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sign message with key.</span>
+
+<span class="sd">        Requires PIN verification.</span>
+
+<span class="sd">        :param slot: The slot of the key to use.</span>
+<span class="sd">        :param key_type: The type of the key to sign with.</span>
+<span class="sd">        :param message: The message to sign.</span>
+<span class="sd">        :param hash_algorithm: The pre-signature hash algorithm to use.</span>
+<span class="sd">        :param padding: The pre-signature padding.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Signing data with key in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2"> using &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;hash=</span><span class="si">{</span><span class="n">hash_algorithm</span><span class="si">}</span><span class="s2">, padding=</span><span class="si">{</span><span class="n">padding</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">padded</span> <span class="o">=</span> <span class="n">_pad_message</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">,</span> <span class="n">padding</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_private_key</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">padded</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.decrypt"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.decrypt">[docs]</a>    <span class="k">def</span> <span class="nf">decrypt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span> <span class="n">cipher_text</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">AsymmetricPadding</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt cipher text.</span>
+
+<span class="sd">        Requires PIN verification.</span>
+
+<span class="sd">        :param slot: The slot.</span>
+<span class="sd">        :param cipher_text: The cipher text to decrypt.</span>
+<span class="sd">        :param padding: The padding of the plain text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cipher_text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1024</span> <span class="o">//</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">RSA1024</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">cipher_text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2048</span> <span class="o">//</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">RSA2048</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid length of ciphertext&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Decrypting data with key in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2"> using &quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;padding=</span><span class="si">{</span><span class="n">padding</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">padded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_private_key</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">cipher_text</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_unpad_message</span><span class="p">(</span><span class="n">padded</span><span class="p">,</span> <span class="n">padding</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.calculate_secret"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.calculate_secret">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_secret</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span> <span class="n">peer_public_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate shared secret using ECDH.</span>
+
+<span class="sd">        Requires PIN verification.</span>
+
+<span class="sd">        :param slot: The slot.</span>
+<span class="sd">        :param peer_public_key: The peer&#39;s public key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">from_public_key</span><span class="p">(</span><span class="n">peer_public_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">!=</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">EC</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported key type&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Performing key agreement with key in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">peer_public_key</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span>
+            <span class="n">Encoding</span><span class="o">.</span><span class="n">X962</span><span class="p">,</span> <span class="n">PublicFormat</span><span class="o">.</span><span class="n">UncompressedPoint</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_private_key</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.get_object"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_object">[docs]</a>    <span class="k">def</span> <span class="nf">get_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get object by ID.</span>
+
+<span class="sd">        Requires PIN verification.</span>
+
+<span class="sd">        :param object_id: The object identifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading data from object slot </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="n">object_id</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">object_id</span> <span class="o">==</span> <span class="n">OBJECT_ID</span><span class="o">.</span><span class="n">DISCOVERY</span><span class="p">:</span>
+            <span class="n">expected</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">OBJECT_ID</span><span class="o">.</span><span class="n">DISCOVERY</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">expected</span> <span class="o">=</span> <span class="n">TAG_OBJ_DATA</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span>
+                <span class="n">expected</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+                    <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">INS_GET_DATA</span><span class="p">,</span>
+                    <span class="mh">0x3F</span><span class="p">,</span>
+                    <span class="mh">0xFF</span><span class="p">,</span>
+                    <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_OBJ_ID</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">object_id</span><span class="p">)),</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Malformed object data&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.put_object"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.put_object">[docs]</a>    <span class="k">def</span> <span class="nf">put_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write data to PIV object.</span>
+
+<span class="sd">        Requires authentication with management key.</span>
+
+<span class="sd">        :param object_id: The object identifier.</span>
+<span class="sd">        :param data: The object data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">INS_PUT_DATA</span><span class="p">,</span>
+            <span class="mh">0x3F</span><span class="p">,</span>
+            <span class="mh">0xFF</span><span class="p">,</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_OBJ_ID</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">object_id</span><span class="p">))</span> <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_OBJ_DATA</span><span class="p">,</span> <span class="n">data</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data written to object slot </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="n">object_id</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.get_certificate"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.get_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">get_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get certificate from slot.</span>
+
+<span class="sd">        :param slot: The slot to get the certificate from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading certificate in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">OBJECT_ID</span><span class="o">.</span><span class="n">from_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">)))</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Malformed certificate data object&quot;</span><span class="p">)</span>
+
+        <span class="n">cert_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">TAG_CERTIFICATE</span><span class="p">]</span>
+        <span class="n">cert_info</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">TAG_CERT_INFO</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">TAG_CERT_INFO</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">cert_info</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Certificate is compressed, decompressing...&quot;</span><span class="p">)</span>
+            <span class="c1"># Compressed certificate</span>
+            <span class="n">cert_data</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">cert_info</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;Unsupported value in CertInfo&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">cert_data</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Invalid certificate&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.put_certificate"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.put_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">put_certificate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span> <span class="n">certificate</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span> <span class="n">compress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Import certificate to slot.</span>
+
+<span class="sd">        Requires authentication with management key.</span>
+
+<span class="sd">        :param slot: The slot to import the certificate to.</span>
+<span class="sd">        :param certificate: The certificate to import.</span>
+<span class="sd">        :param compress: If the certificate should be compressed or not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Storing certificate in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">cert_data</span> <span class="o">=</span> <span class="n">certificate</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">DER</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Certificate is </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes, compression=</span><span class="si">{</span><span class="n">compress</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">compress</span><span class="p">:</span>
+            <span class="n">cert_info</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\1</span><span class="s2">&quot;</span>
+            <span class="n">cert_data</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Compressed size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cert_info</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_CERTIFICATE</span><span class="p">,</span> <span class="n">cert_data</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_CERT_INFO</span><span class="p">,</span> <span class="n">cert_info</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_LRC</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID</span><span class="o">.</span><span class="n">from_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Certificate written to slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">, compression=</span><span class="si">{</span><span class="n">compress</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PivSession.delete_certificate"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.delete_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">delete_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete certificate.</span>
+
+<span class="sd">        Requires authentication with management key.</span>
+
+<span class="sd">        :param slot: The slot to delete the certificate from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting certificate in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID</span><span class="o">.</span><span class="n">from_slot</span><span class="p">(</span><span class="n">slot</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="PivSession.put_key"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.put_key">[docs]</a>    <span class="k">def</span> <span class="nf">put_key</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
+        <span class="n">private_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+            <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateKeyWithSerialization</span><span class="p">,</span>
+            <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKeyWithSerialization</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n">pin_policy</span><span class="p">:</span> <span class="n">PIN_POLICY</span> <span class="o">=</span> <span class="n">PIN_POLICY</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+        <span class="n">touch_policy</span><span class="p">:</span> <span class="n">TOUCH_POLICY</span> <span class="o">=</span> <span class="n">TOUCH_POLICY</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Import a private key to slot.</span>
+
+<span class="sd">        Requires authentication with management key.</span>
+
+<span class="sd">        :param slot: The slot to import the key to.</span>
+<span class="sd">        :param private_key: The private key to import.</span>
+<span class="sd">        :param pin_policy: The PIN policy.</span>
+<span class="sd">        :param touch_policy: The touch policy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">from_public_key</span><span class="p">(</span><span class="n">private_key</span><span class="o">.</span><span class="n">public_key</span><span class="p">())</span>
+        <span class="n">check_key_support</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">pin_policy</span><span class="p">,</span> <span class="n">touch_policy</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span> <span class="o">//</span> <span class="mi">8</span>
+        <span class="n">numbers</span> <span class="o">=</span> <span class="n">private_key</span><span class="o">.</span><span class="n">private_numbers</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+            <span class="n">numbers</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateNumbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">numbers</span><span class="o">.</span><span class="n">public_numbers</span><span class="o">.</span><span class="n">e</span> <span class="o">!=</span> <span class="mi">65537</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;RSA exponent must be 65537&quot;</span><span class="p">)</span>
+            <span class="n">ln</span> <span class="o">//=</span> <span class="mi">2</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x01</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
+                <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x02</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
+                <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x03</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">dmp1</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
+                <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x04</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">dmq1</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
+                <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x05</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">iqmp</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">numbers</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateNumbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x06</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">private_value</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">pin_policy</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_PIN_POLICY</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pin_policy</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">touch_policy</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_TOUCH_POLICY</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">touch_policy</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Importing key with pin_policy=</span><span class="si">{</span><span class="n">pin_policy</span><span class="si">}</span><span class="s2">, touch_policy=</span><span class="si">{</span><span class="n">touch_policy</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_IMPORT_KEY</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Private key imported in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">key_type</span></div>
+
+<div class="viewcode-block" id="PivSession.generate_key"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.generate_key">[docs]</a>    <span class="k">def</span> <span class="nf">generate_key</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
+        <span class="n">key_type</span><span class="p">:</span> <span class="n">KEY_TYPE</span><span class="p">,</span>
+        <span class="n">pin_policy</span><span class="p">:</span> <span class="n">PIN_POLICY</span> <span class="o">=</span> <span class="n">PIN_POLICY</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+        <span class="n">touch_policy</span><span class="p">:</span> <span class="n">TOUCH_POLICY</span> <span class="o">=</span> <span class="n">TOUCH_POLICY</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate private key in slot.</span>
+
+<span class="sd">        Requires authentication with management key.</span>
+
+<span class="sd">        :param slot: The slot to generate the private key in.</span>
+<span class="sd">        :param key_type: The key type.</span>
+<span class="sd">        :param pin_policy: The PIN policy.</span>
+<span class="sd">        :param touch_policy: The touch policy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
+        <span class="n">check_key_support</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">pin_policy</span><span class="p">,</span> <span class="n">touch_policy</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_GEN_ALGORITHM</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">key_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">pin_policy</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_PIN_POLICY</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pin_policy</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">touch_policy</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_TOUCH_POLICY</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">touch_policy</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Generating key with pin_policy=</span><span class="si">{</span><span class="n">pin_policy</span><span class="si">}</span><span class="s2">, touch_policy=</span><span class="si">{</span><span class="n">touch_policy</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="n">INS_GENERATE_ASYMMETRIC</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xAC</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Private key generated in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_parse_device_public_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="mh">0x7F49</span><span class="p">,</span> <span class="n">response</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="PivSession.attest_key"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.piv.PivSession.attest_key">[docs]</a>    <span class="k">def</span> <span class="nf">attest_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attest key in slot.</span>
+
+<span class="sd">        :param slot: The slot where the key has been generated.</span>
+<span class="sd">        :return: A X.509 certificate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_ATTEST</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attested key in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span></div>
+
+    <span class="k">def</span> <span class="nf">_change_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">value1</span><span class="p">,</span> <span class="n">value2</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+                <span class="mi">0</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">_pin_bytes</span><span class="p">(</span><span class="n">value1</span><span class="p">)</span> <span class="o">+</span> <span class="n">_pin_bytes</span><span class="p">(</span><span class="n">value2</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">retries</span> <span class="o">=</span> <span class="n">_retries_from_sw</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">sw</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">retries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">if</span> <span class="n">p2</span> <span class="o">==</span> <span class="n">PIN_P2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_pin_retries</span> <span class="o">=</span> <span class="n">retries</span>
+            <span class="k">raise</span> <span class="n">InvalidPinError</span><span class="p">(</span><span class="n">retries</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_pin_puk_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p2</span><span class="p">):</span>
+        <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_GET_METADATA</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p2</span><span class="p">))</span>
+        <span class="n">attempts</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_RETRIES</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">PinMetadata</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">TAG_METADATA_IS_DEFAULT</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">attempts</span><span class="p">[</span><span class="n">INDEX_RETRIES_TOTAL</span><span class="p">],</span>
+            <span class="n">attempts</span><span class="p">[</span><span class="n">INDEX_RETRIES_REMAINING</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_use_private_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">exponentiation</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">INS_AUTHENTICATE</span><span class="p">,</span>
+                <span class="n">key_type</span><span class="p">,</span>
+                <span class="n">slot</span><span class="p">,</span>
+                <span class="n">Tlv</span><span class="p">(</span>
+                    <span class="n">TAG_DYN_AUTH</span><span class="p">,</span>
+                    <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_AUTH_RESPONSE</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span>
+                        <span class="n">TAG_AUTH_EXPONENTIATION</span>
+                        <span class="k">if</span> <span class="n">exponentiation</span>
+                        <span class="k">else</span> <span class="n">TAG_AUTH_CHALLENGE</span><span class="p">,</span>
+                        <span class="n">message</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span>
+                <span class="n">TAG_AUTH_RESPONSE</span><span class="p">,</span>
+                <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span>
+                    <span class="n">TAG_DYN_AUTH</span><span class="p">,</span>
+                    <span class="n">response</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">INCORRECT_PARAMETERS</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>  <span class="c1"># TODO: Different error, No key?</span>
+            <span class="k">raise</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
