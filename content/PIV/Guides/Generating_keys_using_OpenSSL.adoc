@@ -11,6 +11,11 @@ different types of keys are supported: RSA and EC (elliptic curve).
 NOTE: When generating a key pair on a PC, you must take care not to expose the
 private key. Ensure that you only do so on a system you consider to be secure.
 
+
+=== Configuring the Environment
+   * Install OpenSSL.
+   * Install YubiKey Manager (ykman CLI tool).
+
 === Generating a private RSA key
 1. Generate an RSA private key, of size 2048, and output it to a file named key.pem:
 
@@ -28,7 +33,7 @@ private key. Ensure that you only do so on a system you consider to be secure.
 === Generating a private EC key
 1. Generate an EC private key, of size 256, and output it to a file named key.pem:
 
-  $ openssl ecparam -name prime256v1 -genkey -noout -out key.pem
+  $ openssl ecparam -name prime256v1 -genkey -noout -out ec_private.key
 
 2. Extract the public key from the key pair, which can be used in a certificate:
 
@@ -39,3 +44,33 @@ private key. Ensure that you only do so on a system you consider to be secure.
 After running these two commands you end up with two files: key.pem and
 public.pem. These files are referenced in various other guides on this page
 when dealing with key import.
+
+=== Create a certificate signing request (CSR) with a subject name:
+
+1. Use the `-subj` flag to set the DN fields. For instance, if you want to set the country (C) to "US", the state (ST) to "California", the organization (O) to "Example Corp", and the common name (CN) to "John Doe", you'd use the following command:
+
+  $ openssl req -new -key ec_private.key -out ec_csr.pem -subj "/C=US/ST=California/O=Example Corp/CN=John Doe"
+
+2. Self-sign the CSR to create a certificate (or get it signed by a CA):
+
+  $ openssl x509 -signkey ec_private.key -in ec_csr.pem -req -days 365 -out ec_cert.pem
+
+3. Import the private key and certificate into the YubiKey:
+   Optionally, begin by deleting any existing PIV data on the YubiKey (this will erase any certificates or keys stored in the PIV application, so confirm the correct YubiKey is selected and no existing credentials are present):
+
+  $ ykman piv reset
+
+4. Next, import the private key:
+
+  $ ykman piv keys import 9a ec_private.key
+
+5. Then, import the certificate:
+
+  $ ykman piv certificates import 9a ec_cert.pem
+
+
+=== Notes:
+* "9a" is the slot typically used for PIV authentication, but other slots can be used depending on the purpose.
+* Always have backups of any existing keys or certificates before making changes.
+* Use a strong management key and PIN for your YubiKey to ensure security.
+* This guide is a basic introduction to the process. Depending on the environment and risk assesment, additional steps may be required.
