@@ -1,0 +1,66 @@
+= Enterprise Attestation
+:description: Learn how you can enhance your WebAuthn strategy using enterprise attestation 
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, attestation, enterprise attestation
+
+Learn how you can enhance your WebAuthn strategy using enterprise attestation
+
+The adoption of passkeys and WebAuthn aim to make online accounts more secure by offering phishing resistant forms of MFA. While passkeys already offer a much higher degree of security than passwords, there are still **high assurance** scenarios that would benefit from additional mechanisms to protect user accounts. For some enterprises it’s not enough to know that a user’s account is protected by a WebAuthn credential. Enterprises may want to ensure that a user is only leveraging authenticators that were provisioned and provided by their security teams. 
+
+Enterprise attestation aims to close this gap by giving enterprises the ability to **uniquely identify authenticators** to determine if they have been approved for use in a protected environment. In this series we are going to explore enterprise attestation: what it is, applicable use cases, how to integrate it into your enterprise, and how to enable it in your custom applications. 
+
+== Attestation 
+Before we dive into enterprise attestation, let’s first understand what attestation is. Attestation in the context of WebAuthn is the ability for a security device to prove its own identity type, and for a backend service to validate what the authenticator has provided. The identity that is provided will typically include a make/model specific identifier (commonly referred to as the AAGUID), and a verified chain of trust that can be verified against a publicly registered attestation key.
+
+In its most basic form, **attestation will help a backend service identify the make and model**, but it won’t be able to determine uniquely identifiable information such as a serial number, or user information. What does this mean? This means that a backend service could identify that I am using a YubiKey 5 NFC, but nothing beyond that. 
+
+The above scenario was done to provide additional privacy protections to prevent backend services from tracking users across applications, or tying user identities to specific devices. You can learn more about attestation privacy concerns here in the link:https://www.w3.org/TR/webauthn-2/#sctn-attestation-privacy[WebAuthn specification]. 
+
+If you wish to dive deeper into attestation, the links below are great resources to help you understand the concept in more detail:
+
+* link:https://medium.com/webauthnworks/webauthn-fido2-demystifying-attestation-and-mds-efc3b3cb3651[WebAuthn Works: Demystifying attestation and MDS] 
+* link:https://developers.yubico.com/WebAuthn/Concepts/Securing_WebAuthn_with_Attestation.html[Securing WebAuthn with Attestation] 
+* link:https://developers.yubico.com/Developer_Program/WebAuthn_Starter_Kit/Attestation.html[WebAuthn Attestation and Authenticator Metadata] 
+
+Now that we have some understanding of what attestation is, let’s dive into how it’s been extended in enterprise attestation.
+
+== Enterprise attestation
+Let’s envision a scenario where an enterprise, Acme Inc, has worked with a trusted authenticator manufacturer, Yubico, to purchase and deploy YubiKey 5 NFCs to their workforce. 
+With “regular” YubiKey attestation, Acme will be able to limit registrations in their application to ONLY accept YubiKey 5 NFCs. This means that any attempt to register any other form of authenticator will be rejected. What if the RP could identify the make/model of the device, **AND** also uniquely identify each device, and determine whether it is to be allowed for use in the environment. One problem is that this notion goes against the privacy features of WebAuthn that prevent a backend service from uniquely identifying devices. 
+
+Enterprise Attestation **(EA)** looks to close this gap by providing the ability to configure authenticators with an attestation statement that could offer uniquely identifiable information. This could mean that if a backend service specifically requests EA, the authenticator could provide an identifier like the device's serial number. 
+
+The ability to uniquely identify devices will allow security and application teams to fine tune their link:https://developers.yubico.com/WebAuthn/Concepts/Authenticator_Management/[authenticator management strategy], which would to only allow specific devices, with specific identifiers contained in the attestation statement from the YubiKey.
+
+It would also allow enterprises to track their authenticators in their environment, and even across environments in a case where the enterprise has multiple environments or backends, and hence know who is using what device, and ensuring no one shares a device.
+
+Finally, it could also be used together with link:https://developers.yubico.com/PIV/Introduction/PIV_attestation.html[PIV Attestation] to prove that a FIDO2 credential and a PIV certificate both originate and reside on the same device, based on the fact that both attestations share the same serial number.
+
+The link:https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-feature-descriptions-enterp-attstn[CTAP specification] defines two forms of EA. For the next two sections we will provide an overview of both types: vendor facilitated, and platform managed.
+
+=== Vendor facilitated enterprise attestation
+When using vendor facilitated EA an organization will work with an authenticator vendor to configure a specific set of keys to include EA metadata. 
+
+One of the major components of EA is the presence of a pre-configured relying party (RP) ID list that may only be updated by the vendor/manufacturer. An RP ID list refers to the Relying Party ID, or in other words, the list of domains that are allowed to request EA from a device. 
+
+The enterprise will provide the list of RP IDs to the manufacturer, who will then work to have them imprinted on the authenticators for use in their applications/identity solutions. 
+
+==== Pre-configured RP ID list
+The importance of the RP ID list is to ensure some degree of privacy for authenticators with EA when used on non-enterprise applications. As stated in the previous section, the RP ID list ensures that the authenticator can only send its EA when it’s being used on specific domains (websites). 
+
+For instance, the Acme Inc federated SSO solution resides on login.acme.com. Every Acme employee uses this URL to sign into their suite of corporate applications. In order to leverage EA on their SSO solution, Acme will need to work with Yubico to add login.acme.com to the RP ID list on their new authenticators (the IdP service will also need the mechanisms to verify and support EA).
+
+What happens when this authenticator is used on different services? There are two scenarios that could occur: services that don’t request EA, and those that do. In general, a user will be free to use the authenticator on other domains. These other sites will likely request link:https://www.w3.org/TR/webauthn-2/#sctn-attestation-types[basic attestation], in which the normal privacy-conscious, non-identifiable, attestation statement may be returned.  
+
+The user may then attempt to use the authenticator on another domain that requests EA, where the origin was not added to the device’s RP ID list. In this instance regular attestation may be returned, but it will not include the EA identifiers such as serial number. 
+
+=== Platform managed enterprise attestation
+Platform managed EA allows for more flexibility in the domains/origins that are allowed to request EA. Rather than imprinting a RPID list on an authenticator, this form of EA allows for this policy to be managed and controlled by an enterprise managed platform, such as an enterprise managed browser. The platform will make the determination if EA should be provided to a relying party, based on a policy that can be changed/updated by the enterprise. In other words the enterprise managed platform controls the allowed RP ID list.
+
+This form of EA works well in scenarios when an enterprise has a device management process in place where a set of policies can be given directly to an end user. In the case of platform managed EA, a user has the ability to disable the feature on their authenticator through a hard reset. EA should be allowed to be re-enabled through enterprise managed tools.
+
+Note, that platform managed EA is independent of vendor facilitated. In both cases, the security key will need to support EA - but with platform managed, the platform can still allow EA requests from a list of domains, even if they are not part of a vendor configured list. 
+
+== Use cases
+Click the link below to continue to our next section where we will explore use cases for enterprise attestation. 
+
+link:/WebAuthn/Concepts/Enterprise_Attestation/Use_cases.html[Continue to enterprise attestation use cases]

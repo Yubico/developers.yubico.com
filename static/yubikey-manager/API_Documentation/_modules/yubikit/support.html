@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yubikit.support &mdash; yubikey-manager 5.2.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">yubikit.support</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for yubikit.support</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015-2022 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TRANSPORT</span><span class="p">,</span>
+    <span class="n">YUBIKEY</span><span class="p">,</span>
+    <span class="n">PID</span><span class="p">,</span>
+    <span class="n">Version</span><span class="p">,</span>
+    <span class="n">Connection</span><span class="p">,</span>
+    <span class="n">NotSupportedError</span><span class="p">,</span>
+    <span class="n">ApplicationNotAvailableError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.core.otp</span> <span class="kn">import</span> <span class="n">OtpConnection</span><span class="p">,</span> <span class="n">CommandRejectedError</span>
+<span class="kn">from</span> <span class="nn">.core.fido</span> <span class="kn">import</span> <span class="n">FidoConnection</span>
+<span class="kn">from</span> <span class="nn">.core.smartcard</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AID</span><span class="p">,</span>
+    <span class="n">SmartCardConnection</span><span class="p">,</span>
+    <span class="n">SmartCardProtocol</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.management</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ManagementSession</span><span class="p">,</span>
+    <span class="n">DeviceInfo</span><span class="p">,</span>
+    <span class="n">DeviceConfig</span><span class="p">,</span>
+    <span class="n">Mode</span><span class="p">,</span>
+    <span class="n">USB_INTERFACE</span><span class="p">,</span>
+    <span class="n">CAPABILITY</span><span class="p">,</span>
+    <span class="n">FORM_FACTOR</span><span class="p">,</span>
+    <span class="n">DEVICE_FLAG</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.yubiotp</span> <span class="kn">import</span> <span class="n">YubiOtpSession</span>
+
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># Old U2F AID, only used to detect the presence of the applet</span>
+<span class="n">_AID_U2F_YUBICO</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a0000005271002&quot;</span><span class="p">)</span>
+
+<span class="n">_SCAN_APPLETS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="c1"># OTP will be checked elsewhere and thus isn&#39;t needed here</span>
+    <span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">FIDO</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">_AID_U2F_YUBICO</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">PIV</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">PIV</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">OPENPGP</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OPENPGP</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">OATH</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OATH</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">_BASE_NEO_APPS</span> <span class="o">=</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OATH</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">PIV</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OPENPGP</span>
+
+
+<span class="k">def</span> <span class="nf">_read_info_ccid</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">):</span>
+    <span class="n">version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Version</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mgmt</span> <span class="o">=</span> <span class="n">ManagementSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">mgmt</span><span class="o">.</span><span class="n">version</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mgmt</span><span class="o">.</span><span class="n">read_device_info</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+            <span class="c1"># Workaround to &quot;de-select&quot; the Management Applet needed for NEO</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xa4\x04\x00\x08</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ApplicationNotAvailableError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t select Management application, use fallback&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Synthesize data</span>
+    <span class="n">capabilities</span> <span class="o">=</span> <span class="n">CAPABILITY</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Try to read serial (and version if needed) from OTP application</span>
+    <span class="n">serial</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">otp</span> <span class="o">=</span> <span class="n">YubiOtpSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">otp</span><span class="o">.</span><span class="n">version</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">serial</span> <span class="o">=</span> <span class="n">otp</span><span class="o">.</span><span class="n">get_serial</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to read serial over OTP, no serial&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">capabilities</span> <span class="o">|=</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span>
+    <span class="k">except</span> <span class="n">ApplicationNotAvailableError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t select OTP application, serial unknown&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Firmware version unknown, using 3.0.0 as a baseline&quot;</span><span class="p">)</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Guess, no way to know</span>
+
+    <span class="c1"># Scan for remaining capabilities</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Scan for available applications...&quot;</span><span class="p">)</span>
+    <span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">aid</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">_SCAN_APPLETS</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">aid</span><span class="p">)</span>
+            <span class="n">capabilities</span> <span class="o">|=</span> <span class="n">code</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found applet: aid: </span><span class="si">%s</span><span class="s2">, capability: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">aid</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApplicationNotAvailableError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Missing applet: aid: </span><span class="si">%s</span><span class="s2">, capability: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">aid</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Error selecting aid: </span><span class="si">%s</span><span class="s2">, capability: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">aid</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">capabilities</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">key_type</span><span class="p">:</span>
+        <span class="c1"># NFC, no capabilities, probably not a YubiKey.</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Device does not seem to be a YubiKey&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Assume U2F on devices &gt;= 3.3.0</span>
+    <span class="k">if</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">FIDO</span> <span class="ow">in</span> <span class="n">interfaces</span> <span class="ow">or</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">capabilities</span> <span class="o">|=</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span>
+
+    <span class="k">return</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">DeviceConfig</span><span class="p">(</span>
+            <span class="n">enabled_capabilities</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># Populated later</span>
+            <span class="n">auto_eject_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">challenge_response_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">device_flags</span><span class="o">=</span><span class="n">DEVICE_FLAG</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">serial</span><span class="o">=</span><span class="n">serial</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+        <span class="n">form_factor</span><span class="o">=</span><span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">,</span>
+        <span class="n">supported_capabilities</span><span class="o">=</span><span class="p">{</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">:</span> <span class="n">capabilities</span><span class="p">,</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">:</span> <span class="n">capabilities</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">is_locked</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_read_info_otp</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">):</span>
+    <span class="n">otp</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">serial</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mgmt</span> <span class="o">=</span> <span class="n">ManagementSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ApplicationNotAvailableError</span><span class="p">:</span>
+        <span class="n">otp</span> <span class="o">=</span> <span class="n">YubiOtpSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+
+    <span class="c1"># Retry during potential reclaim timeout period (~3s).</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">otp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">mgmt</span><span class="o">.</span><span class="n">read_device_info</span><span class="p">()</span>  <span class="c1"># Rejected while reclaim</span>
+                <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+                    <span class="n">otp</span> <span class="o">=</span> <span class="n">YubiOtpSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+            <span class="n">serial</span> <span class="o">=</span> <span class="n">otp</span><span class="o">.</span><span class="n">get_serial</span><span class="p">()</span>  <span class="c1"># Rejected if reclaim (or not API_SERIAL_VISIBLE)</span>
+            <span class="k">break</span>
+        <span class="k">except</span> <span class="n">CommandRejectedError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">otp</span> <span class="ow">and</span> <span class="n">interfaces</span> <span class="o">==</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">OTP</span><span class="p">:</span>
+                <span class="k">break</span>  <span class="c1"># Can&#39;t be reclaim with only one interface</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Potential reclaim, sleep...&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>  <span class="c1"># Potential reclaim</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">otp</span> <span class="o">=</span> <span class="n">YubiOtpSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+
+    <span class="c1"># Synthesize info</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to get info via Management application, use fallback&quot;</span><span class="p">)</span>
+
+    <span class="n">version</span> <span class="o">=</span> <span class="n">otp</span><span class="o">.</span><span class="n">version</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">NEO</span><span class="p">:</span>
+        <span class="n">usb_supported</span> <span class="o">=</span> <span class="n">_BASE_NEO_APPS</span>
+        <span class="k">if</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">FIDO</span> <span class="ow">in</span> <span class="n">interfaces</span> <span class="ow">or</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">usb_supported</span> <span class="o">|=</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span>
+        <span class="n">capabilities</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">:</span> <span class="n">usb_supported</span><span class="p">,</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">:</span> <span class="n">usb_supported</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">elif</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">YKP</span><span class="p">:</span>
+        <span class="n">capabilities</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">:</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">capabilities</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">:</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">DeviceConfig</span><span class="p">(</span>
+            <span class="n">enabled_capabilities</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># Populated later</span>
+            <span class="n">auto_eject_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">challenge_response_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">device_flags</span><span class="o">=</span><span class="n">DEVICE_FLAG</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">serial</span><span class="o">=</span><span class="n">serial</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+        <span class="n">form_factor</span><span class="o">=</span><span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">,</span>
+        <span class="n">supported_capabilities</span><span class="o">=</span><span class="n">capabilities</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+        <span class="n">is_locked</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_read_info_ctap</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mgmt</span> <span class="o">=</span> <span class="n">ManagementSession</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mgmt</span><span class="o">.</span><span class="n">read_device_info</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># SKY 1, NEO, or YKP</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to get info via Management application, use fallback&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Best guess version</span>
+        <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">YKP</span><span class="p">:</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">supported_apps</span> <span class="o">=</span> <span class="p">{</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">:</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">NEO</span><span class="p">:</span>
+            <span class="n">supported_apps</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">]</span> <span class="o">|=</span> <span class="n">_BASE_NEO_APPS</span>
+            <span class="n">supported_apps</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">]</span> <span class="o">=</span> <span class="n">supported_apps</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">DeviceConfig</span><span class="p">(</span>
+                <span class="n">enabled_capabilities</span><span class="o">=</span><span class="p">{},</span>  <span class="c1"># Populated later</span>
+                <span class="n">auto_eject_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">challenge_response_timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">device_flags</span><span class="o">=</span><span class="n">DEVICE_FLAG</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="n">serial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+            <span class="n">form_factor</span><span class="o">=</span><span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_KEYCHAIN</span><span class="p">,</span>
+            <span class="n">supported_capabilities</span><span class="o">=</span><span class="n">supported_apps</span><span class="p">,</span>
+            <span class="n">is_locked</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="read_info"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.support.read_info">[docs]</a><span class="k">def</span> <span class="nf">read_info</span><span class="p">(</span><span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">pid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PID</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads out DeviceInfo from a YubiKey, or attempts to synthesize the data.</span>
+
+<span class="sd">    Reading DeviceInfo from a ManagementSession is only supported for newer YubiKeys.</span>
+<span class="sd">    This function attempts to read that information, but will fall back to gathering the</span>
+<span class="sd">    data using other mechanisms if needed. It will also make adjustments to the data if</span>
+<span class="sd">    required, for example to &quot;fix&quot; known bad values.</span>
+
+<span class="sd">    The *pid* parameter must be provided whenever the YubiKey is connected via USB.</span>
+
+<span class="sd">    :param conn: A connection to a YubiKey.</span>
+<span class="sd">    :param pid: The USB Product ID.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempting to read device info, using </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pid</span><span class="p">:</span>
+        <span class="n">key_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">YUBIKEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">pid</span><span class="o">.</span><span class="n">yubikey_type</span>
+        <span class="n">interfaces</span> <span class="o">=</span> <span class="n">pid</span><span class="o">.</span><span class="n">usb_interfaces</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">)</span> <span class="ow">and</span> <span class="n">conn</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">:</span>
+        <span class="c1"># No PID for NFC connections</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">interfaces</span> <span class="o">=</span> <span class="n">USB_INTERFACE</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Add interfaces later</span>
+        <span class="c1"># For NEO we need to figure out the mode, newer keys get it from Management</span>
+        <span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">OTP</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">resp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="p">:</span>
+                <span class="n">interfaces</span> <span class="o">=</span> <span class="n">Mode</span><span class="o">.</span><span class="n">from_code</span><span class="p">(</span><span class="n">resp</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span><span class="o">.</span><span class="n">interfaces</span>
+        <span class="k">except</span> <span class="n">ApplicationNotAvailableError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># OTP turned off, this must be YK5, no problem</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PID must be provided for non-NFC connections&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">):</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">_read_info_ccid</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">OtpConnection</span><span class="p">):</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">_read_info_otp</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">FidoConnection</span><span class="p">):</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">_read_info_ctap</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid connection type&quot;</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Read info: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+
+    <span class="c1"># Set usb_enabled if missing (pre YubiKey 5)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">has_transport</span><span class="p">(</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enabled_capabilities</span>
+    <span class="p">):</span>
+        <span class="n">usb_enabled</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">supported_capabilities</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">usb_enabled</span> <span class="o">==</span> <span class="p">(</span><span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span> <span class="o">|</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">CCID</span><span class="p">):</span>
+            <span class="c1"># YubiKey Edge, hide unusable CCID interface from supported</span>
+            <span class="c1"># usb_enabled = CAPABILITY.OTP | CAPABILITY.U2F</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">supported_capabilities</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">:</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span>
+            <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">OTP</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">:</span>
+            <span class="n">usb_enabled</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span>
+        <span class="k">if</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">FIDO</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">:</span>
+            <span class="n">usb_enabled</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">FIDO2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">CCID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">:</span>
+            <span class="n">usb_enabled</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span>
+                <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">CCID</span>
+                <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OATH</span>
+                <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OPENPGP</span>
+                <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">PIV</span>
+            <span class="p">)</span>
+
+        <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enabled_capabilities</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">]</span> <span class="o">=</span> <span class="n">usb_enabled</span>
+
+    <span class="c1"># SKY identified by PID</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">SKY</span><span class="p">:</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">is_sky</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># YK4-based FIPS version</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">is_fips</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Set nfc_enabled if missing (pre YubiKey 5)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">has_transport</span><span class="p">(</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enabled_capabilities</span>
+    <span class="p">):</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enabled_capabilities</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">supported_capabilities</span><span class="p">[</span>
+            <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span>
+        <span class="p">]</span>
+
+    <span class="c1"># Workaround for invalid configurations.</span>
+    <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_NANO</span><span class="p">,</span>
+            <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_NANO</span><span class="p">,</span>
+            <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_LIGHTNING</span><span class="p">,</span>
+        <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="ow">is</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_KEYCHAIN</span> <span class="ow">and</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="c1"># Known not to have NFC</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">supported_capabilities</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enabled_capabilities</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Device info, after tweaks: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">info</span></div>
+
+
+<span class="k">def</span> <span class="nf">_fido_only</span><span class="p">(</span><span class="n">capabilities</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">capabilities</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">FIDO2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+
+<span class="k">def</span> <span class="nf">_is_preview</span><span class="p">(</span><span class="n">version</span><span class="p">):</span>
+    <span class="n">_PREVIEW_RANGES</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+        <span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+        <span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">_PREVIEW_RANGES</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="get_name"><a class="viewcode-back" href="../../rst/yubikit.html#yubikit.support.get_name">[docs]</a><span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="n">info</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">,</span> <span class="n">key_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">YUBIKEY</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the product name of a YubiKey</span>
+
+<span class="sd">    :param info: The device info.</span>
+<span class="sd">    :param key_type: The YubiKey hardware platform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">usb_supported</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">supported_capabilities</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span><span class="p">]</span>
+
+    <span class="c1"># Guess the key type (over NFC)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">key_type</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">key_type</span> <span class="o">=</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">NEO</span>
+        <span class="k">elif</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_fido_only</span><span class="p">(</span><span class="n">usb_supported</span><span class="p">):</span>
+            <span class="n">key_type</span> <span class="o">=</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">SKY</span> <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span> <span class="k">else</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">YK4</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">key_type</span> <span class="o">=</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">YK4</span>
+
+    <span class="c1"># Generic name based on key type alone</span>
+    <span class="n">device_name</span> <span class="o">=</span> <span class="n">key_type</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="c1"># Improved name based on configuration</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">SKY</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">FIDO2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">usb_supported</span><span class="p">:</span>
+            <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;FIDO U2F Security Key&quot;</span>  <span class="c1"># SKY 1</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">has_transport</span><span class="p">(</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">):</span>
+            <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;Security Key NFC&quot;</span>
+    <span class="k">elif</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">YK4</span><span class="p">:</span>
+        <span class="n">major_version</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">major_version</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;YubiKey (</span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;YubiKey&quot;</span>
+        <span class="k">elif</span> <span class="n">major_version</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">is_fips</span><span class="p">:</span>
+                <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;YubiKey FIPS&quot;</span>
+            <span class="k">elif</span> <span class="n">usb_supported</span> <span class="o">==</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">OTP</span> <span class="o">|</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">U2F</span><span class="p">:</span>
+                <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;YubiKey Edge&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;YubiKey 4&quot;</span>
+
+        <span class="k">if</span> <span class="n">_is_preview</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">version</span><span class="p">):</span>
+            <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;YubiKey Preview&quot;</span>
+        <span class="k">elif</span> <span class="n">info</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># Dynamic name building for YK5</span>
+            <span class="n">is_nano</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_NANO</span><span class="p">,</span>
+                <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_NANO</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">is_bio</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="ow">in</span> <span class="p">(</span><span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_BIO</span><span class="p">,</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_BIO</span><span class="p">)</span>
+            <span class="n">is_c</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="ow">in</span> <span class="p">(</span>  <span class="c1"># Does NOT include Ci</span>
+                <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_KEYCHAIN</span><span class="p">,</span>
+                <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_NANO</span><span class="p">,</span>
+                <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_BIO</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">is_sky</span><span class="p">:</span>
+                <span class="n">name_parts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Security Key&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name_parts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;YubiKey&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_bio</span><span class="p">:</span>
+                    <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;5&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_c</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="o">==</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_LIGHTNING</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Ci&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_nano</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Nano&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">has_transport</span><span class="p">(</span><span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">):</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;NFC&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">info</span><span class="o">.</span><span class="n">form_factor</span> <span class="o">==</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_KEYCHAIN</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>  <span class="c1"># Only for non-NFC A Keychain.</span>
+            <span class="k">if</span> <span class="n">is_bio</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Bio&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">_fido_only</span><span class="p">(</span><span class="n">usb_supported</span><span class="p">):</span>
+                    <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;- FIDO Edition&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">is_fips</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FIPS&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">is_sky</span> <span class="ow">and</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span><span class="p">:</span>
+                <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;- Enterprise Edition&quot;</span><span class="p">)</span>
+            <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name_parts</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;5 C&quot;</span><span class="p">,</span> <span class="s2">&quot;5C&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;5 A&quot;</span><span class="p">,</span> <span class="s2">&quot;5A&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">device_name</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

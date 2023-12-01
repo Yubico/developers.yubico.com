@@ -1,0 +1,107 @@
+= Passkey for developers client application implementation guidance
+:description: Understand common passkey user flows
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, client application, user flows
+
+Understand common passkey user flows
+
+In this section we are going to explore the different user flows that should be incorporated into passkey applications. These are the flows that will help your users to register, authenticate, and manage their passkeys. Followed by this section will be implementation guidance that can be used for each scenario presented on this page.
+
+== Registration flows
+Registration flows are those where a user will register a new passkey for use in their application. This flow will utilize a combination of the `PublicKeyCredentialCreationOptions` that were link:/Passkeys/Passkey_relying_party_implementation_guidance/Passkey_registration_requests.html[issued by the relying party], and the `navigator.credentials.create()` method that can be invoked from the browser. The registration flows presented below are common scenarios that should be included in your application.
+
+**User’s first registration**
+
+This flow covers when a user first creates an account on your website. In traditional account registration flows a user would register their username and password. In the context of passkeys, you could allow a user to register for their account, and their first passkey at the same time.
+
+Figure 1 demonstrates an application that invokes a passkey creation when a user registers for a new account.
+
+[role="videoConst"]
+--
+video::../videos/passkey_init_reg.mp4[]
+--
+**Figure 1**
+
+**User adds a new passkey to their account**
+
+During the lifecycle of a user’s account, they may need to register a new passkey. This could be due a variety of reasons such as: they purchased a new security key, their authenticator was lost/stolen/misplaced, or they simply just want a new passkey. 
+Your client application should allow the user the ability to add a new passkey through an account management screen.
+
+Figure 2 demonstrates an application that allows a user to create a new passkey for their account
+
+[role="videoConst"]
+--
+video::../videos/passkey_reg.mp4[]
+--
+**Figure 2**
+
+In the video above, please note that each button invokes a different option in the `PublicKeyCredentialCreationOptions` that triggers the creation of a cross platform or platform authenticator. 
+
+== Authentication flows
+Authentication flows are those where a user will use a passkey to authenticate into their application account. This flow will utilize a combination of the `PublicKeyCredentialRequestOptions` that were link:/Passkeys/Passkey_relying_party_implementation_guidance/Passkey_authentication_requests.html[issued by the relying party], and the `navigator.credentials.get()` method that can be invoked from the browser. The authentication flows presented below are common scenarios that should be included in your application.
+
+**Modal authentication**
+
+The first option is the traditional method in which WebAuthn credentials were used to authenticate. This was done using modal prompts provided by the browser or operating system. The intent is for the user to follow along with the prompt in order to complete authentication. Prompts could instruct users to:
+
+* Insert authenticator / choose their platform authenticator
+* Invoke user verification
+* Invoke user presence
+* Consent to attestation
+
+Modal authentication allows for the use of both passkeys, and non-discoverable credentials. 
+
+Figure 3 demonstrates a login page that allows for the use of modal authentication for passkeys.
+
+[role="videoConst"]
+--
+video::../videos/passkey_modal.mp4[]
+--
+**Figure 3**
+
+**Autofill authentication** 
+
+Autofill is a concept that many users are familiar with, in the context of passwords. Even though passkeys do not leverage passwords, there is another usability gap present in the use of passkeys. A user may enter a site and be unsure if they have a passkey readily available for authentication. Autofill aims to close this gap by providing a mechanism to prompt the user that a passkey is available for authentication. 
+
+Figure 4 demonstrates a login page that allows for the use of autofill authentication for passkeys.
+
+[role="videoConst"]
+--
+video::../videos/passkey_autofill.mp4[]
+--
+**Figure 4**
+
+It should be noted that autofill is not readily available on all ecosystems, and some lack support for the use of security keys. It’s advised to leverage autofill when possible, but to also include an option for modal authentication.
+
+Figure 5 demonstrates a login page that allows for the use of both autofill and modal authentication
+
+[role="videoConst"]
+--
+video::../videos/passkey_modal_auto.mp4[]
+--
+**Figure 5**
+
+== Passkey management
+Lastly, an account page should have different mechanisms that allow a user to manage the passkeys on their account. While these operations are not entirely within the bounds of the `get()` and `create()` methods, they should still be considered essential.
+
+All of the methods discussed below should utilize an interface to your relying party. Some of the operations mentioned below will utilize guidance found on our `Passkey for developers relying party implementation guidance`.
+
+**Display passkeys**
+
+Your user should be presented with a list of passkeys that belong to their account. Each passkey should come with the option to edit or delete it if the user chooses to do so.
+
+**Add a new passkey**
+
+This scenario was mentioned above, as it is a form of passkey registration.
+
+**Edit a passkey**
+
+The term edit is not meant to allow a user to edit their passkey, rather attributes that can help them, the user, identify it. A user may be allowed to change the display name/nickname that they have assigned to a passkey.
+
+**Delete a passkey**
+
+A user should be able to remove a passkey from their account - meaning that it should no longer be usable to authenticate into the user’s account. 
+
+== Implementation guidance
+Now that we have an understanding of user flows in passkey client applications, let’s move on to implementation guidance needed to incorporate registration and authentication flows.
+
+link:/Passkeys/Passkey_client_application_implementation_guidance/Passkey_client_application_prerequisites.html[Continue to passkey client application prerequisites]

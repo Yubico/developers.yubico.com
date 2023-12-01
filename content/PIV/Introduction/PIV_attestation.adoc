@@ -7,7 +7,7 @@ This document describes the attestation feature added to the PIV module in YubiK
 The concept of attestation is used to show that a certain asymmetric key has been generated on device and not imported. Typically this would be used before creating a certificate.
 
 === Implementation
-Attestation is implemented by creating a X.509 certificate for the key that is to be attested, this is only done if the key has been generated on device. This certificate should only be used for the purpose of verifying that the key was generated in device, not for any other purposes.
+Attestation is implemented by creating a X.509 certificate for the key that is to be attested, this is only done if the key has been generated on device. This certificate should be used for the purpose of verifying that the key was generated in device. Additional information included in the Attestation Certificate can be used to provide information about the device the attested key was generated on.
 
 Some features of the generated certificate:
 
@@ -26,19 +26,22 @@ Extensions in the generated certificate:
 ** Pin policy: 01 - never, 02 - once per session, 03 - always
 ** Touch policy: 01 - never, 02 - always, 03 - cached for 15s
 * +1.3.6.1.4.1.41482.3.9+: Formfactor, encoded as one byte
-** USB-A Keychain: 01
-** USB-A Nano: 02
-** USB-C Keychain: 03
-** USB-C Nano: 04
+** USB-A Keychain: 01 (81 for FIPS Devices)
+** USB-A Nano: 02 (82 for FIPS Devices)
+** USB-C Keychain: 03 (83 for FIPS Devices)
+** USB-C Nano: 04 (84 for FIPS Devices)
+** Lightning and USB-C: 05 (85 for FIPS Devices)
+* +1.3.6.1.4.1.41482.3.10+: FIPS Certified YubiKey
+* +1.3.6.1.4.1.41482.3.11+: CSPN Certified YubiKey
 
-The YubiKey comes with a pre-loaded attestation certificate signed by a link:piv-attestation-ca.pem[Yubico PIV CA] this can be overwritten by loading a new key and certificate to slot f9. After the Yubico key is overwritten it can not be brought back. The attestation key and certificate will not be cleared out by a reset of the device.
+The YubiKey comes with a pre-loaded attestation certificate signed by a link:piv-attestation-ca.pem[Yubico PIV CA]. This can be overwritten by loading a new key and certificate to slot f9. After the Yubico key is overwritten it can not be brought back. The attestation key and certificate will not be cleared out by a reset of the device.
 
 NOTE: If you have a YubiKey Preview device, the attestation certificate will
 instead be signed by our link:piv-attestation-preview-ca.pem[Yubico PIV Preview CA].
 
 [NOTE]
 ====
-The root cert for the Yubico PIV CA was updated on September 24, 2018. The prior PEM can be found link:piv-attestation-ca-old.pem[here].
+The root cert for the Yubico PIV CA was updated on September 24, 2018. The prior PEM can be found link:piv-attestation-ca-old.pem[here]. YubiKey 4 Series manufactured prior to mid-2017 and some manufactured in 2018 were signed with link:https://developers.yubico.com/u2f/yubico-u2f-ca-certs.txt[Yubico's U2F Attestation CA].
 
 For more information on support added to the current root certificate, see link:https://support.yubico.com/support/solutions/articles/15000013406-piv-attestation-verification-fails-with-openssl-1-1-0[PIV Attestation Verification Fails with OpenSSL 1.1.0].
 ====

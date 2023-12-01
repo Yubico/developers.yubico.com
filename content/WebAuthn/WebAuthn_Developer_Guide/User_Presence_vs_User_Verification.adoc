@@ -7,24 +7,43 @@ Both registration and authentication require either or both of the following:
 
 This description is derived in part from the W3C's recommendation, https://www.w3.org/TR/webauthn/[Web Authentication: An API for accessing Public Key Credentials Level 1]. However, the distinction is also entirely applicable to YubiKeys outside the WebAuthn context.
 
-User **verification** serves to ensure that the person authenticating to a service is in fact who they say they are for the purposes of that service. Or, in the words of the W3C recommendation, "...a user and the user’s client (containing at least one authenticator) work in concert to cryptographically prove to [that service, the RP] that the user controls the private key credential associated with a previously-registered public key credential". The RP directs the authenticator to perform user verification, the authenticator performs user verification locally and signals to the RP whether user verification was successful. User verification can take various forms, such as password, PIN, fingerprint, public key credential, etc. The point is to distinguish one user from any other, i.e., uniquely identify the user.
+User **verification** serves to ensure that the person authenticating to a service is in fact who they say they are for the purposes of that service. Or, in the words of the W3C recommendation, "...a user and the user’s client (containing at least one authenticator) work in concert to cryptographically prove to [that service, the RP] that the user controls the private key credential associated with a previously-registered public key credential". The RP directs the authenticator to perform user verification, the authenticator performs user verification locally and signals to the RP whether user verification was successful. User verification can take various forms, such as password, PIN, fingerprint, public key credential, etc. The point is to distinguish one user from any other, i.e., uniquely identify the user. The YubiKey supports the use of a PIN up to 63 characters/bytes in size.
 
 With user **presence**, the intent is not to identify the user, but to ensure that a user is physically present and in control of the YubiKey. The YubiKey has a capacitive touch sensor that cannot be controlled by software. Presumably that user is the one who registered the YubiKey, but without user verification, it could be any individual who is physically present at the location where these ceremonies are performed.
 
 Note that the term "authorization gesture" - used in some WebAuthn reference material - is ambiguous: it can refer either to user presence or user verification.
 
-The RP has the following options for ``userVerification`` when initiating registration or authentication:
+The RP has the following options for `userVerification` when initiating registration or authentication:
 
 *DISCOURAGED*: This value indicates that the RP does not want user verification employed during the operation (for example, to minimize disruption to the user interaction flow).
 
-*PREFERRED*:	This value indicates that the RP prefers user verification for the operation if possible, but will not fail the operation if the response does not have the ``AuthenticatorDataFlags.UV`` flag set.
+*PREFERRED*:	This value indicates that the RP prefers user verification for the operation if possible, but will not fail the operation if the response does not have the `AuthenticatorDataFlags.UV` flag set.
 
-*REQUIRED*: Indicates that the RP requires user verification for the operation and will fail the operation if the response does not have the ``AuthenticatorDataFlags.UV flag`` set.
+*REQUIRED*: Indicates that the RP requires user verification for the operation and will fail the operation if the response does not have the `AuthenticatorDataFlags.UV flag` set.
 
+Note that:
+
+* The default value for `userVerification` is `preferred`.
+
+* When `userVerification` is set to `discouraged`, this doesn't mean that User Verification is never performed.
+For instance, when using a YubiKey Bio or a biometric platform authenticator, the User Presence and User Verification gestures coincide.
+
+* When `userVerification` is `preferred`, the user experience depends on whether or not a PIN is set or a fingerprint is enrolled on the user's security key. To achieve a uniform user experience, explicitly set `userVerification` to either `discouraged` or `required` according to your specific use case.
+
+* When `userVerification` is `required`, keep in mind that registration or authentication will fail in the following cases:
+  1. the user has not set a PIN or enrolled a fingerprint on his or her security key. Some browsers will ask the user to set a PIN or enroll a fingerprint during registration, but others don't so that behaviour cannot in general be relied on.
+  2. the user is using a security key that does not support user verification (for instance, a U2F key)
+  3. the user is using a browser that does not support user verification (for instance, browsers that implement CTAP1 only)
+
+Also note that `userVerification` is a hint to the client to perform User Verification, but Relying Parties that depend on User Verification should always check the result of a registration or authentication to verify if User Verification was actually performed according to the authenticator.
 
 == Use Cases ==
-* User presence is appropriate for second factor authentication (2FA)
-* User verification is not recommended for 2FA because the user will have already entered a shared secret (password) sent to the server over the network
-* User verification is appropriate for passwordless scenarios and multi-factor authentication (MFA) because the user enters a shared secret with the authenticator (PIN) that is not sent over the network.
+
+The use of User Presence or User Verification depends on the specific use case:
+
+* User presence is appropriate for second factor authentication (2FA).
+* User verification is not recommended for 2FA because the user will have already entered a shared secret (password) sent to the server over the network. In this case, explicitly set  `userVerification` to `discouraged`. Otherwise, a superfluous user verification step will be required for users that have set a PIN or enrolled a fingerprint on their security key, creating a bad user experience.
+* User verification is appropriate for passwordless scenarios and multi-factor authentication (MFA) because when for example using a PIN, the user enters a shared secret with the authenticator that is not sent over the network.
+* User presence and user verification can be combined in a re-authentication scenario, where user verification is required for login, and user presence is used to periodically confirm if a user is still actively using a service.
 
 link:Registering_Multiple_Devices.html[Next: Registering Multiple Devices]

@@ -1,0 +1,237 @@
+= Passkey authentication requests
+:description: Send authentication requests and handle the response from the client application to verify a passkey
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, relying party
+
+Send authentication requests and handle the response from the client application to verify a passkey
+
+For this guide we will focus on passkey authentication flows, and will also highlight the importance of allowing authentication flows for non-discoverable credentials. 
+
+== Issuing an authentication challenge
+This first method will be used to provide the client application with the necessary information in order to begin an authentication ceremony using the `navigator.credentials.get()` method.
+
+In terms of the WebAuthn specification, the object that is returned from the relying party, that is given to the client application to begin authentication is called the link:https://www.w3.org/TR/webauthn-2/#dictionary-assertion-options[`PublicKeyCredentialRequestOptions`]. We are going to begin by creating the method that the relying party will use to issue the create options. 
+
+In this initial section we are going to create a `PublicKeyCredentialRequestOptions` object that will attempt to authenticate the user with a passkey (discoverable credential).
+
+Figure 1 will demonstrate a method that will create a generic `PublicKeyCredentialRequestOptions` for a passkey flow - Please note that some of the code leverages methods/class from the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library].
+
+[role="dark"]
+--
+[source,java]
+----
+Object startAuthentication() {
+  AssertionRequest pubKey = rp.startAssertion(
+      StartAssertionOptions.builder()
+          .username(username)
+          .userVerification(UserVerificationRequirement.PREFERRED)
+          .build());
+  AssertionRequestWrapper request = new AssertionRequestWrapper(
+      generateRandom(32),
+      pubKey);
+  assertRequestStorage.put(request.getRequestId(), request);
+  String authRequestJson = gson.toJson(request, AssertionRequestWrapper.class);
+  return pubKey.toCredentialsGetJson();
+}
+----
+--
+**Figure 1**
+
+`PublicKeyCredentialRequestOptions` for passkey flows do not contain any options or configurations that are specific to a user. Due to the generic nature of the request, no inputs are needed for “usernameless” passkey flows.
+
+We will start by creating and storing the actual authentication request that will be issued to the user. 
+
+`new AssertionRequestWrapper()` refers to the authentication request object that we denoted in the prerequisites section. The important aspect of this object builder is the final parameter, which will help you to build your `PublicKeyRequestRequestOptions`. 
+In this step you will leverage `rp.startAssertion(StartAssertionOptions.builder())` to build your object. 
+
+The parameters set within are as follow:
+
+* `userVerification()` is the option to set if you are looking to enforce that the user utilizes link:/Passkeys/Passkey_concepts/User_verification.html[user verification]. The current option will prompt the user for their PIN/Biometric if the feature is available, but will allow a user to continue if the feature is not available. We will go over other options for this parameter in a later section
+
+Once we are finished with creating our authentication request, we will store it in the authentication request repository.
+
+Storing the request is important as this will prevent unwanted authentication responses from being processed by your relying party.
+
+=== Setting user verification requirement
+There are instances where you want to set the ability for a user to leverage user verification (UV) when they authenticate with a passkey. The WebAuthn specification has a list of options that can be chosen in order to invoke different behaviors by client applications. 
+For high assurance applications, you may want to enforce that your users always leverage UV. Some low assurance applications might not want the additional friction for users, so they may opt to remove the requirement. 
+
+Below are the different options that can be chosen, and how to set them in the example given in Figure 1.
+
+==== Required
+This indicates that the relying party requires UV, and will not allow for authentication of a credential if UV was not performed
+
+Figure 2 demonstrates sample code to change the UV requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.userVerification(UserVerificationRequirement.REQUIRED)
+----
+--
+Figure 2
+
+==== Preferred
+This indicates that the relying party prefers UV, if possible, but will not fail the operation if UV was not performed
+
+Figure 3 demonstrates sample code to change the UV requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.userVerification(UserVerificationRequirement.PREFERRED)
+----
+--
+**Figure 3**
+
+==== Discouraged
+This indicates that the relying party does not want UV invoked during authentication
+
+Figure 4 demonstrates sample code to change the UV requirement for the example given in Figure 1
+
+[role="dark"]
+--
+[source,java]
+----
+.userVerification(UserVerificationRequirement.DISCOURAGED)
+----
+--
+**Figure 4**
+
+== Completing authentication
+At this stage you have created your `PublicKeyCredentialRequestOptions`, sent them to the client application, and now the client has returned a signed challenge that it wants verified for the user to be authenticated. This next method will demonstrate how to validate the passkey to authenticate the user. 
+
+This step will validate that the credential follows the rules that were set by the `PublicKeyCredentialRequestOptions`, and verify the challenge was signed correctly.
+
+Figure 5 will demonstrate a method that will verify a passkey to determine if a user should be authenticated - Please note that some of the code leverages methods/class from the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library].
+
+[role="dark"]
+--
+[source,java]
+----
+Object finishAuthentication(JsonObject responseJson) {
+    //Step 1
+    final AssertionResponse response;
+    try {
+        response = jsonMapper.readValue(responseJson.toString(), AssertionResponse.class);
+    } catch (Exception e) {
+        return e;
+    }
+    
+    //Step 2
+    AssertionRequestWrapper request = assertRequestStorage.getIfPresent(response.getRequestId());
+    assertRequestStorage.invalidate(response.getRequestId());
+    
+    if (request == null) {
+        String msg = "Assertion failed!" + "No such assertion in progress: " + response.getRequestId();
+        log.error(msg);
+        return new Exception(msg);
+    } else {
+        try {
+        //Step 3
+            AssertionResult result = rp.finishAssertion(
+                FinishAssertionOptions.builder()
+                    .request(request.getRequest())
+                    .response(response.getCredential())
+                    .build());
+
+        if (result.isSuccess()) {
+            try {
+                userStorage.updateSignatureCount(result);
+            } catch (Exception e) {
+                return e;
+            }
+
+            return result;
+        } else {
+            String msg = "Assertion failed: Invalid assertion.";
+            return new Exception(msg);
+        }
+        } catch (AssertionFailedException e) {
+            return e;
+        } catch (Exception e) {
+            return e;
+        }
+    }
+}
+----
+--
+**Figure 5**
+
+**Step 1**
+
+First we will determine if the response sent by the client application is a valid assertion response. We will do this by attempting to cast the response into an `AssertionResponse` object.
+
+**Step 2**
+
+Next we will see if the response corresponds to an authentication request that was issued by the relying party. We will query the assertion response repository in order to determine if the request ID used by the client corresponds to a request issued by the relying party.
+
+If the response does not correspond to a valid request, then the method will throw an error.
+
+If the response is correct, the authentication request will be invalidated so that it can no longer be used. This will prevent replay attacks from compromising a user account. 
+
+**Step 3**
+
+We will pass both the response and request into the `RelyingParty.finishAssertion()` method in order to determine if a valid passkey was utilized during the authentication ceremony. Behind the scenes this method will perform a variety of different checks such as evaluating if the challenge was signed correctly, signature counters, user handles, and other criteria. 
+
+If the checks are valid, then we will update the signature counter stored in our repository, then return the authentication response to the identity provider, noting that the user should be authorized. 
+
+== Non-discoverable credential authentication
+As discussed before, passkeys will refer to WebAuthn discoverable credentials. While this guide is focused on passkeys, it’s important to know how to implement a flow that supports non-discoverable credentials as they will be common amongst users, especially those using security keys. 
+
+What is the main difference between a discoverable and non-discoverable credential flow?
+
+The primary difference is due to a user prompting the relying party to begin authentication by supplying a username. Passkey flows work in a generic fashion, they are not tailored to any individual user, and instead rely on a user passing in both a credential and user handle in order to identify themselves. 
+
+In a non-discoverable credential flow, a user starts by providing their user handle to a relying party. The relying party will then populate an link:https://www.w3.org/TR/webauthn-2/#dom-publickeycredentialrequestoptions-allowcredentials[`allowCredentials`] list - which notes credential IDs belonging to the provided user handle. This `allowCredentials` list will only allow the client application to utilize credentials that match one of the provided IDs. 
+
+In fact, the `allowCredentials` list is the primary difference between `PublicKeyCredentialRequestOptions` that support discoverable credentials, and those for non-discoverable credentials. The `PublicKeyCredentialRequestOptions` for passkeys will NOT include an `allowCredentials` list. 
+
+So how can we modify our code in **Figure 1** to support both flows? In fact it’s not difficult with the java-webauthn-server library. We modify our `startAuthentication()` method to accept a user handle when invoked. No changes will need to be made to the `finishAuthenitcation()` method.
+
+Figure 6 will demonstrate a method that will allow for an authentication request to be invoked for both discoverable and non-discoverable credentials - Please note that some of the code leverages methods/class from the link:https://github.com/Yubico/java-webauthn-server[Yubico java-webauthn-server library].
+
+[role="dark"]
+--
+[source,java]
+----
+Object startAuthentication(JsonObject jsonRequest) {
+    JsonElement jsonElement = jsonRequest.get("username");
+    Optional<String> username = Optional.ofNullable(jsonElement).map(JsonElement::getAsString);
+
+    if (username.isPresent() && !userStorage.userExists(username.get())) {
+        String msg = "The username \"" + username + "\" is not registered.";
+        return new Exception(msg);
+    } else {
+        AssertionRequest pubKey = rp.startAssertion(
+        StartAssertionOptions.builder()
+            .username(username)
+            .userVerification(UserVerificationRequirement.PREFERRED)
+            .build());
+
+        AssertionRequestWrapper request = new AssertionRequestWrapper(
+            generateRandom(32),
+            pubKey);
+
+        assertRequestStorage.put(request.getRequestId(), request);
+        String authRequestJson = gson.toJson(request, AssertionRequestWrapper.class);
+        return pubKey.toCredentialsGetJson();
+    }
+}
+----
+--
+**Figure 6**
+
+You may notice that not much has changed in terms of what is included in the code. A quick rundown of the changes are as follows:
+
+* New method parameter that should include a field titled `username`
+* Attempt to read the username from the parameter object. We will utilize an Optional<String> value as a username will not be included in the case of a passkey flow
+* Next, if a username was presented, we will verify that the username has a credential registered in our credential repository 
+* Lastly in our `StartAssertionOptions.builder()`, we will add a step `username()` and pass in our username as a value - Behind the scenes, if this value is `null` then a `PublicKeyCredentialRequestOptions` will be issued without an `allowCredentials` list. If a username is provided, then the `allowCredentials` list will be populated with the credential IDs belonging to the user 
+
+Lastly, ensure that the API that invokes the `startAuthentication()` method has the ability for the user to add, or not include a username, to help support both authentication flows. 
+
+Next we will discuss how your relying party helps users manage their passkeys through credential management.
+
+link:/Passkeys/Passkey_relying_party_implementation_guidance/Passkey_credential_management.html[Continue to credential management]

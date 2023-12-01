@@ -1,0 +1,43 @@
+= Enterprise Attestation Use Cases
+:description: Learn about different use cases for enterprise attestation 
+:keywords: passkey, passkeys, developer, high assurance, FIDO2, CTAP, WebAuthn, attestation, enterprise attestation, use cases
+
+Learn about different use cases for enterprise attestation
+
+In this section we will discuss some possible use cases for enterprise attestation **(EA)**. We are primarily focused on **high assurance** use cases, where there is a regulatory or business requirement that requires the highest degree of certainty that the device being used is owned and controlled by the real user.
+
+== Registration of new device
+When a user receives a new authenticator with FIDO2 Enterprise Attestation enabled, the EA feature needs to be activated by the user, or it can be activated by an enterprise managed platform such as an enterprise managed browser. Once the feature is activated, the user will register the device just as any other FIDO2 security key. 
+
+During the registration process the Relying Party will register normal data from the authenticator such as the public key and the AAGUID as well as the extra information associated with the EA certificate, e.g. the serial number. The Relying Party can then use the serial number of the authenticator to track the use of that individual authenticator in their IdP, or make decisions based on the information in the EA certificate.
+
+== Subdomain separation
+There may be cases where an enterprise has an instance of an application that is only available to a specific subdomain. This could be due to data residency, regulatory, or business requirements that prevent users from one region accessing an instance of the application from another region. In this case it’s not enough to allow all of the YubiKeys that you have deployed in your ecosystem to access an application; you want to ensure that only the YubiKeys that you deployed in a specific region can access their corresponding resources.
+
+For instance you may have an application deployed on two separate domains:
+
+* regionA.login.acme.com
+* regionB.login.acme.com
+
+While both domains share the login.acme.com domain, they are separated by two subdomains, regionA and regionB. Let’s imagine that Acme has provided YubiKey 5 NFCs to all users in regionA and regionB. Acme has a list of the authenticator’s serial numbers that were provided in regionA, and a separate list for the devices given in regionB.  
+
+EA would allow you to configure authenticators to only be usable in their specific subdomain. This means that the identity solution will:
+
+* Use attestation to validate that user used an accepted authenticator model
+* Use EA to validate that the serial number has been authorized in this region
+
+If a user in regionB attempts to register in regionA, the identity solution should deny the request as the user’s serial number should not exist in the list of allowed serial numbers for the region. 
+
+== Derived FIDO2 credentials
+In this scenario, derived does not refer to “cryptographically derived” but rather assurance that the credential was derived from another credential on the same device. Remember, FIDO2 credentials and PIV certificates that reside on a YubiKey cannot be exported.
+
+A user may have a PIV certificate on their YubiKey issued to them by their enterprise, which is now allowed in more environments thanks to link:https://csrc.nist.gov/publications/detail/sp/800-157/final[NIST SP 800-157]. If the key used to generate the certificate was generated on the YubiKey, the link:https://developers.yubico.com/PIV/Introduction/PIV_attestation.html[PIV Attestation] from the YubiKey will be present and contain the device’s serial number.
+
+When the user is registering that YubiKey to their backend system, the system can check for the PIV Attestation Certificate (e.g. at login), read the serial number and compare that to the serial number in the FIDO2 Enterprise Attestation. There is hence assurances that the PIV credential/certificate and the FIDO2 credential both are hardware bound and also reside on the same device.
+
+In the case of PIV Attestation, the key used to generate that certificate can be custom configured to be the same for an order or individual per key in that order.
+
+== Considerations
+Click the link below to continue to our next section where we will explore considerations when deploying enterprise attestation. 
+
+link:/WebAuthn/Concepts/Enterprise_Attestation/Considerations.html[Continue to enterprise attestation considerations]
