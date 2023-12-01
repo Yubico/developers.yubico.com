@@ -1,72 +1,9 @@
 == Java code signing using YubiHSM 2
 
-Java code can be signed using a tool called link:https://docs.oracle.com/en/java/javase/17/docs/specs/man/jarsigner.html[jarsigner],
-which is installed together with your Java Development Kit.
+**This content is deprecated. **
 
-As an example, generate an RSA key pair and a self-signed certificate stored on the YubiHSM 2:
+For current content see:
 
-....
-$ keytool -keystore NONE -storetype PKCS11 -storepass 0001password -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -genkey -alias rsaSign -keyalg RSA -dname CN=rsaSign
-Generating 2,048 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 90 days
-	for: CN=rsaSign
-....
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/index.html[YubiHSM 2 User Guide]
 
-As before, we are using the SunPKCS11 provider to interface with the YubiHSM2, similar to other examples.
-See link:Usage_Guides/Using_YubiHSM2_with_Java/example_signing_with_YubiHSM2.adoc[] for more details.
-
-=== Signing JAR files
-
-Consider the following minimal Java source file:
-
-....
-$ cat HelloWorld.java 
-public class HelloWorld {
-	public static void main(String [] args) {
-		System.out.println("Hello, world");
-	}
-}
-....
-
-Compile the java source file and create an (unsigned) .jar file:
-
-....
-$ javac HelloWorld.java 
-$ jar cfe unsigned.jar HelloWorld HelloWorld.class
-....
-
-We can now sign this JAR file with the RSA signing key we have stored in our YubiHSM 2 and create a signed JAR file:
-
-....
-$ jarsigner -tsa http://timestamp.digicert.com -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password -signedjar signed.jar ./unsigned.jar rsaSign
-jar signed.
-
-Warning: 
-The signer's certificate is self-signed.
-
-The timestamp will expire on 2031-11-10.
-....
-
-In this case, a self-signed certificate was used, but for others to be able to validate the certificate you should use a public CA to sign your Java code.
-
-Note that we are using a timestamp server to record the current time in the signed JAR file.
-This way we do not need to resign the JAR file when the signing certificate expires.
-
-=== Verifying signed JAR files
-
-To verify the signature on the signed JAR, we use the public key certificate stored on the YubiHSM 2.
-
-....
-$ jarsigner -verify -addProvider SunPKCS11 -providerArg ./sunpkcs11.conf -keystore NONE -storetype PKCS11 -storepass 0001password ./signed.jar
-
-jar verified.
-....
-
-If we trust the signer and the Certificate Authority that issued the signer's certificate, we can decide to run the software in the JAR file:
-
-....
-$ java -jar signed.jar 
-Hello, world
-....
-
-Note that access to the YubiHSM2 is not required when verifying a signature on a signed JAR file as the certificate is included in the JAR file itself.
-Verification will fail however unless the certificate was signed by a trusted Certification Authority.
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/hsm2-java-code-signing.html[Configuring YubiHSM 2 for Java Code Signing]

@@ -1,0 +1,47 @@
+== YubiHSM 2 Setup Tool
+
+The SDK ships with a tool called link:/yubihsm-setup/[yubihsm-setup] that helps with setting up a device for specific use cases.
+The tool assumes familiarity with the key concepts of YubiHSM such as link:../../Concepts/Domain.adoc[Domains], link:../../Concepts/Capability.adoc[Capabilities] and link:../../Concepts/Object_ID.adoc[Object IDs]. It currently supports the following:
+
+- setup for KSP/ADCS and EJBCA;
+- restoring a previous configuration
+- resetting the device to factory defaults
+- exporting all existing objects
+
+The tool is based around the concept of secret-sharing. When setting up Objects, those are exported with a freshly created Wrap Key. The key is never stored on disk, but rather it is printed on the screen as shares. The key concepts here are:
+
+    * The number of shares, which is the number of parts the key should be divided into
+    * The security threshold, which is the minimum number of shares required to reconstruct the Wrap Key.
+
+Besides splitting the Wrap Key into shares, the tool (by default) also exports under wrap all the newly created objects and saves them in the current directory. This can be used at a later time to "clone" or recover a device. This operation can be performed either with `yubihsm-setup` or manually if the Wrap Key is known.
+
+By default, the Authentication Key used to establish a Session with the device is also normally deleted at the end of the process.
+
+Default behavior can be altered with command-line options. For more information, consult the tool's help.
+
+=== Setup for EJBCA
+
+When setting up the device for use by EJBCA, the setup tool will also generate an asymmetric keypair and an
+X509 certificate suitable for use as a CA key. The setup tool can be re-run as many times as the number of
+asymmetric keys to be generated since each run will produce only one keypair and one corresponding X509 certificate.
+
+NOTE: Using the `--no-new-authkey` flag will prevent a new Wrap Key and a new Authentication Key to be generated.
+
+==== How It Works
+
+For the JAVA implementation, a keypair can be used to perform PKCS#11 operations only if the key and
+its corresponding X509 certificate are stored under the same ID on the device (The value of their CKA_ID attribute
+is the same). To achieve that, when running the YubiHSM 2 Setup tool with the `ejbca` subcommand, it will:
+
+    . Generate an Asymmetric Key on the YubiHSM 2
+    . Generate an attestation certificate for the asymmetric key and import it into the YubiHSM 2 under the same ID
+      as the Asymmetric Key
+
+
+The attestation certificate stored on the YubiHSM 2 is, in fact, only a place holder certificate for the public key.
+It is never used by EJBCA as EJBCA stores the CAs' certificates on a dedicated database.
+
+==== Backup of the YubiHSM 2
+
+To backup the entire content of the device, it is recommended to use the `dump` subcommand on one YubiHSM and then
+the `restore` subcommand on another YubiHSM. For more information, consult the tool’s help.

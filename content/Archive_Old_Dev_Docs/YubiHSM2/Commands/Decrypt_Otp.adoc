@@ -1,0 +1,46 @@
+== DECRYPT OTP
+
+Decrypt a Yubico OTP.
+
+== Description
+
+Decrypt a Yubico OTP and return counters and timer information.
+
+== Shell Example
+
+Decrypt a (hex encoded) Yubico OTP using key ID `0x027c`:
+
+  yubihsm> otp decrypt 0 0x027c 2f5d71a4915dec304aa13ccf97bb0dbb aead
+  OTP decoded, useCtr:1, sessionCtr:1, tstph:1, tstpl:1
+
+== Protocol Details
+
+=== Command
+
+|===============
+|T~c~ = 0x60
+|L~c~ = 2 + 36 + 16
+|V~c~ = K \|\| A \|\| O
+|===============
+
+I := link:../Concepts/Object_ID.adoc[Object ID] of the OTP AEAD Key (2 bytes)
+
+A := Nonce concatenated with AEAD (36 bytes)
+
+O := OTP (16 bytes)
+
+==== Response
+
+|===========
+|T~r~ = 0xe0
+|L~r~ = 6
+|V~r~ = S \|\| U \|\| T~h~ \|\| T~l~
+|===========
+
+S := Session counter (2 bytes)
+
+U := Usage counter (1 byte)
+
+T~h~ := Timestamp high (1 byte)
+
+T~l~ := Timestamp low (2 bytes)

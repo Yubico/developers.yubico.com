@@ -1,0 +1,9 @@
+== Logs
+
+A YubiHSM 2 device maintains a list of recently executed commands in a portion of non-volatile memory known as the Log Store. This allows to log commands across different power cycles. Specific commands are used to extract logs from the device. Since the Log Store uses non-volatile memory, it can only store up to `62` different entries. When the Log Store is full, it is used as a circular buffer, meaning that the least recently used entry is overwritten.
+
+It is possible to set the device in Force Audit mode. When this is done entries from the Log Store must be retrieved or commands that can not be logged will fail. Together with individual commands, also power-on and reboot events are logged.
+
+Establishing a session is logged like any other operation, however those commands are always allowed, independent of the current status of the Log Store. This is so that it is always possible to retrieve logs and free up the Log Store, even when the device is in Force Audit mode and the Log Store is full. However, the number of unlogged authentication and power-up events is stored in a counter that is retrieved as part of the log retrieval.
+
+Entries in the Log Store are organized to form a chain of hashes. This allows auditors to verify that a given set of entries has not been tampered with after extraction, and that all entries are present. More details on the format of log entries can be found in the protocol description document for link:../Commands/Get_Log_Entries.adoc[extracting logs entries].
