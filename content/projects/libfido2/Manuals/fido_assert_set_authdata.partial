@@ -32,7 +32,8 @@
   <code class="Nm" title="Nm">fido_assert_set_up</code>,
   <code class="Nm" title="Nm">fido_assert_set_uv</code>,
   <code class="Nm" title="Nm">fido_assert_set_rp</code>,
-  <code class="Nm" title="Nm">fido_assert_set_sig</code> &#x2014;
+  <code class="Nm" title="Nm">fido_assert_set_sig</code>,
+  <code class="Nm" title="Nm">fido_assert_set_winhello_appid</code> &#x2014;
 <div class="Nd" title="Nd">set parameters of a FIDO2 assertion</div>
 <h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
 <code class="In" title="In">#include
@@ -130,6 +131,12 @@ typedef enum {
   idx</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   unsigned char *ptr</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_assert_set_winhello_appid</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_assert_t
+  *assert</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  char *id</var>);
 <h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
 The <code class="Nm" title="Nm">fido_assert_set_authdata</code> set of functions
   define the various parameters of a FIDO2 assertion, allowing a
@@ -218,6 +225,33 @@ The <code class="Fn" title="Fn">fido_assert_set_up</code>() and
   <code class="Dv" title="Dv">FIDO_OPT_OMIT</code> by default, allowing the
   authenticator to use its default settings.
 <div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_assert_set_winhello_appid</code>() function
+  sets the U2F application <var class="Fa" title="Fa">id</var> (&#x201C;U2F
+  AppID&#x201D;) of <var class="Fa" title="Fa">assert</var>, where
+  <var class="Fa" title="Fa">id</var> is a NUL-terminated UTF-8 string. The
+  content of <var class="Fa" title="Fa">id</var> is copied, and no references to
+  the passed pointer are kept. The
+  <code class="Fn" title="Fn">fido_assert_set_winhello_appid</code>() function
+  is a no-op unless <var class="Fa" title="Fa">assert</var> is passed to
+  <a class="Xr" title="Xr" href="fido_dev_get_assert.html">fido_dev_get_assert(3)</a>
+  with a device <var class="Fa" title="Fa">dev</var> on which
+  <a class="Xr" title="Xr" href="fido_dev_is_winhello.html">fido_dev_is_winhello(3)</a>
+  holds true. In this case, <i class="Em" title="Em">libfido2</i> will instruct
+  Windows Hello to try the assertion twice, first with the
+  <var class="Fa" title="Fa">id</var> passed to
+  <code class="Fn" title="Fn">fido_assert_set_rp</code>(), and a second time
+  with the <var class="Fa" title="Fa">id</var> passed to
+  <code class="Fn" title="Fn">fido_assert_set_winhello_appid</code>(). If the
+  second assertion succeeds,
+  <a class="Xr" title="Xr" href="fido_assert_rp_id.html">fido_assert_rp_id(3)</a>
+  will point to the U2F AppID once
+  <a class="Xr" title="Xr" href="fido_dev_get_assert.html">fido_dev_get_assert(3)</a>
+  completes. This mechanism exists in Windows Hello to ensure U2F backwards
+  compatibility without the application inadvertently prompting the user twice.
+  Note that <code class="Fn" title="Fn">fido_assert_set_winhello_appid</code>()
+  is not needed on platforms offering CTAP primitives, since the authenticator
+  can be silently probed for the existence of U2F credentials.
+<div class="Pp"></div>
 Use of the <code class="Nm" title="Nm">fido_assert_set_authdata</code> set of
   functions may happen in two distinct situations: when asking a FIDO2 device to
   produce a series of assertion statements, prior to
@@ -244,10 +278,11 @@ The <code class="Nm" title="Nm">fido_assert_set_authdata</code> functions return
   ALSO</a></h1>
 <a class="Xr" title="Xr" href="fido_assert_allow_cred.html">fido_assert_allow_cred(3)</a>,
   <a class="Xr" title="Xr" href="fido_assert_verify.html">fido_assert_verify(3)</a>,
-  <a class="Xr" title="Xr" href="fido_dev_get_assert.html">fido_dev_get_assert(3)</a></div>
+  <a class="Xr" title="Xr" href="fido_dev_get_assert.html">fido_dev_get_assert(3)</a>,
+  <a class="Xr" title="Xr" href="fido_dev_is_winhello.html">fido_dev_is_winhello(3)</a></div>
 <table class="foot">
   <tr>
-    <td class="foot-date">April 27, 2022</td>
-    <td class="foot-os">Linux 5.17.4-200.fc35.x86_64</td>
+    <td class="foot-date">April 8, 2023</td>
+    <td class="foot-os">Debian</td>
   </tr>
 </table>
