@@ -8,14 +8,6 @@ key and certificate.
 
   $ brew install yubico-piv-tool
 
-* the OpenSC software, available on link:https://github.com/OpenSC/OpenSC/releases[GitHub] or 
-  
-  $ brew install OpenSC
-+
-====
-Installing OpenSC on macOS might stop GnuPG from working, check our link:https://developers.yubico.com/PGP/[PGP page] for more details and workarounds
-====
-
 * jarsigner and keytool from the JDK (OpenJDK 8 used here)
 
 === Steps
@@ -31,17 +23,17 @@ b. Import the key and cert (PKCS12 format) in slot 9a:
 
 2. Create a java pkcs11 configuration file:
 +
-* Find out where OpenSC has installed the pkcs11 module. The following command can help with that:
+* Find out where YKCS11 has been installed. The following command can help with that:
 
-  $ find /usr/local/ -name opensc-pkcs11*
+  $ find /usr/local/ -name libykcs11.so
 
 * Create the file, using the correct path discovered above for the library setting:
 
   $ cat > /tmp/pkcs11_java.cfg
-  name = OpenSC-PKCS11
-  description = SunPKCS11 via OpenSC
-  library = /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
-  slotListIndex = 1
+  name = YKCS11
+  description = SunPKCS11 via YKCS11
+  library = /usr/lib/x86_64-linux-gnu/libykcs11.so
+  slotListIndex = 0
 
 3. Check that keytool can see the key:
 +
@@ -51,7 +43,7 @@ $ keytool -providerClass sun.security.pkcs11.SunPKCS11 -providerArg /tmp/pkcs11_
 Enter keystore password:
 
 Keystore type: PKCS11
-Keystore provider: SunPKCS11-OpenSC-PKCS11
+Keystore provider: SunPKCS11-YKCS11
 
 Your keystore contains 1 entry
 
