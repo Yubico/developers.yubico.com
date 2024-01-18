@@ -17,13 +17,13 @@
 <li>The application receives a session from the server (#6) and navigates to the main UI (#7).</li>
 </ol>
 
-<p>Not all iOS devices support NFC reading. Some devices may have older versions of iOS or some may not have access to the NFC reading capability. To address such an issue, the enrolment flow can include a <em>desktop bridged</em> solution. In such a scenario a secret can be generated on a desktop app or website and send it to the application by encoding it into a QR code. YubiKit provides the ability to scan QR codes for this purpose. Consult the library documentation to find out how this can be done.</p>
+<p>Not all iOS devices support NFC reading. Some devices may have older versions of iOS or some may not have access to the NFC reading capability. To address such an issue, the enrollment flow can include a <em>desktop bridged</em> solution. In such a scenario a secret can be generated on a desktop app or website and send it to the application by encoding it into a QR code. YubiKit provides the ability to scan QR codes for this purpose. Consult the library documentation to find out how this can be done.</p>
 
 <p><img src="docassets/QR2FA.png" alt="QR2FA"></p>
 
 <p>The authentication in this scenario is very similar with the NFC scanning. The only difference is on the second step of the authentication (#4) where the secret is generated on a desktop machine using a <strong>YubiKey</strong> (#4.1, #4.2). The requirement to use the YubiKey is important because the generation of the QR code should not be allowed unless the user is strongly authenticated.</p>
 
-<p>To simplify the design, the desktop/web app can ask the user to authenticate with the YubiKey (OTP, U2F, etc.) and then use again the YubiKey to generate a OTP which is encoded in the QR Code. In this case a unified design for the enrolment APIs from the server can be used, where the OTP source is considered secure, as long as a YubiKey was used in the process.</p>
+<p>To simplify the design, the desktop/web app can ask the user to authenticate with the YubiKey (OTP, U2F, etc.) and then use again the YubiKey to generate a OTP which is encoded in the QR Code. In this case a unified design for the enrollment APIs from the server can be used, where the OTP source is considered secure, as long as a YubiKey was used in the process.</p>
 
 <h2 id="toc_2">2. Using Yubico OTP as 1FA</h2>
 
@@ -39,14 +39,14 @@
 
 <p>After following these steps, the server will be able to validate the Yubico OTPs received from the key for that specific account.</p>
 
-<p>Next, when the user wants to enrol or authenticate using the mobile app, he/she can use directly the Yubico OTP for both identity lookup and authentication.</p>
+<p>Next, when the user wants to enroll or authenticate using the mobile app, he/she can use directly the Yubico OTP for both identity lookup and authentication.</p>
 
 <p><img src="docassets/OTP1FA.png" alt="OTP1FA" title="Using the Yubico OTP from the YubiKey for 1FA"></p>
 
 <ol>
 <li>The application asks the user to scan the YubiKey.</li>
 <li>The application reads the OTP from the YubiKey using YubiKit (#1).</li>
-<li>The application validates the user identity agains the server by sending only the OTP to the server(#2).</li>
+<li>The application validates the user identity against the server by sending only the OTP to the server(#2).</li>
 <li>The server receives the login request and derives from it the Public ID, finds the associated account and validates the OTP for that account (#2). </li>
 <li>The application receives a session from the server (#3) and navigates to the main UI (#4)</li>
 </ol>
@@ -57,33 +57,33 @@
 
 <hr>
 
-<h2 id="toc_3">3. Using the YubiKey for one time enrolments</h2>
+<h2 id="toc_3">3. Using the YubiKey for one time enrollments</h2>
 
-<p>Some applications may have UX requirements where using always the YubiKey can be an impediment for the usability of the application. In a scenario where the application is used very often for a very short time, an enrolment mechanism involving the YubiKey can be used instead. On first run, the application asks the user to authorise/enrol the application using a YubiKey. The app requires again the usage of the YubiKey <em>on demand</em>, only when important requests are performed by the client.</p>
+<p>Some applications may have UX requirements where using always the YubiKey can be an impediment for the usability of the application. In a scenario where the application is used very often for a very short time, an enrollment mechanism involving the YubiKey can be used instead. On first run, the application asks the user to authorise/enroll the application using a YubiKey. The app requires again the usage of the YubiKey <em>on demand</em>, only when important requests are performed by the client.</p>
 
-<p>To increase the security of this approach a <em>time limited enrolment</em> can be used, so the user needs to reauthorise the application every [X] days. Depending on the security requirements and the type of application [X] can be shorter or longer.</p>
+<p>To increase the security of this approach a <em>time limited enrollment</em> can be used, so the user needs to reauthorise the application every [X] days. Depending on the security requirements and the type of application [X] can be shorter or longer.</p>
 
 <p>The application needs (not only in this scenario) to provide strong security when communicating with the server by taking advantage of the build-in APIs provided by iOS like <a href="https://developer.apple.com/documentation/security/keychain_services?language=objc">keychain services</a>, <a href="https://developer.apple.com/documentation/localauthentication?language=objc">local authentication framework</a> and hardware features like the <a href="https://developer.apple.com/documentation/security/certificate_key_and_trust_services/keys/storing_keys_in_the_secure_enclave?language=objc">Secure Enclave</a> and <a href="https://developer.apple.com/videos/play/wwdc2014/711/">Touch ID</a>.</p>
 
-<p>The next diagram shows a possible enrolment solution, where the YubiKey is used only <em>on demand</em> when an important transaction is performed:</p>
+<p>The next diagram shows a possible enrollment solution, where the YubiKey is used only <em>on demand</em> when an important transaction is performed:</p>
 
 <p><img src="docassets/OTPEnroll.png" alt="OTP2FA" title="Enrolment example"></p>
 
-<p>The enrolment process involves three major steps:</p>
+<p>The enrollment process involves three major steps:</p>
 
 <ol>
 <li>The application requests the OTP from the YubiKey (1, 2).</li>
 <li>The application uses the Secure Enclave (SE) to create a key pair (3).</li>
-<li>The application requests from the server to enrol the instance by passing the OTP (for enrolment validation) and the public key from the generated key pair at #2, for future communication (4, 5).</li>
+<li>The application requests from the server to enroll the instance by passing the OTP (for enrollment validation) and the public key from the generated key pair at #2, for future communication (4, 5).</li>
 </ol>
 
-<p>After the enrolment process is completed once, the application will be able to use the private key to generate a signature when communicating with the server. </p>
+<p>After the enrollment process is completed once, the application will be able to use the private key to generate a signature when communicating with the server. </p>
 
 <p>In case of login: </p>
 
 <ol>
 <li>The application can build a login payload which is signed with the SE (6). The SE will prompt for Touch ID or passcode to allow the payload to be signed. </li>
-<li>The application sends the payload to the server (7), which is using the enrolment public key to validate the authenticity of the request. If the signature is confirmed the client is allowed to login (8).</li>
+<li>The application sends the payload to the server (7), which is using the enrollment public key to validate the authenticity of the request. If the signature is confirmed the client is allowed to login (8).</li>
 </ol>
 
 <p>If the user requests an important operation from the server, the application needs to send a signed request with an OTP (Double verification policy - SE signature and YubiKey):</p>
