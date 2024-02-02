@@ -197,15 +197,15 @@ See the following tables for mappings:
 
 [options="header"]
 |==============================================================================
-| PKCS#11 | RSA (CKK_RSA) | EC (CKK_EC) | Wrap (CKK_YUBICO_AES*_CCM_WRAP) | HMAC (CKK_SHA*_HMAC)
-| CKA_SIGN | sign-pkcs,sign-pss | sign-ecdsa | N/A | sign-hmac
-| CKA_VERIFY | N/A | N/A | N/A | verify-hmac
-| CKA_ENCRYPT | N/A | N/A | wrap-data | N/A
-| CKA_DECRYPT | decrypt-pkcs,decrypt-oaep | N/A | unwrap-data | N/A
-| CKA_DERIVE | N/A | derive-ecdh | N/A | N/A
-| CKA_WRAP | N/A | N/A | export-wrapped | N/A
-| CKA_UNWRAP | N/A | N/A | import-wrapped | N/A
-| CKA_EXTRACTABLE | export-under-wrap | export-under-wrap | export-under-wrap | export-under-wrap
+| PKCS#11 | RSA (CKK_RSA) | EC (CKK_EC) | Wrap (CKK_YUBICO_AES*_CCM_WRAP) | HMAC (CKK_SHA*_HMAC) | AES (CKK_AES)
+| CKA_SIGN | sign-pkcs,sign-pss | sign-ecdsa | N/A | sign-hmac  | N/A
+| CKA_VERIFY | N/A | N/A | N/A | verify-hmac | N/A
+| CKA_ENCRYPT | N/A | N/A | wrap-data | N/A | encrypt-ecb,encrypt-cbc
+| CKA_DECRYPT | decrypt-pkcs,decrypt-oaep | N/A | unwrap-data | N/A | decrypt-ecb,decrypt-cbc
+| CKA_DERIVE | N/A | derive-ecdh | N/A | N/A | N/A
+| CKA_WRAP | N/A | N/A | export-wrapped | N/A | N/A
+| CKA_UNWRAP | N/A | N/A | import-wrapped | N/A | N/A
+| CKA_EXTRACTABLE | export-under-wrap | export-under-wrap | export-under-wrap | export-under-wrap | export-under-wrap
 |==============================================================================
 
 == PKCS#11 Objects
@@ -218,7 +218,7 @@ implemented and what it maps to.
 | PKCS#11 | Supported CKK | Comment
 | CKO_PRIVATE_KEY | CKK_RSA, CKK_EC | RSA 2048, 3072 & 4096 with e=0x10001, EC with secp224r1, secp256r1, secp384r1, secp521r1, secp256k1, brainpool256r1, brainpool384r1, brainpool512r1
 | CKO_PUBLIC_KEY | | does not exist in device, only as a property of a private key
-| CKO_SECRET_KEY | CKK_SHA_1_HMAC, CKK_SHA256_HMAC, CKK_SHA384_HMAC, CKK_SHA512_HMAC, CKK_YUBICO_AES128_CCM_WRAP, CKK_YUBICO_AES192_CCM_WRAP, CKK_YUBICO_AES256_CCM_WRAP |
+| CKO_SECRET_KEY | CKK_SHA_1_HMAC, CKK_SHA256_HMAC, CKK_SHA384_HMAC, CKK_SHA512_HMAC, CKK_YUBICO_AES128_CCM_WRAP, CKK_YUBICO_AES192_CCM_WRAP, CKK_YUBICO_AES256_CCM_WRAP, CKK_AES |
 | CKO_CERTIFICATE | | Opaque object with algorithm YH_ALGO_OPAQUE_X509_CERTIFICATE
 | CKO_DATA | | Opaque object with algorithm YH_ALGO_OPAQUE_DATA
 |==============================================================================
@@ -254,11 +254,11 @@ what is implemented.
 | C_FindObjectsInit |
 | C_FindObjects |
 | C_FindObjectsFinal |
-| C_EncryptInit | Encrypt with Wrap Key or do software encryption for RSA key
+| C_EncryptInit | Encrypt with Wrap Key, AES key or do software encryption for RSA key
 | C_Encrypt |
 | C_EncryptUpdate |
 | C_EncryptFinal |
-| C_DecryptInit | Decrypt with Wrap Key or RSA key
+| C_DecryptInit | Decrypt with Wrap Key, RSA key or AES key
 | C_Decrypt |
 | C_DecryptUpdate |
 | C_DecryptFinal |
@@ -275,7 +275,7 @@ what is implemented.
 | C_Verify |
 | C_VerifyUpdate |
 | C_VerifyFinal |
-| C_GenerateKey | Generate HMAC Key or Wrap Key
+| C_GenerateKey | Generate HMAC Key, Wrap Key or AES key
 | C_GenerateKeyPair | Generate Asymmetric Key
 | C_WrapKey | Wrap an object with Wrap Key
 | C_UnwrapKey | Unwrap an object with Wrap Key
