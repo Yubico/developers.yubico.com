@@ -1,43 +1,9 @@
 == Key Storage Provider
 
-The Key Storage Provider (KSP) for Windows CNG works for general RSA2048, RSA3072,
-and RSA4096 keys, but has been tested to work well with ADCS as follows:
+**This content is deprecated.**
 
-The following installs the KSP, the Connector Service, and uses it for ADCS
-with the default Authentication Key (`1`) and password (`password`).
+For current content see:
 
-During the `Install-AdcsCertificationAuthority` command, you should see the
-YubiHSM 2 light flash rapidly as ADCS uses the KSP to generate an RSA 2048 bit
-key in hardware.
-`Restart-Computer` may be needed for ADCS to work properly.
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/index.html[YubiHSM 2 User Guide]
 
-  PS1> msiexec /i "yubihsm-connector-windows-amd64.msi" /passive ACCEPT=yes
-  PS1> msiexec /i "yubihsm-cngprovider-windows-amd64.msi" /passive  ACCEPT=yes
-  PS1> Install-WindowsFeature AD-Certificate -Verbose
-  PS1> Install-AdcsCertificationAuthority -CAType EnterpriseRootCa    \
-      -CryptoProviderName "RSA#YubiHSM Key Storage Provider"          \
-      -KeyLength 2048 -HashAlgorithmName SHA256 -ValidityPeriod Years \
-      -ValidityPeriodUnits 5
-  PS1> Install-AdcsOnlineResponder
-
-If you are using a different Authentication Key, password, or Connector for the KSP,
-you can specify them as follows (defaults are shown):
-
-  PS1> Set-ItemProperty -path HKLM:\SOFTWARE\Yubico\YubiHSM \
-      -name ConnectorURL -Type String -Value http://127.0.0.1:12345
-  PS1> Set-ItemProperty -path HKLM:\SOFTWARE\Yubico\YubiHSM \
-      -name AuthKeysetPassword -Type String -Value password
-  PS1> Set-ItemProperty -path HKLM:\SOFTWARE\Yubico\YubiHSM \
-      -name AuthKeysetID -Type DWord -Value 1
-
-WARNING: Due to design considerations for Key Storage Providers in Windows, the direct USB functionality of libyubihsm (Connector URL `yhusb://`) is not supported in this version of the YubiHSM KSP.
-
-The default configuration for the connector is:
-link:../yubihsm-connector[`ProgramData\YubiHSM\yubihsm-connector.yaml`] - Administrator rights are required to access the file.
-
-=== Additional Documentation for YubiHSM Key Storage Provider
-
-- For instructions on how to move a software-based key into the YubiHSM 2 for use with the Key Storage Provider, please see link:Software_keys_to_ksp.adoc[Move Software Keys to Key Storage Provider].
-- For an example of how to create an HSM backed code signing certificate for Windows through the KSP, please see link:Code_Signing_Example.adoc[Creating a Code-Signing Certificate using the Key Storage Provider].
-- More information about link:Status_codes.adoc[YubiHSM 2 status codes] in Windows.
-- For details on how to configure the 32-bit and 64-bit KSP DLLs, please see link:../../Usage_Guides/YubiHSM_2_Windows_Deployment_Guide\--Configure_YubiHSM_2_Key_Storage_Provider_for_Microsoft_Windows_Server/Introduction.adoc[YubiHSM 2 Windows Deployment Guide]
+- link:<https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/hhsm2-sdk-tools-libraries.html#key-storage-provider-ksp-windows-only[Key Storage Provider (KSP) - Windows Only]

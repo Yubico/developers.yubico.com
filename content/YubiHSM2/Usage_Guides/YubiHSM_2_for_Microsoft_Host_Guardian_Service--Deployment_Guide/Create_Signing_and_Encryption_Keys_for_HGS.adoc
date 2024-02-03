@@ -1,92 +1,9 @@
 == Create Signing and Encryption Keys for HGS
 
-=== Generate Signing and Encryption Keys and Certificates
+**This content is deprecated.**
 
-Generate the signing and encryption keys and certificates for HGS by using the PowerShell cmdlet `New-SelfSignedCertificate`. In this guide, self-signed certificates will be used for HGS.
+For current content see:
 
-The HGS signing and encryption certificates must adhere to the following specifications:
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/index.html[YubiHSM 2 User Guide]
 
-* Crypto provider: YubiHSM Key Storage Provider.
-* Key algorithm: RSA
-* Minimum key size: 2048 bits
-* Signature algorithm: SHA256
-* Key usage: Digital signature and data encipherment
-* Enhanced key usage: Server authentication
-* Subject name: Recommended: your company's name or web address
-
-Do the following to create the self-signed HGS certificates:
-
-==== Step 1: Create the Self-signed HGS Signing Certificate and Key
-
-Start a command prompt with administrator rights and type the command `PowerShell`. In the PowerShell command prompt, run the following cmdlet:
-
-....
-$ PS New-SelfSignedCertificate -Provider "YubiHSM Key Storage Provider" -Subject "CN=HGS Signing Certificate" -KeyExportPolicy NonExportable -KeyUsage DigitalSignature,DataEncipherment -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.1") -KeyAlgorithm RSA -KeyLength 2048 -CertStoreLocation "Cert:\LocalMachine\My" -Verbose
-....
-
-
-==== Step 2: Create the Self-signed HGS Encryption Certificate and Key
-
-In the PowerShell command prompt, run the following cmdlet:
-
-....
-PS C:\users\your-username\ New-SelfSignedCertificate -Provider "YubiHSM Key Storage Provider" -Subject "CN=HGS Encryption Certificate" -KeyExportPolicy NonExportable -KeyUsage DigitalSignature,DataEncipherment -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.1") -KeyAlgorithm RSA -KeyLength 2048
- "Cert:\LocalMachine\My" -Verbose
-....
-
-image::ex-powershell-cmdlt-for-self-signed-certificates.png[]
-
-**Figure 3 – Example of PowerShell cmdlet to create self-signed certificates**
-
-Make a note of the thumbprints of the self-signed certificates. In this example, the signing certificate thumbprint is `A576F936B6F044586123FDE8CB3C7BDDA1431DA8` and the encryption certificate thumbprint is `5701A22B99C029FCFB578B9191AEFA8AF7454188`.
-
-
-==== Step 3: Verify Generation and Storage of HGS Key-pairs in YubiHSM 2
-
-Verify that the HGS key-pairs have been properly generated and stored in YubiHSM 2 by starting a command prompt and using `YubiHSM-Shell` to list the objects, as shown in the figure below.
-
-image::ex-hgs-keys-in-yubihsm-shell.png[]
-
-**Figure 4 – Example of HGS keys in YubiHSM-Shell**
-
-
-==== Step 4: Verify Storage of HGS Certificates in Microsoft Certificate Store
-
-Verify that corresponding HGS certificates have been stored in Microsoft certificate store. Launch the Microsoft Management Console (MMC) by going to the command line and typing `MMC.exe`.
-
-a) In MMC, select **File > Add/remove Snap-in**.
-
-b) In the **Add or Remove Snap-ins** window, select the option **Certificates > Computer Account > Local Computer**.
-
-c) In the **Certificates (Local Computer)** console, expand the folders Personal > Certificates, and verify that the self-signed HGS signing and encryption certificates appear.
-
-image::ex-hgs-certs-in-ms-cert-store.png[]
-
-**Figure 5 – Example of HGS certificates in Microsoft certificate store**
-
-For more information on how to generate HGS signing and encryption keys and certificates, see link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-obtain-certs[Microsoft’s documentation on HGS certificate management].
-
-
-=== Initialize HGS with Signing and Encryption Keys and Certificates
-
-Once the HGS signing and encryption keys and certificates have been generated, use them to initialize HGS.
-
-Create the self-signed HGS certificates by starting a command prompt with administrator rights and typing the command `PowerShell`. In the PowerShell command prompt, run the following cmdlet to initialize HGS with the signing and encryption certificates.
-
-[NOTE]
-======
-The parameters `SigningCertificateThumbprint` and `EncryptionCertificateThumbprint` should be set to the output values from the PowerShell cmdlet `New-SelfSignedCertificate` as described in the previous section.
-======
-
-....
-PS C:\users\your-username\ Initialize-HgsServer -HgsServiceName 'MyHgsService' -SigningCertificateThumbprint '<SigningCertificateThumbprint>' -EncryptionCertificateThumbprint '<EncryptionCertificateThumbprint>'
-....
-
-image::ex-pwrshell-cmdlt-to-initialize.png[]
-
-**Figure 6 – Example of PowerShell cmdlet to initialize HGS with the certificates**
-
-For more information on how to initialize HGS with the signing and encryption certificates, see link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-initialize-hgs-key-mode-default[Microsoft’s documentation on HGS initialization].
-
-
-link:Back_Up_Key_Material.adoc[Next: Back Up Key Material]
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/hsm2-ms-host-guardian-service-guide.html#create-signing-and-encryption-keys-for-hgs[Create Signing and Encryption Keys for HGS]

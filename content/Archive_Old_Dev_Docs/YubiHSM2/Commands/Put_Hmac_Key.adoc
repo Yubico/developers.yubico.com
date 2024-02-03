@@ -1,0 +1,51 @@
+== PUT HMAC KEY
+
+Import an HMAC Key.
+
+== Description
+
+Store an HMAC Key in the device.
+
+== Shell Example
+
+Store an HMAC Key with the binary value `666f6f` in the device:
+
+  yubihsm> put hmackey 0 0 hmackey 1 sign-hmac,verify-hmac hmac-sha256 666f6f
+  Stored HMAC key 0x7cf2
+
+== Protocol Details
+
+=== Command
+
+|===============
+|T~c~ = 0x52
+|L~c~ = 2 + 40 + 2 + 8 + 1 + L~P~
+|V~c~ = I \|\| L \|\| D \|\| C \|\| A \|\| P
+|===============
+
+I := link:../Concepts/Object_ID.adoc[Object ID] of the HMAC Key (2 bytes)
+
+L := link:../Concepts/Label.adoc[Label] (40 bytes)
+
+D := link:../Concepts/Domain.adoc[Domains] (2 bytes)
+
+C := link:../Concepts/Capability.adoc[Capabilities] (8 bytes)
+
+A := link:../Concepts/Algorithms.adoc[Algorithm] (1 byte)
+
+P := Key (Minimum 1 byte)
+
+For HMAC-SHA1 and HMAC-SHA256: maximum 64 bytes +
+ +
+For HMAC-SHA384 and HMAC-SHA512: maximum 128 bytes +
+
+
+=== Response
+
+|===========
+|T~r~ = 0xd2
+|L~r~ = 2
+|V~r~ = I
+|===========
+
+I := link:../Concepts/Object_ID.adoc[Object ID] of created HMAC Key (2 bytes)

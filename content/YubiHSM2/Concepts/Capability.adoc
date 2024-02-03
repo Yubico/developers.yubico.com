@@ -1,77 +1,9 @@
 == Capability
 
-A Capability is an attribute that can be given to an link:Object.adoc[Object] allowing specific operations to be performed on or with it. Commands like digital signature generation and data decryption require (and check) for a predetermined set of Capabilities to be present on an Object. Further below is the list of existing Capabilities.
+**This content is deprecated.**
 
-It is important to know that there are no restrictions on which Capabilities can be set on an Object. Specifically, this means that it is possible to assign meaningless Capabilities to Objects that will never be able to use them, for example it is possible to have an Asymmetric Object with the Capability `verify-hmac`. Such a Capability only makes sense for Hmac Key objects, but the device will allow defining a superset.
-Lack of Capabilities required for a specific operation will cause a command requiring that Capability to fail.
+For current content see:
 
-=== Delegated Capabilities
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/index.html[YubiHSM 2 User Guide]
 
-Every Object stored on the device has an associated set of Capabilities. There is a second set of so-called Delegated Capabilities that only Authentication Keys and Wrap Keys have. This is used to capture the indirection that Authentication Keys and Wrap Keys can be used as a means of storing more Objects on a device. In both cases Delegated Capabilities are used as a filter.
-
-For Authentication Keys, Delegated Capabilities define the set of Capabilities that can be set or "bestowed" onto an Object created by the Authentication Key. Any operation attempting to create Objects with a Capability outside of this set will fail.
-
-For Wrap Keys, Delegated Capabilities define the set of Capabilities that an Object can have when imported or exported using the Wrap Key. A larger set of Capabilities will cause the import operation to fail.
-
-== Protocol Details
-
-A Set of Capabilities is an 8-byte value. Each Capability is identified by a specific bit, as shown in the `Hex Mask` column below.
-
-[options="header"]
-|=========================
-|Name | Hex Mask | Applicable Objects | Description
-|get-opaque | 0x0000000000000001 | authentication-key | Read Opaque Objects
-|put-opaque | 0x0000000000000002 | authentication-key | Write Opaque Objects
-|put-authentication-key| 0x0000000000000004 | authentication-key | Write Authentication Key Objects
-|put-asymmetric-key| 0x0000000000000008 | authentication-key | Write Asymmetric Key Objects
-|generate-asymmetric-key | 0x0000000000000010 | authentication-key | Generate Asymmetric Key Objects
-|sign-pkcs | 0x0000000000000020 | authentication-key, asymmetric-key | Compute signatures using RSA-PKCS1v1.5
-|sign-pss | 0x0000000000000040 | authentication-key, asymmetric-key | Compute digital signatures using using RSA-PSS
-|sign-ecdsa | 0x0000000000000080 | authentication-key, asymmetric-key | Compute digital signatures using ECDSA
-|sign-eddsa | 0x0000000000000100 | authentication-key, asymmetric-key | Compute digital signatures using EDDSA
-|decrypt-pkcs | 0x0000000000000200 | authentication-key, asymmetric-key | Decrypt data using RSA-PKCS1v1.5
-|decrypt-oaep | 0x0000000000000400 | authentication-key, asymmetric-key | Decrypt data using RSA-OAEP
-|derive-ecdh | 0x0000000000000800 | authentication-key, asymmetric-key | Perform ECDH
-|export-wrapped | 0x0000000000001000 | authentication-key, wrap-key | Export other Objects under wrap
-|import-wrapped | 0x0000000000002000 | authentication-key, wrap-key | Import wrapped Objects
-|put-wrap-key | 0x0000000000004000 | authentication-key | Write Wrap Key Objects
-|generate-wrap-key | 0x0000000000008000 | authentication-key | Generate Wrap Key Objects
-|exportable-under-wrap | 0x0000000000010000 | all | Mark an Object as exportable under wrap
-|set-option | 0x0000000000020000 | authentication-key | Write device-global options
-|get-option | 0x0000000000040000 | authentication-key | Read device-global options
-|get-pseudo-random | 0x0000000000080000 | authentication-key | Extract random bytes
-|put-mac-key | 0x0000000000100000 | authentication-key | Write HMAC Key Objects
-|generate-hmac-key | 0x0000000000200000 | authentication-key | Generate HMAC Key Objects
-|sign-hmac | 0x0000000000400000 | authentication-key, hmac-key | Compute HMAC of data
-|verify-hmac | 0x0000000000800000 | authentication-key, hmac-key | Verify HMAC of data
-|get-log-entries | 0x0000000001000000 | authentication-key | Read the Log Store
-|sign-ssh-certificate | 0x0000000002000000 | authentication-key, asymmetric-key | Sign SSH certificates
-|get-template | 0x0000000004000000 | authentication-key | Read Template Objects
-|put-template | 0x0000000008000000 | authentication-key | Write Template Objects
-|reset-device | 0x0000000010000000 | authentication-key | Perform a factory reset on the device
-|decrypt-otp | 0x0000000020000000 | authentication-key, otp-aead-key | Decrypt OTP
-|create-otp-aead | 0x0000000040000000 | authentication-key, otp-aead-key | Create OTP AEAD
-|randomize-otp-aead | 0x0000000080000000 | authentication-key, otp-aead-key | Create OTP AEAD from random data
-|rewrap-from-otp-aead-key | 0x0000000100000000 | authentication-key, otp-aead-key | Rewrap AEADs from one OTP AEAD Key Object to another
-|rewrap-to-otp-aead-key | 0x0000000200000000 | authentication-key, otp-aead-key | Rewrap AEADs to one OTP AEAD Key Object from another
-|sign-attestation-certificate | 0x0000000400000000 | authentication-key, asymmetric-key | Attest properties of Asymmetric Key Objects
-|put-otp-aead-key | 0x0000000800000000 | authentication-key | Write OTP AEAD Key Objects
-|generate-otp-aead-key | 0x0000001000000000 | authentication-key | Generate OTP AEAD Key Objects
-|wrap-data | 0x0000002000000000 | authentication-key, wrap-key | Wrap user-provided data
-|unwrap-data | 0x0000004000000000 | authentication-key, wrap-key | Unwrap user-provided data
-|delete-opaque | 0x0000008000000000 | authentication-key | Delete Opaque Objects
-|delete-authentication-key | 0x0000010000000000 | authentication-key | Delete Authentication Key Objects
-|delete-asymmetric-key | 0x0000020000000000 | authentication-key | Delete Asymmetric Key Objects
-|delete-wrap-key | 0x0000040000000000 | authentication-key | Delete Wrap Key Objects
-|delete-hmac-key | 0x0000080000000000 | authentication-key | Delete HMAC Key Objects
-|delete-template | 0x0000100000000000 | authentication-key | Delete Template Objects
-|delete-otp-aead-key | 0x0000200000000000 | authentication-key | Delete OTP AEAD Key Objects
-|change-authentication-key | 0x0000400000000000 | authentication-key | Replace Authentication Key Objects
-|put-symmetric-key | 0x0000800000000000 | authentication-key | Write Symmetric Key Objects (Available with firmware version 2.3.1 or later)
-|generate-symmetric-key | 0x0001000000000000 | authentication-key | Generate Symmetric Key Objects (Available with firmware version 2.3.1 or later)
-|delete-symmetric-key | 0x0002000000000000 | authentication-key | Delete Symmetric Key Objects (Available with firmware version 2.3.1 or later)
-|decrypt-ecb | 0x0004000000000000 | authentication-key, symmetric-key | Decrypt in AES ECB mode (Available with firmware version 2.3.1 or later)
-|encrypt-ecb | 0x0008000000000000 | authentication-key, symmetric-key | Encrypt in AES ECB mode (Available with firmware version 2.3.1 or later)
-|decrypt-cbc | 0x0010000000000000 | authentication-key, symmetric-key | Decrypt in AES CBC mode (Available with firmware version 2.3.1 or later)
-|encrypt-cbc | 0x0020000000000000 | authentication-key, symmetric-key | Encrypt in AES CBC mode (Available with firmware version 2.3.1 or later)
-|=========================
+- link:https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/hsm2-core-concepts.html#capability[Capability]

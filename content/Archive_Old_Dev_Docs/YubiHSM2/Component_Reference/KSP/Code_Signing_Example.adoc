@@ -1,0 +1,151 @@
+== Creating a Code-Signing Certificate using the Key Storage Provider
+
+This example will show you how to create a code-signing certificate request using a key generated and stored in the YubiHSM 2 via the Key Storage Provider (KSP).  This type of code-signing certificate is appropriate for use with the Microsoft `signtool` utility for digitally signing Windows binaries.
+
+In this example, we will use the command line `certreq` utility.  All procedures documented here are available in the Certificate Manager (`certmgr.msc`) MMC snap-in if you prefer a UI experience.
+
+=== Configure the Key Storage Provider
+
+The KSP will by default use the factory authentication key in slot 1.
+If the factory authentication key no longer exists or use of a different authentication key is desired, the KSP must first be link:index.adoc[configured] with the desired key ID and password.
+
+Note that the configured authentication key must at a minimum have capabilities `generate-asymmetric-key,sign-pkcs` and delegated capability `sign-pkcs`. If you want the generated key to be exportable, then add the `exportable-under-wrap` delegated capability.
+
+==== Authentication Key Example
+
+Create a new Authentication Key capable of generating exportable asymmetric keys through KSP.
+
+  yubihsm> put authkey 0 0 "GenerateKey" 1 generate-asymmetric-key,sign-pkcs sign-pkcs,exportable-under-wrap password
+  Stored Authentication key 0x0e32
+
+=== Create the Certificate Request Configuration File
+
+The `certreq` utility requires a _.inf_ file as input which defines your request.  An example file is supplied here:
+
+*sign.inf*
+----
+[Version]
+Signature="$Windows NT$"
+
+[NewRequest]
+Subject = "CN=My Publisher"                     ; Entity name (dns name/upn for other cert types)
+HashAlgorithm = sha256                          ; Request uses sha256 hash
+KeyAlgorithm = RSA                              ; Key pair generated using RSA algorithm
+Exportable = FALSE                              ; Private key is not exportable
+ExportableEncrypted = FALSE                     ; Private key is not exportable encrypted
+KeyLength = 2048                                ; YubiHSM KSP key sizes: 2048, 3072, 4096
+KeySpec = 2                                     ; 1 = AT_KEYEXCHANGE, 2 = AT_SIGNATURE
+KeyUsage = 0x80                                 ; 80 = Digital Signature, 20 = Key Encipherment (bitmask)
+MachineKeySet = FALSE                           ; True: cert belongs the local computer, False: current user
+KeyUsageProperty = NCRYPT_ALLOW_SIGNING_FLAG    ; Private key only used for signing, not decryption
+UseExistingKeySet = FALSE                       ; Do not use an existing key pair
+ProviderName = "YubiHSM Key Storage Provider"
+ProviderType = 1
+SMIME = FALSE                                   ; No secure email function
+UseExistingKeySet = FALSE                       ; Do not use an existing key pair
+RequestType = PKCS10                            ; Can be CMC, PKCS10, PKCS7 or Cert (self-signed)
+
+[Strings]
+szOID_ENHANCED_KEY_USAGE = "2.5.29.37"
+szOID_CODE_SIGN = "1.3.6.1.5.5.7.3.3"
+szOID_BASIC_CONSTRAINTS = "2.5.29.19"
+
+[Extensions]
+%szOID_ENHANCED_KEY_USAGE% = "{text}%szOID_CODE_SIGN%"
+%szOID_BASIC_CONSTRAINTS% = "{text}ca=0&pathlength=0"
+
+; If you are using ADCS with certificate templates, you may add
+; a specific template under [RequestAttributes]
+;[RequestAttributes]
+;CertificateTemplate= CodeSigning
+----
+
+=== Create the Certificate Request
+
+Once you've created the certificate request configuration file, pass it to `certreq` as the input file argument, e.g:
+
+  certreq -new sign.inf sign.req
+
+=== Sign the Certificate Request
+
+In the above example, the certificate request was written to _sign.req_.  Take this file and submit its contents to your CA for
+signature.  Once signed, open the resulting file (e.g., sign.crt) and install the certificate to your personal store.
+
+=== Sign using Signtool
+
+Open a prompt with `signtool` in the path and use the following command to sign your binary.
+
+  > signtool sign <binary name>
+
+If you have multiple certificates available for code signing, it may be necessary to identify your signing certificate by hash.  If this occurs, `signtool` will show you a list of valid certificates.  Simply re-run sign tool with the sha1 hash of the certificate:
+
+  > signtool sign /sha1 <certificate hash> <binary name>
+
+When importing the certificate for the first time on a new computer, it may be
+necessary to manually bind the certificate to the private key.
+This is because the key is not stored with the certificate and Windows doesn't
+automatically create an association between the two.
+
+After importing the certificate to your personal store, use the `certutil` utility
+provided by Windows to associate the YubiHSM private key to the certificate.
+
+  > certutil -repairstore my <certificate hash>
+
+=== Troubleshooting
+
+The error messages returned from `signtool` are often unhelpful in diagnosing why
+a signing operation failed.
+In these situations there are a few commands you can use to try to track down the root cause.
+
+When using `signtool`, use the `/v` and `/debug` flags to get more detailed output.
+The example below shows a response you may receive if the certificate is installed
+but the YubiHSM is not connected or is misconfigured.
+
+  > signtool sign /v /debug <binary name>
+  After EKU filter, 1 certs were left.
+  After expiry filter, 1 certs were left.
+  After Hash filter, 1 certs were left.
+  After Private Key filter, 0 certs were left.
+  SignTool Error: No certificates were found that met all the given criteria.
+
+Use `certutil` to check the validity of the imported certificate.
+
+  > certutil -verifystore my <certificate hash>
+  ================ Certificate 0 ================
+  Serial Number: 029fe48291dd587c1e6f42bca341291
+  ...
+  Certificate is valid
+
+Use `certutil` to check whether the KSP has been installed correctly.
+You should see `Provider Name: YubiHSM Key Storage Provider` as one of the entries with no errors.
+
+  > certutil -csplist
+  ...
+  Provider Name: YubiHSM Key Storage Provider
+  ...
+
+Use `certutil` to check if the key is accessible through the storage provider.
+You can also add the `-v` flag to get additional details.
+
+  > certutil -csp "YubiHSM Key Storage Provider" -key
+  YubiHSM Key Storage Provider:
+  tq-75c94c4b-5e40-4e44-bcd2-ee3330d4942f
+  RSA
+    AT_SIGNATURE
+
+Use `certutil` to dump certificate information.
+This command may show `Cannot find the certificate and private key for decryption.`
+when using a new computer if `certutil -repairstore` hasn't yet been performed.
+
+  > certutil -store my <certificate hash>
+  ================ Certificate 0 ================
+  Serial Number: 029fe48291dd587c1e6f42bca341291
+  ...
+  Private key is NOT exportable
+  Signature test passed
+
+=== More Information
+
+For a detailed explanation of all options available in the request _inf_ file, please see the documentation for the link:https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certreq_1[certreq] utility.
+
+To generate a similar request using the Certificate Manager, open the Certificate Manager snap-in, select the Personal/Certificates store, right click and select _All Tasks->Advanced Operations->Create Custom Request_.

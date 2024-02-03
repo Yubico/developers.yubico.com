@@ -1,0 +1,71 @@
+== Introduction
+
+=== Overview
+
+In a Microsoft Host Guardian Service (HGS) environment, the signing key and the encryption key must be protected in hardware. The YubiHSM 2 protects these keys in hardware and thereby guards the HGS.
+
+This guide is intended to help systems administrators deploy YubiHSM 2 for use with HGS in a Windows server environment. The expected outcome is that the signing key and the encryption key are generated and stored securely on a YubiHSM 2 and that a hardware-based backup copy of key materials has been produced.
+
+These guidelines for deployment cover basic topics, so the instructions should be modified as required for your particular environment. It is assumed that you are familiar with the concepts and processes for working with HSG. It is also assumed that the installation is performed on a single HSG, but the concept can be extended to multiple servers.
+
+[IMPORTANT]
+===========
+We recommend that you install and test the HGS installation and setup of the YubiHSM 2 in a test or lab environment before deploying to production. For guidance on enabling the HGS in a production environment, see link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-and-shielded-vms-top-node[Microsoft’s documentation on how to deploy a guarded fabric and shielded virtual machines (VMs)].
+===========
+
+=== Introduction to the Host Guardian Service
+
+==== The Guarded Fabric Concept
+
+In order to raise the security level for virtualization, Microsoft Windows Server 2016 introduced the concept of https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-and-shielded-vms[Guarded Fabric] to increase the security of Hyper-V Virtual Machines (VMs). A guarded fabric is used to protect hosts from a VM running malicious software and to protect VMs from a compromised host.
+
+The graphic below gives an overview of a guarded fabric and the main components.
+
+image::Overview-of-a-guarded-fabric.png[]
+**Figure 1 - Overview of a guarded fabric**
+
+A guarded fabric is comprised of the following main components:
+
+* link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-setting-up-the-host-guardian-service-hgs[Host Guardian Service (HGS)]: This is a Windows Server role that is typically installed on a cluster of physical servers. The HGS in turn is composed of the Attestation Service and the Key Protection Service. The Attestation Service verifies the Trusted Computing Group (TCG) logs of a guarded host, and issues a health certificate if the Guarded Host is attested by HGS. The HGS Key Protection Service is described in "HGS Key Protection Service" below.
+
+* link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-configure-hgs-with-authorized-hyper-v-hosts[Guarded Host]: This is an attested host machine, equipped with a Trusted Platform Module (TPM)  that can run shielded Hyper-V VMs. The guarded Hyper-V host must be attested by the HGS Attestation Service in order to power on or migrate shielded VMs.
+
+* link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-configuration-scenarios-for-shielded-vms-overview[Shielded VM]: This is a Hyper-V VM equipped with a virtual TPM, that is encrypted using BitLocker and can run only on attested guarded hosts in a guarded fabric.
+
+The guarded fabric components are described in link:https://docs.microsoft.com/en-us/windows-server/security/guarded-fabric-shielded-vm/guarded-fabric-and-shielded-vms[Microsoft’s overview of guarded fabric and shielded VMs].
+
+
+=== HGS Key Protection Service
+
+The HGS Key Protection Service (KPS) is configured with at least two certificates (and corresponding private keys), which are used for signing and encrypting the keys used to start up shielded VMs. The two mandatory certificates are:
+
+* *Encryption certificate*: This certificate is used to encrypt and decrypt the key protector, which itself contains the symmetric key that encrypts the virtual TPM of a shielded VM at rest. When a shielded VM is booting up on an attested guarded host, the HGS KPS decrypts and releases its symmetric key, which is used by the guarded host to decrypt the virtual TPM and the hard drive of a shielded VM.
+
+* *Signing certificate*: This certificate is used to digitally sign the key protector to ensure its authenticity.
+
+In addition to these mandatory certificates, the HGS KPS can also be configured with four optional certificates:
+* Communications certificate
+* Attestation signer certificate
+* HTTPS (SSL/TLS) certificate
+* Dump encryption certificate.
+
+If those certificates are not configured, the Encryption certificate and Signing certificate will provide the necessary operations.
+
+The Encryption certificate and Signing certificate can either be self-signed or issued by a Certification Authority (CA).
+
+The private keys corresponding to the certificates can be stored in an HSM or in software in PKCS #12 format. The recommended option is to protect the keys in hardware in an HSM.
+
+For more information on these topics, see link:https://techcommunity.microsoft.com/t5/Data-Center-Security/Frequently-Asked-Questions-About-HGS-Certificates/ba-p/372272[Frequently Asked Questions About HGS Certificates] in the Microsoft Tech Community.
+
+==== Scope of this Document
+
+The scope of this document is to describe how to use the HGS KPS to generate the Encryption and Signing certificates/keys using the YubiHSM. In this document, the Encryption and Signing certificates will be self-signed and created with PowerShell scripts.
+
+How to use CA to issue the certificates is out of scope for this document.
+
+How to deploy and configure the HGS Attestation Service, guarded hosts, shielded VMs, and additional features of a guarded fabric are also out of scope for this document.
+
+For information on how to install and configure a complete guarded fabric, see Microsoft’s documentation on guarded fabric deployment.
+
+
+link:Prerequisites_and_Preparations.adoc[Next: Prerequisites and Preparations]

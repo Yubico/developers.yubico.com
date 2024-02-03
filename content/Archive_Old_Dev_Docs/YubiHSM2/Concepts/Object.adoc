@@ -1,0 +1,64 @@
+== Objects
+
+The first concept that we will present are Objects. Any persistently-stored and self-contained piece of information present in a YubiHSM 2, is an Object. This is intentionally a very generic and broad definition which can be easily rephrased as _everything is an Object_. Objects have associated properties that characterize them and give them different meanings. Regardless of the kind and the specific properties, any YubiHSM 2 device can store up to `256` Objects. Their combined size can not exceed `126 KB`.
+
+== Object Type
+
+As said before, an Object is almost anything stored on the device. To identify what an Object can and can not do, we define an attribute called Object Type, or simply Type. A Type is not enough to _uniquely_ identify an Object, but it defines the set of operations that can be performed with or on it. The following types are defined:
+
+=== Authentication Key
+
+An Authentication Key is one of the most fundamental Objects there are. Authentication Keys can be used to establish link:Session.adoc[Sessions] with a device. An Authentication Key is basically two long-lived AES keys: an encryption key and a MAC key. When establishing a Session, the long-lived keys are used to generate three session keys:
+
+- An encryption key used to encrypt the messages exchanged with the device
+- A MAC key used to create an authentication tag for each message sent to the device
+- A response MAC key used to create an authentication tag for each response message sent by the device
+
+The session keys are temporary and are destroyed when the Session is no longer in use.
+
+=== Asymmetric Key
+
+An Asymmetric Key Object, is what the YubiHSM 2 uses to represent an asymmetric key-pair where only the private key can be used to perform cryptographic operations.
+
+=== Symmetric Key
+
+Available with firmware version 2.3.1 or later.
+
+A Symmetric Key is a secret key used when encrypting and decrypting AES.
+
+=== HMAC Key
+
+An HMAC Key is a secret key used when computing and verifying HMAC signatures.
+
+=== Opaque
+
+An Opaque Object is an unchecked kind of Object, normally used to store raw data in the device. No specific restrictions (besides size limitations) are imposed to this type of Object.
+
+=== OTP AEAD Key
+
+An OTP AEAD Key Object is a secret key used to decrypt Yubico OTP values for further verification by a validation process.
+
+=== Template
+
+A Template Object is a binary template used for example to validate SSH certificate requests.
+
+=== Wrap Key
+
+A Wrap Key Object is a secret key used to wrap and unwrap Objects during the export and import process.
+
+== Protocol Details
+
+Object Types are encoded as an 8-bit value.
+
+[options="header"]
+|=======================
+|Type Name | Hex Value
+|opaque | 0x01
+|authentication-key | 0x02
+|asymmetric-key | 0x03
+|wrap-key | 0x04
+|hmac-key | 0x05
+|template | 0x06
+|otp-aead-key | 0x07
+|symmetric-key | 0x08 (Available with firmware version 2.3.1 or later)
+|=======================
