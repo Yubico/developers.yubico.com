@@ -4,6 +4,7 @@ Activated by a "git" entry in .conf.json, containing the following settings:
     url: Git repository URL (required).
     files: List of filepatterns to copy from the repository (default: all)
     preserve_mtimes: If true, set mtimes based on commit times (default: false)
+    skip_lfs: If true, fetch the repo without pulling Git LFS objects
 
 The "git" entry can also be a list of objects containing the settings above if
 multiple repositories should be clones.
@@ -94,8 +95,10 @@ class GitModule(Module):
                                       cwd=repo_dir, stderr=sys.stdout.fileno())
             else:
                 print "clone:", url
-                subprocess.check_call(['git', 'clone', url, repo_dir],
-                                stderr=sys.stdout.fileno())
+                clone_cmd = ['git', 'clone', url, repo_dir]
+                if conf.get('skip_lfs'):
+                    clone_cmd += ['-c', 'filter.lfs.process=git-lfs filter-process --skip']
+                subprocess.check_call(clone_cmd, stderr=sys.stdout.fileno())
             subprocess.check_call(['git', 'reset', 'origin/%s' % branch, '--hard'],
                                   cwd=repo_dir, stderr=sys.stdout.fileno())
 
