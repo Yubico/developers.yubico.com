@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.yubiotp &mdash; yubikey-manager 5.2.0 documentation</title>
+  <title>yubikit.yubiotp &mdash; yubikey-manager 5.4.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -13,7 +13,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f02a3fcf"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
         <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -33,7 +33,7 @@
             yubikey-manager
           </a>
               <div class="version">
-                5.2
+                5.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -204,7 +204,7 @@
     <span class="c1"># Yubikey 2 and above</span>
     <span class="n">SHORT_TICKET</span> <span class="o">=</span> <span class="mh">0x02</span>  <span class="c1"># Send truncated ticket (half length)</span>
     <span class="n">STRONG_PW1</span> <span class="o">=</span> <span class="mh">0x10</span>  <span class="c1"># Strong password policy flag #1 (mixed case)</span>
-    <span class="n">STRONG_PW2</span> <span class="o">=</span> <span class="mh">0x40</span>  <span class="c1"># Strong password policy flag #2 (subtitute 0..7 to digits)</span>
+    <span class="n">STRONG_PW2</span> <span class="o">=</span> <span class="mh">0x40</span>  <span class="c1"># Strong password policy flag #2 (substitute 0..7 to digits)</span>
     <span class="n">MAN_UPDATE</span> <span class="o">=</span> <span class="mh">0x80</span>  <span class="c1"># Allow manual (local) update of static OTP</span>
 
     <span class="c1"># Yubikey 2.1 and above</span>
@@ -708,8 +708,6 @@
 
 
 <span class="k">class</span> <span class="nc">_Backend</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
-    <span class="n">version</span><span class="p">:</span> <span class="n">Version</span>
-
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="o">...</span>
@@ -748,6 +746,7 @@
 
 
 <span class="n">INS_CONFIG</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">INS_YK2_STATUS</span> <span class="o">=</span> <span class="mh">0x03</span>
 
 
 <span class="k">class</span> <span class="nc">_YubiOtpSmartCardBackend</span><span class="p">(</span><span class="n">_Backend</span><span class="p">):</span>
@@ -761,14 +760,17 @@
 
     <span class="k">def</span> <span class="nf">write_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_CONFIG</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>  <span class="c1"># Some commands don&#39;t return status on some YubiKeys</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_YK2_STATUS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
         <span class="n">prev_prog_seq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prog_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prog_seq</span><span class="p">,</span> <span class="n">status</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prog_seq</span> <span class="o">==</span> <span class="n">prev_prog_seq</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">status</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prog_seq</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">prev_prog_seq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">version</span> <span class="o">=</span> <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">status</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
-            <span class="k">if</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>  <span class="c1"># Programming state does not update</span>
-                <span class="k">return</span> <span class="n">status</span>
             <span class="k">if</span> <span class="n">status</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x1F</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">status</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>  <span class="c1"># Programming state does not update</span>
                 <span class="k">return</span> <span class="n">status</span>
         <span class="k">raise</span> <span class="n">CommandRejectedError</span><span class="p">(</span><span class="s2">&quot;Not updated&quot;</span><span class="p">)</span>
 

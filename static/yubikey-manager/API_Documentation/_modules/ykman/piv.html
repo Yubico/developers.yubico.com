@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.piv &mdash; yubikey-manager 5.2.0 documentation</title>
+  <title>ykman.piv &mdash; yubikey-manager 5.4.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -13,7 +13,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f02a3fcf"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
         <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -33,7 +33,7 @@
             yubikey-manager
           </a>
               <div class="version">
-                5.2
+                5.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -111,17 +111,17 @@
     <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">,</span>
     <span class="n">ALGORITHM</span><span class="p">,</span>
     <span class="n">TAG_LRC</span><span class="p">,</span>
+    <span class="n">SlotMetadata</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
 <span class="kn">from</span> <span class="nn">cryptography.exceptions</span> <span class="kn">import</span> <span class="n">InvalidSignature</span>
 <span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">hashes</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">ec</span><span class="p">,</span> <span class="n">padding</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">ec</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">ed25519</span><span class="p">,</span> <span class="n">x25519</span>
 <span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.serialization</span> <span class="kn">import</span> <span class="n">Encoding</span><span class="p">,</span> <span class="n">PublicFormat</span>
 <span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.kdf.pbkdf2</span> <span class="kn">import</span> <span class="n">PBKDF2HMAC</span>
 <span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
 <span class="kn">from</span> <span class="nn">cryptography.x509.oid</span> <span class="kn">import</span> <span class="n">NameOID</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">struct</span>
@@ -219,15 +219,17 @@
     <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_dummy_key</span><span class="p">(</span><span class="n">algorithm</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">RSA1024</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="mi">65537</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>  <span class="c1"># nosec</span>
-    <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">RSA2048</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="mi">65537</span><span class="p">,</span> <span class="mi">2048</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ECCP256</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_dummy_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="mi">65537</span><span class="p">,</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ECCP256</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="n">ec</span><span class="o">.</span><span class="n">SECP256R1</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ECCP384</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ECCP384</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="n">ec</span><span class="o">.</span><span class="n">SECP384R1</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ED25519</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PrivateKey</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="o">==</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">X25519</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PrivateKey</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid algorithm&quot;</span><span class="p">)</span>
 
 
@@ -298,7 +300,7 @@
 
 <div class="viewcode-block" id="PivmanData.get_bytes"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanData.get_bytes">[docs]</a>    <span class="k">def</span> <span class="nf">get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x81</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">salt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x82</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">salt</span><span class="p">)</span>
@@ -438,6 +440,22 @@
         <span class="n">session</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID_PIVMAN_DATA</span><span class="p">,</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">())</span></div>
 
 
+<div class="viewcode-block" id="pivman_set_pin_attempts"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_set_pin_attempts">[docs]</a><span class="k">def</span> <span class="nf">pivman_set_pin_attempts</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span> <span class="n">pin_attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">puk_attempts</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the number of PIN and PUK retry attempts, while keeping PivmanData in sync.</span>
+
+<span class="sd">    :param session: The PIV session.</span>
+<span class="sd">    :param pin_attempts: The PIN attempts.</span>
+<span class="sd">    :param puk_attempts: The PUK attempts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">set_pin_attempts</span><span class="p">(</span><span class="n">pin_attempts</span><span class="p">,</span> <span class="n">puk_attempts</span><span class="p">)</span>
+    <span class="n">pivman</span> <span class="o">=</span> <span class="n">get_pivman_data</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pivman</span><span class="o">.</span><span class="n">puk_blocked</span><span class="p">:</span>
+        <span class="n">pivman</span><span class="o">.</span><span class="n">puk_blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID_PIVMAN_DATA</span><span class="p">,</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">())</span></div>
+
+
 <div class="viewcode-block" id="list_certificates"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.list_certificates">[docs]</a><span class="k">def</span> <span class="nf">list_certificates</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">SLOT</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read out and parse stored certificates.</span>
 
@@ -445,16 +463,27 @@
 
 <span class="sd">    :param session: The PIV session.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">certs</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="n">certs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">SLOT</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">SLOT</span><span class="o">.</span><span class="n">ATTESTATION</span><span class="p">}:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">certs</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_certificate</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">ApduError</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">except</span> <span class="n">BadResponseError</span><span class="p">:</span>
-            <span class="n">certs</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+            <span class="n">certs</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">return</span> <span class="n">certs</span></div>
+
+
+<span class="k">def</span> <span class="nf">_list_keys</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">SLOT</span><span class="p">,</span> <span class="n">SlotMetadata</span><span class="p">]:</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">SLOT</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">SLOT</span><span class="o">.</span><span class="n">ATTESTATION</span><span class="p">}:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">keys</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_slot_metadata</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">REFERENCE_DATA_NOT_FOUND</span><span class="p">:</span>
+                <span class="k">raise</span>
+    <span class="k">return</span> <span class="n">keys</span>
 
 
 <div class="viewcode-block" id="check_key"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.check_key">[docs]</a><span class="k">def</span> <span class="nf">check_key</span><span class="p">(</span>
@@ -569,20 +598,31 @@
         <span class="n">tries</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_pin_attempts</span><span class="p">()</span>
         <span class="n">tries_str</span> <span class="o">=</span> <span class="s2">&quot;15 or more&quot;</span> <span class="k">if</span> <span class="n">tries</span> <span class="o">==</span> <span class="mi">15</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">tries</span><span class="p">)</span>
     <span class="n">info</span><span class="p">[</span><span class="s2">&quot;PIN tries remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tries_str</span>
-    <span class="k">if</span> <span class="n">pivman</span><span class="o">.</span><span class="n">puk_blocked</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">puk_data</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_puk_metadata</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">default_value</span><span class="p">:</span>
-                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;WARNING: Using default PUK!&quot;</span><span class="p">)</span>
-            <span class="n">tries_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span><span class="p">,</span>
-                <span class="n">puk_data</span><span class="o">.</span><span class="n">total_attempts</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;PUK tries remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tries_str</span>
-        <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
-            <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">puk_data</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_puk_metadata</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">default_value</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;WARNING: Using default PUK!&quot;</span><span class="p">)</span>
+        <span class="n">tries_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span><span class="p">,</span>
+            <span class="n">puk_data</span><span class="o">.</span><span class="n">total_attempts</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;PUK tries remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tries_str</span>
+    <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pivman</span><span class="o">.</span><span class="n">puk_blocked</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bio</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_bio_metadata</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">bio</span><span class="o">.</span><span class="n">configured</span><span class="p">:</span>
+            <span class="n">info</span><span class="p">[</span>
+                <span class="s2">&quot;Biometrics&quot;</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Configured, </span><span class="si">{</span><span class="n">bio</span><span class="o">.</span><span class="n">attempts_remaining</span><span class="si">}</span><span class="s2"> attempts remaining&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;Biometrics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Not configured&quot;</span>
+    <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+        <span class="k">pass</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_management_key_metadata</span><span class="p">()</span>
@@ -612,9 +652,22 @@
         <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">FILE_NOT_FOUND</span><span class="p">:</span>
             <span class="n">objects</span><span class="p">[</span><span class="s2">&quot;CCC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;No data available&quot;</span>
 
-    <span class="k">for</span> <span class="n">slot</span><span class="p">,</span> <span class="n">cert</span> <span class="ow">in</span> <span class="n">list_certificates</span><span class="p">(</span><span class="n">session</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">certs</span> <span class="o">=</span> <span class="n">list_certificates</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">_list_keys</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">SLOT</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">SLOT</span><span class="o">.</span><span class="n">ATTESTATION</span><span class="p">}:</span>
+        <span class="k">if</span> <span class="n">slot</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys</span> <span class="ow">and</span> <span class="n">slot</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">certs</span><span class="p">:</span>
+            <span class="k">continue</span>
+
         <span class="n">cert_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">objects</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cert_data</span>
+        <span class="k">if</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Private key type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="n">slot</span><span class="p">]</span><span class="o">.</span><span class="n">key_type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Private key type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;EMPTY&quot;</span>
+        <span class="n">cert</span> <span class="o">=</span> <span class="n">certs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cert</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># Try to read out full DN, fallback to only CN.</span>
@@ -642,18 +695,24 @@
                 <span class="n">key_algo</span> <span class="o">=</span> <span class="s2">&quot;Unsupported&quot;</span>
             <span class="n">serial</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">serial_number</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">not_before</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">not_valid_before</span>
+                <span class="k">try</span><span class="p">:</span>  <span class="c1"># Prefer timezone-aware variant (cryptography &gt;= 42)</span>
+                    <span class="n">not_before</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">not_valid_before_utc</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="n">not_before</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">not_valid_before</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed reading not_valid_before&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">not_before</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">not_after</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">not_valid_after</span>
+                <span class="k">try</span><span class="p">:</span>  <span class="c1"># Prefer timezone-aware variant (cryptography &gt;= 42)</span>
+                    <span class="n">not_after</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">not_valid_after_utc</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="n">not_after</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">not_valid_after</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed reading not_valid_after&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">not_after</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="c1"># Print out everything</span>
-            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Algorithm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key_algo</span>
+            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Public key type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key_algo</span>
             <span class="k">if</span> <span class="n">print_dn</span><span class="p">:</span>
                 <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Subject DN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subject_dn</span>
                 <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Issuer DN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">issuer_dn</span>
@@ -666,7 +725,7 @@
                 <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Not before&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">not_before</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">not_after</span><span class="p">:</span>
                 <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Not after&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">not_after</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">certs</span><span class="p">:</span>
             <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Failed to parse certificate&quot;</span>
 
     <span class="k">return</span> <span class="n">lines</span></div>
@@ -684,6 +743,12 @@
 <span class="p">]</span>
 
 
+<span class="k">def</span> <span class="nf">_hash</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">ED25519</span><span class="p">,</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">X25519</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">hash_algorithm</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="sign_certificate_builder"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.sign_certificate_builder">[docs]</a><span class="k">def</span> <span class="nf">sign_certificate_builder</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
@@ -697,17 +762,17 @@
 <span class="sd">    :param slot: The slot.</span>
 <span class="sd">    :param key_type: The key type.</span>
 <span class="sd">    :param builder: The x509 certificate builder object.</span>
-<span class="sd">    :param hash_algorithm: The hash algorithm.</span>
+<span class="sd">    :param hash_algorithm: The hash algorithm, ignored for Curve 25519.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Signing a certificate&quot;</span><span class="p">)</span>
     <span class="n">dummy_key</span> <span class="o">=</span> <span class="n">_dummy_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
-    <span class="n">cert</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">dummy_key</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span>
+    <span class="n">cert</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">dummy_key</span><span class="p">,</span> <span class="n">_hash</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">),</span> <span class="n">default_backend</span><span class="p">())</span>
 
     <span class="n">sig</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span>
         <span class="n">slot</span><span class="p">,</span>
         <span class="n">key_type</span><span class="p">,</span>
         <span class="n">cert</span><span class="o">.</span><span class="n">tbs_certificate_bytes</span><span class="p">,</span>
-        <span class="n">hash_algorithm</span><span class="p">(),</span>
+        <span class="n">_hash</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">),</span>
         <span class="n">padding</span><span class="o">.</span><span class="n">PKCS1v15</span><span class="p">(),</span>  <span class="c1"># Only used for RSA</span>
     <span class="p">)</span>
 
@@ -734,12 +799,13 @@
 <span class="sd">    :param public_key: The public key.</span>
 <span class="sd">    :param builder: The x509 certificate signing request builder</span>
 <span class="sd">        object.</span>
-<span class="sd">    :param hash_algorithm: The hash algorithm.</span>
+<span class="sd">    :param hash_algorithm: The hash algorithm, ignored for Curve 25519.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Signing a CSR&quot;</span><span class="p">)</span>
     <span class="n">key_type</span> <span class="o">=</span> <span class="n">KEY_TYPE</span><span class="o">.</span><span class="n">from_public_key</span><span class="p">(</span><span class="n">public_key</span><span class="p">)</span>
     <span class="n">dummy_key</span> <span class="o">=</span> <span class="n">_dummy_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
-    <span class="n">csr</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">dummy_key</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span>
+
+    <span class="n">csr</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">dummy_key</span><span class="p">,</span> <span class="n">_hash</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">),</span> <span class="n">default_backend</span><span class="p">())</span>
     <span class="n">seq</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span><span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="mh">0x30</span><span class="p">,</span> <span class="n">csr</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">DER</span><span class="p">)))</span>
 
     <span class="c1"># Replace public key</span>
@@ -756,7 +822,7 @@
         <span class="n">slot</span><span class="p">,</span>
         <span class="n">key_type</span><span class="p">,</span>
         <span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-        <span class="n">hash_algorithm</span><span class="p">(),</span>
+        <span class="n">_hash</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">),</span>
         <span class="n">padding</span><span class="o">.</span><span class="n">PKCS1v15</span><span class="p">(),</span>  <span class="c1"># Only used for RSA</span>
     <span class="p">)</span>
 

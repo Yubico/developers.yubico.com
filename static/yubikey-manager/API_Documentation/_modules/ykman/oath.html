@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.oath &mdash; yubikey-manager 5.2.0 documentation</title>
+  <title>ykman.oath &mdash; yubikey-manager 5.4.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -13,7 +13,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=0fa48458"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f02a3fcf"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
         <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -33,7 +33,7 @@
             yubikey-manager
           </a>
               <div class="version">
-                5.2
+                5.4
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -100,25 +100,34 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">yubikit.oath</span> <span class="kn">import</span> <span class="n">OATH_TYPE</span>
+<span class="kn">from</span> <span class="nn">yubikit.core.smartcard</span> <span class="kn">import</span> <span class="n">ApduError</span><span class="p">,</span> <span class="n">SW</span>
+<span class="kn">from</span> <span class="nn">yubikit.oath</span> <span class="kn">import</span> <span class="n">OathSession</span><span class="p">,</span> <span class="n">Credential</span><span class="p">,</span> <span class="n">OATH_TYPE</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
 <span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <span class="n">STEAM_CHAR_TABLE</span> <span class="o">=</span> <span class="s2">&quot;23456789BCDFGHJKMNPQRTVWXY&quot;</span>
 
 
-<div class="viewcode-block" id="is_hidden"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.is_hidden">[docs]</a><span class="k">def</span> <span class="nf">is_hidden</span><span class="p">(</span><span class="n">credential</span><span class="p">):</span>
+<div class="viewcode-block" id="is_hidden"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.is_hidden">[docs]</a><span class="k">def</span> <span class="nf">is_hidden</span><span class="p">(</span><span class="n">credential</span><span class="p">:</span> <span class="n">Credential</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if OATH credential is hidden.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">credential</span><span class="o">.</span><span class="n">issuer</span> <span class="o">==</span> <span class="s2">&quot;_hidden&quot;</span></div>
 
 
-<div class="viewcode-block" id="is_steam"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.is_steam">[docs]</a><span class="k">def</span> <span class="nf">is_steam</span><span class="p">(</span><span class="n">credential</span><span class="p">):</span>
+<div class="viewcode-block" id="is_steam"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.is_steam">[docs]</a><span class="k">def</span> <span class="nf">is_steam</span><span class="p">(</span><span class="n">credential</span><span class="p">:</span> <span class="n">Credential</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if OATH credential is steam.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">credential</span><span class="o">.</span><span class="n">oath_type</span> <span class="o">==</span> <span class="n">OATH_TYPE</span><span class="o">.</span><span class="n">TOTP</span> <span class="ow">and</span> <span class="n">credential</span><span class="o">.</span><span class="n">issuer</span> <span class="o">==</span> <span class="s2">&quot;Steam&quot;</span></div>
 
 
-<div class="viewcode-block" id="calculate_steam"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.calculate_steam">[docs]</a><span class="k">def</span> <span class="nf">calculate_steam</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">credential</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="calculate_steam"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.calculate_steam">[docs]</a><span class="k">def</span> <span class="nf">calculate_steam</span><span class="p">(</span>
+    <span class="n">app</span><span class="p">:</span> <span class="n">OathSession</span><span class="p">,</span> <span class="n">credential</span><span class="p">:</span> <span class="n">Credential</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate steam codes.&quot;&quot;&quot;</span>
     <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timestamp</span> <span class="ow">or</span> <span class="n">time</span><span class="p">())</span>
     <span class="n">resp</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">credential</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;q&quot;</span><span class="p">,</span> <span class="n">timestamp</span> <span class="o">//</span> <span class="mi">30</span><span class="p">))</span>
@@ -131,9 +140,40 @@
     <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="is_in_fips_mode"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.is_in_fips_mode">[docs]</a><span class="k">def</span> <span class="nf">is_in_fips_mode</span><span class="p">(</span><span class="n">app</span><span class="p">):</span>
+<div class="viewcode-block" id="is_in_fips_mode"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.is_in_fips_mode">[docs]</a><span class="k">def</span> <span class="nf">is_in_fips_mode</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">OathSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if OATH application is in FIPS mode.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">app</span><span class="o">.</span><span class="n">locked</span></div>
+
+
+<div class="viewcode-block" id="delete_broken_credential"><a class="viewcode-back" href="../../rst/ykman.html#ykman.oath.delete_broken_credential">[docs]</a><span class="k">def</span> <span class="nf">delete_broken_credential</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">OathSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks for credential in a broken state and deletes it.&quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Probing for broken credentials&quot;</span><span class="p">)</span>
+    <span class="n">creds</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">list_credentials</span><span class="p">()</span>
+    <span class="n">broken</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">creds</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">oath_type</span> <span class="o">==</span> <span class="n">OATH_TYPE</span><span class="o">.</span><span class="n">TOTP</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">c</span><span class="o">.</span><span class="n">touch_required</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">app</span><span class="o">.</span><span class="n">calculate_code</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Credential appears OK: </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">MEMORY_FAILURE</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Memory failure in: </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="k">raise</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">broken</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Credential appears to be broken: </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">broken</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Deleting broken credential&quot;</span><span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">delete_credential</span><span class="p">(</span><span class="n">broken</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Requires a single broken credential, found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">broken</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
 </pre></div>
 
            </div>
