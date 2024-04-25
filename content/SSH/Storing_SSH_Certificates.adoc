@@ -1,0 +1,311 @@
+# Storing SSH Certificates on a FIDO security key
+
+## SSH Certificates
+
+Although using public key authentication to access SSH servers is more secure than using passwords,
+and storing SSH private keys on FIDO security keys is more secure than storing them in files,
+a key management issue can arise when dealing with many users and many servers.
+To make public key authentication scale better in this situation, one can use SSH certificates.
+ An SSH certificate is somewhat similar to an X.509 certificate, but much simpler:
+a raw SSH signing key called the CA key is used to sign user's SSH public keys.
+Instead of provisioning all user public keys to all servers,
+servers are simply configured with the CA public verification key,
+and anyone with a certificate signed by the corresponding CA signing key can use that to logon to the server
+(provided they have an account there).
+
+Note that SSH certificates were introduced with OpenSSH version 5.4 and should be available in all current OpenSSH distributions.
+
+For more information on what is possible with SSH certificates, see the
+link:https://man.openbsd.org/ssh-keygen#CERTIFICATES[ssh-keygen manual]
+
+Also note that not all vendors of SSH software will implement SSH certificates,
+so check their manuals to see if SSH certificates are supported.
+
+## Large blobs
+
+When SSH keys are stored on a FIDO security key (as a FIDO discoverable credential, also known as a resident key),
+we can retrieve the SSH public key and the SSH key file containing the credential ID of the corresponding private key from the FIDO security key.
+This makes it easy to move to another SSH client without copying key files around.
+See link:Securing_SSH_with_FIDO2.adoc[Securing SSH with FIDO2].
+An SSH certificate is stored in a separate file however,
+so you may want to store the certificate file on a FIDO security key as well.
+Fortunately, there exists a FIDO feature for storing arbitrary data on a FIDO security key, called `largeBlobs`.
+We will show below how to use SSH certificates and store them on FIDO security keys leveraging largeBlobs.
+
+Note however that largeBlobs are a relatively new addition to the FIDO CTAP standard,
+and will only be available on FIDO security keys with recent firmware.
+When using a YubiKey or a Security Key by Yubico make sure you have firmware 5.5.1 or later.
+
+To check if your FIDO security key supports largeBlobs, you can use the 
+link:https://developers.yubico.com/libfido2/[libfido] tools  (version 1.7 or later), in particular 
+link:https://developers.yubico.com/libfido2/Manuals/fido2-token.html[fido2-token] as follows.
+
+Insert your FIDO security key, and list all connected authenticators:
+
+```bash
+$ fido2-token -L
+/dev/hidraw0: vendor=0x1050, product=0x0407 (Yubico Yubikey OTP+FIDO+CCID)
+```
+
+The `/dev/hidraw0` device file is specific to linux systems, and device files are typically numbered starting from 0.
+
+On macos systems, the output shows something like this:
+
+```bash
+$ fido2-token -L
+ioreg://1234567890: vendor=0x1050, product=0x0407 (Yubico YubiKey OTP+FIDO+CCID)
+```
+
+In the rest of this document, we'll assume the device ID is `/dev/hidraw0`.
+
+Next, check for largeBlob support by inspecting supported options:
+
+```bash
+$ fido2-token -I /dev/hidraw0 | grep options
+options: rk, up, noplat, noalwaysUv, credMgmt, authnrCfg, clientPin, largeBlobs, pinUvAuthToken, setMinPINLength, makeCredUvNotRqd, credentialMgmtPreview
+```
+
+Note that `largeBlobs` is listed as an option.
+
+## Creating the CA
+
+As SSH certificates need to be signed using a CA signing key,
+we need to generate this CA signing key first:
+
+```bash
+$ ssh-keygen -t ecdsa -f id_userca -N '' -C ca@example.org
+Generating public/private ecdsa key pair.
+Your identification has been saved in id_userca
+Your public key has been saved in id_userca.pub
+The key fingerprint is:
+SHA256:yA0+BNSmSO4arV8CkyxxWW6Bi3BdVKM7w1re+0NqYRc ca@example.org
+The key's randomart image is:
++---[ECDSA 256]---+
+|   +=+o.o        |
+|. ++.oo. .       |
+|o=oooo+          |
+|o++..= =  E      |
+|=+    @ S  .     |
+|ooo  + =o o      |
+| +. o ...=       |
+|o  o    o..      |
+| ..    .....     |
++----[SHA256]-----+
+```
+
+Here, the CA signing key is stored in a file but, depending on the use-case,
+it may make sense to generate and store the key in an Hardware Security Module (HSM),
+such as the
+link:https://www.yubico.com/products/hardware-security-module/[YubiHSM]
+
+## Generating user keys on a FIDO security key
+
+If you don't have a user SSH public key to sign yet,
+you first need to generate an SSH key pair on a FIDO security key.
+This is already discussed in
+link:Securing_SSH_with_FIDO2.adoc[Securing SSH with FIDO2],
+but for completeness we will repeat instructions here:
+
+```bash
+$ ssh-keygen -t ecdsa-sk -f ./id_ecdsa -N '' -O resident -O application=ssh:demo -O user=johndoe -C johndoe@example.org
+Generating public/private ecdsa-sk key pair.
+You may need to touch your authenticator to authorize key generation.
+Enter PIN for authenticator: ********
+You may need to touch your authenticator again to authorize key generation.
+Your identification has been saved in ./id_ecdsa
+Your public key has been saved in ./id_ecdsa.pub
+The key fingerprint is:
+SHA256:sAohY3k592oMYCwGfBJJEIIoxiZIzIPuWJHCZBapti4 johndoe@example.org
+The key's randomart image is:
++-[ECDSA-SK 256]--+
+|^X=.             |
+|#&+..            |
+|@O== ..          |
+|*=+.o .o         |
+|+.o.  ..S        |
+|.o .o..          |
+|.   .+           |
+|E.  .            |
+|.                |
++----[SHA256]-----+
+```
+
+Note that we are generating an ECDSA key pair stored on a FIDO security key here
+(a discoverable credential, also called a "resident key", of type `ecdsa-sk`). 
+The resulting public key is stored in the file `./id_ecdsa.pub`.
+This public key now needs to be signed by the CA.
+
+## Signing the user certificate
+
+Once the CA receives the user's public key, verified the user's identity,
+and determined the user's eligibility for obtaining a certificate
+(exactly how all this is done is up to the CA to decide),
+the user's public key can be signed using the CA signing key:
+
+```bash
+$ ssh-keygen -s ./id_userca -I johndoe@example.org -V +52w -n johndoe id_ecdsa.pub
+Signed user key id_ecdsa-cert.pub: id "johndoe@example.org" serial 0 for johndoe valid from 2024-04-03T18:39:00 to 2025-04-02T18:40:47
+```
+
+Note that the certificate can have a limited validity (52 weeks in this example).
+Other restrictions are also possible. See the
+OpenSSH documentation
+for all possible options.
+
+The resulting SSH certificate is stored in the file `id_ecdsa-cert.pub`,
+and is returned to the user.
+
+To view the SSH certificate contents:
+
+```bash
+$ ssh-keygen -L -f ./id_ecdsa-cert.pub
+./id_ecdsa-cert.pub:
+        Type: sk-ecdsa-sha2-nistp256-cert-v01@openssh.com user certificate
+        Public key: ECDSA-SK-CERT SHA256:sAohY3k592oMYCwGfBJJEIIoxiZIzIPuWJHCZBapti4
+        Signing CA: ECDSA SHA256:yA0+BNSmSO4arV8CkyxxWW6Bi3BdVKM7w1re+0NqYRc (using ecdsa-sha2-nistp256)
+        Key ID: "johndoe@example.org"
+        Serial: 0
+        Valid: from 2024-04-03T18:39:00 to 2025-04-02T18:40:47
+        Principals: 
+                johndoe
+        Critical Options: (none)
+        Extensions: 
+                permit-X11-forwarding
+                permit-agent-forwarding
+                permit-port-forwarding
+                permit-pty
+                permit-user-rc
+```
+
+## Store an ssh certificate on a FIDO security token
+
+Once the user has received their SSH certificate from the CA,
+the certificate can be stored as a "large blob" on the FIDO security key using the `fido2-token` command-line tool:
+
+```bash
+$ fido2-token -S -b -n ssh:demo id_ecdsa-cert.pub /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+```
+
+To verify that your SSH certificate is stored,
+again use `fido2-token` to list all stored large blobs:
+
+```bash
+$ fido2-token -L -b /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+total map size: 1219 bytes
+00:  591  893 <unknown> <unknown>
+01:  581  889 dhx715WNlF36vMvo5hV0SBOPfWqS1ncj2P2BgW2513a/rLvg64Tl4f0/uDrs1LsE ssh:demo
+```
+
+## Retrieving key files and certificates from a FIDO security key
+
+When logging in on a server, you will need your FIDO security key,
+your key file (containing a reference to the key stored on your security key),
+and your SSH certificate.
+When using a new local system to sign in from,
+you can choose to copy these files to the new system,
+but more conveniently, you can regenerate them from your security key.
+
+To retrieve the SSH key file (the "key handle") from your FIDO security key,
+use `ssh-keygen`:
+
+```bash
+$ ssh-keygen -K
+Enter PIN for authenticator: ********
+You may need to touch your authenticator to authorize key download.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Saved ECDSA-SK key ssh:demo to id_ecdsa_sk_rk_demo_johndoe
+```
+
+Here, your key handle is saved to the file `id_ecdsa_sk_rk_demo_johndoe`.
+Note that the name of this file is generated on the key type (`id_ecdsa_sk`),
+the application ID (`demo`), and the username (`johndoe`) used when generating the FIDO credential.
+
+Next, retrieve the SSH certificate stored as a large blob on token:
+
+```bash
+$ fido2-token -G -b -n ssh:demo id_ecdsa_sk_rk_demo_johndoe-cert.pub /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+```
+
+Here, we specify `id_ecdsa_sk_rk_demo_johndoe-cert.pub` as the name of the certificate,
+to match the key file in the previous step.
+
+## Signing in to a server
+
+Now that we have our SSH certificate, we should be able to sign in on any server that uses the CA public key to verify users.
+When using OpenSSH, the CA signing key can be configured globally in the file `/etc/ssh/sshd_config` by including the directive:
+
+```
+TrustedUserCAKeys /etc/ssh/user_ca.pub
+```
+
+For more information on configuring OpenSSH servers, see the
+link:https://man.openbsd.org/sshd_config[sshd_config manual]
+
+Assuming the user account `johndoe` exists, 
+
+test signing in using ssh certificate
+
+```bash
+$ ssh -i ././id_ecdsa_sk_rk_demo_johndoe -l johndoe demo.example.org
+Confirm user presence for key ECDSA-SK SHA256:sAohY3k592oMYCwGfBJJEIIoxiZIzIPuWJHCZBapti4
+User presence confirmed
+[demo.example.org:~]$ whoami
+johndoe
+[demo.example.org:~]$ exit
+$
+```
+
+## Deleting an SSH certificate from a FIDO security key
+
+To delete the large blob (i.e. the certificate) from a FIDO security key, for instance when that certificate has expired:
+
+```bash
+$ fido2-token -D -b -n ssh:demo /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+```
+
+Here, the application ID is used to refer to the credential associated with the large blob.
+
+In case there are multiple credentials enrolled with that application ID, the credential ID must also be specified.
+In that case, lookup the credential ID first:
+
+```bash
+$ fido2-token -Lk ssh:demo /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+00: dhx715WNlF36vMvo5hV0SBOPfWqS1ncj2P2BgW2513a/rLvg64Tl4f0/uDrs1LsE openssh am9obmRvZQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= es256 uvopt+id
+```
+
+The credential ID is listed in base64-encoded format in the second column.
+
+Then, delete the large blog specifying the credential ID.
+
+```bash
+$ fido2-token -D -b -n ssh:demo -i dhx715WNlF36vMvo5hV0SBOPfWqS1ncj2P2BgW2513a/rLvg64Tl4f0/uDrs1LsE /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+```
+
+To also delete the resident credential:
+
+```bash
+$ fido2-token -D -i dhx715WNlF36vMvo5hV0SBOPfWqS1ncj2P2BgW2513a/rLvg64Tl4f0/uDrs1LsE /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+```
+
+## Final notes
+
+SSH certificates are usually small, but can grow large when for instance many principal names are added.
+FIDO large blobs have a maximum size that depends on the specific FIDO security key used.
+
+To inspect the large blobs maximum size for you security key, look for the `maxlargeblob` value reported by your security key:
+
+```bash
+$ fido2-token -I ioreg://4296903100 | grep maxlargeblob
+maxlargeblob: 4096
+```
+
+Also note that `maxlargeblob` is reported starting with version 1.11 of `fido2-token`.
+Use (`fido2-token -V`) to check what version is installed.
