@@ -1,0 +1,372 @@
+== Client To Authenticator Protocol (CTAP)
+
+FIDO2 consists of two standardized components, a web API (WebAuthn) and a protocol for clients to communicate with authenticators: the Client To Authenticator Protocol (CTAP).
+The client can be a platform (an Operating System such as Microsoft Windows), a browser (such as Google Chrome), or an application (such as an SSH client).
+
+CTAP clients can use different transports to communicate with an authenticator.
+When the authenticator is a FIDO security key, USB or NFC is typically used.
+
+The difference between WebAuthn and CTAP is illustrated in the figure below.
+
+image::fido2_building_blocks.png[]
+
+Note that web developers will never need to use CTAP. Instead, they will use the WebAuthn API that is supported by all major browsers.
+See our
+link:https://developers.yubico.com/WebAuthn/[WebAuthn documentation] for guidance on implementing FIDO authentication for web applications.
+
+The current version of the Client To Authenticator Protocol is 
+link:https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html[CTAP 2.1].
+
+=== Developing applications supporting FIDO
+
+With CTAP, there are now different options for developers to leverage FIDO authenticators to secure their applications:
+
+1. Use the WebAuthn API, if the application is a web application. That is, the client is a web browser.
+2. Use a platform API, if the application is a Desktop or Mobile application running on a platform that offers such an API.
+   An Example is the WebAuthn API on Microsoft Windows (link:https://learn.microsoft.com/en-us/windows/win32/api/webauthn/[webauthn.dll]).
+3. Use a library that implements the CTAP protocol, if the application is a Desktop or Mobile application and a platform API is not available or not suitable.
+
+Yubico offers several CTAP libraries for developers.
+
+For building a web application using WebAuthn, there is 
+link:https://developers.yubico.com/java-webauthn-server/[java-webauthn-server].
+
+For building Desktop applications, there are
+link:https://github.com/Yubico/libfido2[libfido2](C), and
+link:https://github.com/Yubico/python-fido2[python-fido2](python).
+
+The `libfido2` library comes with some command-line tools. We will be using the `fido2-token` tool in this section to illustrate some of the CTAP features.
+See also its link:https://developers.yubico.com/libfido2/Manuals/fido2-token.html[manual page].
+
+Many third-party libraries provide bindings of libfido2 for other programming languages.
+
+Note that when working with YubiKeys or the FIDO Security Key by Yubico, there are also these libraries to integrate with:
+
+- link:https://developers.yubico.com/yubikit-ios/[Yubico Mobile SDK (YubiKit) for iOS]
+- link:https://developers.yubico.com/yubikit-android/[Yubico Mobile SDK (YubiKit) for Android]
+- link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-overview.html[.NET YubiKey SDK]
+
+=== CTAP versions
+
+The CTAP specification refers to two protocol versions: CTAP1 and CTAP2 . CTAP1 is a new name for FIDO U2F.
+CTAP1 can only be used as a second factor, i.e. it does not support user verification using a PIN or a biometric.
+CTAP2 does support user verification and is a much more versatile protocol.
+
+An authenticator that implements CTAP2 is called a FIDO2 authenticator.
+If that authenticator implements CTAP1/U2F as well, it is backward compatible with U2F.
+
+CTAP2 also has different sub-versions, similar to WebAuthn levels.
+Authenticators can report the CTAP2 version they support using version identifiers, like `FIDO_2_0`, `FIDO_2_1_PRE`, or `FIDO_2_1`.
+FIDO2 authenticators that also support U2F (i.e. CTAP1), will report `U2F_V2` as a supported version.
+
+For instance: when retrieving information from a FIDO2 security key (on a linux system where it is assigned USB HID device file `/dev/hidraw0`):
+
+....
+$ fido2-token -I /dev/hidraw0
+...
+version strings: FIDO_2_0, FIDO_2_1_PRE, FIDO_2_1
+...
+....
+
+Note that on macOS, the device is typically referred to with something that looks like `ioreg://1234567890`.
+
+To find the list of FIDO security keys available, use:
+
+....
+$ fido2-token -L
+ioreg://4295201353: vendor=0x1050, product=0x0406 (Yubico YubiKey FIDO+CCID)
+ioreg://4295266735: vendor=0x1050, product=0x0407 (Yubico YubiKey OTP+FIDO+CCID)
+....
+
+=== CTAP Authenticator API commands
+
+CTAP defines a number of Authenticator API commands that can be used to communicate with an Authenticator.
+They are typically invoked from a FIDO library, or through the WebAuthn API when using a browser.
+Indeed, the WebAuthn `navigator.credentials.create()` and `navigator.credentials.get()` API methods translate to the
+CTAP `authenticatorMakeCredential` and `authenticatorGetAssertion` commands, respectively.
+
+To use these CTAP API command from the command-line, have a look at the 
+link:https://developers.yubico.com/libfido2/Manuals/fido2-cred.html[fido2-cred] and
+link:https://developers.yubico.com/libfido2/Manuals/fido2-assert.html[fido2-assert] tools that are part of 
+link:https://github.com/Yubico/libfido2[libfido2].
+
+There are also API commands that cannot be invoked directly through the WebAuthn API, for instance for setting or changing PINs, enrolling a biometric, or managing credentials.
+
+For a full list of CTAP Authenticator API commands, see the
+link:https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#authenticator-api[CTAP 2.1 specification]
+
+=== CTAP Features
+
+CTAP defines several optional features that can be implemented on Authenticators, depending on the CTAP version implemented.
+
+Clients can request an authenticator to report a list of its supported protocol versions and other information using the `authenticatorGetInfo` API command.
+
+The `fido2-token` tool can be used to invoke this command from the command-line:
+
+....
+$ fido2-token -I /dev/hidraw0
+proto: 0x02
+major: 0x05
+minor: 0x07
+build: 0x00
+caps: 0x05 (wink, cbor, msg)
+version strings: FIDO_2_0, FIDO_2_1_PRE, FIDO_2_1
+extension strings: credProtect, hmac-secret, largeBlobKey, credBlob, minPinLength
+transport strings: nfc, usb
+algorithms: es256 (public-key), eddsa (public-key), es384 (public-key)
+aaguid: f8a011f38c0a4d15800617111f9edc7d
+options: rk, up, noplat, alwaysUv, credMgmt, authnrCfg, clientPin, largeBlobs, pinUvAuthToken, setMinPINLength, nomakeCredUvNotRqd, credentialMgmtPreview
+fwversion: 0x50700
+maxmsgsiz: 1280
+maxcredcntlst: 8
+maxcredlen: 128
+maxlargeblob: 4096
+maxrpids in minpinlen: 1
+remaining rk(s): 98
+minpinlen: 4
+pin protocols: 2, 1
+pin retries: 8
+pin change required: false
+uv retries: undefined
+....
+
+The meaning of some of this command's output is explained below and on its
+link:https://developers.yubico.com/libfido2/Manuals/fido2-token.html[manual page].
+
+==== Credential Management
+
+Credential management is used to manage discoverable credentials on the authenticator.
+This feature is important, as without it there is no way to delete credentials that are stored on an authenticator, other than resetting the authenticator (and deleting all credentials instead of a specific one).
+Hardware security keys typically have limited storage for discoverable credentials (for instance 100 on a YubiKey with firmware 5.7), so it can be very useful to delete credentials that are no longer being used.
+
+Credential Management also allows for enumeration of credentials, the retrieval of credential metadata and updating credential user information.
+
+The YubiKey and the FIDO Security Key by Yubico support credential management since firmware version 5.2.
+
+The `fido2-token` tool can be used for performing credential management from the command-line.
+
+For instance, to list discoverable credentials stored on a device:
+
+....
+$ fido2-token -L -r $DEV
+Enter PIN: ******
+00: 4wYQ6KFiEVlg/h7CI+ZSnJ9LboAgDcteXDIcivHisb8= ssh:
+01: 5Yaf4EYzO6ALp/K7s+p+BQLPSCYVYcKLZptoXwxqQzs= passkey.org
+....
+
+To delete a discoverable credential, use the `-D` option and specify its (base64-encoded) credential ID with `-i`:
+
+....
+$ fido2-token -D -i uFqNE0NN1Pwvp/gQZ2Y71Hi7zafFHoCyUv+8RGjYDLX6JqN0YpQ7DrynVP5GYoZT /dev/hidraw0
+Enter PIN: ******
+....
+
+==== Enterprise Attestation
+
+Enterprise Attestation (EA) was added in CTAP version 2.1 and WebAuthn L2.
+As suggested by its name, it is intended for use within enterprises to uniquely identify an authenticator, something that is explicitly made infeasible with normal attestation to preserve user privacy.
+In an enterprise scenario, EA can be used for asset tracking or to aid in account recovery flows by allowing an end user to prove they have a specific FIDO2 authenticator.
+It requires an authenticator that is specifically configured for use within a particular enterprise, so it will not be generally available on authenticators.
+
+See also our guidance on
+link:https://developers.yubico.com/WebAuthn/Concepts/Enterprise_Attestation/[using Enterprise Attestation in web applications].
+
+The YubiKey and the FIDO Security Key by Yubico support enterprise attestation since firmware version 5.7, but only on custom configured keys. 
+It will allow Relying Parties to read the serial number (or another organization-specified unique identifier) from the YubiKey during FIDO2 registration.
+
+Enterprise attestation can be enabled on a device using:
+....
+$ fido2-token -S -a /dev/hidraw0
+Enter PIN: ******
+....
+
+==== Always Require User Verification
+
+This feature, called `AlwaysUV`, causes every FIDO2 registration or authentication event to require a PIN or biometric, regardless of the options set by the relying party or platform.
+
+The current status for AlwaysUV can be retrieved using 
+When using the `fido2-token` tool with the `-I` switch, the current status is listed under `options` as
+
+- `alwaysUv`, meaning AlwaysUV is enabled, or
+- `noalwaysUv`, meaning AlwaysUV is disabled.
+
+The AlwaysUV feature can be enabled on a device using `fido2-token -S -u` or disabled using `fido2-token -D -u`.
+
+==== Set Minimum PIN Length
+
+Another feature that is intended for use in an enterprise or government environment is "Set Minimum PIN Length", which enforces a minimum PIN length policy for authenticators.
+
+
+Minimum PIN Length allows Identity Providers to enforce the configured minimum PIN length during FIDO2 registration, to support self-enrollment processes.
+The minimum PIN length can only be configured by platforms, or by communicating to the YubiKey directly, and can only be enforced by identity providers or relying parties in an allowed list configured on the YubiKey.
+
+To set a minimum PIN length for a device to 6:
+
+....
+$ fido2-token -S -l 6 /dev/hidraw0
+Enter PIN: ******
+....
+
+To force a PIN change:
+
+....
+$ fido2-token -S -f /dev/hidraw0
+Enter PIN: ******
+....
+
+The authenticator cannot be used before the PIN is changed. For instance, when listing discoverable credentials, an PIN violation occurs:
+
+....
+$ fido2-token -L -r /dev/hidraw0
+Enter PIN for: ******
+fido2-token: fido_credman_get_dev_rp: FIDO_ERR_PIN_POLICY_VIOLATION
+....
+
+To set a list of RP IDs allowed to retrieve the minimum PIN length, use the `-S -m` option:
+
+....
+$ fido2-token -S -m example.org,example.com /dev/hidraw0
+Enter PIN: ******
+....
+
+See also the minimum PIN length extension below.
+
+=== Extensions
+
+FIDO authenticators may support optional extensions.
+
+For a list of defined extensions, see the
+link:https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-defined-extensions[CTAP specification]
+
+The extensions supported by an authenticator can be retrieved using the `authenticatorGetInfo` API command.
+
+The `fido2-token` tool can be used to invoke this command from the command-line, where the supported extensions are listed as `extension strings`. For instance:
+
+....
+$ fido2-token -I /dev/hidraw0
+...
+extension strings: credProtect, hmac-secret, largeBlobKey, credBlob, minPinLength
+...
+....
+
+See below for what these extensions entail.
+
+==== Credential Protection (credProtect)
+
+The Credential Protection extension can be used to improve privacy in case an unauthorized user has access to an authenticator.
+It allows a Relying Party to set a credential protection policy at registration. 
+
+With the Credential Protection extension set, the associated FIDO2 credential can be flagged to not be exposed to any one without user verification
+It can neither be read nor used for authentication with the user asserting their identity. 
+
+==== Credential Blob (credBlob) and Large Blob Key (largeBlobKey)
+
+The Large blob storage extension (largeBlob) allow a Relying Party to 
+
+Note that large blobs are also available from the WebAuthn API. See the
+link:https://www.w3.org/TR/webauthn-2/#sctn-large-blob-extension[WebAuthn Level 2 W3C Recommandation].
+
+Note that on some browsers, the HMAC Secret extension is also available 
+
+To list all large blobs stored on an authenticator:
+
+....
+fido2-token -L -b /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+total map size: 1219 bytes
+00:  591  893 <unknown> <unknown>
+01:  581  889 dhx715WNlF36vMvo5hV0SBOPfWqS1ncj2P2BgW2513a/rLvg64Tl4f0/uDrs1LsE example.org
+....
+
+To store the contents of file `myfile` as a large blob on an authenticator:
+
+....
+fido2-token -S -b -n example.org myfile /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+....
+
+
+To retrieve a large blob from an authenticator and store it in `myfile`:
+
+....
+fido2-token -G -b -n example.org myfile /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+....
+
+To delete a large blob associated with RP ID `example.org` from an authenticator:
+
+....
+fido2-token -D -b -n example.org /dev/hidraw0
+Enter PIN for /dev/hidraw0: ********
+....
+
+An example use-case for largeBlobs is SSH, where an SSH certificate can be stored on an authenticator, together with is corresponding private key.
+
+See 
+link:https://developers.yubico.com/SSH/Storing_SSH_Certificates.html[Storing SSH Certificates on a FIDO security key].
+
+==== Minimum PIN Length Extension (minPinLength)
+
+The Minimum PIN Length extension allows clients to retrieve the minimum PIN length for a specific RP ID.
+Which RP IDs are allowed to retrieve this information can be set.
+
+==== HMAC Secret Extension (hmac-secret)
+
+The HMAC Secret extension can be used by a client to retrieve a symmetric secret from the authenticator when it needs to encrypt or decrypt data.
+
+The HMAC secrets extension is enabled on a create credential request, and the symmetric secret is scoped to the generated credential.
+
+For an example of using the HMAC Secret extension using the
+link:https://github.com/Yubico/python-fido2/tree/main[python-fido2]
+Python library, see
+link:https://github.com/Yubico/python-fido2/blob/main/examples/hmac_secret.py[hmac_secret.py].
+
+Note that on some browsers, the HMAC Secret extension is also available from the WebAuthn API, where it is known as the
+link:https://github.com/w3c/webauthn/wiki/Explainer:-PRF-extension[PRF extension].
+The WebAuthn PRF extension is specified in the forthcoming
+link:https://w3c.github.io/webauthn/#prf-extension[WebAuthn Level 3 draft].
+
+=== FIDO CTAP support on YubiKeys
+
+See the YubiKey Technical Manual for an overview of 
+link:https://docs.yubico.com/hardware/yubikey/yk-tech-manual/yk5-apps.html#id16[FIDO2 features and extensions available per firmware version]
+
+
+
+
+
+SYNOPSIS
+     fido2-token -C  device
+     fido2-token -D  -i cred_id device
+     fido2-token -D -b  -k key_path device
+     fido2-token -D -b  -n rp_id [-i cred_id] device
+     fido2-token -D -e  -i template_id device
+     fido2-token -D -u  device
+     fido2-token -G -b  -k key_path blob_path device
+     fido2-token -G -b  -n rp_id [-i cred_id] blob_path device
+     fido2-token -I [-c] [-k rp_id -i cred_id] device
+     fido2-token -L [-ber] [-k rp_id] [device]
+     fido2-token -R device
+     fido2-token -S [-aefu] device
+     fido2-token -S -i template_id -n template_name device
+     fido2-token -S -l pin_length device
+     fido2-token -S -b  -k key_path blob_path device
+     fido2-token -S -b  -n rp_id [-i cred_id] blob_path device
+     fido2-token -S -c  -i cred_id -k user_id -n name -p display_name device
+     fido2-token -S -m rp_id device
+     fido2-token -V
+
+-R	reset
+
+PIN
+
+-C	 Changes the PIN of device.
+-S	Sets the PIN of device.
+
+BIOMETRICS
+
+-L -e	 list biometric enrollments
+-D -e -i id	 list biometric enrollment id (enrollment's template base64-encoded id)
+-S -e	 set new biometric enrollment
+-S -e -i template_id -n template_name	 set biometric enrollment template_id (base64-encoded) to friendly name to template_name
+
