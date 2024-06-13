@@ -24,6 +24,7 @@
 <code class="Nm" title="Nm">fido_cred_set_authdata</code>,
   <code class="Nm" title="Nm">fido_cred_set_authdata_raw</code>,
   <code class="Nm" title="Nm">fido_cred_set_attstmt</code>,
+  <code class="Nm" title="Nm">fido_cred_set_attobj</code>,
   <code class="Nm" title="Nm">fido_cred_set_x509</code>,
   <code class="Nm" title="Nm">fido_cred_set_sig</code>,
   <code class="Nm" title="Nm">fido_cred_set_id</code>,
@@ -71,6 +72,13 @@ typedef enum {
 <var class="Ft" title="Ft">int</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_set_attstmt</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_set_attobj</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   unsigned char *ptr</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
@@ -191,14 +199,16 @@ The <code class="Nm" title="Nm">fido_cred_set_authdata</code> set of functions
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_authdata</code>(),
   <code class="Fn" title="Fn">fido_cred_set_attstmt</code>(),
+  <code class="Fn" title="Fn">fido_cred_set_attobj</code>(),
   <code class="Fn" title="Fn">fido_cred_set_x509</code>(),
   <code class="Fn" title="Fn">fido_cred_set_sig</code>(),
   <code class="Fn" title="Fn">fido_cred_set_id</code>(), and
   <code class="Fn" title="Fn">fido_cred_set_clientdata_hash</code>() functions
-  set the authenticator data, attestation statement, attestation certificate,
-  attestation signature, id, and client data hash parts of
-  <var class="Fa" title="Fa">cred</var> to <var class="Fa" title="Fa">ptr</var>,
-  where <var class="Fa" title="Fa">ptr</var> points to
+  set the authenticator data, attestation statement, attestation object,
+  attestation certificate, attestation signature, id, and client data hash parts
+  of <var class="Fa" title="Fa">cred</var> to
+  <var class="Fa" title="Fa">ptr</var>, where
+  <var class="Fa" title="Fa">ptr</var> points to
   <var class="Fa" title="Fa">len</var> bytes. A copy of
   <var class="Fa" title="Fa">ptr</var> is made, and no references to the passed
   pointer are kept.
@@ -224,6 +234,19 @@ The attestation statement passed to
   <code class="Fn" title="Fn">fido_cred_set_sig</code>(). The latter two are
   meant to be used in contexts where the credential's complete attestation
   statement is not available or required.
+<div class="Pp"></div>
+The attestation object passed to
+  <code class="Fn" title="Fn">fido_cred_set_attobj</code>() must be a
+  CBOR-encoded map containing &#x201C;authData&#x201D;, &#x201C;fmt&#x201D;, and
+  &#x201C;attStmt&#x201D;. An application calling
+  <code class="Fn" title="Fn">fido_cred_set_attobj</code>() does not need to
+  call <code class="Fn" title="Fn">fido_cred_set_fmt</code>(),
+  <code class="Fn" title="Fn">fido_cred_set_attstmt</code>(),
+  <code class="Fn" title="Fn">fido_cred_set_authdata</code>(), or
+  <code class="Fn" title="Fn">fido_cred_set_authdata_raw</code>().
+  <code class="Fn" title="Fn">fido_cred_set_attobj</code>() may be useful in
+  applications interfacing with the WebAuthn API, removing the need to first
+  parse the attestation object to verify the credential.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_clientdata</code>() function
   allows an application to set the client data hash of
