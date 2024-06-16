@@ -155,6 +155,28 @@ In addition to a native SSH client, the Windows OpenSSH beta release also contai
 
 Once those prerequisites are met, the openSSH client inside the WSL environment can be used seamlessly with the YubiKey plugged into the Windows host.
 
+=== Using FIDO2 Keys with macOS ===
+The version of OpenSSH shipped by macOS does not bundle the required middleware `libsk-libfido2.dylib` and generating a key results in:
+
+----
+$ ssh-keygen -t ed25519-sk
+Generating public/private ed25519-sk key pair.
+You may need to touch your authenticator to authorize key generation.
+Key enrollment failed: unknown or unsupported key type
+----
+
+You can either install a different version of OpenSSH which bundles this library,
+or add the required binary manually.
+The latter approach will keep the integrations of OpenSSH with Apple launchctl and Keychain intact.
+A brew package is available:
+
+----
+$ brew install michaelroosz/ssh/libsk-libfido2-install
+----
+
+* The middleware can then be injected using `SSH_SK_PROVIDER=/usr/local/lib/libsk-libfido2.dylib`.
+* For the `ssh` command only (e.g., not `ssh-keygen`), `SecurityKeyProvider /usr/local/lib/libsk-libfido2.dylib` may be configured in `~/.ssh/config` in addition.
+* Note that for `ssh-agent` to work you also need to pass `-P '/usr/lib/*,/usr/local/lib/*,/usr/local/Cellar/libsk-libfido2/*'` to allow the FIDO2 provider.
 
 == Troubleshooting
 .In the event you are prompted for a password instead of the YubiKey, further configuration of the remote system may be required.  Some areas to consider investigating are:
