@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yubikit.securitydomain &mdash; yubikey-manager 5.5.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=a385a3de"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.5
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">yubikit.securitydomain</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for yubikit.securitydomain</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">Tlv</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">,</span> <span class="n">BadResponseError</span><span class="p">,</span> <span class="n">Version</span>
+<span class="kn">from</span> <span class="nn">.core.smartcard</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AID</span><span class="p">,</span>
+    <span class="n">SmartCardConnection</span><span class="p">,</span>
+    <span class="n">SmartCardProtocol</span><span class="p">,</span>
+    <span class="n">ApduError</span><span class="p">,</span>
+    <span class="n">SW</span><span class="p">,</span>
+    <span class="n">ScpProcessor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.core.smartcard.scp</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">INS_INITIALIZE_UPDATE</span><span class="p">,</span>
+    <span class="n">INS_EXTERNAL_AUTHENTICATE</span><span class="p">,</span>
+    <span class="n">INS_INTERNAL_AUTHENTICATE</span><span class="p">,</span>
+    <span class="n">INS_PERFORM_SECURITY_OPERATION</span><span class="p">,</span>
+    <span class="n">KeyRef</span><span class="p">,</span>
+    <span class="n">ScpKid</span><span class="p">,</span>
+    <span class="n">ScpKeyParams</span><span class="p">,</span>
+    <span class="n">StaticKeys</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">serialization</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.ciphers</span> <span class="kn">import</span> <span class="n">Cipher</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">,</span> <span class="n">modes</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">ec</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">INS_GET_DATA</span> <span class="o">=</span> <span class="mh">0xCA</span>
+<span class="n">INS_PUT_KEY</span> <span class="o">=</span> <span class="mh">0xD8</span>
+<span class="n">INS_STORE_DATA</span> <span class="o">=</span> <span class="mh">0xE2</span>
+<span class="n">INS_DELETE</span> <span class="o">=</span> <span class="mh">0xE4</span>
+<span class="n">INS_GENERATE_KEY</span> <span class="o">=</span> <span class="mh">0xF1</span>
+
+<span class="n">TAG_KEY_INFORMATION</span> <span class="o">=</span> <span class="mh">0xE0</span>
+<span class="n">TAG_CARD_RECOGNITION_DATA</span> <span class="o">=</span> <span class="mh">0x66</span>
+<span class="n">TAG_CA_KLOC_IDENTIFIERS</span> <span class="o">=</span> <span class="mh">0xFF33</span>
+<span class="n">TAG_CA_KLCC_IDENTIFIERS</span> <span class="o">=</span> <span class="mh">0xFF34</span>
+<span class="n">TAG_CERTIFICATE_STORE</span> <span class="o">=</span> <span class="mh">0xBF21</span>
+
+
+<div class="viewcode-block" id="KeyType">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.KeyType">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">KeyType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AES</span> <span class="o">=</span> <span class="mh">0x88</span>
+    <span class="n">ECC_PUBLIC_KEY</span> <span class="o">=</span> <span class="mh">0xB0</span>
+    <span class="n">ECC_PRIVATE_KEY</span> <span class="o">=</span> <span class="mh">0xB1</span>
+    <span class="n">ECC_KEY_PARAMS</span> <span class="o">=</span> <span class="mh">0xF0</span></div>
+
+
+
+<span class="n">_DEFAULT_KCV_IV</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\1</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">16</span>
+
+
+<div class="viewcode-block" id="Curve">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.Curve">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">Curve</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">SECP256R1</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">SECP384R1</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">SECP521R1</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BrainpoolP256R1</span> <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BrainpoolP384R1</span> <span class="o">=</span> <span class="mh">0x05</span>
+    <span class="n">BrainpoolP512R1</span> <span class="o">=</span> <span class="mh">0x07</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_from_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">private_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Curve&quot;</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">private_key</span><span class="o">.</span><span class="n">curve</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">curve</span> <span class="ow">in</span> <span class="bp">cls</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">curve</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">curve</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported private key&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurve</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_int2asn1</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="n">bs</span> <span class="o">=</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x80</span><span class="p">:</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">bs</span>
+    <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x93</span><span class="p">,</span> <span class="n">bs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_encrypt_cbc</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="n">encryptor</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span>
+        <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>
+        <span class="n">modes</span><span class="o">.</span><span class="n">CBC</span><span class="p">(</span><span class="n">iv</span><span class="p">),</span>
+        <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">(),</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">encryptor</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="SecurityDomainSession">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession">[docs]</a>
+<span class="k">class</span> <span class="nc">SecurityDomainSession</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A session for managing SCP keys&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">SECURE_DOMAIN</span><span class="p">)</span>
+        <span class="c1"># We don&#39;t know the exact version, but this is the minimum that supports SCP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">Version</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SecurityDomain session initialized&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SecurityDomainSession.authenticate">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.authenticate">[docs]</a>
+    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_params</span><span class="p">:</span> <span class="n">ScpKeyParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize SCP and authenticate the session.</span>
+
+<span class="sd">        SCP11b does not authenticate the OCE, and will not allow the usage of commands</span>
+<span class="sd">        which require authentication of the OCE.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">init_scp</span><span class="p">(</span><span class="n">key_params</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.get_data">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.get_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read data from the security domain.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_GET_DATA</span><span class="p">,</span> <span class="n">tag</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">,</span> <span class="n">tag</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.get_key_information">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.get_key_information">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_key_information</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">KeyRef</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information about the currently loaded keys.&quot;&quot;&quot;</span>
+        <span class="c1"># 11.3.3.1.1 Key Information Template (&#39;E0&#39;)</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">TAG_KEY_INFORMATION</span><span class="p">)):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="mh">0xC0</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">keys</span><span class="p">[</span><span class="n">KeyRef</span><span class="p">(</span><span class="n">data</span><span class="p">[:</span><span class="mi">2</span><span class="p">])]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">::</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">keys</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.get_card_recognition_data">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.get_card_recognition_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_card_recognition_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get information about the card.&quot;&quot;&quot;</span>
+        <span class="c1"># 7.4.1.3 Card Recognition Data</span>
+        <span class="k">return</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="mh">0x73</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">TAG_CARD_RECOGNITION_DATA</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.get_supported_ca_identifiers">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.get_supported_ca_identifiers">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_supported_ca_identifiers</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">kloc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">klcc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">KeyRef</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a list of the CA issuer Subject Key Identifiers for keys.</span>
+
+<span class="sd">        Setting one of kloc or klcc to True will cause only those CAs to be returned.</span>
+<span class="sd">        By default, this will get both KLOC and KLCC CAs.</span>
+
+<span class="sd">        :param kloc: Get KLOC CAs.</span>
+<span class="sd">        :param klcc: Get KLCC CAs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kloc</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">klcc</span><span class="p">:</span>
+            <span class="n">kloc</span> <span class="o">=</span> <span class="n">klcc</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Getting CA identifiers KLOC=</span><span class="si">{</span><span class="n">kloc</span><span class="si">}</span><span class="s2">, KLCC=</span><span class="si">{</span><span class="n">klcc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+        <span class="c1"># Combine CA list for KLCC and KLOC</span>
+        <span class="k">for</span> <span class="n">fetch</span><span class="p">,</span> <span class="n">tag</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">kloc</span><span class="p">,</span> <span class="n">TAG_CA_KLOC_IDENTIFIERS</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">klcc</span><span class="p">,</span> <span class="n">TAG_CA_KLCC_IDENTIFIERS</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">fetch</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">REFERENCE_DATA_NOT_FOUND</span><span class="p">:</span>
+                        <span class="k">raise</span>
+        <span class="n">tlvs</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">KeyRef</span><span class="p">(</span><span class="n">tlvs</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">):</span> <span class="n">tlvs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tlvs</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.get_certificate_bundle">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.get_certificate_bundle">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_certificate_bundle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the certificates associated with the given SCP11 private key.</span>
+
+<span class="sd">        Certificates are returned leaf-last.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Getting certificate bundle for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">TAG_CERTIFICATE_STORE</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xA6</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="n">key</span><span class="p">)))</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">REFERENCE_DATA_NOT_FOUND</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.reset">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a factory reset of the Security Domain.</span>
+
+<span class="sd">        This will remove all keys and associated data, as well as restore the default</span>
+<span class="sd">        SCP03 static keys, and generate a new (attestable) SCP11b key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Resetting all SCP keys&quot;</span><span class="p">)</span>
+        <span class="c1"># Reset is done by blocking all available keys</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">8</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_key_information</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span> <span class="o">==</span> <span class="mh">0x01</span><span class="p">:</span>
+                <span class="c1"># SCP03 uses KID=0, we use KVN=0 to allow deleting the default keys</span>
+                <span class="c1"># which have an invalid KVN (0xff).</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">KeyRef</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">ins</span> <span class="o">=</span> <span class="n">INS_INITIALIZE_UPDATE</span>
+            <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span> <span class="ow">in</span> <span class="p">(</span><span class="mh">0x02</span><span class="p">,</span> <span class="mh">0x03</span><span class="p">):</span>
+                <span class="k">continue</span>  <span class="c1"># Skip these, will be deleted by 0x01</span>
+            <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span> <span class="ow">in</span> <span class="p">(</span><span class="mh">0x11</span><span class="p">,</span> <span class="mh">0x15</span><span class="p">):</span>
+                <span class="n">ins</span> <span class="o">=</span> <span class="n">INS_EXTERNAL_AUTHENTICATE</span>
+            <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span> <span class="o">==</span> <span class="mh">0x13</span><span class="p">:</span>
+                <span class="n">ins</span> <span class="o">=</span> <span class="n">INS_INTERNAL_AUTHENTICATE</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># 0x10, 0x20-0x2F</span>
+                <span class="n">ins</span> <span class="o">=</span> <span class="n">INS_PERFORM_SECURITY_OPERATION</span>
+
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">65</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mh">0x80</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">kvn</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="ow">in</span> <span class="p">(</span>
+                        <span class="n">SW</span><span class="o">.</span><span class="n">AUTH_METHOD_BLOCKED</span><span class="p">,</span>
+                        <span class="n">SW</span><span class="o">.</span><span class="n">SECURITY_CONDITION_NOT_SATISFIED</span><span class="p">,</span>
+                    <span class="p">):</span>
+                        <span class="k">break</span>
+                    <span class="k">elif</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">INCORRECT_PARAMETERS</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">raise</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SCP keys reset&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.store_data">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.store_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">store_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores data in the security domain.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_STORE_DATA</span><span class="p">,</span> <span class="mh">0x90</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.store_certificate_bundle">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.store_certificate_bundle">[docs]</a>
+    <span class="k">def</span> <span class="nf">store_certificate_bundle</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyRef</span><span class="p">,</span> <span class="n">certificates</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the certificate chain for the given key.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+
+<span class="sd">        Certificates should be in order, with the leaf certificate last.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Storing certificate bundle for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_data</span><span class="p">(</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xA6</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span>
+                <span class="n">TAG_CERTIFICATE_STORE</span><span class="p">,</span>
+                <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">c</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">serialization</span><span class="o">.</span><span class="n">Encoding</span><span class="o">.</span><span class="n">DER</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">certificates</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Certificate bundle stored&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.store_allowlist">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.store_allowlist">[docs]</a>
+    <span class="k">def</span> <span class="nf">store_allowlist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyRef</span><span class="p">,</span> <span class="n">serials</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store which certificate serial numbers that can be used for a given key.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+
+<span class="sd">        If no allowlist is stored, any certificate signed by the CA can be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Storing serial allowlist for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_data</span><span class="p">(</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xA6</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x70</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_int2asn1</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">serials</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Serial allowlist stored&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.store_ca_issuer">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.store_ca_issuer">[docs]</a>
+    <span class="k">def</span> <span class="nf">store_ca_issuer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyRef</span><span class="p">,</span> <span class="n">ski</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the SKI (Subject Key Identifier) for the CA of a given key.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Storing CA issuer SKI for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">ski</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">klcc</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ScpKid</span><span class="o">.</span><span class="n">SCP11a</span><span class="p">,</span> <span class="n">ScpKid</span><span class="o">.</span><span class="n">SCP11b</span><span class="p">,</span> <span class="n">ScpKid</span><span class="o">.</span><span class="n">SCP11c</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_data</span><span class="p">(</span>
+            <span class="n">Tlv</span><span class="p">(</span>
+                <span class="mh">0xA6</span><span class="p">,</span>
+                <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x80</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\1</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">klcc</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x42</span><span class="p">,</span> <span class="n">ski</span><span class="p">)</span> <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CA issuer SKI stored&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.delete_key">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.delete_key">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kid</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">kvn</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">delete_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete one (or more) keys.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+
+<span class="sd">        All keys matching the given KID and/or KVN will be deleted.</span>
+<span class="sd">        To delete the final key you must set delete_last = True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kvn</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify at least one of kid, kvn.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">kid</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="c1"># SCP03 keys can only be deleted by KVN</span>
+            <span class="k">if</span> <span class="n">kvn</span><span class="p">:</span>
+                <span class="n">kid</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SCP03 keys can only be deleted by KVN&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting keys with KID=</span><span class="si">{</span><span class="n">kid</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;ANY&#39;</span><span class="si">}</span><span class="s2">, KVN=</span><span class="si">{</span><span class="n">kvn</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;ANY&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kid</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xD0</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">kid</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">kvn</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xD2</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">kvn</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mh">0x80</span><span class="p">,</span> <span class="n">INS_DELETE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">delete_last</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Keys deleted&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.generate_ec_key">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.generate_ec_key">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_ec_key</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyRef</span><span class="p">,</span> <span class="n">curve</span><span class="p">:</span> <span class="n">Curve</span> <span class="o">=</span> <span class="n">Curve</span><span class="o">.</span><span class="n">SECP256R1</span><span class="p">,</span> <span class="n">replace_kvn</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a new SCP11 key.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+
+<span class="sd">        Use replace_kvn to replace an existing key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Generating new key for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;, replacing KVN=</span><span class="si">{</span><span class="n">replace_kvn</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">replace_kvn</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">key</span><span class="o">.</span><span class="n">kvn</span><span class="p">])</span> <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">KeyType</span><span class="o">.</span><span class="n">ECC_KEY_PARAMS</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">curve</span><span class="p">]))</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mh">0x80</span><span class="p">,</span> <span class="n">INS_GENERATE_KEY</span><span class="p">,</span> <span class="n">replace_kvn</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span><span class="p">,</span> <span class="n">data</span>
+        <span class="p">)</span>
+        <span class="n">encoded_point</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">KeyType</span><span class="o">.</span><span class="n">ECC_PUBLIC_KEY</span><span class="p">,</span> <span class="n">resp</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New key generated&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="o">.</span><span class="n">from_encoded_point</span><span class="p">(</span><span class="n">curve</span><span class="o">.</span><span class="n">_curve</span><span class="p">,</span> <span class="n">encoded_point</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SecurityDomainSession.put_key">
+<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.securitydomain.SecurityDomainSession.put_key">[docs]</a>
+    <span class="k">def</span> <span class="nf">put_key</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">KeyRef</span><span class="p">,</span>
+        <span class="n">sk</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">StaticKeys</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">],</span>
+        <span class="n">replace_kvn</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Import an SCP key.</span>
+
+<span class="sd">        Requires OCE verification.</span>
+
+<span class="sd">        The value of the sk argument should match the SCP type as defined by the KID.</span>
+<span class="sd">        Use replace_kvn to replace an existing key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Importing key into </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">_processor</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">processor</span><span class="p">,</span> <span class="n">ScpProcessor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must be authenticated!&quot;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">key</span><span class="o">.</span><span class="n">kvn</span><span class="p">])</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">dek</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">_keys</span><span class="o">.</span><span class="n">key_dek</span>
+        <span class="n">p2</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">kid</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">StaticKeys</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dek</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No session DEK key available&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sk</span><span class="o">.</span><span class="n">key_dek</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;New DEK must be set in static keys&quot;</span><span class="p">)</span>
+            <span class="n">p2</span> <span class="o">|=</span> <span class="mh">0x80</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cast</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span> <span class="n">sk</span><span class="p">):</span>
+                <span class="n">kcv</span> <span class="o">=</span> <span class="n">_encrypt_cbc</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">_DEFAULT_KCV_IV</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">KeyType</span><span class="o">.</span><span class="n">AES</span><span class="p">,</span> <span class="n">_encrypt_cbc</span><span class="p">(</span><span class="n">dek</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">kcv</span><span class="p">)])</span> <span class="o">+</span> <span class="n">kcv</span>
+                <span class="n">expected</span> <span class="o">+=</span> <span class="n">kcv</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">dek</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No session DEK key available&quot;</span><span class="p">)</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="n">sk</span><span class="o">.</span><span class="n">key_size</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">//</span> <span class="mi">8</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">sk</span><span class="o">.</span><span class="n">private_numbers</span><span class="p">()</span><span class="o">.</span><span class="n">private_value</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">KeyType</span><span class="o">.</span><span class="n">ECC_PRIVATE_KEY</span><span class="p">,</span> <span class="n">_encrypt_cbc</span><span class="p">(</span><span class="n">dek</span><span class="p">,</span> <span class="n">s</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span>
+                    <span class="n">KeyType</span><span class="o">.</span><span class="n">ECC_PUBLIC_KEY</span><span class="p">,</span>
+                    <span class="n">sk</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span>
+                        <span class="n">serialization</span><span class="o">.</span><span class="n">Encoding</span><span class="o">.</span><span class="n">X962</span><span class="p">,</span>
+                        <span class="n">serialization</span><span class="o">.</span><span class="n">PublicFormat</span><span class="o">.</span><span class="n">UncompressedPoint</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported key type&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">KeyType</span><span class="o">.</span><span class="n">ECC_KEY_PARAMS</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">Curve</span><span class="o">.</span><span class="n">_from_key</span><span class="p">(</span><span class="n">sk</span><span class="p">)]))</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mh">0x80</span><span class="p">,</span> <span class="n">INS_PUT_KEY</span><span class="p">,</span> <span class="n">replace_kvn</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Incorrect key check value&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Key imported&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ykman.util &mdash; yubikey-manager 5.5.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=a385a3de"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+              <div class="version">
+                5.5
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ykman.util</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ykman.util</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">yubikit.core</span> <span class="kn">import</span> <span class="n">Tlv</span><span class="p">,</span> <span class="n">int2bytes</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.serialization</span> <span class="kn">import</span> <span class="n">pkcs12</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">serialization</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">PEM_IDENTIFIER</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;-----BEGIN&quot;</span>
+
+
+<div class="viewcode-block" id="InvalidPasswordError">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.InvalidPasswordError">[docs]</a>
+<span class="k">class</span> <span class="nc">InvalidPasswordError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when parsing key/certificate and the password might be wrong/missing.&quot;&quot;&quot;</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_parse_pkcs12</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">key</span><span class="p">,</span> <span class="n">cert</span><span class="p">,</span> <span class="n">cas</span> <span class="o">=</span> <span class="n">pkcs12</span><span class="o">.</span><span class="n">load_key_and_certificates</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">cert</span><span class="p">:</span>
+            <span class="n">cas</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cert</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">cas</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># cryptography raises ValueError on wrong password</span>
+        <span class="k">raise</span> <span class="n">InvalidPasswordError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="parse_private_key">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.parse_private_key">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_private_key</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify, decrypt and return a cryptography private key object.</span>
+
+<span class="sd">    :param data: The private key in bytes.</span>
+<span class="sd">    :param password: The password to decrypt the private key</span>
+<span class="sd">        (if it is encrypted).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># PEM</span>
+    <span class="k">if</span> <span class="n">is_pem</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">encrypted</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;ENCRYPTED&quot;</span> <span class="ow">in</span> <span class="n">data</span>
+        <span class="k">if</span> <span class="n">encrypted</span> <span class="ow">and</span> <span class="n">password</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPasswordError</span><span class="p">(</span><span class="s2">&quot;No password provided for encrypted key.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">serialization</span><span class="o">.</span><span class="n">load_pem_private_key</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Cryptography raises ValueError if decryption fails.</span>
+            <span class="k">if</span> <span class="n">encrypted</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidPasswordError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to parse PEM private key &quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to parse PEM private key &quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># PKCS12</span>
+    <span class="k">if</span> <span class="n">is_pkcs12</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_parse_pkcs12</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># DER</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">serialization</span><span class="o">.</span><span class="n">load_der_private_key</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to parse private key as DER&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># All parsing failed</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not parse private key.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="parse_certificates">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.parse_certificates">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_certificates</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify, decrypt and return a list of cryptography x509 certificates.</span>
+
+<span class="sd">    :param data: The certificate(s) in bytes.</span>
+<span class="sd">    :param password: The password to decrypt the certificate(s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Attempting to parse certificate using PEM, PKCS12 and DER&quot;</span><span class="p">)</span>
+
+    <span class="c1"># PEM</span>
+    <span class="k">if</span> <span class="n">is_pem</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">certs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">PEM_IDENTIFIER</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">cert</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">certs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">x509</span><span class="o">.</span><span class="n">load_pem_x509_certificate</span><span class="p">(</span>
+                            <span class="n">PEM_IDENTIFIER</span> <span class="o">+</span> <span class="n">cert</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">()</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to parse PEM certificate&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Could be valid PEM but not certificates.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">certs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;PEM file does not contain any certificate(s)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">certs</span>
+
+    <span class="c1"># PKCS12</span>
+    <span class="k">if</span> <span class="n">is_pkcs12</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_parse_pkcs12</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">password</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># DER</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())]</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to parse certificate as DER&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not parse certificate.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_leaf_certificates">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.get_leaf_certificates">[docs]</a>
+<span class="k">def</span> <span class="nf">get_leaf_certificates</span><span class="p">(</span><span class="n">certs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the leaf certificates from a list of certificates.</span>
+
+<span class="sd">    Leaf certificates are ones whose subject does not appear as</span>
+<span class="sd">    issuer among the others.</span>
+
+<span class="sd">    :param certs: The list of cryptography x509 certificate objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">issuers</span> <span class="o">=</span> <span class="p">[</span><span class="n">cert</span><span class="o">.</span><span class="n">issuer</span> <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="n">certs</span><span class="p">]</span>
+    <span class="n">leafs</span> <span class="o">=</span> <span class="p">[</span><span class="n">cert</span> <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="n">certs</span> <span class="k">if</span> <span class="n">cert</span><span class="o">.</span><span class="n">subject</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">issuers</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">leafs</span></div>
+
+
+
+<div class="viewcode-block" id="is_pem">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.is_pem">[docs]</a>
+<span class="k">def</span> <span class="nf">is_pem</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">PEM_IDENTIFIER</span> <span class="ow">in</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="is_pkcs12">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.is_pkcs12">[docs]</a>
+<span class="k">def</span> <span class="nf">is_pkcs12</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tries to identify a PKCS12 container.</span>
+<span class="sd">    The PFX PDU version is assumed to be v3.</span>
+<span class="sd">    See: https://tools.ietf.org/html/rfc7292.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_from</span><span class="p">(</span><span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="mh">0x30</span><span class="p">,</span> <span class="n">data</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">header</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="mh">0x02</span> <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x03</span><span class="s2">&quot;</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to parse TLV&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="display_serial">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.display_serial">[docs]</a>
+<span class="k">def</span> <span class="nf">display_serial</span><span class="p">(</span><span class="n">serial</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Displays an x509 certificate serial number in a readable format.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">serial</span> <span class="o">&gt;=</span> <span class="mh">0x10000000000000000</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">serial</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">serial</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="n">serial</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="OSVERSIONINFOW">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.OSVERSIONINFOW">[docs]</a>
+<span class="k">class</span> <span class="nc">OSVERSIONINFOW</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;dwOSVersionInfoSize&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;dwMajorVersion&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;dwMinorVersion&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;dwBuildNumber&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;dwPlatformId&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_ulong</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;szCSDVersion&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_wchar</span> <span class="o">*</span> <span class="mi">128</span><span class="p">),</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_windows_version">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.util.get_windows_version">[docs]</a>
+<span class="k">def</span> <span class="nf">get_windows_version</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the true Windows version, since sys.getwindowsversion lies.&quot;&quot;&quot;</span>
+    <span class="n">osvi</span> <span class="o">=</span> <span class="n">OSVERSIONINFOW</span><span class="p">()</span>
+    <span class="n">osvi</span><span class="o">.</span><span class="n">dwOSVersionInfoSize</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">osvi</span><span class="p">)</span>
+    <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">Ntdll</span><span class="o">.</span><span class="n">RtlGetVersion</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">osvi</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+    <span class="k">return</span> <span class="n">osvi</span><span class="o">.</span><span class="n">dwMajorVersion</span><span class="p">,</span> <span class="n">osvi</span><span class="o">.</span><span class="n">dwMinorVersion</span><span class="p">,</span> <span class="n">osvi</span><span class="o">.</span><span class="n">dwBuildNumber</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

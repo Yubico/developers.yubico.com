@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.piv &mdash; yubikey-manager 5.4.0 documentation</title>
+  <title>ykman.piv &mdash; yubikey-manager 5.5.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -13,9 +13,9 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f02a3fcf"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../_static/documentation_options.js?v=a385a3de"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -33,7 +33,7 @@
             yubikey-manager
           </a>
               <div class="version">
-                5.4
+                5.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -113,6 +113,7 @@
     <span class="n">TAG_LRC</span><span class="p">,</span>
     <span class="n">SlotMetadata</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">display_serial</span>
 
 <span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
 <span class="kn">from</span> <span class="nn">cryptography.exceptions</span> <span class="kn">import</span> <span class="n">InvalidSignature</span>
@@ -192,7 +193,9 @@
 <span class="n">_DOTTED_STRING_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d(\.\d+)+&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="parse_rfc4514_string"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.parse_rfc4514_string">[docs]</a><span class="k">def</span> <span class="nf">parse_rfc4514_string</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Name</span><span class="p">:</span>
+<div class="viewcode-block" id="parse_rfc4514_string">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.parse_rfc4514_string">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_rfc4514_string</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Name</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse an RFC 4514 string into a x509.Name.</span>
 
 <span class="sd">    See: https://tools.ietf.org/html/rfc4514.html</span>
@@ -219,6 +222,7 @@
     <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">Name</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span></div>
 
 
+
 <span class="k">def</span> <span class="nf">_dummy_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="mi">65537</span><span class="p">,</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span>
@@ -233,7 +237,9 @@
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid algorithm&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="derive_management_key"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.derive_management_key">[docs]</a><span class="k">def</span> <span class="nf">derive_management_key</span><span class="p">(</span><span class="n">pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">salt</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<div class="viewcode-block" id="derive_management_key">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.derive_management_key">[docs]</a>
+<span class="k">def</span> <span class="nf">derive_management_key</span><span class="p">(</span><span class="n">pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">salt</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Derive a management key from the users PIN and a salt.</span>
 
 <span class="sd">    NOTE: This method of derivation is deprecated! Protect the management key using</span>
@@ -246,7 +252,10 @@
     <span class="k">return</span> <span class="n">kdf</span><span class="o">.</span><span class="n">derive</span><span class="p">(</span><span class="n">pin</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="generate_random_management_key"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_random_management_key">[docs]</a><span class="k">def</span> <span class="nf">generate_random_management_key</span><span class="p">(</span><span class="n">algorithm</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="generate_random_management_key">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_random_management_key">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_random_management_key</span><span class="p">(</span><span class="n">algorithm</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a new random management key.</span>
 
 <span class="sd">    :param algorithm: The algorithm for the management key.</span>
@@ -254,7 +263,10 @@
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="n">algorithm</span><span class="o">.</span><span class="n">key_len</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="PivmanData"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanData">[docs]</a><span class="k">class</span> <span class="nc">PivmanData</span><span class="p">:</span>
+
+<div class="viewcode-block" id="PivmanData">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanData">[docs]</a>
+<span class="k">class</span> <span class="nc">PivmanData</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x80</span><span class="p">)):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">Tlv</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mh">0x81</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="mh">0x81</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">else</span> <span class="kc">None</span>
@@ -298,7 +310,9 @@
     <span class="k">def</span> <span class="nf">has_stored_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mgm_key_protected</span>
 
-<div class="viewcode-block" id="PivmanData.get_bytes"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanData.get_bytes">[docs]</a>    <span class="k">def</span> <span class="nf">get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<div class="viewcode-block" id="PivmanData.get_bytes">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanData.get_bytes">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x81</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">))</span>
@@ -306,22 +320,32 @@
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x82</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">salt</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;I&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_timestamp</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x80</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x80</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="k">if</span> <span class="n">data</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="PivmanProtectedData"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanProtectedData">[docs]</a><span class="k">class</span> <span class="nc">PivmanProtectedData</span><span class="p">:</span>
+
+<div class="viewcode-block" id="PivmanProtectedData">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanProtectedData">[docs]</a>
+<span class="k">class</span> <span class="nc">PivmanProtectedData</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x88</span><span class="p">)):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">Tlv</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mh">0x89</span><span class="p">)</span>
 
-<div class="viewcode-block" id="PivmanProtectedData.get_bytes"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanProtectedData.get_bytes">[docs]</a>    <span class="k">def</span> <span class="nf">get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<div class="viewcode-block" id="PivmanProtectedData.get_bytes">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.PivmanProtectedData.get_bytes">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x89</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x88</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x88</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="k">if</span> <span class="n">data</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="get_pivman_data"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.get_pivman_data">[docs]</a><span class="k">def</span> <span class="nf">get_pivman_data</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PivmanData</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_pivman_data">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.get_pivman_data">[docs]</a>
+<span class="k">def</span> <span class="nf">get_pivman_data</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PivmanData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read out the Pivman data from a YubiKey.</span>
 
 <span class="sd">    :param session: The PIV session.</span>
@@ -337,7 +361,10 @@
         <span class="k">raise</span></div>
 
 
-<div class="viewcode-block" id="get_pivman_protected_data"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.get_pivman_protected_data">[docs]</a><span class="k">def</span> <span class="nf">get_pivman_protected_data</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PivmanProtectedData</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_pivman_protected_data">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.get_pivman_protected_data">[docs]</a>
+<span class="k">def</span> <span class="nf">get_pivman_protected_data</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PivmanProtectedData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read out the Pivman protected data from a YubiKey.</span>
 
 <span class="sd">    This function requires PIN verification prior to being called.</span>
@@ -355,7 +382,10 @@
         <span class="k">raise</span></div>
 
 
-<div class="viewcode-block" id="pivman_set_mgm_key"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_set_mgm_key">[docs]</a><span class="k">def</span> <span class="nf">pivman_set_mgm_key</span><span class="p">(</span>
+
+<div class="viewcode-block" id="pivman_set_mgm_key">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_set_mgm_key">[docs]</a>
+<span class="k">def</span> <span class="nf">pivman_set_mgm_key</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">new_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
     <span class="n">algorithm</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">,</span>
@@ -371,6 +401,7 @@
 <span class="sd">    :param store_on_device: If set, the management key is stored on device.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pivman</span> <span class="o">=</span> <span class="n">get_pivman_data</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="n">pivman_old_bytes</span> <span class="o">=</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">()</span>
     <span class="n">pivman_prot</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">store_on_device</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">store_on_device</span> <span class="ow">and</span> <span class="n">pivman</span><span class="o">.</span><span class="n">has_stored_key</span><span class="p">):</span>
@@ -393,8 +424,10 @@
     <span class="c1"># Set flag for stored or not stored key.</span>
     <span class="n">pivman</span><span class="o">.</span><span class="n">mgm_key_protected</span> <span class="o">=</span> <span class="n">store_on_device</span>
 
-    <span class="c1"># Update readable pivman data</span>
-    <span class="n">session</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID_PIVMAN_DATA</span><span class="p">,</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">())</span>
+    <span class="c1"># Update readable pivman data, if changed</span>
+    <span class="n">pivman_bytes</span> <span class="o">=</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">pivman_old_bytes</span> <span class="o">!=</span> <span class="n">pivman_bytes</span><span class="p">:</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID_PIVMAN_DATA</span><span class="p">,</span> <span class="n">pivman_bytes</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">pivman_prot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">store_on_device</span><span class="p">:</span>
@@ -416,7 +449,10 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No PIN provided, can&#39;t clear key...&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="pivman_change_pin"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_change_pin">[docs]</a><span class="k">def</span> <span class="nf">pivman_change_pin</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span> <span class="n">old_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="pivman_change_pin">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_change_pin">[docs]</a>
+<span class="k">def</span> <span class="nf">pivman_change_pin</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span> <span class="n">old_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Change the PIN, while keeping PivmanData in sync.</span>
 
 <span class="sd">    :param session: The PIV session.</span>
@@ -429,7 +465,6 @@
     <span class="k">if</span> <span class="n">pivman</span><span class="o">.</span><span class="n">has_derived_key</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Has derived management key, update for new PIN&quot;</span><span class="p">)</span>
         <span class="n">session</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span>
-            <span class="n">MANAGEMENT_KEY_TYPE</span><span class="o">.</span><span class="n">TDES</span><span class="p">,</span>
             <span class="n">derive_management_key</span><span class="p">(</span><span class="n">old_pin</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">pivman</span><span class="o">.</span><span class="n">salt</span><span class="p">)),</span>
         <span class="p">)</span>
         <span class="n">session</span><span class="o">.</span><span class="n">verify_pin</span><span class="p">(</span><span class="n">new_pin</span><span class="p">)</span>
@@ -440,7 +475,10 @@
         <span class="n">session</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID_PIVMAN_DATA</span><span class="p">,</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="pivman_set_pin_attempts"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_set_pin_attempts">[docs]</a><span class="k">def</span> <span class="nf">pivman_set_pin_attempts</span><span class="p">(</span>
+
+<div class="viewcode-block" id="pivman_set_pin_attempts">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.pivman_set_pin_attempts">[docs]</a>
+<span class="k">def</span> <span class="nf">pivman_set_pin_attempts</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span> <span class="n">pin_attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">puk_attempts</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the number of PIN and PUK retry attempts, while keeping PivmanData in sync.</span>
@@ -456,7 +494,10 @@
         <span class="n">session</span><span class="o">.</span><span class="n">put_object</span><span class="p">(</span><span class="n">OBJECT_ID_PIVMAN_DATA</span><span class="p">,</span> <span class="n">pivman</span><span class="o">.</span><span class="n">get_bytes</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="list_certificates"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.list_certificates">[docs]</a><span class="k">def</span> <span class="nf">list_certificates</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">SLOT</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">]]:</span>
+
+<div class="viewcode-block" id="list_certificates">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.list_certificates">[docs]</a>
+<span class="k">def</span> <span class="nf">list_certificates</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">SLOT</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read out and parse stored certificates.</span>
 
 <span class="sd">    Only certificates which are successfully parsed are returned.</span>
@@ -475,6 +516,7 @@
     <span class="k">return</span> <span class="n">certs</span></div>
 
 
+
 <span class="k">def</span> <span class="nf">_list_keys</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">SLOT</span><span class="p">,</span> <span class="n">SlotMetadata</span><span class="p">]:</span>
     <span class="n">keys</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">SLOT</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">SLOT</span><span class="o">.</span><span class="n">ATTESTATION</span><span class="p">}:</span>
@@ -486,7 +528,9 @@
     <span class="k">return</span> <span class="n">keys</span>
 
 
-<div class="viewcode-block" id="check_key"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.check_key">[docs]</a><span class="k">def</span> <span class="nf">check_key</span><span class="p">(</span>
+<div class="viewcode-block" id="check_key">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.check_key">[docs]</a>
+<span class="k">def</span> <span class="nf">check_key</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
     <span class="n">public_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">],</span>
@@ -538,7 +582,10 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="generate_chuid"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_chuid">[docs]</a><span class="k">def</span> <span class="nf">generate_chuid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="generate_chuid">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_chuid">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_chuid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a CHUID (Cardholder Unique Identifier).&quot;&quot;&quot;</span>
     <span class="c1"># Non-Federal Issuer FASC-N</span>
     <span class="c1"># [9999-9999-999999-0-1-0000000000300001]</span>
@@ -558,7 +605,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="generate_ccc"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_ccc">[docs]</a><span class="k">def</span> <span class="nf">generate_ccc</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="generate_ccc">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_ccc">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_ccc</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a CCC (Card Capability Container).&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xF0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xa0\x00\x00\x01\x16\xff\x02</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">14</span><span class="p">))</span>
@@ -577,7 +627,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_piv_info"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.get_piv_info">[docs]</a><span class="k">def</span> <span class="nf">get_piv_info</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_piv_info">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.get_piv_info">[docs]</a>
+<span class="k">def</span> <span class="nf">get_piv_info</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get human readable information about the PIV configuration.</span>
 
 <span class="sd">    :param session: The PIV session.</span>
@@ -598,22 +651,8 @@
         <span class="n">tries</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_pin_attempts</span><span class="p">()</span>
         <span class="n">tries_str</span> <span class="o">=</span> <span class="s2">&quot;15 or more&quot;</span> <span class="k">if</span> <span class="n">tries</span> <span class="o">==</span> <span class="mi">15</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">tries</span><span class="p">)</span>
     <span class="n">info</span><span class="p">[</span><span class="s2">&quot;PIN tries remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tries_str</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">puk_data</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_puk_metadata</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">default_value</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;WARNING: Using default PUK!&quot;</span><span class="p">)</span>
-        <span class="n">tries_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span><span class="p">,</span>
-            <span class="n">puk_data</span><span class="o">.</span><span class="n">total_attempts</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;PUK tries remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tries_str</span>
-    <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">pivman</span><span class="o">.</span><span class="n">puk_blocked</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
 
-    <span class="k">try</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>  <span class="c1"># Bio metadata</span>
         <span class="n">bio</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_bio_metadata</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">bio</span><span class="o">.</span><span class="n">configured</span><span class="p">:</span>
             <span class="n">info</span><span class="p">[</span>
@@ -622,7 +661,21 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">info</span><span class="p">[</span><span class="s2">&quot;Biometrics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Not configured&quot;</span>
     <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
-        <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>  <span class="c1"># PUK metadata (on non-bio)</span>
+            <span class="n">puk_data</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_puk_metadata</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">puk_data</span><span class="o">.</span><span class="n">default_value</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;WARNING: Using default PUK!&quot;</span><span class="p">)</span>
+            <span class="n">tries_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">puk_data</span><span class="o">.</span><span class="n">attempts_remaining</span><span class="p">,</span>
+                <span class="n">puk_data</span><span class="o">.</span><span class="n">total_attempts</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;PUK tries remaining&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tries_str</span>
+        <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
+            <span class="c1"># YK &lt; 5.3</span>
+            <span class="k">if</span> <span class="n">pivman</span><span class="o">.</span><span class="n">puk_blocked</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PUK is blocked&quot;</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_management_key_metadata</span><span class="p">()</span>
@@ -670,18 +723,8 @@
         <span class="n">cert</span> <span class="o">=</span> <span class="n">certs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cert</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># Try to read out full DN, fallback to only CN.</span>
-                <span class="c1"># Support for DN was added in crytography 2.5</span>
                 <span class="n">subject_dn</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">rfc4514_string</span><span class="p">()</span>
                 <span class="n">issuer_dn</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">issuer</span><span class="o">.</span><span class="n">rfc4514_string</span><span class="p">()</span>
-                <span class="n">print_dn</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="n">print_dn</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed to read DN, falling back to only CNs&quot;</span><span class="p">)</span>
-                <span class="n">cn</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">get_attributes_for_oid</span><span class="p">(</span><span class="n">x509</span><span class="o">.</span><span class="n">NameOID</span><span class="o">.</span><span class="n">COMMON_NAME</span><span class="p">)</span>
-                <span class="n">subject_cn</span> <span class="o">=</span> <span class="n">cn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">cn</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
-                <span class="n">cn</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">issuer</span><span class="o">.</span><span class="n">get_attributes_for_oid</span><span class="p">(</span><span class="n">x509</span><span class="o">.</span><span class="n">NameOID</span><span class="o">.</span><span class="n">COMMON_NAME</span><span class="p">)</span>
-                <span class="n">issuer_cn</span> <span class="o">=</span> <span class="n">cn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">cn</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
             <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="c1"># Malformed certificates may throw ValueError</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed parsing certificate&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -713,13 +756,9 @@
 
             <span class="c1"># Print out everything</span>
             <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Public key type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key_algo</span>
-            <span class="k">if</span> <span class="n">print_dn</span><span class="p">:</span>
-                <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Subject DN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subject_dn</span>
-                <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Issuer DN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">issuer_dn</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Subject CN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subject_cn</span>
-                <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Issuer CN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">issuer_cn</span>
-            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Serial&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">serial</span>
+            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Subject DN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subject_dn</span>
+            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Issuer DN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">issuer_dn</span>
+            <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Serial&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">display_serial</span><span class="p">(</span><span class="n">serial</span><span class="p">)</span>
             <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Fingerprint&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fingerprint</span>
             <span class="k">if</span> <span class="n">not_before</span><span class="p">:</span>
                 <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Not before&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">not_before</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
@@ -729,6 +768,7 @@
             <span class="n">cert_data</span><span class="p">[</span><span class="s2">&quot;Error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Failed to parse certificate&quot;</span>
 
     <span class="k">return</span> <span class="n">lines</span></div>
+
 
 
 <span class="n">_AllowedHashTypes</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
@@ -749,7 +789,9 @@
     <span class="k">return</span> <span class="n">hash_algorithm</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="sign_certificate_builder"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.sign_certificate_builder">[docs]</a><span class="k">def</span> <span class="nf">sign_certificate_builder</span><span class="p">(</span>
+<div class="viewcode-block" id="sign_certificate_builder">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.sign_certificate_builder">[docs]</a>
+<span class="k">def</span> <span class="nf">sign_certificate_builder</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
     <span class="n">key_type</span><span class="p">:</span> <span class="n">KEY_TYPE</span><span class="p">,</span>
@@ -785,7 +827,10 @@
     <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">der</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="sign_csr_builder"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.sign_csr_builder">[docs]</a><span class="k">def</span> <span class="nf">sign_csr_builder</span><span class="p">(</span>
+
+<div class="viewcode-block" id="sign_csr_builder">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.sign_csr_builder">[docs]</a>
+<span class="k">def</span> <span class="nf">sign_csr_builder</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
     <span class="n">public_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">],</span>
@@ -834,7 +879,10 @@
     <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_csr</span><span class="p">(</span><span class="n">der</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="generate_self_signed_certificate"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_self_signed_certificate">[docs]</a><span class="k">def</span> <span class="nf">generate_self_signed_certificate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="generate_self_signed_certificate">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_self_signed_certificate">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_self_signed_certificate</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
     <span class="n">public_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">],</span>
@@ -870,7 +918,10 @@
     <span class="k">return</span> <span class="n">sign_certificate_builder</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">builder</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="generate_csr"><a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_csr">[docs]</a><span class="k">def</span> <span class="nf">generate_csr</span><span class="p">(</span>
+
+<div class="viewcode-block" id="generate_csr">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.piv.generate_csr">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_csr</span><span class="p">(</span>
     <span class="n">session</span><span class="p">:</span> <span class="n">PivSession</span><span class="p">,</span>
     <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
     <span class="n">public_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">],</span>
@@ -891,6 +942,7 @@
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">sign_csr_builder</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">public_key</span><span class="p">,</span> <span class="n">builder</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
