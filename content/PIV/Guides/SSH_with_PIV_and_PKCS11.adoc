@@ -10,7 +10,7 @@ This is a step-by-step guide on setting up a YubiKey with PIV to work for public
 OpenSC is no longer required, since we now have a functional PKCS #11 module, namely ykcs11.
 
 [NOTE]
-RSA 4096-bit keys are not currently supported due to a limitation in the PIV spec: https://github.com/Yubico/yubico-piv-tool/issues/58
+RSA 4096-bit and RSA 3072-bit keys require YubiKey firmware version 5.7 or later.
 
 [NOTE]
 We strongly recommend changing the management key; keeping the default management key is explicitly discouraged. The examples given in the following steps assume that you have not yet changed the management key. If you have changed the management key, add `--key` to the `yubico-piv-tool -a import-certificate` command below.
@@ -33,6 +33,9 @@ or *generate* the key:
 *Step 2*: Create a self-signed certificate for that key. The only use for the X.509 certificate is to satisfy PIV/PKCS #11 lib. It needs to be able to extract the public-key from the smartcard, and to do that through the X.509 certificate.
 
   $ yubico-piv-tool -a verify-pin -a selfsign-certificate -s 9a -S "/CN=SSH key/" -i public.pem -o cert.pem
+
+[NOTE]
+This command will prompt for the PIV PIN. The default PIV PIN is 123456. You should change the default PIN before generating keys with `yubico-piv-tool -a change-pin`.
 
 *Step 3*: Load the certificate:
 
