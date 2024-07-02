@@ -39,6 +39,8 @@
   <code class="Nm" title="Nm">fido_cred_pubkey_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_sig_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_user_id_ptr</code>,
+  <code class="Nm" title="Nm">fido_cred_x5c_list_count</code>,
+  <code class="Nm" title="Nm">fido_cred_x5c_list_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_x5c_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_attstmt_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_authdata_len</code>,
@@ -50,6 +52,7 @@
   <code class="Nm" title="Nm">fido_cred_pubkey_len</code>,
   <code class="Nm" title="Nm">fido_cred_sig_len</code>,
   <code class="Nm" title="Nm">fido_cred_user_id_len</code>,
+  <code class="Nm" title="Nm">fido_cred_x5c_list_len</code>,
   <code class="Nm" title="Nm">fido_cred_x5c_len</code>,
   <code class="Nm" title="Nm">fido_cred_attstmt_len</code>,
   <code class="Nm" title="Nm">fido_cred_type</code>,
@@ -149,6 +152,17 @@
 <code class="Fn" title="Fn">fido_cred_user_id_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_cred_t *cred</var>);
 <div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_x5c_list_count</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">const unsigned char *</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_x5c_list_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
+<div class="Pp"></div>
 <var class="Ft" title="Ft">const unsigned char *</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_x5c_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
@@ -203,6 +217,12 @@
 <br/>
 <code class="Fn" title="Fn">fido_cred_user_id_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_cred_t *cred</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_x5c_list_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t idx</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">size_t</var>
 <br/>
@@ -298,7 +318,7 @@ The <code class="Fn" title="Fn">fido_cred_authdata_ptr</code>(),
   <code class="Fn" title="Fn">fido_cred_attstmt_ptr</code>() functions return
   pointers to the CBOR-encoded and raw authenticator data, client data hash, ID,
   authenticator attestation GUID, &#x201C;largeBlobKey&#x201D;, public key,
-  signature, user ID, x509 certificate, and attestation statement parts of
+  signature, user ID, x509 leaf certificate, and attestation statement parts of
   <var class="Fa" title="Fa">cred</var>, or NULL if the respective entry is not
   set.
 <div class="Pp"></div>
@@ -314,6 +334,27 @@ The corresponding length can be obtained by
   <code class="Fn" title="Fn">fido_cred_user_id_len</code>(),
   <code class="Fn" title="Fn">fido_cred_x5c_len</code>(), and
   <code class="Fn" title="Fn">fido_cred_attstmt_len</code>().
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_cred_x5c_list_count</code>() function
+  returns the length of the x509 certificate chain in
+  <var class="Fa" title="Fa">cred</var> and the
+  <code class="Fn" title="Fn">fido_cred_x5c_list_ptr</code>() and
+  <code class="Fn" title="Fn">fido_cred_x5c_list_len</code>() functions return a
+  pointer to and length of the x509 certificate at index
+  <var class="Fa" title="Fa">idx</var> respectively. Please note that the leaf
+  certificate has an <var class="Fa" title="Fa">idx</var> (index) value of 0 and
+  calling
+  <code class="Fn" title="Fn">fido_cred_x5c_list_ptr</code>(<var class="Fa" title="Fa">cred</var>,
+  <var class="Fa" title="Fa">0</var>) and
+  <code class="Fn" title="Fn">fido_cred_x5c_list_len</code>(<var class="Fa" title="Fa">cred</var>,
+  <var class="Fa" title="Fa">0</var>) is equivalent to
+  <code class="Fn" title="Fn">fido_cred_x5c_ptr</code>(<var class="Fa" title="Fa">cred</var>)
+  and
+  <code class="Fn" title="Fn">fido_cred_x5c_len</code>(<var class="Fa" title="Fa">cred</var>)
+  respectively. If <var class="Fa" title="Fa">idx</var> exceeds the return value
+  of <code class="Fn" title="Fn">fido_cred_x5c_list_count</code>(),
+  <code class="Fn" title="Fn">fido_cred_x5c_list_ptr</code>() returns NULL and
+  <code class="Fn" title="Fn">fido_cred_x5c_list_len</code>() returns 0.
 <div class="Pp"></div>
 The authenticator data, x509 certificate, and signature parts of a credential
   are typically passed to a FIDO2 server for verification.

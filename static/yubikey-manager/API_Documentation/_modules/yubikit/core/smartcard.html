@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.core.smartcard &mdash; yubikey-manager 5.4.0 documentation</title>
+  <title>yubikit.core.smartcard &mdash; yubikey-manager 5.5.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
@@ -13,9 +13,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=f02a3fcf"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/documentation_options.js?v=a385a3de"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +33,7 @@
             yubikey-manager
           </a>
               <div class="version">
-                5.4
+                5.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -101,25 +101,54 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">Version</span><span class="p">,</span>
     <span class="n">TRANSPORT</span><span class="p">,</span>
     <span class="n">USB_INTERFACE</span><span class="p">,</span>
     <span class="n">Connection</span><span class="p">,</span>
-    <span class="n">CommandError</span><span class="p">,</span>
+    <span class="n">NotSupportedError</span><span class="p">,</span>
     <span class="n">ApplicationNotAvailableError</span><span class="p">,</span>
+    <span class="n">CommandError</span><span class="p">,</span>
+    <span class="n">BadResponseError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">.scp</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ScpState</span><span class="p">,</span>
+    <span class="n">ScpKeyParams</span><span class="p">,</span>
+    <span class="n">Scp03KeyParams</span><span class="p">,</span>
+    <span class="n">Scp11KeyParams</span><span class="p">,</span>
+    <span class="n">INS_EXTERNAL_AUTHENTICATE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">yubikit.logging</span> <span class="kn">import</span> <span class="n">LOG_LEVEL</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">struct</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ApduError&quot;</span><span class="p">,</span> <span class="s2">&quot;ApduFormat&quot;</span><span class="p">,</span> <span class="s2">&quot;SW&quot;</span><span class="p">,</span> <span class="s2">&quot;AID&quot;</span><span class="p">]</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ApduError"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.ApduError">[docs]</a><span class="k">class</span> <span class="nc">ApduError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SmartCardConnection</span><span class="p">(</span><span class="n">Connection</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="n">usb_interface</span> <span class="o">=</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">CCID</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TRANSPORT</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the transport type of the connection (USB or NFC)&quot;&quot;&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_and_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">apdu</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a command APDU and returns the response&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="ApduError">
+<a class="viewcode-back" href="../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.ApduError">[docs]</a>
+<span class="k">class</span> <span class="nc">ApduError</span><span class="p">(</span><span class="n">CommandError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Thrown when an APDU response has the wrong SW code&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">sw</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
@@ -127,10 +156,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sw</span> <span class="o">=</span> <span class="n">sw</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;APDU error: SW=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sw</span><span class="si">:</span><span class="s2">04x</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">SW</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sw</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;APDU error: SW=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sw</span><span class="si">:</span><span class="s2">04x</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;APDU error: SW=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sw</span><span class="si">:</span><span class="s2">04x</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 
-<div class="viewcode-block" id="ApduFormat"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.ApduFormat">[docs]</a><span class="nd">@unique</span>
+
+<div class="viewcode-block" id="ApduFormat">
+<a class="viewcode-back" href="../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.ApduFormat">[docs]</a>
+<span class="nd">@unique</span>
 <span class="k">class</span> <span class="nc">ApduFormat</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;APDU encoding format&quot;&quot;&quot;</span>
 
@@ -138,7 +174,10 @@
     <span class="n">EXTENDED</span> <span class="o">=</span> <span class="s2">&quot;extended&quot;</span></div>
 
 
-<div class="viewcode-block" id="AID"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.AID">[docs]</a><span class="nd">@unique</span>
+
+<div class="viewcode-block" id="AID">
+<a class="viewcode-back" href="../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.AID">[docs]</a>
+<span class="nd">@unique</span>
 <span class="k">class</span> <span class="nc">AID</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey Application smart card AID values.&quot;&quot;&quot;</span>
 
@@ -148,10 +187,14 @@
     <span class="n">OATH</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a0000005272101&quot;</span><span class="p">)</span>
     <span class="n">PIV</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000308&quot;</span><span class="p">)</span>
     <span class="n">FIDO</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a0000006472f0001&quot;</span><span class="p">)</span>
-    <span class="n">HSMAUTH</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000527210701&quot;</span><span class="p">)</span></div>
+    <span class="n">HSMAUTH</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000527210701&quot;</span><span class="p">)</span>
+    <span class="n">SECURE_DOMAIN</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="s2">&quot;a000000151000000&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SW"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SW">[docs]</a><span class="nd">@unique</span>
+
+<div class="viewcode-block" id="SW">
+<a class="viewcode-back" href="../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.SW">[docs]</a>
+<span class="nd">@unique</span>
 <span class="k">class</span> <span class="nc">SW</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">NO_INPUT_DATA</span> <span class="o">=</span> <span class="mh">0x6285</span>
     <span class="n">VERIFY_FAIL_NO_RETRY</span> <span class="o">=</span> <span class="mh">0x63C0</span>
@@ -170,21 +213,10 @@
     <span class="n">APPLET_SELECT_FAILED</span> <span class="o">=</span> <span class="mh">0x6999</span>
     <span class="n">WRONG_PARAMETERS_P1P2</span> <span class="o">=</span> <span class="mh">0x6B00</span>
     <span class="n">INVALID_INSTRUCTION</span> <span class="o">=</span> <span class="mh">0x6D00</span>
+    <span class="n">CLASS_NOT_SUPPORTED</span> <span class="o">=</span> <span class="mh">0x6E00</span>
     <span class="n">COMMAND_ABORTED</span> <span class="o">=</span> <span class="mh">0x6F00</span>
     <span class="n">OK</span> <span class="o">=</span> <span class="mh">0x9000</span></div>
 
-
-<div class="viewcode-block" id="SmartCardConnection"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardConnection">[docs]</a><span class="k">class</span> <span class="nc">SmartCardConnection</span><span class="p">(</span><span class="n">Connection</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
-    <span class="n">usb_interface</span> <span class="o">=</span> <span class="n">USB_INTERFACE</span><span class="o">.</span><span class="n">CCID</span>
-
-    <span class="nd">@property</span>
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TRANSPORT</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the transport type of the connection (USB or NFC)&quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="SmartCardConnection.send_and_receive"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardConnection.send_and_receive">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">send_and_receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">apdu</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a command APDU and returns the response&quot;&quot;&quot;</span></div></div>
 
 
 <span class="n">INS_SELECT</span> <span class="o">=</span> <span class="mh">0xA4</span>
@@ -192,26 +224,178 @@
 <span class="n">P2_SELECT</span> <span class="o">=</span> <span class="mh">0x00</span>
 
 <span class="n">INS_SEND_REMAINING</span> <span class="o">=</span> <span class="mh">0xC0</span>
-<span class="n">SW1_HAS_MORE_DATA</span> <span class="o">=</span> <span class="mh">0x61</span>
+
+
+<span class="k">class</span> <span class="nc">ApduProcessor</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cla</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">p1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">p2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">le</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">ApduFormatProcessor</span><span class="p">(</span><span class="n">ApduProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">connection</span>
+
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">):</span>
+        <span class="n">apdu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="n">apdu</span><span class="p">)</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">format_apdu</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">le</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="o">...</span>
+
 
 <span class="n">SHORT_APDU_MAX_CHUNK</span> <span class="o">=</span> <span class="mh">0xFF</span>
 
 
-<span class="k">def</span> <span class="nf">_encode_short_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBB&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
-    <span class="k">if</span> <span class="n">le</span><span class="p">:</span>
-        <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">buf</span>
+<span class="k">class</span> <span class="nc">ShortApduProcessor</span><span class="p">(</span><span class="n">ApduFormatProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">format_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBB&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
+        <span class="k">if</span> <span class="n">le</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">buf</span>
+
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">):</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">:</span>
+            <span class="n">chunk</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">data</span><span class="p">[:</span><span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">],</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">:],</span>
+            <span class="p">)</span>
+            <span class="n">apdu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_apdu</span><span class="p">(</span><span class="mh">0x10</span> <span class="o">|</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="n">apdu</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">response</span><span class="p">,</span> <span class="n">sw</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_encode_extended_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBBH&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
-    <span class="k">if</span> <span class="n">le</span><span class="p">:</span>
-        <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">buf</span>
+<span class="k">class</span> <span class="nc">ExtendedApduProcessor</span><span class="p">(</span><span class="n">ApduFormatProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">max_apdu_size</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span> <span class="o">=</span> <span class="n">max_apdu_size</span>
+
+    <span class="k">def</span> <span class="nf">format_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBBH&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span>
+        <span class="k">if</span> <span class="n">le</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;APDU length exceeds YubiKey capability&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">buf</span>
 
 
-<div class="viewcode-block" id="SmartCardProtocol"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol">[docs]</a><span class="k">class</span> <span class="nc">SmartCardProtocol</span><span class="p">:</span>
+<span class="n">SW1_HAS_MORE_DATA</span> <span class="o">=</span> <span class="mh">0x61</span>
+
+
+<span class="k">class</span> <span class="nc">ChainedResponseProcessor</span><span class="p">(</span><span class="n">ApduProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">,</span>
+        <span class="n">extended_apdus</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">max_apdu_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ins_send_remaining</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">INS_SEND_REMAINING</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ExtendedApduProcessor</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">max_apdu_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">extended_apdus</span>
+            <span class="k">else</span> <span class="n">ShortApduProcessor</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">format_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ins_send_remaining</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">):</span>
+        <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+
+        <span class="c1"># Read chained response</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+        <span class="k">while</span> <span class="n">sw</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span> <span class="o">==</span> <span class="n">SW1_HAS_MORE_DATA</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">+=</span> <span class="n">response</span>
+            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span><span class="p">)</span>
+
+        <span class="n">buf</span> <span class="o">+=</span> <span class="n">response</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="p">,</span> <span class="n">sw</span>
+
+
+<span class="k">class</span> <span class="nc">TouchWorkaroundProcessor</span><span class="p">(</span><span class="n">ChainedResponseProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">,</span>
+        <span class="n">ins_send_remaining</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">INS_SEND_REMAINING</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">connection</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4</span><span class="p">,</span> <span class="n">ins_send_remaining</span><span class="o">=</span><span class="n">ins_send_remaining</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending dummy APDU as touch workaround&quot;</span><span class="p">)</span>
+            <span class="c1"># Dummy APDU, returns error</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">resp</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">54</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">resp</span><span class="p">,</span> <span class="n">sw</span>
+
+
+<span class="k">class</span> <span class="nc">ScpProcessor</span><span class="p">(</span><span class="n">ChainedResponseProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">,</span>
+        <span class="n">scp_state</span><span class="p">:</span> <span class="n">ScpState</span><span class="p">,</span>
+        <span class="n">max_apdu_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ins_send_remaining</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">INS_SEND_REMAINING</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">connection</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">max_apdu_size</span><span class="p">,</span> <span class="n">ins_send_remaining</span><span class="o">=</span><span class="n">ins_send_remaining</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">scp_state</span>
+
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">,</span> <span class="n">encrypt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="n">cla</span> <span class="o">|=</span> <span class="mh">0x04</span>
+
+        <span class="k">if</span> <span class="n">encrypt</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">LOG_LEVEL</span><span class="o">.</span><span class="n">TRAFFIC</span><span class="p">,</span> <span class="s2">&quot;Plaintext data: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">hex</span><span class="p">())</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Calculate and add MAC to data</span>
+        <span class="n">apdu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">format_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+        <span class="n">mac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">mac</span><span class="p">(</span><span class="n">apdu</span><span class="p">[:</span><span class="o">-</span><span class="mi">8</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">+</span> <span class="n">mac</span>
+
+        <span class="n">resp</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
+
+        <span class="c1"># Un-MAC and decrypt, if needed</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="p">:</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">unmac</span><span class="p">(</span><span class="n">resp</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">resp</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">LOG_LEVEL</span><span class="o">.</span><span class="n">TRAFFIC</span><span class="p">,</span> <span class="s2">&quot;Plaintext resp: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">hex</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">resp</span><span class="p">,</span> <span class="n">sw</span>
+
+
+<span class="k">class</span> <span class="nc">_MaxApduSize</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">NEO</span> <span class="o">=</span> <span class="mi">1390</span>
+    <span class="n">YK4</span> <span class="o">=</span> <span class="mi">2038</span>
+    <span class="n">YK4_3</span> <span class="o">=</span> <span class="mi">3062</span>
+
+
+<span class="k">class</span> <span class="nc">SmartCardProtocol</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;An implementation of the Smart Card protocol.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -219,40 +403,82 @@
         <span class="n">smartcard_connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">,</span>
         <span class="n">ins_send_remaining</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">INS_SEND_REMAINING</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">apdu_format</span> <span class="o">=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">SHORT</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">smartcard_connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span> <span class="o">=</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">NEO</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span> <span class="o">=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">SHORT</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span> <span class="o">=</span> <span class="n">ins_send_remaining</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_processor</span><span class="p">()</span>
 
-<div class="viewcode-block" id="SmartCardProtocol.close"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
-
-<div class="viewcode-block" id="SmartCardProtocol.enable_touch_workaround"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.enable_touch_workaround">[docs]</a>    <span class="k">def</span> <span class="nf">enable_touch_workaround</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_reset_processor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_processor</span> <span class="o">=</span> <span class="n">ChainedResponseProcessor</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span> <span class="o">==</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Touch workaround enabled=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SmartCardProtocol.select"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.select">[docs]</a>    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aid</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a SELECT instruction.</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">apdu_format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ApduFormat</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Deprecated: do not read apdu_format.&quot;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span><span class="p">,</span>
+        <span class="p">)</span>
 
-<span class="sd">        :param aid: The YubiKey application AID value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_SELECT</span><span class="p">,</span> <span class="n">P1_SELECT</span><span class="p">,</span> <span class="n">P2_SELECT</span><span class="p">,</span> <span class="n">aid</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="ow">in</span> <span class="p">(</span>
-                <span class="n">SW</span><span class="o">.</span><span class="n">FILE_NOT_FOUND</span><span class="p">,</span>
-                <span class="n">SW</span><span class="o">.</span><span class="n">APPLET_SELECT_FAILED</span><span class="p">,</span>
-                <span class="n">SW</span><span class="o">.</span><span class="n">INVALID_INSTRUCTION</span><span class="p">,</span>
-                <span class="n">SW</span><span class="o">.</span><span class="n">WRONG_PARAMETERS_P1P2</span><span class="p">,</span>
-            <span class="p">):</span>
-                <span class="k">raise</span> <span class="n">ApplicationNotAvailableError</span><span class="p">()</span>
-            <span class="k">raise</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span>
 
-<div class="viewcode-block" id="SmartCardProtocol.send_apdu"><a class="viewcode-back" href="../../../rst/yubikit.core.html#yubikit.core.smartcard.SmartCardProtocol.send_apdu">[docs]</a>    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">le</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="nd">@apdu_format</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">apdu_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot change to </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_processor</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">enable_touch_workaround</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Deprecated: use SmartCardProtocol.configure(version) instead.&quot;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_enable_touch_workaround</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_do_enable_touch_workaround</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">USB</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">version</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span> <span class="o">=</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_processor</span> <span class="o">=</span> <span class="n">TouchWorkaroundProcessor</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Touch workaround enabled&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure the connection optimally for the given YubiKey version.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_processor</span><span class="p">,</span> <span class="n">ScpProcessor</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_enable_touch_workaround</span><span class="p">(</span><span class="n">version</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span> <span class="o">=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4_3</span> <span class="k">if</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">else</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reset_processor</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cla</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">p1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">p2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">le</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Send APDU message.</span>
 
@@ -264,53 +490,75 @@
 <span class="sd">        :param le: The maximum number of bytes in the data</span>
 <span class="sd">            field of the response.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span>
-            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="ow">and</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">&lt;</span> <span class="mi">2</span>
-        <span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending dummy APDU as touch workaround&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
-                <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-            <span class="p">)</span>  <span class="c1"># Dummy APDU, returns error</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mi">0</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apdu_format</span> <span class="ow">is</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">SHORT</span><span class="p">:</span>
-            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">:</span>
-                <span class="n">chunk</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">SHORT_APDU_MAX_CHUNK</span><span class="p">:]</span>
-                <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
-                    <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="mh">0x10</span> <span class="o">|</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
-                <span class="p">)</span>
-                <span class="k">if</span> <span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">ApduError</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
-            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
-                <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">get_data</span> <span class="o">=</span> <span class="n">_encode_short_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">apdu_format</span> <span class="ow">is</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span><span class="p">:</span>
-            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span>
-                <span class="n">_encode_extended_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">get_data</span> <span class="o">=</span> <span class="n">_encode_extended_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid ApduFormat set&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Read chained response</span>
-        <span class="n">buf</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
-        <span class="k">while</span> <span class="n">sw</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span> <span class="o">==</span> <span class="n">SW1_HAS_MORE_DATA</span><span class="p">:</span>
-            <span class="n">buf</span> <span class="o">+=</span> <span class="n">response</span>
-            <span class="n">response</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="n">get_data</span><span class="p">)</span>
+        <span class="n">resp</span><span class="p">,</span> <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processor</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">sw</span> <span class="o">!=</span> <span class="n">SW</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ApduError</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
-        <span class="n">buf</span> <span class="o">+=</span> <span class="n">response</span>
+            <span class="k">raise</span> <span class="n">ApduError</span><span class="p">(</span><span class="n">resp</span><span class="p">,</span> <span class="n">sw</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_touch_workaround</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">54</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_last_long_resp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">resp</span>
 
-        <span class="k">return</span> <span class="n">buf</span></div></div>
+    <span class="k">def</span> <span class="nf">select</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aid</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a SELECT instruction.</span>
+
+<span class="sd">        :param aid: The YubiKey application AID value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selecting AID: </span><span class="si">{</span><span class="n">aid</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_processor</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_SELECT</span><span class="p">,</span> <span class="n">P1_SELECT</span><span class="p">,</span> <span class="n">P2_SELECT</span><span class="p">,</span> <span class="n">aid</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">FILE_NOT_FOUND</span><span class="p">,</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">APPLET_SELECT_FAILED</span><span class="p">,</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">INVALID_INSTRUCTION</span><span class="p">,</span>
+                <span class="n">SW</span><span class="o">.</span><span class="n">WRONG_PARAMETERS_P1P2</span><span class="p">,</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ApplicationNotAvailableError</span><span class="p">()</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">init_scp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_params</span><span class="p">:</span> <span class="n">ScpKeyParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_params</span><span class="p">,</span> <span class="n">Scp03KeyParams</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scp03_init</span><span class="p">(</span><span class="n">key_params</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_params</span><span class="p">,</span> <span class="n">Scp11KeyParams</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scp11_init</span><span class="p">(</span><span class="n">key_params</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported ScpKeyParams&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apdu_format</span> <span class="o">=</span> <span class="n">ApduFormat</span><span class="o">.</span><span class="n">EXTENDED</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_apdu_size</span> <span class="o">=</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4_3</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SCP initialized&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">CLASS_NOT_SUPPORTED</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span>
+                    <span class="s2">&quot;This YubiKey does not support secure messaging&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">REFERENCE_DATA_NOT_FOUND</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect SCP parameters&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">BadResponseError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect SCP parameters&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_scp03_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_params</span><span class="p">:</span> <span class="n">Scp03KeyParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initializing SCP03&quot;</span><span class="p">)</span>
+        <span class="n">scp</span><span class="p">,</span> <span class="n">host_cryptogram</span> <span class="o">=</span> <span class="n">ScpState</span><span class="o">.</span><span class="n">scp03_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">,</span> <span class="n">key_params</span><span class="p">)</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="n">ScpProcessor</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="n">scp</span><span class="p">,</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4_3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Send EXTERNAL AUTHENTICATE</span>
+        <span class="c1"># P1 = C-DECRYPTION, R-ENCRYPTION, C-MAC, and R-MAC</span>
+        <span class="n">processor</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+            <span class="mh">0x84</span><span class="p">,</span> <span class="n">INS_EXTERNAL_AUTHENTICATE</span><span class="p">,</span> <span class="mh">0x33</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">host_cryptogram</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">encrypt</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_processor</span> <span class="o">=</span> <span class="n">processor</span>
+
+    <span class="k">def</span> <span class="nf">_scp11_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_params</span><span class="p">:</span> <span class="n">Scp11KeyParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initializing SCP11&quot;</span><span class="p">)</span>
+        <span class="n">scp</span> <span class="o">=</span> <span class="n">ScpState</span><span class="o">.</span><span class="n">scp11_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">,</span> <span class="n">key_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_processor</span> <span class="o">=</span> <span class="n">ScpProcessor</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="n">scp</span><span class="p">,</span> <span class="n">_MaxApduSize</span><span class="o">.</span><span class="n">YK4_3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ins_send_remaining</span>
+        <span class="p">)</span>
 </pre></div>
 
            </div>
