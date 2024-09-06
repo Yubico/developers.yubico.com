@@ -78,7 +78,7 @@ link:https://github.com/Yubico/developers.yubico.com/issues/388[issue in the Git
 
  gpg --card-status
 
-Example response where the authentication-key-id in this example is `B28F B5D2 9E6C 37FD 7E84  3CA4 6849 79BD 3F2F 3A7A`. The general-key-id in this example is `840EB535F08D8A5F`.
+Example response where the authentication-key-id in this example is `4043 4AB6 BFE1 4040 EA6E  18BD 3C47 7268 8968 2A45`. The general-key-id in this example is `51BCF7B00445B676`.
 
 image::gpg-card-status-response.png[]
 
@@ -91,7 +91,7 @@ Example command where the `ssh_auth_key.pub` in this example is:
 ....
 ssh-rsa 
 AAAAB3NzaC1yc2E... 
-openpgp:0x3F2F3A7A
+openpgp:0x89682A45
 ....
 
 image::gpg-export-ssh-key-cmd.png[]
@@ -151,3 +151,68 @@ After installation, open a Cygwin shell and edit the `~/.bashrc` file by adding 
 eval $(/usr/bin/ssh-pageant -r -a "/tmp/.ssh-pageant-$USERNAME")
 ....
 
+== Troubleshooting
+
+=== Solving the "Permission denied (publickey)" Error
+*Problem:*
+
+When running a Git command such as git clone, you encounter the following error:
+
+[source,sh]
+----
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+----
+
+*Common Cause:*
+
+This error usually occurs when Git cannot authenticate your SSH key with the remote repository, often due to configuration issues with SSH keys or conflicting OpenSSH executables on your system.
+
+*Steps to Troubleshoot:*
+
+. *Check SSH Key Setup:*
+* Ensure your SSH key is correctly set up and added to your SSH agent. You can verify this by running:
++
+[source,sh]
+----
+ssh -vT git@github.com
+----
++
+* This command will provide detailed debugging output. If the key isn’t being recognized, follow GitHub's SSH key setup guide.
+. *Verify Git Configuration:*
+* If you are on Windows, the issue could be due to Git using a different version of OpenSSH than the one your SSH agent is using. By default, Windows may use its built-in OpenSSH, while Git for Windows may use its own.
+* Fix this by configuring Git to use the correct OpenSSH executable:
++
+[source,sh]
+----
+git config --global core.sshCommand "C:\\Windows\\System32\\OpenSSH\\ssh.exe"
+----
++
+. *Modify Your Git Configuration File (~/.gitconfig):*
+* Alternatively, you can add the following to your .gitconfig file:
++
+[source,ini]
+----
+[core]
+    sshCommand = 'C:\\Windows\\System32\\OpenSSH\\ssh.exe'
+----
++
+. *Restart SSH Agent:*
+* If using an SSH agent, ensure it is running and your key is added:
++
+[source,sh]
+----
+ssh-add -l
+----
++
+* If no keys are listed, add your key:
++
+[source,sh]
+----
+ssh-add ~/.ssh/id_rsa
+----
++
+. *Check Repository Access:*
+* Ensure you have the necessary permissions for the repository you're trying to access. Check if you can view the repository in your GitHub account.
+. *Re-add SSH Key to GitHub:*
+* If you've rotated your SSH keys or updated them recently, you may need to re-add the new public key to your GitHub account.
