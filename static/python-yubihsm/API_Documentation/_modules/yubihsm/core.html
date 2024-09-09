@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubihsm.core &mdash; python-yubihsm 3.0.0.dev0 documentation</title>
+  <title>yubihsm.core &mdash; python-yubihsm 3.1.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -13,7 +13,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=3aa38957"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=ff68d3e4"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
         <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -33,7 +33,7 @@
             python-yubihsm
           </a>
               <div class="version">
-                3.0
+                3.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -87,7 +87,16 @@
 <span class="sd">&quot;&quot;&quot;Core classes for YubiHSM communication.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">.defs</span> <span class="kn">import</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">OBJECT</span><span class="p">,</span> <span class="n">ALGORITHM</span><span class="p">,</span> <span class="n">LIST_FILTER</span><span class="p">,</span> <span class="n">OPTION</span><span class="p">,</span> <span class="n">AUDIT</span><span class="p">,</span> <span class="n">ERROR</span>
+<span class="kn">from</span> <span class="nn">.defs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">COMMAND</span><span class="p">,</span>
+    <span class="n">OBJECT</span><span class="p">,</span>
+    <span class="n">ALGORITHM</span><span class="p">,</span>
+    <span class="n">LIST_FILTER</span><span class="p">,</span>
+    <span class="n">OPTION</span><span class="p">,</span>
+    <span class="n">AUDIT</span><span class="p">,</span>
+    <span class="n">ERROR</span><span class="p">,</span>
+    <span class="n">FIPS_STATUS</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.backends</span> <span class="kn">import</span> <span class="n">get_backend</span><span class="p">,</span> <span class="n">YhsmBackend</span>
 <span class="kn">from</span> <span class="nn">.objects</span> <span class="kn">import</span> <span class="n">YhsmObject</span><span class="p">,</span> <span class="n">_label_pack</span><span class="p">,</span> <span class="n">LABEL_LENGTH</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="p">(</span>
@@ -108,6 +117,7 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">NamedTuple</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 
 <span class="n">KEY_ENC</span> <span class="o">=</span> <span class="mh">0x04</span>
@@ -115,8 +125,6 @@
 <span class="n">KEY_RMAC</span> <span class="o">=</span> <span class="mh">0x07</span>
 <span class="n">CARD_CRYPTOGRAM</span> <span class="o">=</span> <span class="mh">0x00</span>
 <span class="n">HOST_CRYPTOGRAM</span> <span class="o">=</span> <span class="mh">0x01</span>
-
-<span class="n">MAX_MSG_SIZE</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">-</span> <span class="mi">1</span>
 
 
 <span class="k">def</span> <span class="nf">_derive</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">L</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mh">0x80</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
@@ -190,6 +198,7 @@
 <span class="sd">    :ivar log_size: Log entry storage capacity.</span>
 <span class="sd">    :ivar log_used: Log entries currently stored.</span>
 <span class="sd">    :ivar supported_algorithms: List of supported algorithms.</span>
+<span class="sd">    :ivar part_number: Chip designator.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">FORMAT</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;!BBBIBB&quot;</span>
@@ -200,16 +209,22 @@
     <span class="n">log_size</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">log_used</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">supported_algorithms</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">ALGORITHM</span><span class="p">]</span>
+    <span class="n">part_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 <div class="viewcode-block" id="DeviceInfo.parse"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.DeviceInfo.parse">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeviceInfo&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">first_page</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">second_page</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeviceInfo&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a DeviceInfo from its binary representation.&quot;&quot;&quot;</span>
-        <span class="n">unpacked</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">unpacked</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">first_page</span><span class="p">)</span>
         <span class="n">version</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpacked</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
         <span class="n">serial</span><span class="p">,</span> <span class="n">log_size</span><span class="p">,</span> <span class="n">log_used</span> <span class="o">=</span> <span class="n">unpacked</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
-        <span class="n">algorithms</span> <span class="o">=</span> <span class="p">{</span><span class="n">_algorithm</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">value</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">LENGTH</span> <span class="p">:]}</span>
+        <span class="n">algorithms</span> <span class="o">=</span> <span class="p">{</span><span class="n">_algorithm</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">first_page</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">LENGTH</span> <span class="p">:]}</span>
+        <span class="n">part_number</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">second_page</span><span class="p">:</span>
+            <span class="n">part_number</span> <span class="o">=</span> <span class="n">second_page</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">serial</span><span class="p">,</span> <span class="n">log_size</span><span class="p">,</span> <span class="n">log_used</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">serial</span><span class="p">,</span> <span class="n">log_size</span><span class="p">,</span> <span class="n">log_used</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">,</span> <span class="n">part_number</span><span class="p">)</span></div></div>
 
 
 <span class="k">def</span> <span class="nf">_calculate_iv</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
@@ -327,6 +342,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="p">:</span> <span class="n">YhsmBackend</span> <span class="o">=</span> <span class="n">backend</span>
 
+        <span class="c1"># Initialize the message buffer size to 2048 bytes. This may be updated</span>
+        <span class="c1"># depending on the YubiHSM FW version (in 2.4.0 or higher the</span>
+        <span class="c1"># buffer size is 3136) in get_device_info.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_msg_buf_size</span> <span class="o">=</span> <span class="mi">2048</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_device_info</span><span class="p">()</span>
+
     <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -340,7 +361,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span> <span class="o">=</span> <span class="n">_ClosedBackend</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">_transceive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_MSG_SIZE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_msg_buf_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">YubiHsmInvalidRequestError</span><span class="p">(</span><span class="s2">&quot;Message too long.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">transceive</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
@@ -359,7 +380,15 @@
 
 <span class="sd">        :return: Device information.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">DeviceInfo</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">send_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DEVICE_INFO</span><span class="p">))</span></div>
+        <span class="n">first_page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DEVICE_INFO</span><span class="p">)</span>
+        <span class="n">device_info</span> <span class="o">=</span> <span class="n">DeviceInfo</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">first_page</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">device_info</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># Update maximum message buffer size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_msg_buf_size</span> <span class="o">=</span> <span class="mi">3136</span>
+            <span class="c1"># fetch next page</span>
+            <span class="n">second_page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DEVICE_INFO</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!B&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">device_info</span> <span class="o">=</span> <span class="n">DeviceInfo</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">first_page</span><span class="p">,</span> <span class="n">second_page</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">device_info</span></div>
 
 <div class="viewcode-block" id="YubiHsm.get_device_public_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.YubiHsm.get_device_public_key">[docs]</a>    <span class="k">def</span> <span class="nf">get_device_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the device&#39;s public key.</span>
@@ -375,7 +404,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="YubiHsm.init_session"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.YubiHsm.init_session">[docs]</a>    <span class="k">def</span> <span class="nf">init_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SymmetricAuth&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiates the symmetric authentication process for establishing</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiate the symmetric authentication process for establishing</span>
 <span class="sd">        an authenticated session with the YubiHSM.</span>
 
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
@@ -387,7 +416,7 @@
 <div class="viewcode-block" id="YubiHsm.init_session_asymmetric"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.YubiHsm.init_session_asymmetric">[docs]</a>    <span class="k">def</span> <span class="nf">init_session_asymmetric</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">epk_oce</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AsymmetricAuth&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiates the asymmetric authentication process for establishing</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiate the asymmetric authentication process for establishing</span>
 <span class="sd">        an authenticated session with the YubiHSM.</span>
 
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
@@ -400,7 +429,7 @@
 <div class="viewcode-block" id="YubiHsm.create_session"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.YubiHsm.create_session">[docs]</a>    <span class="k">def</span> <span class="nf">create_session</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">key_enc</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_mac</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an authenticated session with the YubiHSM.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an authenticated session with the YubiHSM.</span>
 
 <span class="sd">        See also create_session_derived, which derives K-ENC and K-MAC from a</span>
 <span class="sd">        password.</span>
@@ -414,7 +443,7 @@
         <span class="k">return</span> <span class="n">SymmetricAuth</span><span class="o">.</span><span class="n">create_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth_key_id</span><span class="p">,</span> <span class="n">key_enc</span><span class="p">,</span> <span class="n">key_mac</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="YubiHsm.create_session_derived"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.YubiHsm.create_session_derived">[docs]</a>    <span class="k">def</span> <span class="nf">create_session_derived</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an authenticated session with the YubiHSM.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an authenticated session with the YubiHSM.</span>
 
 <span class="sd">        Uses a supplied password to derive the keys K-ENC and K-MAC.</span>
 
@@ -432,7 +461,7 @@
         <span class="n">private_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">,</span>
         <span class="n">public_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an authenticated session with the YubiHSM.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an authenticated session with the YubiHSM.</span>
 
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
 <span class="sd">            authenticate the session.</span>
@@ -493,7 +522,7 @@
         <span class="n">hsm</span><span class="p">:</span> <span class="n">YubiHsm</span><span class="p">,</span>
         <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SymmetricAuth&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiates the mutual symmetric session authentication process.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiate the mutual symmetric session authentication process.</span>
 
 <span class="sd">        :param hsm: The YubiHSM connection.</span>
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
@@ -515,7 +544,7 @@
     <span class="k">def</span> <span class="nf">create_session</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">hsm</span><span class="p">:</span> <span class="n">YubiHsm</span><span class="p">,</span> <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">key_enc</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_mac</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs an authenticated session.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct an authenticated session.</span>
 
 <span class="sd">        :param hsm: The YubiHSM connection.</span>
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
@@ -535,7 +564,7 @@
 <div class="viewcode-block" id="SymmetricAuth.authenticate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.SymmetricAuth.authenticate">[docs]</a>    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">key_senc</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_smac</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_srmac</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs an authenticated session.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct an authenticated session.</span>
 
 <span class="sd">        :param key_senc: `S-ENC` used for data confidentiality.</span>
 <span class="sd">        :param key_smac: `S-MAC` used for data and protocol integrity.</span>
@@ -603,7 +632,7 @@
         <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">epk_oce</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AsymmetricAuth&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiates the mutual asymmetric session authentication process.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiate the mutual asymmetric session authentication process.</span>
 
 <span class="sd">        :param hsm: The YubiHSM connection.</span>
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
@@ -632,7 +661,7 @@
         <span class="n">private_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">,</span>
         <span class="n">public_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs an authenticated session.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct an authenticated session.</span>
 
 <span class="sd">        :param hsm: The YubiHSM connection.</span>
 <span class="sd">        :param auth_key_id: The ID of the Authentication key used to</span>
@@ -681,7 +710,7 @@
 <div class="viewcode-block" id="AsymmetricAuth.authenticate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.AsymmetricAuth.authenticate">[docs]</a>    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">key_senc</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_smac</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_srmac</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AuthSession&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs an authenticated session.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct an authenticated session.</span>
 
 <span class="sd">        :param key_senc: `S-ENC` used for data confidentiality.</span>
 <span class="sd">        :param key_smac: `S-MAC` used for data and protocol integrity.</span>
@@ -858,7 +887,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">GET_PSEUDO_RANDOM</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="AuthSession.reset_device"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.AuthSession.reset_device">[docs]</a>    <span class="k">def</span> <span class="nf">reset_device</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs a factory reset of the YubiHSM.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a factory reset of the YubiHSM.</span>
 
 <span class="sd">        Resets and reboots the YubiHSM, deletes all Objects and restores the</span>
 <span class="sd">        default Authkey.</span>
@@ -903,7 +932,7 @@
         <span class="k">return</span> <span class="n">LogData</span><span class="p">(</span><span class="n">boot</span><span class="p">,</span> <span class="n">auth</span><span class="p">,</span> <span class="n">logs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="AuthSession.set_log_index"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.AuthSession.set_log_index">[docs]</a>    <span class="k">def</span> <span class="nf">set_log_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears logs to free up space for use with forced audit.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear logs to free up space for use with forced audit.</span>
 
 <span class="sd">        :param index: The log entry index to clear up to (inclusive).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1035,13 +1064,23 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">put_option</span><span class="p">(</span><span class="n">OPTION</span><span class="o">.</span><span class="n">FIPS_MODE</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!B&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span></div>
 
+<div class="viewcode-block" id="AuthSession.get_fips_status"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.AuthSession.get_fips_status">[docs]</a>    <span class="k">def</span> <span class="nf">get_fips_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FIPS_STATUS</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current FIPS status.</span>
+
+<span class="sd">        YubiHSM2 FIPS only.</span>
+
+<span class="sd">        :return: The FipsStatus value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">FIPS_STATUS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_option</span><span class="p">(</span><span class="n">OPTION</span><span class="o">.</span><span class="n">FIPS_MODE</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+
 <div class="viewcode-block" id="AuthSession.get_fips_mode"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.core.AuthSession.get_fips_mode">[docs]</a>    <span class="k">def</span> <span class="nf">get_fips_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current setting for FIPS compliant mode.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current setting for FIPS mode.</span>
 
 <span class="sd">        YubiHSM2 FIPS only.</span>
 
 <span class="sd">        :return: True if in FIPS mode, False if not.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Deprecated, use get_fips_status instead&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_option</span><span class="p">(</span><span class="n">OPTION</span><span class="o">.</span><span class="n">FIPS_MODE</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
