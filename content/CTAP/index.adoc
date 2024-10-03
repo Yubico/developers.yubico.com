@@ -14,7 +14,7 @@ Note that web developers will never need to use CTAP. Instead, they will use the
 See our
 link:https://developers.yubico.com/WebAuthn/[WebAuthn documentation] for guidance on implementing FIDO authentication for web applications.
 
-The current version of the Client To Authenticator Protocol is 
+The current version of the Client To Authenticator Protocol is
 link:https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html[CTAP 2.1].
 
 === Developing applications supporting FIDO
@@ -32,8 +32,8 @@ Yubico offers several CTAP libraries for developers:
 link:https://developers.yubico.com/java-webauthn-server/[java-webauthn-server].
 
 - For building Desktop applications, there are
-link:https://github.com/Yubico/libfido2[libfido2](for C), and
-link:https://github.com/Yubico/python-fido2[python-fido2](for Python).
+link:https://github.com/Yubico/libfido2[libfido2] (for C), and
+link:https://github.com/Yubico/python-fido2[python-fido2] (for Python).
 
 The `libfido2` library comes with some command-line tools. We will be using the `fido2-token` tool in this section to illustrate some of the CTAP features.
 See also its link:https://developers.yubico.com/libfido2/Manuals/fido2-token.html[manual page].
@@ -69,6 +69,8 @@ version strings: FIDO_2_0, FIDO_2_1_PRE, FIDO_2_1
 ....
 
 Note that on macOS, the device is typically referred to with something that looks like `ioreg://1234567890`.
+On Microsoft Windows, the device is referred to with a longer string containing the USB vendor and prodcut ID.
+Note however that Windows requires Administrator privileges to communicate with FIDO Authenticators over USB.
 
 To find the list of FIDO security keys available, use:
 
@@ -85,7 +87,7 @@ They are typically invoked from a FIDO library, or through the WebAuthn API when
 Indeed, the WebAuthn `navigator.credentials.create()` and `navigator.credentials.get()` API methods translate to the
 CTAP `authenticatorMakeCredential` and `authenticatorGetAssertion` commands, respectively.
 
-To use these CTAP API command from the command-line, have a look at the 
+To use these CTAP API commands from the command-line, have a look at the 
 link:https://developers.yubico.com/libfido2/Manuals/fido2-cred.html[fido2-cred] and
 link:https://developers.yubico.com/libfido2/Manuals/fido2-assert.html[fido2-assert] tools that are part of 
 link:https://github.com/Yubico/libfido2[libfido2].
@@ -97,7 +99,7 @@ link:https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authent
 
 === CTAP Features
 
-CTAP defines several optional features that can be implemented on Authenticators, depending on the CTAP version implemented.
+CTAP defines several optional features that may be available on Authenticators, depending on the CTAP version implemented.
 
 Clients can request an authenticator to report a list of its supported protocol versions and other information using the `authenticatorGetInfo` API command.
 
@@ -172,7 +174,7 @@ See also our guidance on
 link:https://developers.yubico.com/WebAuthn/Concepts/Enterprise_Attestation/[using Enterprise Attestation in web applications].
 
 The YubiKey and the FIDO Security Key by Yubico support enterprise attestation since firmware version 5.7, but only on custom configured keys. 
-It will allow Relying Parties to read the serial number (or another organization-specified unique identifier) from the YubiKey during FIDO2 registration.
+It will allow Relying Parties to read the serial number (or another organization-specified unique identifier) from the security key during FIDO2 registration.
 
 Enterprise attestation can be enabled on a device using:
 ....
@@ -184,7 +186,6 @@ Enter PIN: ******
 
 This feature, called `AlwaysUV`, causes every FIDO2 registration or authentication event to require a PIN or biometric, regardless of the options set by the relying party or platform.
 
-The current status for AlwaysUV can be retrieved using 
 When using the `fido2-token` tool with the `-I` switch, the current status is listed under `options` as
 
 - `alwaysUv`, meaning AlwaysUV is enabled, or
@@ -198,7 +199,7 @@ Another feature that is intended for use in an enterprise or government environm
 
 
 Minimum PIN Length allows Identity Providers to enforce the configured minimum PIN length during FIDO2 registration, to support self-enrollment processes.
-The minimum PIN length can only be configured by platforms, or by communicating to the YubiKey directly, and can only be enforced by identity providers or relying parties in an allowed list configured on the YubiKey.
+The minimum PIN length can only be configured by platforms, or by communicating to the security key directly, and can only be enforced by identity providers or relying parties in an allowed list configured on the security key.
 
 To set a minimum PIN length for a device to 6:
 
@@ -214,7 +215,7 @@ $ fido2-token -S -f /dev/hidraw0
 Enter PIN: ******
 ....
 
-The authenticator cannot be used before the PIN is changed. For instance, when listing discoverable credentials, an PIN violation occurs:
+The authenticator cannot be used before the PIN is changed. For instance, when listing discoverable credentials, a PIN violation occurs:
 
 ....
 $ fido2-token -L -r /dev/hidraw0
