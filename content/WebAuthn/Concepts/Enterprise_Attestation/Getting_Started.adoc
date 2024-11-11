@@ -4,60 +4,76 @@
 
 Learn how to get started with enterprise attestation, including procuring EA enabled security keys, needs for a relying party, and how to quickly test using a custom client application
 
-In this section we are going to dive into what is required in order to enable enterprise attestation **(EA)** in your environment. There are a few different aspects that need to be understood, and enabled as there are inherent differences from a traditional WebAuthn protected ecosystem. We will cover authenticators, clients and browsers, and applications.
+In this section we are going to dive into what is required in order to enable enterprise attestation **(EA)** in your environment. There are a few different aspects that need to be understood, and enabled as there are inherent differences from a traditional WebAuthn ecosystem. We will cover authenticators, clients/browsers, and relying parties.
 
 == Authenticators that support enterprise attestation
-The first step in adopting EA is to utilize authenticators that include the feature. While EA has been included in the WebAuthn L2 specification since its release, there have not been any major vendors that have supported the feature. 
 
-Naturally the first step in the process will be to work directly with your device manufacturer to configure new authenticators with EA, if the vendor supports the feature.
+The first step in the process will be to work directly with your device manufacturer to configure new authenticators with EA, if the vendor supports the feature.
 
-Yubico will begin to offer the ability to add EA onto YubiKeys. If you are a current customer who would like to be a part of the early adopter program, please consult with your account representative for consideration.
+Yubico now offers Enterprise Attestation on YubiKeys. If you are a current customer who would like to utilize EA then please consult with your Yubico account representative for consideration.
 
-Your relying party also needs to support EA. If you are leveraging a vendor bought solution you will need to work with the vendor to begin to enable EA from their platform. If you are leveraging an in-house built solution, then you will need to implement these features on your solution. 
+Your relying party also needs to support EA. If you are leveraging a vendor bought solution you will need to work with the vendor to begin to enable EA from their platform. If you are leveraging an in-house built solution, or an IdP looking to adopt EA, then you will need to implement support in your application which will be covered in the implementation guidance below.
 
 == Vendor facilitated and platform managed strategies
-Your next major determination is whether to leverage vendor facilitated, or platform managed.
+The next step is to determine whether to leverage vendor facilitated, or platform managed EA.
 
 Both forms will require some coordination with your vendor / device manufacturer. 
 
 Both forms will require that your authenticator can leverage enterprise attestation.
 
-If you select vendor facilitated, then you will need to work with your vendor on the list of origins/domains which will be present on your authenticator. This means that once the keys are distributed, then EA can only be directly requested by those sites, regardless of platform.
+If you select vendor facilitated, then you will need to work with your vendor to curate a list of origins/domains which will be added to your authenticator. This means that once the keys are distributed then EA will only be directly available when requesting attestation for those domains.
 
-If you select platform managed, then you will need to consider two things. The first is to ensure that you work with your vendor to come up with tools to re-enable EA, should a user disable it through a device reset. Second is to work with your platform vendor to ensure that it has the ability to manage your security policy, and can be configured and rolled out to users within your enterprise. 
+If you select platform managed, then you will need work with your platform vendor to ensure that it has the ability to manage your security policy, and can be configured and rolled out to users within your enterprise. This includes your platforms ability to support EA, and to allow for the configuration of the curated origin/domain list that can request EA. 
 
-== Browser ecosystems
-The next step is to ensure that your client application is being utilized in an ecosystem that supports EA. EA is not inherently available on all ecosystems. 
+== Enable Enterprise Attestation on your YubiKey
 
-As it currently stands, Google Chrome is the only browser that supports EA. This is currently marked as an experimental feature, but is still offered in the production version of Chrome.
+YubiKeys with Enterprise Attestation come with the feature enabled, but a reset on the key will turn the feature off. If you are unsure if your YubiKey has EA enabled, you can verify this from the link:https://www.yubico.com/products/yubico-authenticator/[Yubico Authenticator App] by following the steps below:
 
-If you are an enterprise looking to deploy EA, you will need to set your internal Google Chrome package with the EA flag enabled.
+1. Open the Yubico Authenticator App
+2. Navigate to **Passkeys**
+3. Under **Manage** you should see a badge indicating that Enterprise Attestation is Enabled (as demonstrated in the image below)
 
-Figure 1 demonstrates how to set the flag using a CLI (note the sample below targets Chrome Canary, but the feature is available in the latest version of Chrome)
+image::./Images/yauth-ea.png[]
+
+If Enterprise Attestation is shown as **Disabled** you can reenable it from the Yubico Authenticator, or from the link:https://docs.yubico.com/software/yubikey/tools/ykman/index.html[YubiKey Manager CLI].
+
+Or, use the following steps to reenable EA from the Yubico Authenticator App
+
+1. Open the Yubico Authenticator App
+2. Navigate to **Passkeys**
+3. Under **Manage** you should see a badge indicating that Enterprise Attestation is Disabled
+4. Click the Enterprise Attestation badge
+5. When the pop-up window appears, click **Enable**. EA will now be enabled on your YubiKey
+
+Use the following command the reenable EA from the YubiKey Manager CLI
 
 [role="dark"]
 --
 [source,bash]
 ----
-$ /Applications/Google\ Chrome\ Canary.app/Contents\MacOS/Google\ Chrome\ Canary --webauthn-permit-enterprise-attestation=my.sampleapp.com,my.othersampleapp.com
+ykman fido config enable-ep-attestation
 ----
 --
-**Figure 1**
 
-This can also be accomplished through the Google Chrome UI. The steps below will assist you in setting up enterprise attestation in your local instance of Chrome:
+== Browser/Client ecosystems
+The next step is to ensure that your client application is being utilized in an ecosystem that supports EA. EA is not inherently available on all ecosystems. 
 
-1. Type `chrome://flags` into the URL browser
-2. Search for “enterprise attestation”
-3. In the row denoted as “Web Authentication Enterprise Attestation”:
+As of writing this material, Google Chrome is the only browser that supports EA **in the form on an experimental feature**.
 
-  * Change the dropdown to enabled
-  * Add your list of origins that will request enterprise attestation.
+Follow the steps below to enable Enterprise Attestation from Google Chrome. An example image is provided below the steps
+
+1. Navigate to `chrome://flags`
+2. Search for `enterprise attestation`, an item with the title **Web Authentication Enterprise Attestation** should appear
+3. Set the feature to `Enabled`
+4. For vendor managed EA (or to request EA from origins/sites not pre-configured on your YubiKey), add your domain to the text box. Note, this needs to be the full domain name, including the HTTPS prefix, as seen in the image below below
+
+image::./Images/chrome-ea-enable.png[]
 
 == Relying party support
-Your relying party (backend application) will need to support EA. This will include two different aspects.
+Your relying party (backend application) will need to be modified to support EA. This will include two different aspects.
 The first is around the attestation conveyance of your relying party. To register a new credential, your relying party will issue a `PublicKeyCredentialCreationOptions` to your client application. This object contains an option to request a specific type of attestation - in most cases this is `direct`. To support enterprise attestation, the `PublicKeyCredentialCreationOptions` needs to issue an attestation type of `enterprise`. 
 
-Figure 2 demonstrates a sample `PublicKeyCredentialCreationOptions` object that can be used to invoke EA.
+The JSON payload below demonstrates a sample `PublicKeyCredentialCreationOptions` object that can be used to invoke EA.
 
 [role="dark"]
 --
@@ -78,18 +94,17 @@ Figure 2 demonstrates a sample `PublicKeyCredentialCreationOptions` object that 
 }
 ----
 --
-**Figure 2**
 
-It’s important to note a few things in Figure 2. The first is the property `rp` and `id`, This will be the RP ID that will either need to be 
+It’s important to note a few things in the payload. The first is the property `rp` and `id`, This will be the RP ID that will either need to be 
 
-* Included in your RP ID list, configured by your security key vendor
+* Included in your vendor managed RP ID list
 * Included in your policy managed by your platform
 
-Next, it’s important to set the `attestation` property to “enterprise”. In most cases, this value will be set to “direct”, which will provide you with “normal” attestation. 
+First we'll begin by setting the `attestation` property to `enterprise`. In most cases, this value will be set to `direct`, which will provide you with the standard form of attestation. 
 
 The implementation for this will look different depending on the language and framework being utilized by your relying party. 
 
-Figure 3 provides an example of how to set this option, if you are leveraging link:https://github.com/Yubico/java-webauthn-server[Yubico’s java-webauthn-server library].
+The code sample below provides an example of how to set this option when leveraging link:https://github.com/Yubico/java-webauthn-server[Yubico’s java-webauthn-server library].
 
 [role="dark"]
 --
@@ -98,53 +113,154 @@ Figure 3 provides an example of how to set this option, if you are leveraging li
 import com.yubico.webauthn.RelyingParty;
 
 private final RelyingParty rp = RelyingParty.builder()
-    .identity(Config.getRpIdentity())
+    .identity(RelyingPartyIdentity.builder()
+      .id("my.ea.app")
+      .name("My app")
+      .build())
     .credentialRepository(this.userStorage)
     .origins(Config.getOrigins())
     .attestationConveyancePreference(Optional.of(AttestationConveyancePreference.ENTERPRISE))
-    .allowUntrustedAttestation(true)
-    .validateSignatureCounter(true)
     .build();
 ----
 --
-**Figure 3**
 
-Note how the method `attestationConveyancePreference` is set to a property noting the use of “enterprise”. This will ensure that any registration request coming from this relying party will denote the use of enterprise attestation, as seen in Figure 2.  
+Note how the method `attestationConveyancePreference` is set to a property noting the use of `enterprise`. This will ensure that any registration request coming from this relying party will ask for enterprise attestation.
 
-Next your relying party will need a mechanism to parse the attestation statement to utilize the identifiable information (like serial number) that was returned with the attestation statement. Your application will also benefit by having access to a metadata repository (like the FIDO MDS), to verify the signed attestation statement and associate the new credential with metadata related to the authenticator it was created on. You need to ensure that the EA has a corresponding entry in your chosen metadata repository to leverage this ability.
-
-Below are two examples of attestation objects sent by a created credential. The first will demonstrate a “normal” attestation statement. The second will demonstrate an attestation object with EA related data (serial number).
-
-Figure 4 demonstrates an attestation object with “normal” attestation
+Next we will develop a method to provide attestation options (PublicKeyCredentialCreationOptions) to the client application. The method below can be used to provide attestation options (assume that there is some sort of API controller invoking this method).
 
 [role="dark"]
 --
-[source,python]
+[source,java]
 ----
-ATTESTATION OBJECT: AttestationObject(fmt='packed', auth_data=AuthenticatorData(rp_id_hash=b'I\x96\r\xe5\x88\x0e\x8cht4\x17\x0fdv`[\x8f\xe4\xae\xb9\xa2\x862\xc7\x99\\\xf3\xba\x83\x1d\x97c', flags=65, counter=3, credential_data=AttestedCredentialData(aaguid=AAGUID(1a4360eb-a2b1-447a-b3c4-f1f27eff1d32), credential_id=b'\x8f}\xc5\xb9\x8e7\xbf\x0ew@\xc3\x06\x91\x84\xd9\xec\xec\x10\x8f\xbf\xa4\xbd\xb9K\xfe\xd0\xc7\xe0i\xf5\x11\xcf5F\xbb\xee\xe9!}:\x8d#\x1d\xb19\x0e\xf8\xe5r=\xdf\x18\xb2\x8e\xb3\x8b\xda^1\xdd\x16t\x8e9', public_key={1: 2, 3: -7, -1: 1, -2: b'\xa1Y\xd3\xbc_\xb5\xd3\x1eb\x04\x1a]Z\xab\xd3\xe4\x9b\x86\x95\x9aBw\xec\x1c\xad\xc8\x9c\x9ehQA\xf1', -3: b'Q&#\xd9\xbbd\x84\xe9\xc5<K\xde\xfb+Q\xe5\xe1\xca\x08\xf8\xb6\x14\x9b\xf0\x8dm\x93V\x15\xe0\xb5='}), extensions=None), att_stmt={'alg': -7, 'sig': b'0E\x02!\x00\xdc\xb1\ra\x9bT\x05\x119\xcf\xd3\x99\xcb\x12~,\xa1\x14i\xc8mV\x195\tC\xc5?\x82U\x93\xb1\x02 8\x19\xbf}(@\xbf8\x027\x0eD>\xb0\xcd+W\x98\x08\x0eP\x8a\x96;~\xfe\x8bM\xefQ\xe3\x08', 'x5c': [b'0\x82\x02\xce0\x82\x01\xb6\xa0\x03\x02\x01\x02\x02\t\x00\xb0\xf9\xf1\xad\x01\xdd\xa4f0\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x000&1$0"\x06\x03U\x04\x03\x0c\x1bYubico 2022 FIDO Preview CA0\x1e\x17\r220707233233Z\x17\r230707233233Z0n1\x0b0\t\x06\x03U\x04\x06\x13\x02SE1\x120\x10\x06\x03U\x04\n\x0c\tYubico AB1"0 \x06\x03U\x04\x0b\x0c\x19Authenticator Attestation1\'0%\x06\x03U\x04\x03\x0c\x1eYubico U2F EE Serial 7708328160Y0\x13\x06\x07*\x86H\xce=\x02\x01\x06\x08*\x86H\xce=\x03\x01\x07\x03B\x00\x04\x9b\x7f\xac\x0b!\x9d\xb8\xc5\xd1\x1bj\xd5-\x80\xbe\xb3\xc8M\xa0\x19\x03\x8b\xc4\x0f\x87\x7f\xad\xf2\x13O\x0b\x9f\x06\x05\xa5\xec\xf0R\x19\xd3\x14\xad\xda\xb7\xf8@\x96\xa4K\x00\xe3\x12\xf2E\xe3H\xf5a\x19z\x9c\xf0\xc5\xd4\xa3\x81\x810\x7f0\x13\x06\n+\x06\x01\x04\x01\x82\xc4\n\r\x01\x04\x05\x04\x03\x05\x06\x000"\x06\t+\x06\x01\x04\x01\x82\xc4\n\x02\x04\x151.3.6.1.4.1.41482.1.70\x13\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x02\x01\x01\x04\x04\x03\x02\x0400!\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x01\x01\x04\x04\x12\x04\x10\x1aC`\xeb\xa2\xb1Dz\xb3\xc4\xf1\xf2~\xff\x1d20\x0c\x06\x03U\x1d\x13\x01\x01\xff\x04\x020\x000\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x00\x03\x82\x01\x01\x00\x0fz"X\xc8C\xf8\xe3\x00\xa3,K\xf4,T3\x13jEN\x8d\x978s%3\'$Av\x0b\x00\x08\xa8\xe0C\x165(\xa1Y\x90%\xf1\x86\x86\x01\xeb)%%\xdd\x88\x0b5-\xfc\xd2\x82\x97\xf1K\xf2\xce{-i2e\xa2\x87\xdb\xaf5\x80\xeac\xcdt\xcd"u\xa7I\xc4-#$\xc1\xca\xbc\x12#AF\n\x8cc\xc9\x8aD\x8a\xabr0\xb0\xca\x9d\x00\xa9\x1eB\xd6\x0e\x0f~\xc1\x9dY\x8f\x8a6\xddY\xebk.\xda\xbdd\x93\x93sD\xf5e\xd2\xd1l\xa8\x93\xd1\xa8\xdcst\xa3W \xd4\x80v\xf6\x9d\xb7\xc4}\x9fU\xda\xfe\x19kk0\xb3\xa2\xf7q\xd7\x9czH\xc7\xe2\xf9\x90\xd0\x1a\n@J\'\x1e\xaav\x8c\xf1G\x18\xc71\x0e\x1d\x13s\xb7R\xa0\xee\xb0\xb1\xa5As\x80&\xc8.\xf6,c\xf4\x9b\x9c\xb7\x89\x84x\xddt\xb0N\x7fu\x9d\xe8\xf5cM\xacH\x97\xd8\xc0\xd49P\xcb\xe5\x92\xb8v\xdf\x02m\xf6\xaf\x83z\xac\xbc\xf8\xd0\xe8.']})
+import com.yubico.webauthn.data.UserIdentity;
+import com.yubico.webauthn.data.PublicKeyCredentialCreationOptions;
+
+public String attestationOptions() throws Exception {
+
+    /*
+     * Create a generic/random user for the example
+     */
+    UserIdentity userIdentity = UserIdentity.builder()
+      .name("Default User")
+      .displayName("Default User")
+      .id(generateRandom(32))
+      .build();
+
+    /*
+     * Create PublicKeyCredentialCreationOptions 
+     * Note, the attestation preference was set in the RP configs in the previous code example
+     */
+    PublicKeyCredentialCreationOptions assertionOptions = this.rp.startRegistration(
+        StartRegistrationOptions.builder()
+          .user(userIdentity)
+          .timeout(180000)
+          .build());
+
+    /*
+     * Return the JSON object to the client
+     */
+    return assertionOptions.toCredentialsCreateJson();
+  }
 ----
 --
-**Figure 4**
 
-Figure 5 demonstrates an attestation object with enterprise attestation - Note the section below the full code sample, noting enterprise attestation, along with the device serial number.
+From here your client will invoke the Java app's API to receive the attestation options. Other than the Chrome settings mentioned above, your client will not need any special functionality in order to invoke a WebAuthn request that includes EA. 
+
+The code below will act as a generic example of calling an RP's API, and invoking the WebAuthn ceremony.
 
 [role="dark"]
 --
-[source,python]
+[source,javascript]
 ----
-ATTESTATION OBJECT: AttestationObject(fmt='packed', auth_data=AuthenticatorData(rp_id_hash=b'\xe4S)\xd0: h\xd1\xca\xf7\xf7\xbb\n\xe9T\xe6\xb0\xe6%\x97E\xf3/H)\xf7P\xf0P\x11\xf9\xc2', flags=65, counter=2, credential_data=AttestedCredentialData(aaguid=AAGUID(1a4360eb-a2b1-447a-b3c4-f1f27eff1d32), credential_id=b'\xaa\x0c\x9aF\x12\x904\xff\xeb}\xee\xf1p\xdb\xbc\xa3\xcf\xc32<`)\x01\x93\x16f\xac\xe8>\x91@v\x81\xf6\xeb\xf6\xd1Y\x1d\xa8\x9c\xe0\xfc\xd2Z\xc6Q\x7f$\x9b\x0f\xad;\xc5\xa5L\\\xac\xf8\xfa\xab\x81\xf1<', public_key={1: 2, 3: -7, -1: 1, -2: b'\r\xc8 \xc8\x8b\xb7\xffdc\xacS\xf1\xf4{\xe8\x8d\x97\x9ec,lv4\x9c\xfa(\xd7\x1a\xa8\x90\xb5/', -3: b'#\xf8\x12A\xe2V\xfe\x87\t\xcdQJg\xe3/|]\x9c8\xc6\xf1\xd6\x08\x10\xf9\x14\xa5\x8b\xa4\x91\x8a\xa7'}), extensions=None), att_stmt={'alg': -7, 'sig': b'0D\x02 \x16\x98\xc0ITS\xf4\xb3-\xa6m`W\xceCc,Q \xe7\x02\xb6(\xa5M\x03\xcf[\x13\x9f\xd1\x88\x02 \nkh~s\x15\xfd\xc7\xd4\xdc\x9et*9\xf1Bb\x0e\x80^XC8\xab\x80\xde\tI\xdc.\xf8\xb2', 'x5c': [b'0\x82\x02\xe50\x82\x01\xcd\xa0\x03\x02\x01\x02\x02\t\x00\xe6H\x19\xfa\xccFV\x1e0\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x000&1$0"\x06\x03U\x04\x03\x0c\x1bYubico 2022 FIDO Preview CA0\x1e\x17\r220707233233Z\x17\r230707233233Z0m1\x0b0\t\x06\x03U\x04\x06\x13\x02SE1\x120\x10\x06\x03U\x04\n\x0c\tYubico AB1\x1f0\x1d\x06\x03U\x04\x0b\x0c\x16Enterprise Attestation1)0\'\x06\x03U\x04\x03\x0c Yubico Fido EE (Serial=19600953)0Y0\x13\x06\x07*\x86H\xce=\x02\x01\x06\x08*\x86H\xce=\x03\x01\x07\x03B\x00\x04\xd7\xbaL\xde|\x07\xc1s\xecd\x87\x88\xa76Y\xb9\xb4\xca6\xc8\xac\xd9\xd2\xa4\x1e\x00\x13\x0e!\xb6\xc1\x98\x9a\xc0C\xdd\x80\x10\xca\xa7\xb3G\xaa@p\x1aF\xd1B\x1c\xd2\xf6\x1bMe\xf7\xcd\xbc-\xa1\xed3\xdd\xd4\xa3\x81\x990\x81\x960\x13\x06\n+\x06\x01\x04\x01\x82\xc4\n\r\x01\x04\x05\x04\x03\x05\x06\x000\x15\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x01\x01\x02\x04\x06\x04\x04\x01+\x1690"\x06\t+\x06\x01\x04\x01\x82\xc4\n\x02\x04\x151.3.6.1.4.1.41482.1.70\x13\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x02\x01\x01\x04\x04\x03\x02\x0400!\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x01\x01\x04\x04\x12\x04\x10\x1aC`\xeb\xa2\xb1Dz\xb3\xc4\xf1\xf2~\xff\x1d20\x0c\x06\x03U\x1d\x13\x01\x01\xff\x04\x020\x000\r\x06\t*\x86H\x86\xf7\r\x01\x01\x0b\x05\x00\x03\x82\x01\x01\x00>\xdb4\xcbM\xac$@\xd8\x94\xb2q\xc3$\x9d\xf2$\x9da\x89\xf7:\x16\'\xb5*\t\xbc+\x9b\x05\xc0\x9a0\xaf@\x10\xb5r\xde\x88V\x1c!\xbfyH\xeb\xe6-%U\x1f!\'\x8c\x97z)T\xad\x19 .\xc4?\xf0\xb2\xbd\x122W\xe7\x88\xa80\x83\nN\x9c\xee\x8f\x8c\xcev\x9a\xea` \xba-\x08\xa0\xe6\x1c\x91h\x92\x06\xce\x9c\x8c\xfd\xa0\xe9\xcd\x9f\xde\x0f=\x1f\xe0\x82\xa8\x11B\xf8\xc0\x01z\xa3\x93\xfe\xfb\xbb\x9dbQ\x8f\xec0\xefn\xfa$\x9e\xd6r5\x93\xc4\xb5\xfa\xa0p~hn\xf0\xa6\xaa9\x81Z\x1fZ\xde\x88).h\x10o\xcc\x02\x1a\xaa\n9\x13J,zX\x95\xfa\xd2\x17\xdf\xcf\xd8\x8f\xb8p@-\x19\x14\xda\xfd7\xb6 S\x86\x94A25\xc0\x08*T&X\x7f\x9dp\x01T \xe0>ss43R\x8f\x0eq0\xec\x81\xdb2[p\xe0-/\xc0\x8f\nU\xce\xbaX\xf6\xb8\xe6u\x8c\x9a\x9c\xd6\xf7kx\xea^\xd9m\xc5\xd7\xbd']})
-----
-[source,python]
-----
-Enterprise Attestation1)0\'\x06\x03U\x04\x03\x0c Yubico Fido EE (Serial=19600953)
+import {
+  create,
+  parseCreationOptionsFromJSON,
+} from "@github/webauthn-json/browser-ponyfill";
+
+const invokeWebAuthn = async() => {
+    // Call Java app for attestation options
+    const startOptions = { method: "GET" };
+    const response = await fetch("https://api.my.ea.app/v1/attestation/options", startOptions);
+    const response_json = await response.json();
+
+    // Invoke WebAuthn request with attestation options
+    const attestationResult = await create(
+      parseCreationOptionsFromJSON(response_json)
+    );
+
+    // Call Java app to send credential response
+    // Note, the implementation for this method is the upcoming guidance
+    const resultOptions = { method: "POST", body: JSON.stringify(attestationResult) }
+    const response2 = await fetch(
+      "https://api.my.ea.app/v1/attestation/result",
+      resultOptions);
+  }
 ----
 --
-**Figure 5**
 
-== Next steps
-EA is an evolving feature that Yubico is working to perfect for customer use. If you are a Yubico customer who is looking to enable EA in your WebAuthn deployment, then please begin to:
+Once the client has been used to create a credential on an EA enabled YubiKey, the credential response will be sent back the relying party in the form of an assertion result (the second API call in the code example above).
 
-* Reach out to your Yubico representative for consideration into our early adopter program
-* Work with partners who develop your relying party solution to enable EA in their environment
+To finalize things we will develop a method that will process the attestation result. For simplicity, we will not demonstrate the validating and storing of the credential; we will only be focused on the mechanism to read the serial number from the credential response, which is demonstrated in the Java code below.
 
-We will continue to expand on this guide as we uncover more best practices, and features within our libraries and SDKs.
+[role="dark"]
+--
+[source,java]
+----
+/*
+   * Request structure 
+   * { 
+   *   type: "public-key", 
+   *   id: "base64url credential ID", 
+   *   clientExtensionResults: {}, 
+   *   response: { 
+   *      clientDataJSON: "base64url string", 
+   *      attestationObject: "CBOR encoded object"
+   *   }
+   * }
+   */
+  public void attestationResult(String request) throws Exception {
+    // Parse the JSON request
+    PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs> 
+      parsedRequest = PublicKeyCredential.parseRegistrationResponseJson(request);
+
+    // Read the attestationObject
+    AttestationObject attestationObject =
+        new AttestationObject(parsedRequest.getResponse().getAttestationObject());
+
+    // Parse the attestation statement for the x5c cert
+    ObjectNode attestationStatement = attestationObject.getAttestationStatement();
+    JsonNode x5cNode = attestationStatement.get("x5c");
+    // Encode the x5c value to a String array (this is how the entry is represented)
+    String[] x5cArray = mapper.readValue(x5cNode.toString(), String[].class);
+
+    // Assume the first entry (it's the only entry)
+    String firstX5c = x5cArray[0];
+    byte[] bytes = ByteArray.fromBase64(firstX5c).getBytes();
+    X509Certificate cert = X509CertUtils.parse(bytes);
+
+    System.out.println("\nPrinting entire cert");
+    System.out.println(cert.toString());
+
+    // Serial number is encoded in the cert subject name
+    System.out.println("\n\n**********");
+    System.out.println("Printing subject name");
+    System.out.println(cert.getSubjectX500Principal().getName());
+    System.out.println("**********");
+
+    /* Perform additional regex to pull out the serial number */
+    /* Perform other registration steps */
+  }
+----
+--
+
+The system logs from the code above will output the full `x5c` cert expressed by the attestation statement in the credential response. 
+
+Below the cert, the cert subject name will be printed which will include the serial number. An example of this log can be found below 
+
+[role="dark"]
+--
+[source,bash]
+----
+CN=Yubico Fido EE (Serial\=19600953),OU=Enterprise Attestation,O=Yubico AB,C=SE
+----
+--
