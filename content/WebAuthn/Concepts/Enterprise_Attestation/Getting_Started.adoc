@@ -6,6 +6,11 @@ Learn how to get started with enterprise attestation, including procuring EA ena
 
 In this section we are going to dive into what is required in order to enable enterprise attestation **(EA)** in your environment. There are a few different aspects that need to be understood, and enabled as there are inherent differences from a traditional WebAuthn ecosystem. We will cover authenticators, clients/browsers, and relying parties.
 
+[Note]
+======
+A demo of the concepts presented below can be found link:https://github.com/YubicoLabs/enterprise-attestation-demo[here in our GitHub repository].
+======
+
 == Authenticators that support enterprise attestation
 
 The first step in the process will be to work directly with your device manufacturer to configure new authenticators with EA, if the vendor supports the feature.
@@ -238,17 +243,40 @@ To finalize things we will develop a method that will process the attestation re
     byte[] bytes = ByteArray.fromBase64(firstX5c).getBytes();
     X509Certificate cert = X509CertUtils.parse(bytes);
 
-    System.out.println("\nPrinting entire cert");
+    System.out.println("\nPrinting entire cert for analysis");
     System.out.println(cert.toString());
 
-    // Serial number is encoded in the cert subject name
-    System.out.println("\n\n**********");
-    System.out.println("Printing subject name");
-    System.out.println(cert.getSubjectX500Principal().getName());
-    System.out.println("**********");
+    /*
+     * Options for reading the serial number:
+     * 1) Read and parse the serial number from the cert subject name
+     * 2) Read the serial number from the cert extension (1.3.6.1.4.1.45724.1.1.2)
+     * 3) Optional, read both and compare to ensure that they're similar
+     */
 
-    /* Perform additional regex to pull out the serial number */
-    /* Perform other registration steps */
+    // 1) Read serial from cert subject name
+    String subjectName = cert.getSubjectX500Principal().getName();
+    System.out.println("\nValue from cert subject name:");
+    System.out.println(subjectName);
+
+    // 2) Read the serial from the cert extension
+    byte[] extensionValuBytes = cert.getExtensionValue("1.3.6.1.4.1.45724.1.1.2");
+    // Convert extension value to int
+    if (extensionValuBytes == null) {
+      String errorMessage = "Serial number extension not present";
+      System.out.println("\n" + errorMessage + "\nEnterprise Attestation not found");
+      throw new NullPointerException(errorMessage);
+    }
+    int extensionValueInts = new BigInteger(1, extensionValuBytes).intValue();
+    String serialNumber = String.valueOf(extensionValueInts);
+    System.out.println("\nValue from cert extension value:");
+    System.out.println(serialNumber);
+
+    // 3) Compare both values to see if they match
+    boolean doesEqual = subjectName.contains(serialNumber);
+    System.out.println("\nDo serial numbers match: " + doesEqual);
+
+    AttestationResponse response = new AttestationResponse(serialNumber);
+    return mapper.writeValueAsString(response);
   }
 ----
 --
