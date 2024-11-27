@@ -1,0 +1,264 @@
+fido2.client
+============
+
+.. py:module:: fido2.client
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   fido2.client.ClientError
+   fido2.client.PinRequiredError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.client.AssertionSelection
+   fido2.client.WebAuthnClient
+   fido2.client.UserInteraction
+   fido2.client.Fido2Client
+   fido2.client.WindowsClient
+
+
+Module Contents
+---------------
+
+.. py:exception:: ClientError(code, cause=None)
+
+   Bases: :py:obj:`Exception`
+
+
+   Base error raised by clients.
+
+
+   .. py:class:: ERR
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Error codes for ClientError.
+
+
+      .. py:attribute:: OTHER_ERROR
+         :value: 1
+
+
+
+      .. py:attribute:: BAD_REQUEST
+         :value: 2
+
+
+
+      .. py:attribute:: CONFIGURATION_UNSUPPORTED
+         :value: 3
+
+
+
+      .. py:attribute:: DEVICE_INELIGIBLE
+         :value: 4
+
+
+
+      .. py:attribute:: TIMEOUT
+         :value: 5
+
+
+
+      .. py:method:: __call__(cause=None)
+
+
+
+   .. py:attribute:: code
+
+
+   .. py:attribute:: cause
+
+
+   .. py:method:: __repr__()
+
+      Return repr(self).
+
+
+
+.. py:exception:: PinRequiredError(code=ClientError.ERR.BAD_REQUEST, cause='PIN required but not provided')
+
+   Bases: :py:obj:`ClientError`
+
+
+   Raised when a call cannot be completed without providing PIN.
+
+
+.. py:class:: AssertionSelection(client_data, assertions, extension_results=None)
+
+   GetAssertion result holding one or more assertions.
+
+   Since multiple assertions may be retured by Fido2Client.get_assertion, this result
+   is returned which can be used to select a specific response to get.
+
+
+   .. py:method:: get_assertions()
+
+      Get the raw AssertionResponses available to inspect before selecting one.
+
+
+
+   .. py:method:: get_response(index)
+
+      Get a single response.
+
+
+
+.. py:class:: WebAuthnClient
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Base class for a WebAuthn client, supporting registration and authentication.
+
+
+   .. py:method:: make_credential(options, event = None)
+      :abstractmethod:
+
+
+      Creates a credential.
+
+      :param options: PublicKeyCredentialCreationOptions data.
+      :param threading.Event event: (optional) Signal to abort the operation.
+
+
+
+   .. py:method:: get_assertion(options, event = None)
+      :abstractmethod:
+
+
+      Get an assertion.
+
+      :param options: PublicKeyCredentialRequestOptions data.
+      :param threading.Event event: (optional) Signal to abort the operation.
+
+
+
+.. py:class:: UserInteraction
+
+   Provides user interaction to the Client.
+
+   Users of Fido2Client should subclass this to implement asking the user to perform
+   specific actions, such as entering a PIN or touching their
+
+
+   .. py:method:: prompt_up()
+
+      Called when the authenticator is awaiting a user presence check.
+
+
+
+   .. py:method:: request_pin(permissions, rp_id)
+
+      Called when the client requires a PIN from the user.
+
+      Should return a PIN, or None/Empty to cancel.
+
+
+
+   .. py:method:: request_uv(permissions, rp_id)
+
+      Called when the client is about to request UV from the user.
+
+      Should return True if allowed, or False to cancel.
+
+
+
+.. py:class:: Fido2Client(device, origin, verify = verify_rp_id, extension_types = _default_extensions(), user_interaction = UserInteraction(), extensions = [])
+
+   Bases: :py:obj:`WebAuthnClient`, :py:obj:`_BaseClient`
+
+
+   WebAuthn-like client implementation.
+
+   The client allows registration and authentication of WebAuthn credentials against
+   an Authenticator using CTAP (1 or 2).
+
+   :param device: CtapDevice to use.
+   :param str origin: The origin to use.
+   :param verify: Function to verify an RP ID for a given origin.
+
+
+   .. py:property:: info
+      :type: fido2.ctap2.Info
+
+
+
+   .. py:method:: selection(event = None)
+
+
+   .. py:method:: make_credential(options, event = None)
+
+      Creates a credential.
+
+      :param options: PublicKeyCredentialCreationOptions data.
+      :param threading.Event event: (optional) Signal to abort the operation.
+
+
+
+   .. py:method:: get_assertion(options, event = None)
+
+      Get an assertion.
+
+      :param options: PublicKeyCredentialRequestOptions data.
+      :param threading.Event event: (optional) Signal to abort the operation.
+
+
+
+.. py:class:: WindowsClient(origin, verify = verify_rp_id, handle=None, allow_hmac_secret=False)
+
+   Bases: :py:obj:`WebAuthnClient`, :py:obj:`_BaseClient`
+
+
+   Fido2Client-like class using the Windows WebAuthn API.
+
+   Note: This class only works on Windows 10 19H1 or later. This is also when Windows
+   started restricting access to FIDO devices, causing the standard client classes to
+   require admin priveleges to run (unlike this one).
+
+   The make_credential and get_assertion methods are intended to work as a drop-in
+   replacement for the Fido2Client methods of the same name.
+
+   :param str origin: The origin to use.
+   :param verify: Function to verify an RP ID for a given origin.
+   :param ctypes.wintypes.HWND handle: (optional) Window reference to use.
+
+
+   .. py:attribute:: api
+
+
+   .. py:attribute:: info
+
+
+   .. py:method:: is_available()
+      :staticmethod:
+
+
+
+   .. py:method:: make_credential(options, event=None)
+
+      Create a credential using Windows WebAuthN APIs.
+
+      :param options: PublicKeyCredentialCreationOptions data.
+      :param threading.Event event: (optional) Signal to abort the operation.
+
+
+
+   .. py:method:: get_assertion(options, event=None)
+
+      Get assertion using Windows WebAuthN APIs.
+
+      :param options: PublicKeyCredentialRequestOptions data.
+      :param threading.Event event: (optional) Signal to abort the operation.
+
+
+

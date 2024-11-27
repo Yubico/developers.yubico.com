@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.cbor &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.cbor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.cbor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2018 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Minimal CBOR implementation supporting a subset of functionality and types</span>
+<span class="sd">required for FIDO 2 CTAP.</span>
+
+<span class="sd">Use the :func:`encode`, :func:`decode` and :func:`decode_from` functions to encode</span>
+<span class="sd">and decode objects to/from CBOR.</span>
+
+<span class="sd">DO NOT use the dump_x/load_x functions directly, these will be made private in</span>
+<span class="sd">python-fido2 2.0.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span>
+
+
+<span class="n">CborType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+
+
+<span class="c1"># TODO 2.0: Make dump_x/load_x functions private</span>
+<div class="viewcode-block" id="dump_int">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.dump_int">[docs]</a>
+<span class="k">def</span> <span class="nf">dump_int</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">data</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">mt</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">data</span>
+
+    <span class="n">mt</span> <span class="o">=</span> <span class="n">mt</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+    <span class="k">if</span> <span class="n">data</span> <span class="o">&lt;=</span> <span class="mi">23</span><span class="p">:</span>
+        <span class="n">args</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">mt</span> <span class="o">|</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data</span> <span class="o">&lt;=</span> <span class="mh">0xFF</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&gt;BB&quot;</span><span class="p">,</span> <span class="n">mt</span> <span class="o">|</span> <span class="mi">24</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data</span> <span class="o">&lt;=</span> <span class="mh">0xFFFF</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&gt;BH&quot;</span><span class="p">,</span> <span class="n">mt</span> <span class="o">|</span> <span class="mi">25</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data</span> <span class="o">&lt;=</span> <span class="mh">0xFFFFFFFF</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&gt;BI&quot;</span><span class="p">,</span> <span class="n">mt</span> <span class="o">|</span> <span class="mi">26</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&gt;BQ&quot;</span><span class="p">,</span> <span class="n">mt</span> <span class="o">|</span> <span class="mi">27</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dump_bool">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.dump_bool">[docs]</a>
+<span class="k">def</span> <span class="nf">dump_bool</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xf5</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">data</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xf4</span><span class="s2">&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="dump_list">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.dump_list">[docs]</a>
+<span class="k">def</span> <span class="nf">dump_list</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">CborType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">dump_int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">mt</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="p">])</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_sort_keys</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">key</span>
+
+
+<div class="viewcode-block" id="dump_dict">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.dump_dict">[docs]</a>
+<span class="k">def</span> <span class="nf">dump_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">CborType</span><span class="p">,</span> <span class="n">CborType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="n">encode</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">encode</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="n">items</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">_sort_keys</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dump_int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">),</span> <span class="n">mt</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">k</span> <span class="o">+</span> <span class="n">v</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">items</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="dump_bytes">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.dump_bytes">[docs]</a>
+<span class="k">def</span> <span class="nf">dump_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">dump_int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">mt</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="dump_text">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.dump_text">[docs]</a>
+<span class="k">def</span> <span class="nf">dump_text</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dump_int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">),</span> <span class="n">mt</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="n">data_bytes</span></div>
+
+
+
+<span class="n">_SERIALIZERS</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bytes</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">dump_bool</span><span class="p">),</span>
+    <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">dump_int</span><span class="p">),</span>
+    <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">dump_text</span><span class="p">),</span>
+    <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">dump_bytes</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">dump_dict</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">dump_list</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="load_int">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_int">[docs]</a>
+<span class="k">def</span> <span class="nf">load_int</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">ai</span> <span class="o">&lt;</span> <span class="mi">24</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ai</span><span class="p">,</span> <span class="n">data</span>
+    <span class="k">elif</span> <span class="n">ai</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">ai</span> <span class="o">==</span> <span class="mi">25</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">ai</span> <span class="o">==</span> <span class="mi">26</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;&gt;I&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">ai</span> <span class="o">==</span> <span class="mi">27</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;&gt;Q&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">8</span><span class="p">:]</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid additional information&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_nint">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_nint">[docs]</a>
+<span class="k">def</span> <span class="nf">load_nint</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="n">val</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">load_int</span><span class="p">(</span><span class="n">ai</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">val</span><span class="p">,</span> <span class="n">rest</span></div>
+
+
+
+<div class="viewcode-block" id="load_bool">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_bool">[docs]</a>
+<span class="k">def</span> <span class="nf">load_bool</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="n">ai</span> <span class="o">==</span> <span class="mi">21</span><span class="p">,</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="load_bytes">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_bytes">[docs]</a>
+<span class="k">def</span> <span class="nf">load_bytes</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="n">l</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">load_int</span><span class="p">(</span><span class="n">ai</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="p">[:</span><span class="n">l</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">l</span><span class="p">:]</span></div>
+
+
+
+<div class="viewcode-block" id="load_text">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_text">[docs]</a>
+<span class="k">def</span> <span class="nf">load_text</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="n">enc</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">load_bytes</span><span class="p">(</span><span class="n">ai</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">),</span> <span class="n">rest</span></div>
+
+
+
+<div class="viewcode-block" id="load_array">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_array">[docs]</a>
+<span class="k">def</span> <span class="nf">load_array</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">CborType</span><span class="p">],</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="n">l</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">load_int</span><span class="p">(</span><span class="n">ai</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">decode_from</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="load_map">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.load_map">[docs]</a>
+<span class="k">def</span> <span class="nf">load_map</span><span class="p">(</span><span class="n">ai</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="n">CborType</span><span class="p">,</span> <span class="n">CborType</span><span class="p">],</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="n">l</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">load_int</span><span class="p">(</span><span class="n">ai</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+        <span class="n">k</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">decode_from</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">v</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">decode_from</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">values</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">data</span></div>
+
+
+
+<span class="n">_DESERIALIZERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="n">load_int</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="n">load_nint</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="n">load_bytes</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="n">load_text</span><span class="p">,</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="n">load_array</span><span class="p">,</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="n">load_map</span><span class="p">,</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="n">load_bool</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="encode">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.encode">[docs]</a>
+<span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">CborType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encodes data to a CBOR byte string.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_SERIALIZERS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value: </span><span class="si">{</span><span class="n">data</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="decode_from">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.decode_from">[docs]</a>
+<span class="k">def</span> <span class="nf">decode_from</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decodes a CBOR-encoded value from the start of a byte string.</span>
+
+<span class="sd">    Additional data after a valid CBOR object is returned as well.</span>
+
+<span class="sd">    :return: The decoded object, and any remaining data.&quot;&quot;&quot;</span>
+    <span class="n">fb</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_DESERIALIZERS</span><span class="p">[</span><span class="n">fb</span> <span class="o">&gt;&gt;</span> <span class="mi">5</span><span class="p">](</span><span class="n">fb</span> <span class="o">&amp;</span> <span class="mb">0b11111</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span></div>
+
+
+
+<div class="viewcode-block" id="decode">
+<a class="viewcode-back" href="../../autoapi/fido2/cbor/index.html#fido2.cbor.decode">[docs]</a>
+<span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CborType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decodes data from a CBOR-encoded byte string.</span>
+
+<span class="sd">    Also validates that no extra data follows the encoded object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">value</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">decode_from</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rest</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Extraneous data&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

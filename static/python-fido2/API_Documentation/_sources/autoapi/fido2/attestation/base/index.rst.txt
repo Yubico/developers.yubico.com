@@ -1,0 +1,251 @@
+fido2.attestation.base
+======================
+
+.. py:module:: fido2.attestation.base
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   fido2.attestation.base.InvalidAttestation
+   fido2.attestation.base.InvalidData
+   fido2.attestation.base.InvalidSignature
+   fido2.attestation.base.UntrustedAttestation
+   fido2.attestation.base.UnsupportedType
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.attestation.base.AttestationType
+   fido2.attestation.base.AttestationResult
+   fido2.attestation.base.Attestation
+   fido2.attestation.base.UnsupportedAttestation
+   fido2.attestation.base.NoneAttestation
+   fido2.attestation.base.AttestationVerifier
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   fido2.attestation.base.catch_builtins
+   fido2.attestation.base.verify_x509_chain
+
+
+Module Contents
+---------------
+
+.. py:exception:: InvalidAttestation
+
+   Bases: :py:obj:`Exception`
+
+
+   Base exception for attestation-related errors.
+
+
+.. py:exception:: InvalidData
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   Attestation contains invalid data.
+
+
+.. py:exception:: InvalidSignature
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   The signature of the attestation could not be verified.
+
+
+.. py:exception:: UntrustedAttestation
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   The CA of the attestation is not trusted.
+
+
+.. py:exception:: UnsupportedType(auth_data, fmt=None)
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   The attestation format is not supported.
+
+
+   .. py:attribute:: auth_data
+
+
+   .. py:attribute:: fmt
+
+
+.. py:class:: AttestationType
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Supported attestation types.
+
+
+   .. py:attribute:: BASIC
+      :value: 1
+
+
+
+   .. py:attribute:: SELF
+      :value: 2
+
+
+
+   .. py:attribute:: ATT_CA
+      :value: 3
+
+
+
+   .. py:attribute:: ANON_CA
+      :value: 4
+
+
+
+   .. py:attribute:: NONE
+      :value: 0
+
+
+
+.. py:class:: AttestationResult
+
+   The result of verifying an attestation.
+
+
+   .. py:attribute:: attestation_type
+      :type:  AttestationType
+
+
+   .. py:attribute:: trust_path
+      :type:  List[bytes]
+
+
+.. py:function:: catch_builtins(f)
+
+   Utility decoractor to wrap common exceptions related to InvalidData.
+
+
+.. py:function:: verify_x509_chain(chain)
+
+   Verifies a chain of certificates.
+
+   Checks that the first item in the chain is signed by the next, and so on.
+   The first item is the leaf, the last is the root.
+
+
+.. py:class:: Attestation
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Implements verification of a specific attestation type.
+
+
+   .. py:method:: verify(statement, auth_data, client_data_hash)
+      :abstractmethod:
+
+
+      Verifies attestation statement.
+
+      :return: An AttestationResult if successful.
+
+
+
+   .. py:method:: for_type(fmt)
+      :staticmethod:
+
+
+      Get an Attestation subclass type for the given format.
+
+
+
+.. py:class:: UnsupportedAttestation(fmt=None)
+
+   Bases: :py:obj:`Attestation`
+
+
+   Implements verification of a specific attestation type.
+
+
+   .. py:attribute:: fmt
+
+
+   .. py:method:: verify(statement, auth_data, client_data_hash)
+
+      Verifies attestation statement.
+
+      :return: An AttestationResult if successful.
+
+
+
+.. py:class:: NoneAttestation
+
+   Bases: :py:obj:`Attestation`
+
+
+   Implements verification of a specific attestation type.
+
+
+   .. py:attribute:: FORMAT
+      :value: 'none'
+
+
+
+   .. py:method:: verify(statement, auth_data, client_data_hash)
+
+      Verifies attestation statement.
+
+      :return: An AttestationResult if successful.
+
+
+
+.. py:class:: AttestationVerifier(attestation_types = None)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Base class for verifying attestation.
+
+   Override the ca_lookup method to provide a trusted root certificate used
+   to verify the trust path from the attestation.
+
+
+   .. py:method:: ca_lookup(attestation_result, auth_data)
+      :abstractmethod:
+
+
+      Lookup a CA certificate to be used to verify a trust path.
+
+      :param attestation_result: The result of the attestation
+      :param auth_data: The AuthenticatorData from the registration
+
+
+
+   .. py:method:: verify_attestation(attestation_object, client_data_hash)
+
+      Verify attestation.
+
+      :param attestation_object: dict containing attestation data.
+      :param client_data_hash: SHA256 hash of the ClientData bytes.
+
+
+
+   .. py:method:: __call__(*args)
+
+      Allows passing an instance to Fido2Server as verify_attestation
+
+
+

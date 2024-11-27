@@ -1,0 +1,267 @@
+fido2.ctap2.credman
+===================
+
+.. py:module:: fido2.ctap2.credman
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.ctap2.credman.CredentialManagement
+
+
+Module Contents
+---------------
+
+.. py:class:: CredentialManagement(ctap, pin_uv_protocol, pin_uv_token)
+
+   Implementation of a draft specification of the Credential Management API.
+   WARNING: This specification is not final and this class is likely to change.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param pin_uv_protocol: An instance of a PinUvAuthProtocol.
+   :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: GET_CREDS_METADATA
+         :value: 1
+
+
+
+      .. py:attribute:: ENUMERATE_RPS_BEGIN
+         :value: 2
+
+
+
+      .. py:attribute:: ENUMERATE_RPS_NEXT
+         :value: 3
+
+
+
+      .. py:attribute:: ENUMERATE_CREDS_BEGIN
+         :value: 4
+
+
+
+      .. py:attribute:: ENUMERATE_CREDS_NEXT
+         :value: 5
+
+
+
+      .. py:attribute:: DELETE_CREDENTIAL
+         :value: 6
+
+
+
+      .. py:attribute:: UPDATE_USER_INFO
+         :value: 7
+
+
+
+
+   .. py:class:: PARAM
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: RP_ID_HASH
+         :value: 1
+
+
+
+      .. py:attribute:: CREDENTIAL_ID
+         :value: 2
+
+
+
+      .. py:attribute:: USER
+         :value: 3
+
+
+
+
+   .. py:class:: RESULT
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: EXISTING_CRED_COUNT
+         :value: 1
+
+
+
+      .. py:attribute:: MAX_REMAINING_COUNT
+         :value: 2
+
+
+
+      .. py:attribute:: RP
+         :value: 3
+
+
+
+      .. py:attribute:: RP_ID_HASH
+         :value: 4
+
+
+
+      .. py:attribute:: TOTAL_RPS
+         :value: 5
+
+
+
+      .. py:attribute:: USER
+         :value: 6
+
+
+
+      .. py:attribute:: CREDENTIAL_ID
+         :value: 7
+
+
+
+      .. py:attribute:: PUBLIC_KEY
+         :value: 8
+
+
+
+      .. py:attribute:: TOTAL_CREDENTIALS
+         :value: 9
+
+
+
+      .. py:attribute:: CRED_PROTECT
+         :value: 10
+
+
+
+      .. py:attribute:: LARGE_BLOB_KEY
+         :value: 11
+
+
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+
+   .. py:method:: is_update_supported(info)
+      :staticmethod:
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:attribute:: pin_uv
+
+
+   .. py:method:: get_metadata()
+
+      Get credentials metadata.
+
+      This returns the existing resident credentials count, and the max
+      possible number of remaining resident credentials (the actual number of
+      remaining credentials may depend on algorithm choice, etc).
+
+      :return: A dict containing EXISTING_CRED_COUNT, and MAX_REMAINING_COUNT.
+
+
+
+   .. py:method:: enumerate_rps_begin()
+
+      Start enumeration of RP entities of resident credentials.
+
+      This will begin enumeration of stored RP entities, returning the first
+      entity, as well as a count of the total number of entities stored.
+
+      :return: A dict containing RP, RP_ID_HASH, and TOTAL_RPS.
+
+
+
+   .. py:method:: enumerate_rps_next()
+
+      Get the next RP entity stored.
+
+      This continues enumeration of stored RP entities, returning the next
+      entity.
+
+      :return: A dict containing RP, and RP_ID_HASH.
+
+
+
+   .. py:method:: enumerate_rps()
+
+      Convenience method to enumerate all RPs.
+
+      See enumerate_rps_begin and enumerate_rps_next for details.
+
+
+
+   .. py:method:: enumerate_creds_begin(rp_id_hash)
+
+      Start enumeration of resident credentials.
+
+      This will begin enumeration of resident credentials for a given RP,
+      returning the first credential, as well as a count of the total number
+      of resident credentials stored for the given RP.
+
+      :param rp_id_hash: SHA256 hash of the RP ID.
+      :return: A dict containing USER, CREDENTIAL_ID, PUBLIC_KEY, and
+          TOTAL_CREDENTIALS.
+
+
+
+   .. py:method:: enumerate_creds_next()
+
+      Get the next resident credential stored.
+
+      This continues enumeration of resident credentials, returning the next
+      credential.
+
+      :return: A dict containing USER, CREDENTIAL_ID, and PUBLIC_KEY.
+
+
+
+   .. py:method:: enumerate_creds(*args, **kwargs)
+
+      Convenience method to enumerate all resident credentials for an RP.
+
+      See enumerate_creds_begin and enumerate_creds_next for details.
+
+
+
+   .. py:method:: delete_cred(cred_id)
+
+      Delete a resident credential.
+
+      :param cred_id: The PublicKeyCredentialDescriptor of the credential to delete.
+
+
+
+   .. py:method:: update_user_info(cred_id, user_info)
+
+      Update the user entity of a resident key.
+
+      :param cred_id: The PublicKeyCredentialDescriptor of the credential to update.
+      :param user_info: The user info update.
+
+
+

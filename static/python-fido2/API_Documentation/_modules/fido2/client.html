@@ -1,0 +1,1415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.client &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.client</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.client</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2018 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">.hid</span> <span class="kn">import</span> <span class="n">STATUS</span>
+<span class="kn">from</span> <span class="nn">.ctap</span> <span class="kn">import</span> <span class="n">CtapDevice</span><span class="p">,</span> <span class="n">CtapError</span>
+<span class="kn">from</span> <span class="nn">.ctap1</span> <span class="kn">import</span> <span class="n">Ctap1</span><span class="p">,</span> <span class="n">APDU</span><span class="p">,</span> <span class="n">ApduError</span>
+<span class="kn">from</span> <span class="nn">.ctap2</span> <span class="kn">import</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">AssertionResponse</span><span class="p">,</span> <span class="n">Info</span>
+<span class="kn">from</span> <span class="nn">.ctap2.pin</span> <span class="kn">import</span> <span class="n">ClientPin</span><span class="p">,</span> <span class="n">PinProtocol</span>
+<span class="kn">from</span> <span class="nn">.ctap2.extensions</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Ctap2Extension</span><span class="p">,</span>
+    <span class="n">AuthenticationExtensionProcessor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.webauthn</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Aaguid</span><span class="p">,</span>
+    <span class="n">AttestationObject</span><span class="p">,</span>
+    <span class="n">CollectedClientData</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialRpEntity</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialDescriptor</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+    <span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">,</span>
+    <span class="n">AuthenticatorSelectionCriteria</span><span class="p">,</span>
+    <span class="n">UserVerificationRequirement</span><span class="p">,</span>
+    <span class="n">AuthenticatorAttestationResponse</span><span class="p">,</span>
+    <span class="n">AuthenticatorAssertionResponse</span><span class="p">,</span>
+    <span class="n">AttestationConveyancePreference</span><span class="p">,</span>
+    <span class="n">ResidentKeyRequirement</span><span class="p">,</span>
+    <span class="n">_as_cbor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.cose</span> <span class="kn">import</span> <span class="n">ES256</span>
+<span class="kn">from</span> <span class="nn">.rpid</span> <span class="kn">import</span> <span class="n">verify_rp_id</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">sha256</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">replace</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Timer</span><span class="p">,</span> <span class="n">Event</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">overload</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ClientError">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.ClientError">[docs]</a>
+<span class="k">class</span> <span class="nc">ClientError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base error raised by clients.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ClientError.ERR">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.ClientError.ERR">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">ERR</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Error codes for ClientError.&quot;&quot;&quot;</span>
+
+        <span class="n">OTHER_ERROR</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">BAD_REQUEST</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">CONFIGURATION_UNSUPPORTED</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">DEVICE_INELIGIBLE</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">TIMEOUT</span> <span class="o">=</span> <span class="mi">5</span>
+
+<div class="viewcode-block" id="ClientError.ERR.__call__">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.ClientError.ERR.__call__">[docs]</a>
+        <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ClientError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cause</span><span class="p">)</span></div>
+</div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span>
+
+<div class="viewcode-block" id="ClientError.__repr__">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.ClientError.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="s2">&quot;Client error: </span><span class="si">{0}</span><span class="s2"> - </span><span class="si">{0.name}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cause</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (cause: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cause</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="n">r</span></div>
+</div>
+
+
+
+<span class="k">def</span> <span class="nf">_ctap2client_err</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">err_cls</span><span class="o">=</span><span class="n">ClientError</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">[</span><span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CREDENTIAL_EXCLUDED</span><span class="p">,</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">NO_CREDENTIALS</span><span class="p">]:</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">DEVICE_INELIGIBLE</span>
+    <span class="k">elif</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">KEEPALIVE_CANCEL</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">ACTION_TIMEOUT</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">USER_ACTION_TIMEOUT</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">TIMEOUT</span>
+    <span class="k">elif</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">UNSUPPORTED_ALGORITHM</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">UNSUPPORTED_OPTION</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">KEY_STORE_FULL</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span>
+    <span class="k">elif</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">INVALID_COMMAND</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CBOR_UNEXPECTED_TYPE</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">INVALID_CBOR</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">MISSING_PARAMETER</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">INVALID_OPTION</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PUAT_REQUIRED</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_INVALID</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_BLOCKED</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_NOT_SET</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_POLICY_VIOLATION</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_TOKEN_EXPIRED</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_AUTH_INVALID</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_AUTH_BLOCKED</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">REQUEST_TOO_LARGE</span><span class="p">,</span>
+        <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">OPERATION_DENIED</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">BAD_REQUEST</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">OTHER_ERROR</span>
+
+    <span class="k">return</span> <span class="n">err_cls</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PinRequiredError">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.PinRequiredError">[docs]</a>
+<span class="k">class</span> <span class="nc">PinRequiredError</span><span class="p">(</span><span class="n">ClientError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when a call cannot be completed without providing PIN.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">BAD_REQUEST</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="s2">&quot;PIN required but not provided&quot;</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">cause</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_call_polling</span><span class="p">(</span><span class="n">poll_delay</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">event</span> <span class="ow">or</span> <span class="n">Event</span><span class="p">()</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">APDU</span><span class="o">.</span><span class="n">USE_NOT_SATISFIED</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">on_keepalive</span><span class="p">:</span>
+                    <span class="n">on_keepalive</span><span class="p">(</span><span class="n">STATUS</span><span class="o">.</span><span class="n">UPNEEDED</span><span class="p">)</span>
+                    <span class="n">on_keepalive</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">poll_delay</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">OTHER_ERROR</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_ctap2client_err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">TIMEOUT</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">_BaseClient</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">verify</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify</span> <span class="o">=</span> <span class="n">verify</span>
+
+    <span class="k">def</span> <span class="nf">_verify_rp_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify</span><span class="p">(</span><span class="n">rp_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">):</span>
+                <span class="k">return</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># nosec</span>
+            <span class="k">pass</span>  <span class="c1"># Fall through to ClientError</span>
+        <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">BAD_REQUEST</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_build_client_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">challenge</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="nb">type</span><span class="o">=</span><span class="n">typ</span><span class="p">,</span>
+            <span class="n">origin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span>
+            <span class="n">challenge</span><span class="o">=</span><span class="n">challenge</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="AssertionSelection">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.AssertionSelection">[docs]</a>
+<span class="k">class</span> <span class="nc">AssertionSelection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;GetAssertion result holding one or more assertions.</span>
+
+<span class="sd">    Since multiple assertions may be retured by Fido2Client.get_assertion, this result</span>
+<span class="sd">    is returned which can be used to select a specific response to get.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span><span class="p">,</span>
+        <span class="n">assertions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AssertionResponse</span><span class="p">],</span>
+        <span class="n">extension_results</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client_data</span> <span class="o">=</span> <span class="n">client_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assertions</span> <span class="o">=</span> <span class="n">assertions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extension_results</span> <span class="o">=</span> <span class="n">extension_results</span>
+
+<div class="viewcode-block" id="AssertionSelection.get_assertions">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.AssertionSelection.get_assertions">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AssertionResponse</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the raw AssertionResponses available to inspect before selecting one.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assertions</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_extension_results</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">assertion</span><span class="p">:</span> <span class="n">AssertionResponse</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extension_results</span>
+
+<div class="viewcode-block" id="AssertionSelection.get_response">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.AssertionSelection.get_response">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorAssertionResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a single response.&quot;&quot;&quot;</span>
+        <span class="n">assertion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assertions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">AuthenticatorAssertionResponse</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client_data</span><span class="p">,</span>
+            <span class="n">assertion</span><span class="o">.</span><span class="n">auth_data</span><span class="p">,</span>
+            <span class="n">assertion</span><span class="o">.</span><span class="n">signature</span><span class="p">,</span>
+            <span class="n">assertion</span><span class="o">.</span><span class="n">user</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">assertion</span><span class="o">.</span><span class="n">user</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">assertion</span><span class="o">.</span><span class="n">credential</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">assertion</span><span class="o">.</span><span class="n">credential</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_extension_results</span><span class="p">(</span><span class="n">assertion</span><span class="p">),</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WebAuthnClient">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WebAuthnClient">[docs]</a>
+<span class="k">class</span> <span class="nc">WebAuthnClient</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for a WebAuthn client, supporting registration and authentication.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WebAuthnClient.make_credential">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WebAuthnClient.make_credential">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorAttestationResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a credential.</span>
+
+<span class="sd">        :param options: PublicKeyCredentialCreationOptions data.</span>
+<span class="sd">        :param threading.Event event: (optional) Signal to abort the operation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="WebAuthnClient.get_assertion">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WebAuthnClient.get_assertion">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssertionSelection</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an assertion.</span>
+
+<span class="sd">        :param options: PublicKeyCredentialRequestOptions data.</span>
+<span class="sd">        :param threading.Event event: (optional) Signal to abort the operation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
+
+
+
+<span class="k">def</span> <span class="nf">_default_extensions</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Ctap2Extension</span><span class="p">]]:</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="bp">cls</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">Ctap2Extension</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isabstract</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+    <span class="p">]</span>
+
+
+<div class="viewcode-block" id="UserInteraction">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.UserInteraction">[docs]</a>
+<span class="k">class</span> <span class="nc">UserInteraction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides user interaction to the Client.</span>
+
+<span class="sd">    Users of Fido2Client should subclass this to implement asking the user to perform</span>
+<span class="sd">    specific actions, such as entering a PIN or touching their&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UserInteraction.prompt_up">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.UserInteraction.prompt_up">[docs]</a>
+    <span class="k">def</span> <span class="nf">prompt_up</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Called when the authenticator is awaiting a user presence check.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;User Presence check required.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UserInteraction.request_pin">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.UserInteraction.request_pin">[docs]</a>
+    <span class="k">def</span> <span class="nf">request_pin</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">permissions</span><span class="p">:</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Called when the client requires a PIN from the user.</span>
+
+<span class="sd">        Should return a PIN, or None/Empty to cancel.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PIN requested, but UserInteraction does not support it.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="UserInteraction.request_uv">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.UserInteraction.request_uv">[docs]</a>
+    <span class="k">def</span> <span class="nf">request_uv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">permissions</span><span class="p">:</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Called when the client is about to request UV from the user.</span>
+
+<span class="sd">        Should return True if allowed, or False to cancel.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;User Verification requested.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<span class="k">def</span> <span class="nf">_user_keepalive</span><span class="p">(</span><span class="n">user_interaction</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_keepalive</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">STATUS</span><span class="o">.</span><span class="n">UPNEEDED</span><span class="p">:</span>  <span class="c1"># Waiting for touch</span>
+            <span class="n">user_interaction</span><span class="o">.</span><span class="n">prompt_up</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">on_keepalive</span>
+
+
+<span class="k">class</span> <span class="nc">_ClientBackend</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="n">info</span><span class="p">:</span> <span class="n">Info</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">do_make_credential</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span><span class="p">,</span>
+        <span class="n">rp</span><span class="p">:</span> <span class="n">PublicKeyCredentialRpEntity</span><span class="p">,</span>
+        <span class="n">rp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">enterprise_rpid_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorAttestationResponse</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">do_get_assertion</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span><span class="p">,</span>
+        <span class="n">rp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssertionSelection</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">_Ctap1ClientBackend</span><span class="p">(</span><span class="n">_ClientBackend</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">CtapDevice</span><span class="p">,</span> <span class="n">user_interaction</span><span class="p">:</span> <span class="n">UserInteraction</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctap1</span> <span class="o">=</span> <span class="n">Ctap1</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">Info</span><span class="p">(</span><span class="n">versions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;U2F_V2&quot;</span><span class="p">],</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[],</span> <span class="n">aaguid</span><span class="o">=</span><span class="n">Aaguid</span><span class="o">.</span><span class="n">NONE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_poll_delay</span> <span class="o">=</span> <span class="mf">0.25</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_on_keepalive</span> <span class="o">=</span> <span class="n">_user_keepalive</span><span class="p">(</span><span class="n">user_interaction</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">_call_polling</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_poll_delay</span><span class="p">,</span>
+            <span class="n">event</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctap1</span><span class="o">.</span><span class="n">register</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">do_make_credential</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">,</span>
+        <span class="n">rp</span><span class="p">,</span>
+        <span class="n">rp_id</span><span class="p">,</span>
+        <span class="n">enterprise_rpid_list</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">key_params</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">pub_key_cred_params</span>
+        <span class="n">exclude_list</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">exclude_credentials</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">authenticator_selection</span> <span class="ow">or</span> <span class="n">AuthenticatorSelectionCriteria</span><span class="p">()</span>
+        <span class="n">rk</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">require_resident_key</span>
+        <span class="n">user_verification</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">user_verification</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">rk</span>
+            <span class="ow">or</span> <span class="n">user_verification</span> <span class="o">==</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">REQUIRED</span>
+            <span class="ow">or</span> <span class="n">ES256</span><span class="o">.</span><span class="n">ALGORITHM</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">alg</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">key_params</span><span class="p">]</span>
+            <span class="ow">or</span> <span class="n">options</span><span class="o">.</span><span class="n">attestation</span> <span class="o">==</span> <span class="n">AttestationConveyancePreference</span><span class="o">.</span><span class="n">ENTERPRISE</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">CtapError</span><span class="p">(</span><span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">UNSUPPORTED_OPTION</span><span class="p">)</span>
+
+        <span class="n">app_param</span> <span class="o">=</span> <span class="n">sha256</span><span class="p">(</span><span class="n">rp_id</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+
+        <span class="n">dummy_param</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span>
+        <span class="k">for</span> <span class="n">cred</span> <span class="ow">in</span> <span class="n">exclude_list</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="n">key_handle</span> <span class="o">=</span> <span class="n">cred</span><span class="o">.</span><span class="n">id</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ctap1</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">dummy_param</span><span class="p">,</span> <span class="n">app_param</span><span class="p">,</span> <span class="n">key_handle</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">OTHER_ERROR</span><span class="p">()</span>  <span class="c1"># Shouldn&#39;t happen</span>
+            <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">APDU</span><span class="o">.</span><span class="n">USE_NOT_SATISFIED</span><span class="p">:</span>
+                    <span class="n">_call_polling</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_poll_delay</span><span class="p">,</span>
+                        <span class="n">event</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_on_keepalive</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ctap1</span><span class="o">.</span><span class="n">register</span><span class="p">,</span>
+                        <span class="n">dummy_param</span><span class="p">,</span>
+                        <span class="n">dummy_param</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">DEVICE_INELIGIBLE</span><span class="p">()</span>
+
+        <span class="n">att_obj</span> <span class="o">=</span> <span class="n">AttestationObject</span><span class="o">.</span><span class="n">from_ctap1</span><span class="p">(</span>
+            <span class="n">app_param</span><span class="p">,</span>
+            <span class="n">_call_polling</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_poll_delay</span><span class="p">,</span>
+                <span class="n">event</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_on_keepalive</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ctap1</span><span class="o">.</span><span class="n">register</span><span class="p">,</span>
+                <span class="n">client_data</span><span class="o">.</span><span class="n">hash</span><span class="p">,</span>
+                <span class="n">app_param</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">AuthenticatorAttestationResponse</span><span class="p">(</span>
+            <span class="n">client_data</span><span class="p">,</span>
+            <span class="n">AttestationObject</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">att_obj</span><span class="o">.</span><span class="n">fmt</span><span class="p">,</span> <span class="n">att_obj</span><span class="o">.</span><span class="n">auth_data</span><span class="p">,</span> <span class="n">att_obj</span><span class="o">.</span><span class="n">att_stmt</span><span class="p">),</span>
+            <span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">({}),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">do_get_assertion</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">,</span>
+        <span class="n">rp_id</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">allow_list</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">allow_credentials</span>
+        <span class="n">user_verification</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">user_verification</span>
+
+        <span class="k">if</span> <span class="n">user_verification</span> <span class="o">==</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">REQUIRED</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">allow_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CtapError</span><span class="p">(</span><span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">UNSUPPORTED_OPTION</span><span class="p">)</span>
+
+        <span class="n">app_param</span> <span class="o">=</span> <span class="n">sha256</span><span class="p">(</span><span class="n">rp_id</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">client_param</span> <span class="o">=</span> <span class="n">client_data</span><span class="o">.</span><span class="n">hash</span>
+        <span class="k">for</span> <span class="n">cred</span> <span class="ow">in</span> <span class="n">allow_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">auth_resp</span> <span class="o">=</span> <span class="n">_call_polling</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_poll_delay</span><span class="p">,</span>
+                    <span class="n">event</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_on_keepalive</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ctap1</span><span class="o">.</span><span class="n">authenticate</span><span class="p">,</span>
+                    <span class="n">client_param</span><span class="p">,</span>
+                    <span class="n">app_param</span><span class="p">,</span>
+                    <span class="n">cred</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">assertions</span> <span class="o">=</span> <span class="p">[</span><span class="n">AssertionResponse</span><span class="o">.</span><span class="n">from_ctap1</span><span class="p">(</span><span class="n">app_param</span><span class="p">,</span> <span class="n">cred</span><span class="p">,</span> <span class="n">auth_resp</span><span class="p">)]</span>
+                <span class="k">return</span> <span class="n">AssertionSelection</span><span class="p">(</span><span class="n">client_data</span><span class="p">,</span> <span class="n">assertions</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">TIMEOUT</span><span class="p">:</span>
+                    <span class="k">raise</span>  <span class="c1"># Other errors are ignored so we move to the next.</span>
+        <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">DEVICE_INELIGIBLE</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">_Ctap2ClientAssertionSelection</span><span class="p">(</span><span class="n">AssertionSelection</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span><span class="p">,</span>
+        <span class="n">assertions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AssertionResponse</span><span class="p">],</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AuthenticationExtensionProcessor</span><span class="p">],</span>
+        <span class="n">pin_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">client_data</span><span class="p">,</span> <span class="n">assertions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extensions</span> <span class="o">=</span> <span class="n">extensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pin_token</span> <span class="o">=</span> <span class="n">pin_token</span>
+
+    <span class="k">def</span> <span class="nf">_get_extension_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assertion</span><span class="p">):</span>
+        <span class="c1"># Process extenstion outputs</span>
+        <span class="n">extension_outputs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extensions</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">prepare_outputs</span><span class="p">(</span><span class="n">assertion</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pin_token</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+                    <span class="n">extension_outputs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">(</span><span class="n">extension_outputs</span><span class="p">)</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span> <span class="nf">_cbor_list</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span> <span class="nf">_cbor_list</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span> <span class="nf">_cbor_list</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">values</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">_as_cbor</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">_Ctap2ClientBackend</span><span class="p">(</span><span class="n">_ClientBackend</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="n">CtapDevice</span><span class="p">,</span>
+        <span class="n">user_interaction</span><span class="p">:</span> <span class="n">UserInteraction</span><span class="p">,</span>
+        <span class="n">extension_types</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Ctap2Extension</span><span class="p">]],</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Ctap2Extension</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span> <span class="o">=</span> <span class="n">Ctap2</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extension_types</span> <span class="o">=</span> <span class="n">extension_types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extensions</span> <span class="o">=</span> <span class="n">extensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_interaction</span> <span class="o">=</span> <span class="n">user_interaction</span>
+
+    <span class="k">def</span> <span class="nf">_get_extensions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Ctap2Extension</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extensions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extensions</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="p">)</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extension_types</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_filter_creds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">cred_list</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+    <span class="p">):</span>
+        <span class="c1"># Filter out credential IDs which are too long</span>
+        <span class="n">max_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_cred_id_length</span>
+        <span class="k">if</span> <span class="n">max_len</span><span class="p">:</span>
+            <span class="n">cred_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cred_list</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_len</span><span class="p">]</span>
+
+        <span class="n">max_creds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_creds_in_list</span> <span class="ow">or</span> <span class="mi">1</span>
+        <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">cred_list</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">max_creds</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cred_list</span><span class="p">),</span> <span class="n">max_creds</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">client_data_hash</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span>
+        <span class="k">if</span> <span class="n">pin_token</span><span class="p">:</span>
+            <span class="n">pin_auth</span> <span class="o">=</span> <span class="n">pin_protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">pin_token</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">)</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">pin_protocol</span><span class="o">.</span><span class="n">VERSION</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pin_auth</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">assertions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">get_assertions</span><span class="p">(</span>
+                    <span class="n">rp_id</span><span class="p">,</span>
+                    <span class="n">client_data_hash</span><span class="p">,</span>
+                    <span class="n">_cbor_list</span><span class="p">(</span><span class="n">chunk</span><span class="p">),</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="p">{</span><span class="s2">&quot;up&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                    <span class="n">pin_auth</span><span class="p">,</span>
+                    <span class="n">version</span><span class="p">,</span>
+                    <span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                    <span class="n">on_keepalive</span><span class="o">=</span><span class="n">on_keepalive</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># Credential ID might be omitted from assertions</span>
+                    <span class="k">return</span> <span class="n">chunk</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">(</span><span class="o">**</span><span class="n">assertions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">credential</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">NO_CREDENTIALS</span><span class="p">:</span>
+                    <span class="c1"># All creds in chunk are discarded</span>
+                    <span class="k">continue</span>
+                <span class="k">raise</span>
+
+        <span class="c1"># No matches found</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;FIDO_2_1&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">versions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">selection</span><span class="p">(</span><span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Selection not supported, make dummy credential instead</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">make_credential</span><span class="p">(</span>
+                    <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">,</span>
+                    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example.com&quot;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">},</span>
+                    <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;public-key&quot;</span><span class="p">,</span> <span class="s2">&quot;alg&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">7</span><span class="p">}],</span>
+                    <span class="n">pin_uv_param</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                    <span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">(</span>
+                    <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_NOT_SET</span><span class="p">,</span>
+                    <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_INVALID</span><span class="p">,</span>
+                    <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_AUTH_INVALID</span><span class="p">,</span>
+                <span class="p">):</span>
+                    <span class="k">return</span>
+                <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">_should_use_uv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_verification</span><span class="p">,</span> <span class="n">permissions</span><span class="p">):</span>
+        <span class="n">uv_supported</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;uv&quot;</span><span class="p">,</span> <span class="s2">&quot;clientPin&quot;</span><span class="p">,</span> <span class="s2">&quot;bioEnroll&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">uv_configured</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;uv&quot;</span><span class="p">,</span> <span class="s2">&quot;clientPin&quot;</span><span class="p">,</span> <span class="s2">&quot;bioEnroll&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">mc</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">MAKE_CREDENTIAL</span> <span class="o">&amp;</span> <span class="n">permissions</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="n">additional_perms</span> <span class="o">=</span> <span class="n">permissions</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span>
+            <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">MAKE_CREDENTIAL</span> <span class="o">|</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">GET_ASSERTION</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">user_verification</span> <span class="o">==</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">REQUIRED</span>
+            <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">user_verification</span> <span class="o">==</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">PREFERRED</span>
+                <span class="ow">and</span> <span class="n">uv_supported</span>
+            <span class="p">)</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alwaysUv&quot;</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">uv_configured</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span>
+                    <span class="s2">&quot;User verification not configured/supported&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">mc</span> <span class="ow">and</span> <span class="n">uv_configured</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;makeCredUvNotRqd&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">uv_configured</span> <span class="ow">and</span> <span class="n">additional_perms</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_get_token</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">client_pin</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span><span class="p">,</span> <span class="n">allow_internal_uv</span>
+    <span class="p">):</span>
+        <span class="c1"># Prefer UV</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;uv&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">is_token_supported</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_interaction</span><span class="o">.</span><span class="n">request_uv</span><span class="p">(</span><span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">client_pin</span><span class="o">.</span><span class="n">get_uv_token</span><span class="p">(</span>
+                        <span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+                    <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">allow_internal_uv</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_interaction</span><span class="o">.</span><span class="n">request_uv</span><span class="p">(</span><span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># No token, use uv=True</span>
+
+        <span class="c1"># PIN if UV not supported/allowed.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clientPin&quot;</span><span class="p">):</span>
+            <span class="n">pin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_interaction</span><span class="o">.</span><span class="n">request_pin</span><span class="p">(</span><span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pin</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">client_pin</span><span class="o">.</span><span class="n">get_pin_token</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">PinRequiredError</span><span class="p">()</span>
+
+        <span class="c1"># Client PIN not configured.</span>
+        <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span>
+            <span class="s2">&quot;User verification not configured&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_auth_params</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">user_verification</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">get_info</span><span class="p">()</span>  <span class="c1"># Make sure we have &quot;fresh&quot; info</span>
+
+        <span class="n">pin_token</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">internal_uv</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_use_uv</span><span class="p">(</span><span class="n">user_verification</span><span class="p">,</span> <span class="n">permissions</span><span class="p">):</span>
+            <span class="n">client_pin</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">)</span>
+            <span class="n">allow_internal_uv</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">permissions</span>
+                <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span>
+                    <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">MAKE_CREDENTIAL</span>
+                    <span class="o">|</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">GET_ASSERTION</span>
+                <span class="p">)</span>
+                <span class="o">==</span> <span class="mi">0</span>
+            <span class="p">)</span>
+            <span class="n">pin_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_token</span><span class="p">(</span>
+                <span class="n">client_pin</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span><span class="p">,</span> <span class="n">allow_internal_uv</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pin_token</span><span class="p">:</span>
+                <span class="n">internal_uv</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">pin_token</span><span class="p">,</span> <span class="n">internal_uv</span>
+
+    <span class="k">def</span> <span class="nf">do_make_credential</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">,</span>
+        <span class="n">rp</span><span class="p">,</span>
+        <span class="n">rp_id</span><span class="p">,</span>
+        <span class="n">enterprise_rpid_list</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">user</span>
+        <span class="n">key_params</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">pub_key_cred_params</span>
+        <span class="n">exclude_list</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">exclude_credentials</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">authenticator_selection</span> <span class="ow">or</span> <span class="n">AuthenticatorSelectionCriteria</span><span class="p">()</span>
+        <span class="n">user_verification</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">user_verification</span>
+
+        <span class="n">on_keepalive</span> <span class="o">=</span> <span class="n">_user_keepalive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_interaction</span><span class="p">)</span>
+
+        <span class="c1"># Handle enterprise attestation</span>
+        <span class="n">enterprise_attestation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">attestation</span> <span class="o">==</span> <span class="n">AttestationConveyancePreference</span><span class="o">.</span><span class="n">ENTERPRISE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ep&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">enterprise_rpid_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Platform facilitated</span>
+                    <span class="k">if</span> <span class="n">rp_id</span> <span class="ow">in</span> <span class="n">enterprise_rpid_list</span><span class="p">:</span>
+                        <span class="n">enterprise_attestation</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Vendor facilitated</span>
+                    <span class="n">enterprise_attestation</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Negotiate PIN/UV protocol version</span>
+        <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PROTOCOLS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">proto</span><span class="o">.</span><span class="n">VERSION</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">pin_uv_protocols</span><span class="p">:</span>
+                <span class="n">pin_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">]</span> <span class="o">=</span> <span class="n">proto</span><span class="p">()</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pin_protocol</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Gather UV permissions</span>
+        <span class="n">permissions</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">MAKE_CREDENTIAL</span>
+        <span class="k">if</span> <span class="n">exclude_list</span><span class="p">:</span>
+            <span class="c1"># We need this for filtering the exclude_list</span>
+            <span class="n">permissions</span> <span class="o">|=</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">GET_ASSERTION</span>
+
+        <span class="c1"># Initialize extensions and add extension permissions</span>
+        <span class="n">used_extensions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_extensions</span><span class="p">():</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ext</span><span class="p">:</span>
+                <span class="n">used_extensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+                <span class="n">permissions</span> <span class="o">|=</span> <span class="n">ext</span><span class="o">.</span><span class="n">permissions</span>
+
+        <span class="k">def</span> <span class="nf">_do_make</span><span class="p">():</span>
+            <span class="c1"># Handle auth</span>
+            <span class="n">pin_token</span><span class="p">,</span> <span class="n">internal_uv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_auth_params</span><span class="p">(</span>
+                <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">user_verification</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">exclude_list</span><span class="p">:</span>
+                <span class="n">exclude_cred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_creds</span><span class="p">(</span>
+                    <span class="n">rp_id</span><span class="p">,</span> <span class="n">exclude_list</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+                <span class="p">)</span>
+                <span class="c1"># We know the request will fail if exclude_cred is not None here</span>
+                <span class="c1"># BUT DO NOT FAIL EARLY! We still need to prompt for UP, so we keep</span>
+                <span class="c1"># processing the request</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">exclude_cred</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Process extensions</span>
+            <span class="n">extension_inputs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">used_extensions</span><span class="p">:</span>
+                    <span class="n">auth_input</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">prepare_inputs</span><span class="p">(</span><span class="n">pin_token</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">auth_input</span><span class="p">:</span>
+                        <span class="n">extension_inputs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">auth_input</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+            <span class="n">can_rk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rk&quot;</span><span class="p">)</span>
+            <span class="n">rk</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">resident_key</span> <span class="o">==</span> <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">REQUIRED</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">selection</span><span class="o">.</span><span class="n">resident_key</span> <span class="o">==</span> <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">PREFERRED</span> <span class="ow">and</span> <span class="n">can_rk</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rk</span> <span class="ow">or</span> <span class="n">internal_uv</span><span class="p">):</span>
+                <span class="n">options</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">options</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span> <span class="n">rk</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">can_rk</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span>
+                            <span class="s2">&quot;Resident key not supported&quot;</span>
+                        <span class="p">)</span>
+                    <span class="n">options</span><span class="p">[</span><span class="s2">&quot;rk&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">internal_uv</span><span class="p">:</span>
+                    <span class="n">options</span><span class="p">[</span><span class="s2">&quot;uv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># Calculate pin_auth</span>
+            <span class="n">client_data_hash</span> <span class="o">=</span> <span class="n">client_data</span><span class="o">.</span><span class="n">hash</span>
+            <span class="k">if</span> <span class="n">pin_protocol</span> <span class="ow">and</span> <span class="n">pin_token</span><span class="p">:</span>
+                <span class="n">pin_auth</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">pin_protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">pin_token</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">),</span>
+                    <span class="n">pin_protocol</span><span class="o">.</span><span class="n">VERSION</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pin_auth</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="c1"># Perform make credential</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">make_credential</span><span class="p">(</span>
+                    <span class="n">client_data_hash</span><span class="p">,</span>
+                    <span class="n">_as_cbor</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">rp</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">rp_id</span><span class="p">)),</span>
+                    <span class="n">_as_cbor</span><span class="p">(</span><span class="n">user</span><span class="p">),</span>
+                    <span class="n">_cbor_list</span><span class="p">(</span><span class="n">key_params</span><span class="p">),</span>
+                    <span class="p">[</span><span class="n">_as_cbor</span><span class="p">(</span><span class="n">exclude_cred</span><span class="p">)]</span> <span class="k">if</span> <span class="n">exclude_cred</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">extension_inputs</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">options</span><span class="p">,</span>
+                    <span class="o">*</span><span class="n">pin_auth</span><span class="p">,</span>
+                    <span class="n">enterprise_attestation</span><span class="p">,</span>
+                    <span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                    <span class="n">on_keepalive</span><span class="o">=</span><span class="n">on_keepalive</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">pin_token</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">reconnected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">att_obj</span><span class="p">,</span> <span class="n">pin_token</span> <span class="o">=</span> <span class="n">_do_make</span><span class="p">()</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># The Authenticator may still require UV, try again</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PUAT_REQUIRED</span>
+                    <span class="ow">and</span> <span class="n">user_verification</span> <span class="o">==</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">DISCOURAGED</span>
+                <span class="p">):</span>
+                    <span class="n">user_verification</span> <span class="o">=</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">REQUIRED</span>
+                    <span class="k">continue</span>
+                <span class="c1"># NFC may require reconnect</span>
+                <span class="n">connect</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_AUTH_BLOCKED</span>
+                    <span class="ow">and</span> <span class="n">connect</span>
+                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">reconnected</span>
+                <span class="p">):</span>
+                    <span class="n">dev</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="n">connect</span><span class="p">()</span>
+                    <span class="n">reconnected</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># We only want to try this once</span>
+                    <span class="k">continue</span>
+                <span class="k">raise</span>
+
+        <span class="c1"># Process extenstion outputs</span>
+        <span class="n">extension_outputs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">used_extensions</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">prepare_outputs</span><span class="p">(</span><span class="n">att_obj</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">extension_outputs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">AuthenticatorAttestationResponse</span><span class="p">(</span>
+            <span class="n">client_data</span><span class="p">,</span>
+            <span class="n">AttestationObject</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">att_obj</span><span class="o">.</span><span class="n">fmt</span><span class="p">,</span> <span class="n">att_obj</span><span class="o">.</span><span class="n">auth_data</span><span class="p">,</span> <span class="n">att_obj</span><span class="o">.</span><span class="n">att_stmt</span><span class="p">),</span>
+            <span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">(</span><span class="n">extension_outputs</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">do_get_assertion</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">,</span>
+        <span class="n">client_data</span><span class="p">,</span>
+        <span class="n">rp_id</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">rp_id</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">rp_id</span>
+        <span class="n">allow_list</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">allow_credentials</span>
+        <span class="n">user_verification</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">user_verification</span>
+
+        <span class="n">on_keepalive</span> <span class="o">=</span> <span class="n">_user_keepalive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_interaction</span><span class="p">)</span>
+
+        <span class="c1"># Negotiate PIN/UV protocol version</span>
+        <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PROTOCOLS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">proto</span><span class="o">.</span><span class="n">VERSION</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">pin_uv_protocols</span><span class="p">:</span>
+                <span class="n">pin_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">]</span> <span class="o">=</span> <span class="n">proto</span><span class="p">()</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pin_protocol</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Gather UV permissions</span>
+        <span class="n">permissions</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">GET_ASSERTION</span>
+
+        <span class="c1"># Initialize extensions and add extension permissions</span>
+        <span class="n">used_extensions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_extensions</span><span class="p">():</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_assertion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ext</span><span class="p">:</span>
+                <span class="n">used_extensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+                <span class="n">permissions</span> <span class="o">|=</span> <span class="n">ext</span><span class="o">.</span><span class="n">permissions</span>
+
+        <span class="k">def</span> <span class="nf">_do_auth</span><span class="p">():</span>
+            <span class="c1"># Handle auth</span>
+            <span class="n">pin_token</span><span class="p">,</span> <span class="n">internal_uv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_auth_params</span><span class="p">(</span>
+                <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">,</span> <span class="n">user_verification</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">allow_list</span><span class="p">:</span>
+                <span class="n">selected_cred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_creds</span><span class="p">(</span>
+                    <span class="n">rp_id</span><span class="p">,</span> <span class="n">allow_list</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">on_keepalive</span>
+                <span class="p">)</span>
+                <span class="c1"># We know the request will fail if selected_cred is None here</span>
+                <span class="c1"># BUT DO NOT FAIL EARLY! We still need to prompt for UP, so we keep</span>
+                <span class="c1"># processing the request</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">selected_cred</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Process extensions</span>
+            <span class="n">extension_inputs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">used_extensions</span><span class="p">:</span>
+                    <span class="n">inputs</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">prepare_inputs</span><span class="p">(</span><span class="n">selected_cred</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">inputs</span><span class="p">:</span>
+                        <span class="n">extension_inputs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">CONFIGURATION_UNSUPPORTED</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+            <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;uv&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span> <span class="k">if</span> <span class="n">internal_uv</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="c1"># Calculate pin_auth</span>
+            <span class="n">client_data_hash</span> <span class="o">=</span> <span class="n">client_data</span><span class="o">.</span><span class="n">hash</span>
+            <span class="k">if</span> <span class="n">pin_protocol</span> <span class="ow">and</span> <span class="n">pin_token</span><span class="p">:</span>
+                <span class="n">pin_auth</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">pin_protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">pin_token</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">),</span>
+                    <span class="n">pin_protocol</span><span class="o">.</span><span class="n">VERSION</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pin_auth</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">allow_list</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">selected_cred</span><span class="p">:</span>
+                <span class="c1"># We still need to send a dummy value if there was an allow_list</span>
+                <span class="c1"># but no matches were found:</span>
+                <span class="n">selected_cred</span> <span class="o">=</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">(</span><span class="n">allow_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Perform get assertion</span>
+            <span class="n">assertions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">get_assertions</span><span class="p">(</span>
+                <span class="n">rp_id</span><span class="p">,</span>
+                <span class="n">client_data_hash</span><span class="p">,</span>
+                <span class="p">[</span><span class="n">_as_cbor</span><span class="p">(</span><span class="n">selected_cred</span><span class="p">)]</span> <span class="k">if</span> <span class="n">selected_cred</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">extension_inputs</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">options</span><span class="p">,</span>
+                <span class="o">*</span><span class="n">pin_auth</span><span class="p">,</span>
+                <span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                <span class="n">on_keepalive</span><span class="o">=</span><span class="n">on_keepalive</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">_Ctap2ClientAssertionSelection</span><span class="p">(</span>
+                <span class="n">client_data</span><span class="p">,</span> <span class="n">assertions</span><span class="p">,</span> <span class="n">used_extensions</span><span class="p">,</span> <span class="n">pin_token</span>
+            <span class="p">)</span>
+
+        <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap2</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">reconnected</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_do_auth</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># The Authenticator may still require UV, try again</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PUAT_REQUIRED</span>
+                    <span class="ow">and</span> <span class="n">user_verification</span> <span class="o">==</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">DISCOURAGED</span>
+                <span class="p">):</span>
+                    <span class="n">user_verification</span> <span class="o">=</span> <span class="n">UserVerificationRequirement</span><span class="o">.</span><span class="n">REQUIRED</span>
+                    <span class="k">continue</span>
+                <span class="c1"># NFC may require reconnect</span>
+                <span class="n">connect</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">PIN_AUTH_BLOCKED</span>
+                    <span class="ow">and</span> <span class="n">connect</span>
+                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">reconnected</span>
+                <span class="p">):</span>
+                    <span class="n">dev</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="n">connect</span><span class="p">()</span>
+                    <span class="n">reconnected</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># We only want to try this once</span>
+                    <span class="k">continue</span>
+                <span class="k">raise</span>
+
+
+<div class="viewcode-block" id="Fido2Client">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.Fido2Client">[docs]</a>
+<span class="k">class</span> <span class="nc">Fido2Client</span><span class="p">(</span><span class="n">WebAuthnClient</span><span class="p">,</span> <span class="n">_BaseClient</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;WebAuthn-like client implementation.</span>
+
+<span class="sd">    The client allows registration and authentication of WebAuthn credentials against</span>
+<span class="sd">    an Authenticator using CTAP (1 or 2).</span>
+
+<span class="sd">    :param device: CtapDevice to use.</span>
+<span class="sd">    :param str origin: The origin to use.</span>
+<span class="sd">    :param verify: Function to verify an RP ID for a given origin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="n">CtapDevice</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">verify</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">verify_rp_id</span><span class="p">,</span>
+        <span class="c1"># TODO 2.0: Replace extension_types with extensions</span>
+        <span class="n">extension_types</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Ctap2Extension</span><span class="p">]]</span> <span class="o">=</span> <span class="n">_default_extensions</span><span class="p">(),</span>
+        <span class="n">user_interaction</span><span class="p">:</span> <span class="n">UserInteraction</span> <span class="o">=</span> <span class="n">UserInteraction</span><span class="p">(),</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Ctap2Extension</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">verify</span><span class="p">)</span>
+
+        <span class="c1"># TODO: Decide how to configure this list.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enterprise_rpid_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="p">:</span> <span class="n">_ClientBackend</span> <span class="o">=</span> <span class="n">_Ctap2ClientBackend</span><span class="p">(</span>
+                <span class="n">device</span><span class="p">,</span> <span class="n">user_interaction</span><span class="p">,</span> <span class="n">extension_types</span><span class="p">,</span> <span class="n">extensions</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">CtapError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span> <span class="o">=</span> <span class="n">_Ctap1ClientBackend</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">user_interaction</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Info</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">info</span>
+
+<div class="viewcode-block" id="Fido2Client.selection">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.Fido2Client.selection">[docs]</a>
+    <span class="k">def</span> <span class="nf">selection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">selection</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_ctap2client_err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_rp_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rp_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rp_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">!=</span> <span class="s2">&quot;https&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">netloc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">BAD_REQUEST</span><span class="p">(</span>
+                    <span class="s2">&quot;RP ID required for non-https origin.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">netloc</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rp_id</span>
+
+<div class="viewcode-block" id="Fido2Client.make_credential">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.Fido2Client.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorAttestationResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a credential.</span>
+
+<span class="sd">        :param options: PublicKeyCredentialCreationOptions data.</span>
+<span class="sd">        :param threading.Event event: (optional) Signal to abort the operation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">PublicKeyCredentialCreationOptions</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">event</span> <span class="ow">or</span> <span class="n">Event</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">timeout</span><span class="p">:</span>
+            <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">timeout</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">set</span><span class="p">)</span>
+            <span class="n">timer</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="n">rp</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">rp</span>
+        <span class="n">rp_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_rp_id</span><span class="p">(</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Register a new credential for RP ID: </span><span class="si">{</span><span class="n">rp_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_rp_id</span><span class="p">(</span><span class="n">rp_id</span><span class="p">)</span>
+
+        <span class="n">client_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_client_data</span><span class="p">(</span>
+            <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">TYPE</span><span class="o">.</span><span class="n">CREATE</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">challenge</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">do_make_credential</span><span class="p">(</span>
+                <span class="n">options</span><span class="p">,</span>
+                <span class="n">client_data</span><span class="p">,</span>
+                <span class="n">rp</span><span class="p">,</span>
+                <span class="n">rp_id</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_enterprise_rpid_list</span><span class="p">,</span>
+                <span class="n">event</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_ctap2client_err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">timeout</span><span class="p">:</span>
+                <span class="n">timer</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Fido2Client.get_assertion">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.Fido2Client.get_assertion">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssertionSelection</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an assertion.</span>
+
+<span class="sd">        :param options: PublicKeyCredentialRequestOptions data.</span>
+<span class="sd">        :param threading.Event event: (optional) Signal to abort the operation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">PublicKeyCredentialRequestOptions</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">event</span> <span class="ow">or</span> <span class="n">Event</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">timeout</span><span class="p">:</span>
+            <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">timeout</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">set</span><span class="p">)</span>
+            <span class="n">timer</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="n">rp_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_rp_id</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">rp_id</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Assert a credential for RP ID: </span><span class="si">{</span><span class="n">rp_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_rp_id</span><span class="p">(</span><span class="n">rp_id</span><span class="p">)</span>
+
+        <span class="n">client_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_client_data</span><span class="p">(</span>
+            <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">TYPE</span><span class="o">.</span><span class="n">GET</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">challenge</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">do_get_assertion</span><span class="p">(</span>
+                <span class="n">options</span><span class="p">,</span>
+                <span class="n">client_data</span><span class="p">,</span>
+                <span class="n">rp_id</span><span class="p">,</span>
+                <span class="n">event</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_ctap2client_err</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">timeout</span><span class="p">:</span>
+                <span class="n">timer</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span></div>
+</div>
+
+
+
+<span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;windows&quot;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">.win_api</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="n">WinAPI</span><span class="p">,</span>
+            <span class="n">WebAuthNAuthenticatorAttachment</span><span class="p">,</span>
+            <span class="n">WebAuthNUserVerificationRequirement</span><span class="p">,</span>
+            <span class="n">WebAuthNAttestationConveyancePreference</span><span class="p">,</span>
+            <span class="n">WebAuthNEnterpriseAttestation</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># nosec # TODO: Make this less generic</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="WindowsClient">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WindowsClient">[docs]</a>
+<span class="k">class</span> <span class="nc">WindowsClient</span><span class="p">(</span><span class="n">WebAuthnClient</span><span class="p">,</span> <span class="n">_BaseClient</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fido2Client-like class using the Windows WebAuthn API.</span>
+
+<span class="sd">    Note: This class only works on Windows 10 19H1 or later. This is also when Windows</span>
+<span class="sd">    started restricting access to FIDO devices, causing the standard client classes to</span>
+<span class="sd">    require admin priveleges to run (unlike this one).</span>
+
+<span class="sd">    The make_credential and get_assertion methods are intended to work as a drop-in</span>
+<span class="sd">    replacement for the Fido2Client methods of the same name.</span>
+
+<span class="sd">    :param str origin: The origin to use.</span>
+<span class="sd">    :param verify: Function to verify an RP ID for a given origin.</span>
+<span class="sd">    :param ctypes.wintypes.HWND handle: (optional) Window reference to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">verify</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">verify_rp_id</span><span class="p">,</span>
+        <span class="n">handle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">allow_hmac_secret</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">verify</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api</span> <span class="o">=</span> <span class="n">WinAPI</span><span class="p">(</span>
+            <span class="n">handle</span><span class="p">,</span> <span class="n">return_extensions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_hmac_secret</span><span class="o">=</span><span class="n">allow_hmac_secret</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">Info</span><span class="p">(</span>
+            <span class="n">versions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;U2F_V2&quot;</span><span class="p">,</span> <span class="s2">&quot;FIDO_2_0&quot;</span><span class="p">],</span> <span class="n">extensions</span><span class="o">=</span><span class="p">[],</span> <span class="n">aaguid</span><span class="o">=</span><span class="n">Aaguid</span><span class="o">.</span><span class="n">NONE</span>
+        <span class="p">)</span>
+
+        <span class="c1"># TODO: Decide how to configure this list.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enterprise_rpid_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="WindowsClient.is_available">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WindowsClient.is_available">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_available</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;windows&quot;</span> <span class="ow">and</span> <span class="n">WinAPI</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="WindowsClient.make_credential">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WindowsClient.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a credential using Windows WebAuthN APIs.</span>
+
+<span class="sd">        :param options: PublicKeyCredentialCreationOptions data.</span>
+<span class="sd">        :param threading.Event event: (optional) Signal to abort the operation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">PublicKeyCredentialCreationOptions</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Register a new credential for RP ID: </span><span class="si">{</span><span class="n">options</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_rp_id</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="n">client_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_client_data</span><span class="p">(</span>
+            <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">TYPE</span><span class="o">.</span><span class="n">CREATE</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">challenge</span>
+        <span class="p">)</span>
+
+        <span class="n">selection</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">authenticator_selection</span> <span class="ow">or</span> <span class="n">AuthenticatorSelectionCriteria</span><span class="p">()</span>
+
+        <span class="n">enterprise_attestation</span> <span class="o">=</span> <span class="n">WebAuthNEnterpriseAttestation</span><span class="o">.</span><span class="n">NONE</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">attestation</span> <span class="o">==</span> <span class="n">AttestationConveyancePreference</span><span class="o">.</span><span class="n">ENTERPRISE</span><span class="p">:</span>
+            <span class="n">attestation</span> <span class="o">=</span> <span class="n">WebAuthNAttestationConveyancePreference</span><span class="o">.</span><span class="n">ANY</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ep&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enterprise_rpid_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Platform facilitated</span>
+                    <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enterprise_rpid_list</span><span class="p">:</span>
+                        <span class="n">enterprise_attestation</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">WebAuthNEnterpriseAttestation</span><span class="o">.</span><span class="n">PLATFORM_MANAGED</span>
+                        <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Vendor facilitated</span>
+                    <span class="n">enterprise_attestation</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">WebAuthNEnterpriseAttestation</span><span class="o">.</span><span class="n">VENDOR_FACILITATED</span>
+                    <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">attestation</span> <span class="o">=</span> <span class="n">WebAuthNAttestationConveyancePreference</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">attestation</span> <span class="ow">or</span> <span class="s2">&quot;none&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">att_obj</span><span class="p">,</span> <span class="n">extensions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">make_credential</span><span class="p">(</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">rp</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">pub_key_cred_params</span><span class="p">,</span>
+                <span class="n">client_data</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="n">selection</span><span class="o">.</span><span class="n">resident_key</span><span class="p">,</span>
+                <span class="n">WebAuthNAuthenticatorAttachment</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span>
+                    <span class="n">selection</span><span class="o">.</span><span class="n">authenticator_attachment</span> <span class="ow">or</span> <span class="s2">&quot;any&quot;</span>
+                <span class="p">),</span>
+                <span class="n">WebAuthNUserVerificationRequirement</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span>
+                    <span class="n">selection</span><span class="o">.</span><span class="n">user_verification</span> <span class="ow">or</span> <span class="s2">&quot;discouraged&quot;</span>
+                <span class="p">),</span>
+                <span class="n">attestation</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">exclude_credentials</span><span class="p">,</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">extensions</span><span class="p">,</span>
+                <span class="n">event</span><span class="p">,</span>
+                <span class="n">enterprise_attestation</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">OTHER_ERROR</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New credential registered&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AuthenticatorAttestationResponse</span><span class="p">(</span>
+            <span class="n">client_data</span><span class="p">,</span> <span class="n">att_obj</span><span class="p">,</span> <span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">(</span><span class="n">extensions</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WindowsClient.get_assertion">
+<a class="viewcode-back" href="../../autoapi/fido2/client/index.html#fido2.client.WindowsClient.get_assertion">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get assertion using Windows WebAuthN APIs.</span>
+
+<span class="sd">        :param options: PublicKeyCredentialRequestOptions data.</span>
+<span class="sd">        :param threading.Event event: (optional) Signal to abort the operation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">PublicKeyCredentialRequestOptions</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Assert a credential for RP ID: </span><span class="si">{</span><span class="n">options</span><span class="o">.</span><span class="n">rp_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_rp_id</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">rp_id</span><span class="p">)</span>
+
+        <span class="n">client_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_client_data</span><span class="p">(</span>
+            <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">TYPE</span><span class="o">.</span><span class="n">GET</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">challenge</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">credential</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">signature</span><span class="p">,</span> <span class="n">user_id</span><span class="p">,</span> <span class="n">extensions</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">get_assertion</span><span class="p">(</span>
+                    <span class="n">options</span><span class="o">.</span><span class="n">rp_id</span><span class="p">,</span>
+                    <span class="n">client_data</span><span class="p">,</span>
+                    <span class="n">options</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">WebAuthNAuthenticatorAttachment</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span>
+                    <span class="n">WebAuthNUserVerificationRequirement</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span>
+                        <span class="n">options</span><span class="o">.</span><span class="n">user_verification</span> <span class="ow">or</span> <span class="s2">&quot;discouraged&quot;</span>
+                    <span class="p">),</span>
+                    <span class="n">options</span><span class="o">.</span><span class="n">allow_credentials</span><span class="p">,</span>
+                    <span class="n">options</span><span class="o">.</span><span class="n">extensions</span><span class="p">,</span>
+                    <span class="n">event</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClientError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">OTHER_ERROR</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="n">user</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">user_id</span><span class="p">}</span> <span class="k">if</span> <span class="n">user_id</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">AssertionSelection</span><span class="p">(</span>
+            <span class="n">client_data</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="n">AssertionResponse</span><span class="p">(</span>
+                    <span class="n">credential</span><span class="o">=</span><span class="n">credential</span><span class="p">,</span>
+                    <span class="n">auth_data</span><span class="o">=</span><span class="n">auth_data</span><span class="p">,</span>
+                    <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="p">,</span>
+                    <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">],</span>
+            <span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">(</span><span class="n">extensions</span><span class="p">),</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

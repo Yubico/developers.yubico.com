@@ -1,0 +1,1030 @@
+fido2.webauthn
+==============
+
+.. py:module:: fido2.webauthn
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.webauthn.Aaguid
+   fido2.webauthn.AttestedCredentialData
+   fido2.webauthn.AuthenticatorData
+   fido2.webauthn.AttestationObject
+   fido2.webauthn.CollectedClientData
+   fido2.webauthn.AttestationConveyancePreference
+   fido2.webauthn.UserVerificationRequirement
+   fido2.webauthn.ResidentKeyRequirement
+   fido2.webauthn.AuthenticatorAttachment
+   fido2.webauthn.AuthenticatorTransport
+   fido2.webauthn.PublicKeyCredentialType
+   fido2.webauthn.PublicKeyCredentialRpEntity
+   fido2.webauthn.PublicKeyCredentialUserEntity
+   fido2.webauthn.PublicKeyCredentialParameters
+   fido2.webauthn.PublicKeyCredentialDescriptor
+   fido2.webauthn.AuthenticatorSelectionCriteria
+   fido2.webauthn.PublicKeyCredentialCreationOptions
+   fido2.webauthn.PublicKeyCredentialRequestOptions
+   fido2.webauthn.AuthenticatorAttestationResponse
+   fido2.webauthn.AuthenticatorAssertionResponse
+   fido2.webauthn.RegistrationResponse
+   fido2.webauthn.AuthenticationResponse
+   fido2.webauthn.CredentialCreationOptions
+   fido2.webauthn.CredentialRequestOptions
+   fido2.webauthn.AuthenticationExtensionsClientOutputs
+
+
+Module Contents
+---------------
+
+.. py:class:: Aaguid(data)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:method:: __bool__()
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+   .. py:method:: __repr__()
+
+      Return repr(self).
+
+
+
+   .. py:method:: parse(value)
+      :classmethod:
+
+
+
+   .. py:attribute:: NONE
+      :type:  Aaguid
+
+
+.. py:class:: AttestedCredentialData(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:attribute:: aaguid
+      :type:  Aaguid
+
+
+   .. py:attribute:: credential_id
+      :type:  bytes
+
+
+   .. py:attribute:: public_key
+      :type:  fido2.cose.CoseKey
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+   .. py:method:: create(aaguid, credential_id, public_key)
+      :classmethod:
+
+
+      Create an AttestedCredentialData by providing its components.
+
+      :param aaguid: The AAGUID of the authenticator.
+      :param credential_id: The binary ID of the credential.
+      :param public_key: A COSE formatted public key.
+      :return: The attested credential data.
+
+
+
+   .. py:method:: unpack_from(data)
+      :classmethod:
+
+
+      Unpack an AttestedCredentialData from a byte string, returning it and
+      any remaining data.
+
+      :param data: A binary string containing an attested credential data.
+      :return: The parsed AttestedCredentialData, and any remaining data from
+          the input.
+
+
+
+   .. py:method:: from_ctap1(key_handle, public_key)
+      :classmethod:
+
+
+      Create an AttestatedCredentialData from a CTAP1 RegistrationData instance.
+
+      :param key_handle: The CTAP1 credential key_handle.
+      :type key_handle: bytes
+      :param public_key: The CTAP1 65 byte public key.
+      :type public_key: bytes
+      :return: The credential data, using an all-zero AAGUID.
+      :rtype: AttestedCredentialData
+
+
+
+.. py:class:: AuthenticatorData(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   Binary encoding of the authenticator data.
+
+   :param _: The binary representation of the authenticator data.
+   :ivar rp_id_hash: SHA256 hash of the RP ID.
+   :ivar flags: The flags of the authenticator data, see
+       AuthenticatorData.FLAG.
+   :ivar counter: The signature counter of the authenticator.
+   :ivar credential_data: Attested credential data, if available.
+   :ivar extensions: Authenticator extensions, if available.
+
+
+   .. py:class:: FLAG
+
+      Bases: :py:obj:`enum.IntFlag`
+
+
+      Authenticator data flags
+
+      See https://www.w3.org/TR/webauthn/#sec-authenticator-data for details
+
+
+      .. py:attribute:: UP
+         :value: 1
+
+
+
+      .. py:attribute:: UV
+         :value: 4
+
+
+
+      .. py:attribute:: BE
+         :value: 8
+
+
+
+      .. py:attribute:: BS
+         :value: 16
+
+
+
+      .. py:attribute:: AT
+         :value: 64
+
+
+
+      .. py:attribute:: ED
+         :value: 128
+
+
+
+      .. py:attribute:: USER_PRESENT
+         :value: 1
+
+
+
+      .. py:attribute:: USER_VERIFIED
+         :value: 4
+
+
+
+      .. py:attribute:: BACKUP_ELIGIBILITY
+         :value: 8
+
+
+
+      .. py:attribute:: BACKUP_STATE
+         :value: 16
+
+
+
+      .. py:attribute:: ATTESTED
+         :value: 64
+
+
+
+      .. py:attribute:: EXTENSION_DATA
+         :value: 128
+
+
+
+
+   .. py:attribute:: rp_id_hash
+      :type:  bytes
+
+
+   .. py:attribute:: flags
+      :type:  AuthenticatorData
+
+
+   .. py:attribute:: counter
+      :type:  int
+
+
+   .. py:attribute:: credential_data
+      :type:  Optional[AttestedCredentialData]
+
+
+   .. py:attribute:: extensions
+      :type:  Optional[Mapping]
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+   .. py:method:: create(rp_id_hash, flags, counter, credential_data = b'', extensions = None)
+      :classmethod:
+
+
+      Create an AuthenticatorData instance.
+
+      :param rp_id_hash: SHA256 hash of the RP ID.
+      :param flags: Flags of the AuthenticatorData.
+      :param counter: Signature counter of the authenticator data.
+      :param credential_data: Authenticated credential data (only if attested
+          credential data flag is set).
+      :param extensions: Authenticator extensions (only if ED flag is set).
+      :return: The authenticator data.
+
+
+
+   .. py:method:: is_user_present()
+
+      Return true if the User Present flag is set.
+
+
+
+   .. py:method:: is_user_verified()
+
+      Return true if the User Verified flag is set.
+
+
+
+   .. py:method:: is_backup_eligible()
+
+      Return true if the Backup Eligibility flag is set.
+
+
+
+   .. py:method:: is_backed_up()
+
+      Return true if the Backup State flag is set.
+
+
+
+   .. py:method:: is_attested()
+
+      Return true if the Attested credential data flag is set.
+
+
+
+   .. py:method:: has_extension_data()
+
+      Return true if the Extenstion data flag is set.
+
+
+
+.. py:class:: AttestationObject(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   Binary CBOR encoded attestation object.
+
+   :param _: The binary representation of the attestation object.
+   :ivar fmt: The type of attestation used.
+   :ivar auth_data: The attested authenticator data.
+   :ivar att_statement: The attestation statement.
+
+
+   .. py:attribute:: fmt
+      :type:  str
+
+
+   .. py:attribute:: auth_data
+      :type:  AuthenticatorData
+
+
+   .. py:attribute:: att_stmt
+      :type:  Mapping[str, Any]
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+   .. py:method:: create(fmt, auth_data, att_stmt)
+      :classmethod:
+
+
+
+   .. py:method:: from_ctap1(app_param, registration)
+      :classmethod:
+
+
+      Create an AttestationObject from a CTAP1 RegistrationData instance.
+
+      :param app_param: SHA256 hash of the RP ID used for the CTAP1 request.
+      :type app_param: bytes
+      :param registration: The CTAP1 registration data.
+      :type registration: RegistrationData
+      :return: The attestation object, using the "fido-u2f" format.
+      :rtype: AttestationObject
+
+
+
+.. py:class:: CollectedClientData(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:class:: TYPE
+
+      Bases: :py:obj:`str`, :py:obj:`enum.Enum`
+
+
+      str(object='') -> str
+      str(bytes_or_buffer[, encoding[, errors]]) -> str
+
+      Create a new string object from the given object. If encoding or
+      errors is specified, then the object must expose a data buffer
+      that will be decoded using the given encoding and error handler.
+      Otherwise, returns the result of object.__str__() (if defined)
+      or repr(object).
+      encoding defaults to sys.getdefaultencoding().
+      errors defaults to 'strict'.
+
+
+      .. py:attribute:: CREATE
+         :value: 'webauthn.create'
+
+
+
+      .. py:attribute:: GET
+         :value: 'webauthn.get'
+
+
+
+
+   .. py:attribute:: type
+      :type:  str
+
+
+   .. py:attribute:: challenge
+      :type:  bytes
+
+
+   .. py:attribute:: origin
+      :type:  str
+
+
+   .. py:attribute:: cross_origin
+      :type:  bool
+      :value: False
+
+
+
+   .. py:method:: create(type, challenge, origin, cross_origin = False, **kwargs)
+      :classmethod:
+
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+   .. py:property:: b64
+      :type: str
+
+
+
+   .. py:property:: hash
+      :type: bytes
+
+
+
+.. py:class:: AttestationConveyancePreference
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: NONE
+      :value: 'none'
+
+
+
+   .. py:attribute:: INDIRECT
+      :value: 'indirect'
+
+
+
+   .. py:attribute:: DIRECT
+      :value: 'direct'
+
+
+
+   .. py:attribute:: ENTERPRISE
+      :value: 'enterprise'
+
+
+
+.. py:class:: UserVerificationRequirement
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: REQUIRED
+      :value: 'required'
+
+
+
+   .. py:attribute:: PREFERRED
+      :value: 'preferred'
+
+
+
+   .. py:attribute:: DISCOURAGED
+      :value: 'discouraged'
+
+
+
+.. py:class:: ResidentKeyRequirement
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: REQUIRED
+      :value: 'required'
+
+
+
+   .. py:attribute:: PREFERRED
+      :value: 'preferred'
+
+
+
+   .. py:attribute:: DISCOURAGED
+      :value: 'discouraged'
+
+
+
+.. py:class:: AuthenticatorAttachment
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: PLATFORM
+      :value: 'platform'
+
+
+
+   .. py:attribute:: CROSS_PLATFORM
+      :value: 'cross-platform'
+
+
+
+.. py:class:: AuthenticatorTransport
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: USB
+      :value: 'usb'
+
+
+
+   .. py:attribute:: NFC
+      :value: 'nfc'
+
+
+
+   .. py:attribute:: BLE
+      :value: 'ble'
+
+
+
+   .. py:attribute:: HYBRID
+      :value: 'hybrid'
+
+
+
+   .. py:attribute:: INTERNAL
+      :value: 'internal'
+
+
+
+.. py:class:: PublicKeyCredentialType
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: PUBLIC_KEY
+      :value: 'public-key'
+
+
+
+.. py:class:: PublicKeyCredentialRpEntity
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: name
+      :type:  str
+
+
+   .. py:attribute:: id
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:property:: id_hash
+      :type: Optional[bytes]
+
+
+      Return SHA256 hash of the identifier.
+
+
+
+.. py:class:: PublicKeyCredentialUserEntity
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: name
+      :type:  str
+
+
+   .. py:attribute:: id
+      :type:  bytes
+
+
+   .. py:attribute:: display_name
+      :type:  Optional[str]
+      :value: None
+
+
+
+.. py:class:: PublicKeyCredentialParameters
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:attribute:: alg
+      :type:  int
+
+
+.. py:class:: PublicKeyCredentialDescriptor
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:attribute:: id
+      :type:  bytes
+
+
+   .. py:attribute:: transports
+      :type:  Optional[Sequence[AuthenticatorTransport]]
+      :value: None
+
+
+
+.. py:class:: AuthenticatorSelectionCriteria
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  Optional[AuthenticatorAttachment]
+      :value: None
+
+
+
+   .. py:attribute:: resident_key
+      :type:  Optional[ResidentKeyRequirement]
+      :value: None
+
+
+
+   .. py:attribute:: user_verification
+      :type:  Optional[UserVerificationRequirement]
+      :value: None
+
+
+
+   .. py:attribute:: require_resident_key
+      :type:  Optional[bool]
+      :value: False
+
+
+
+   .. py:method:: __post_init__()
+
+
+.. py:class:: PublicKeyCredentialCreationOptions
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: rp
+      :type:  PublicKeyCredentialRpEntity
+
+
+   .. py:attribute:: user
+      :type:  PublicKeyCredentialUserEntity
+
+
+   .. py:attribute:: challenge
+      :type:  bytes
+
+
+   .. py:attribute:: pub_key_cred_params
+      :type:  Sequence[PublicKeyCredentialParameters]
+
+
+   .. py:attribute:: timeout
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: exclude_credentials
+      :type:  Optional[Sequence[PublicKeyCredentialDescriptor]]
+      :value: None
+
+
+
+   .. py:attribute:: authenticator_selection
+      :type:  Optional[AuthenticatorSelectionCriteria]
+      :value: None
+
+
+
+   .. py:attribute:: attestation
+      :type:  Optional[AttestationConveyancePreference]
+      :value: None
+
+
+
+   .. py:attribute:: extensions
+      :type:  Optional[Mapping[str, Any]]
+      :value: None
+
+
+
+.. py:class:: PublicKeyCredentialRequestOptions
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: challenge
+      :type:  bytes
+
+
+   .. py:attribute:: timeout
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: rp_id
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: allow_credentials
+      :type:  Optional[Sequence[PublicKeyCredentialDescriptor]]
+      :value: None
+
+
+
+   .. py:attribute:: user_verification
+      :type:  Optional[UserVerificationRequirement]
+      :value: None
+
+
+
+   .. py:attribute:: extensions
+      :type:  Optional[Mapping[str, Any]]
+      :value: None
+
+
+
+.. py:class:: AuthenticatorAttestationResponse
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: client_data
+      :type:  CollectedClientData
+
+
+   .. py:attribute:: attestation_object
+      :type:  AttestationObject
+
+
+   .. py:attribute:: extension_results
+      :type:  Optional[Mapping[str, Any]]
+      :value: None
+
+
+
+   .. py:method:: __getitem__(key)
+
+
+   .. py:method:: from_dict(data)
+      :classmethod:
+
+
+
+.. py:class:: AuthenticatorAssertionResponse
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: client_data
+      :type:  CollectedClientData
+
+
+   .. py:attribute:: authenticator_data
+      :type:  AuthenticatorData
+
+
+   .. py:attribute:: signature
+      :type:  bytes
+
+
+   .. py:attribute:: user_handle
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+   .. py:attribute:: credential_id
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+   .. py:attribute:: extension_results
+      :type:  Optional[Mapping[str, Any]]
+      :value: None
+
+
+
+   .. py:method:: __getitem__(key)
+
+
+   .. py:method:: from_dict(data)
+      :classmethod:
+
+
+
+.. py:class:: RegistrationResponse
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: id
+      :type:  bytes
+
+
+   .. py:attribute:: response
+      :type:  AuthenticatorAttestationResponse
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  Optional[AuthenticatorAttachment]
+      :value: None
+
+
+
+   .. py:attribute:: client_extension_results
+      :type:  Optional[AuthenticationExtensionsClientOutputs]
+      :value: None
+
+
+
+   .. py:attribute:: type
+      :type:  Optional[PublicKeyCredentialType]
+      :value: None
+
+
+
+   .. py:method:: __post_init__()
+
+
+.. py:class:: AuthenticationResponse
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: id
+      :type:  bytes
+
+
+   .. py:attribute:: response
+      :type:  AuthenticatorAssertionResponse
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  Optional[AuthenticatorAttachment]
+      :value: None
+
+
+
+   .. py:attribute:: client_extension_results
+      :type:  Optional[AuthenticationExtensionsClientOutputs]
+      :value: None
+
+
+
+   .. py:attribute:: type
+      :type:  Optional[PublicKeyCredentialType]
+      :value: None
+
+
+
+   .. py:method:: __post_init__()
+
+
+.. py:class:: CredentialCreationOptions
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: public_key
+      :type:  PublicKeyCredentialCreationOptions
+
+
+.. py:class:: CredentialRequestOptions
+
+   Bases: :py:obj:`_WebAuthnDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: public_key
+      :type:  PublicKeyCredentialRequestOptions
+
+
+.. py:class:: AuthenticationExtensionsClientOutputs(outputs)
+
+   Bases: :py:obj:`Mapping`\ [\ :py:obj:`str`\ , :py:obj:`Any`\ ]
+
+
+   Holds extension output from a call to MakeCredential or GetAssertion.
+
+   When accessed as a dict, all bytes values will be serialized to base64url encoding,
+   capable of being serialized to JSON.
+
+   When accessed using attributes, richer types will instead be returned.
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(key)
+
+
+   .. py:method:: __getattr__(key)
+
+
+   .. py:method:: __repr__()
+
+

@@ -1,0 +1,424 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.attestation.base &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.attestation.base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.attestation.base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2018 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">..webauthn</span> <span class="kn">import</span> <span class="n">AuthenticatorData</span><span class="p">,</span> <span class="n">AttestationObject</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">padding</span><span class="p">,</span> <span class="n">ec</span><span class="p">,</span> <span class="n">rsa</span>
+<span class="kn">from</span> <span class="nn">cryptography.exceptions</span> <span class="kn">import</span> <span class="n">InvalidSignature</span> <span class="k">as</span> <span class="n">_InvalidSignature</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+
+
+<div class="viewcode-block" id="InvalidAttestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/base/index.html#fido2.attestation.base.InvalidAttestation">[docs]</a>
+<span class="k">class</span> <span class="nc">InvalidAttestation</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base exception for attestation-related errors.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="InvalidData">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.InvalidData">[docs]</a>
+<span class="k">class</span> <span class="nc">InvalidData</span><span class="p">(</span><span class="n">InvalidAttestation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Attestation contains invalid data.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="InvalidSignature">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.InvalidSignature">[docs]</a>
+<span class="k">class</span> <span class="nc">InvalidSignature</span><span class="p">(</span><span class="n">InvalidAttestation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The signature of the attestation could not be verified.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="UntrustedAttestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.UntrustedAttestation">[docs]</a>
+<span class="k">class</span> <span class="nc">UntrustedAttestation</span><span class="p">(</span><span class="n">InvalidAttestation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The CA of the attestation is not trusted.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="UnsupportedType">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.UnsupportedType">[docs]</a>
+<span class="k">class</span> <span class="nc">UnsupportedType</span><span class="p">(</span><span class="n">InvalidAttestation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The attestation format is not supported.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Attestation format &quot;</span><span class="si">{</span><span class="n">fmt</span><span class="si">}</span><span class="s1">&quot; is not supported&#39;</span>
+            <span class="k">if</span> <span class="n">fmt</span>
+            <span class="k">else</span> <span class="s2">&quot;This attestation format is not supported!&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth_data</span> <span class="o">=</span> <span class="n">auth_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="n">fmt</span></div>
+
+
+
+<div class="viewcode-block" id="AttestationType">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.AttestationType">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">AttestationType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Supported attestation types.&quot;&quot;&quot;</span>
+
+    <span class="n">BASIC</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">SELF</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">ATT_CA</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">ANON_CA</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="AttestationResult">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.AttestationResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">AttestationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The result of verifying an attestation.&quot;&quot;&quot;</span>
+
+    <span class="n">attestation_type</span><span class="p">:</span> <span class="n">AttestationType</span>
+    <span class="n">trust_path</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="catch_builtins">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/base/index.html#fido2.attestation.base.catch_builtins">[docs]</a>
+<span class="k">def</span> <span class="nf">catch_builtins</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility decoractor to wrap common exceptions related to InvalidData.&quot;&quot;&quot;</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">inner</span></div>
+
+
+
+<div class="viewcode-block" id="verify_x509_chain">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.verify_x509_chain">[docs]</a>
+<span class="nd">@catch_builtins</span>
+<span class="k">def</span> <span class="nf">verify_x509_chain</span><span class="p">(</span><span class="n">chain</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verifies a chain of certificates.</span>
+
+<span class="sd">    Checks that the first item in the chain is signed by the next, and so on.</span>
+<span class="sd">    The first item is the leaf, the last is the root.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">certs</span> <span class="o">=</span> <span class="p">[</span><span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">der</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span> <span class="k">for</span> <span class="n">der</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">]</span>
+    <span class="n">cert</span> <span class="o">=</span> <span class="n">certs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">certs</span><span class="p">:</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">cert</span>
+        <span class="n">cert</span> <span class="o">=</span> <span class="n">certs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">pub</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="n">child</span><span class="o">.</span><span class="n">signature_hash_algorithm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+                <span class="n">pub</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">signature</span><span class="p">,</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">tbs_certificate_bytes</span><span class="p">,</span>
+                    <span class="n">padding</span><span class="o">.</span><span class="n">PKCS1v15</span><span class="p">(),</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">signature_hash_algorithm</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="n">child</span><span class="o">.</span><span class="n">signature_hash_algorithm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+                <span class="n">pub</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">signature</span><span class="p">,</span>
+                    <span class="n">child</span><span class="o">.</span><span class="n">tbs_certificate_bytes</span><span class="p">,</span>
+                    <span class="n">ec</span><span class="o">.</span><span class="n">ECDSA</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">signature_hash_algorithm</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported signature key type&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">_InvalidSignature</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidSignature</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Attestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.Attestation">[docs]</a>
+<span class="k">class</span> <span class="nc">Attestation</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implements verification of a specific attestation type.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Attestation.verify">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.Attestation.verify">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">statement</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span><span class="p">,</span>
+        <span class="n">client_data_hash</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestationResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verifies attestation statement.</span>
+
+<span class="sd">        :return: An AttestationResult if successful.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Attestation.for_type">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.Attestation.for_type">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">for_type</span><span class="p">(</span><span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">Attestation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an Attestation subclass type for the given format.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">Attestation</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;FORMAT&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">fmt</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">cls</span>
+
+        <span class="k">class</span> <span class="nc">TypedUnsupportedAttestation</span><span class="p">(</span><span class="n">UnsupportedAttestation</span><span class="p">):</span>
+            <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fmt</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">TypedUnsupportedAttestation</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="UnsupportedAttestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.UnsupportedAttestation">[docs]</a>
+<span class="k">class</span> <span class="nc">UnsupportedAttestation</span><span class="p">(</span><span class="n">Attestation</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span> <span class="o">=</span> <span class="n">fmt</span>
+
+<div class="viewcode-block" id="UnsupportedAttestation.verify">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.UnsupportedAttestation.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">UnsupportedType</span><span class="p">(</span><span class="n">auth_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NoneAttestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.NoneAttestation">[docs]</a>
+<span class="k">class</span> <span class="nc">NoneAttestation</span><span class="p">(</span><span class="n">Attestation</span><span class="p">):</span>
+    <span class="n">FORMAT</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+
+<div class="viewcode-block" id="NoneAttestation.verify">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.NoneAttestation.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">statement</span> <span class="o">!=</span> <span class="p">{}:</span>
+            <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;None Attestation requires empty statement.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AttestationResult</span><span class="p">(</span><span class="n">AttestationType</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="p">[])</span></div>
+</div>
+
+
+
+<span class="k">def</span> <span class="nf">_validate_cert_common</span><span class="p">(</span><span class="n">cert</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">cert</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">x509</span><span class="o">.</span><span class="n">Version</span><span class="o">.</span><span class="n">v3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;Attestation certificate must use version 3!&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bc</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">get_extension_for_class</span><span class="p">(</span><span class="n">x509</span><span class="o">.</span><span class="n">BasicConstraints</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">ca</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;Attestation certificate must have CA=false!&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">x509</span><span class="o">.</span><span class="n">ExtensionNotFound</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;Attestation certificate must have Basic Constraints!&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_default_attestations</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="bp">cls</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">Attestation</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;FORMAT&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span>
+    <span class="p">]</span>
+
+
+<div class="viewcode-block" id="AttestationVerifier">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.AttestationVerifier">[docs]</a>
+<span class="k">class</span> <span class="nc">AttestationVerifier</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for verifying attestation.</span>
+
+<span class="sd">    Override the ca_lookup method to provide a trusted root certificate used</span>
+<span class="sd">    to verify the trust path from the attestation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attestation_types</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Attestation</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attestation_types</span> <span class="o">=</span> <span class="n">attestation_types</span> <span class="ow">or</span> <span class="n">_default_attestations</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AttestationVerifier.ca_lookup">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.AttestationVerifier.ca_lookup">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">ca_lookup</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">attestation_result</span><span class="p">:</span> <span class="n">AttestationResult</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lookup a CA certificate to be used to verify a trust path.</span>
+
+<span class="sd">        :param attestation_result: The result of the attestation</span>
+<span class="sd">        :param auth_data: The AuthenticatorData from the registration</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="AttestationVerifier.verify_attestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.AttestationVerifier.verify_attestation">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify_attestation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">attestation_object</span><span class="p">:</span> <span class="n">AttestationObject</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify attestation.</span>
+
+<span class="sd">        :param attestation_object: dict containing attestation data.</span>
+<span class="sd">        :param client_data_hash: SHA256 hash of the ClientData bytes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">att_verifier</span><span class="p">:</span> <span class="n">Attestation</span> <span class="o">=</span> <span class="n">UnsupportedAttestation</span><span class="p">(</span><span class="n">attestation_object</span><span class="o">.</span><span class="n">fmt</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attestation_types</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="s2">&quot;FORMAT&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">attestation_object</span><span class="o">.</span><span class="n">fmt</span><span class="p">:</span>
+                <span class="n">att_verifier</span> <span class="o">=</span> <span class="n">at</span>
+                <span class="k">break</span>
+        <span class="c1"># An unsupported format causes an exception to be thrown, which</span>
+        <span class="c1"># includes the auth_data. The caller may choose to handle this case</span>
+        <span class="c1"># and allow the registration.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">att_verifier</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+            <span class="n">attestation_object</span><span class="o">.</span><span class="n">att_stmt</span><span class="p">,</span>
+            <span class="n">attestation_object</span><span class="o">.</span><span class="n">auth_data</span><span class="p">,</span>
+            <span class="n">client_data_hash</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Lookup CA to use for trust path verification</span>
+        <span class="n">ca</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ca_lookup</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">attestation_object</span><span class="o">.</span><span class="n">auth_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ca</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UntrustedAttestation</span><span class="p">(</span><span class="s2">&quot;No root found for Authenticator&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate the trust chain</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">verify_x509_chain</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">trust_path</span> <span class="o">+</span> <span class="p">[</span><span class="n">ca</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">InvalidSignature</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UntrustedAttestation</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AttestationVerifier.__call__">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.base.AttestationVerifier.__call__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allows passing an instance to Fido2Server as verify_attestation&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_attestation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

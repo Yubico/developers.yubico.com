@@ -1,0 +1,517 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.cose &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.cose</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.cose</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2018 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">bytes2int</span><span class="p">,</span> <span class="n">int2bytes</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">hashes</span><span class="p">,</span> <span class="n">serialization</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">ec</span><span class="p">,</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">ed25519</span><span class="p">,</span> <span class="n">types</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+
+<div class="viewcode-block" id="CoseKey">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey">[docs]</a>
+<span class="k">class</span> <span class="nc">CoseKey</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A COSE formatted public key.</span>
+
+<span class="sd">    :param _: The COSE key paramters.</span>
+<span class="sd">    :cvar ALGORITHM: COSE algorithm identifier.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ALGORITHM</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+
+<div class="viewcode-block" id="CoseKey.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates a digital signature over a given message.</span>
+
+<span class="sd">        :param message: The message which was signed.</span>
+<span class="sd">        :param signature: The signature to check.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Signature verification not supported.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoseKey.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_CoseKey</span><span class="p">],</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">types</span><span class="o">.</span><span class="n">PublicKeyTypes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_CoseKey</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a PublicKey object from Cryptography into a COSE key.</span>
+
+<span class="sd">        :param public_key: Either an EC or RSA public key.</span>
+<span class="sd">        :return: A CoseKey.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Creation from cryptography not supported.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoseKey.for_alg">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey.for_alg">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">for_alg</span><span class="p">(</span><span class="n">alg</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">CoseKey</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a subclass of CoseKey corresponding to an algorithm identifier.</span>
+
+<span class="sd">        :param alg: The COSE identifier of the algorithm.</span>
+<span class="sd">        :return: A CoseKey.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">CoseKey</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span> <span class="o">==</span> <span class="n">alg</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">cls</span>
+        <span class="k">return</span> <span class="n">UnsupportedKey</span></div>
+
+
+<div class="viewcode-block" id="CoseKey.for_name">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey.for_name">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">for_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">CoseKey</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a subclass of CoseKey corresponding to an algorithm identifier.</span>
+
+<span class="sd">        :param alg: The COSE identifier of the algorithm.</span>
+<span class="sd">        :return: A CoseKey.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">CoseKey</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">cls</span>
+        <span class="k">return</span> <span class="n">UnsupportedKey</span></div>
+
+
+<div class="viewcode-block" id="CoseKey.parse">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey.parse">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">cose</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">CoseKey</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a CoseKey from a dict&quot;&quot;&quot;</span>
+        <span class="n">alg</span> <span class="o">=</span> <span class="n">cose</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">alg</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;COSE alg identifier must be provided.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CoseKey</span><span class="o">.</span><span class="n">for_alg</span><span class="p">(</span><span class="n">alg</span><span class="p">)(</span><span class="n">cose</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoseKey.supported_algorithms">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.CoseKey.supported_algorithms">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">supported_algorithms</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a list of all supported algorithm identifiers&quot;&quot;&quot;</span>
+        <span class="n">algs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">CoseKey</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ES256</span><span class="p">,</span>
+            <span class="n">EdDSA</span><span class="p">,</span>
+            <span class="n">ES384</span><span class="p">,</span>
+            <span class="n">ES512</span><span class="p">,</span>
+            <span class="n">PS256</span><span class="p">,</span>
+            <span class="n">RS256</span><span class="p">,</span>
+            <span class="n">ES256K</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">algs</span><span class="p">]</span></div>
+</div>
+
+
+
+<span class="n">T_CoseKey</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T_CoseKey&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">CoseKey</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UnsupportedKey">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.UnsupportedKey">[docs]</a>
+<span class="k">class</span> <span class="nc">UnsupportedKey</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A COSE key with an unsupported algorithm.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ES256">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256">[docs]</a>
+<span class="k">class</span> <span class="nc">ES256</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">7</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ES256.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported elliptic curve&quot;</span><span class="p">)</span>
+        <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span>
+            <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]),</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP256R1</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+            <span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">ECDSA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ES256.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+                <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ES256.from_ctap1">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256.from_ctap1">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_ctap1</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an ES256 key from a CTAP1 formatted public key byte string.</span>
+
+<span class="sd">        :param data: A 65 byte SECP256R1 public key.</span>
+<span class="sd">        :return: A ES256 key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">33</span><span class="p">],</span> <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="mi">33</span><span class="p">:</span><span class="mi">65</span><span class="p">]})</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ES384">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES384">[docs]</a>
+<span class="k">class</span> <span class="nc">ES384</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">35</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA384</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ES384.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES384.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported elliptic curve&quot;</span><span class="p">)</span>
+        <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span>
+            <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]),</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP384R1</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+            <span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">ECDSA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ES384.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES384.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="mi">48</span><span class="p">),</span>
+                <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">48</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ES512">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES512">[docs]</a>
+<span class="k">class</span> <span class="nc">ES512</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">36</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA512</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ES512.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES512.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported elliptic curve&quot;</span><span class="p">)</span>
+        <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span>
+            <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]),</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP521R1</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+            <span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">ECDSA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ES512.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES512.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="mi">66</span><span class="p">),</span>
+                <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">66</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RS256">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.RS256">[docs]</a>
+<span class="k">class</span> <span class="nc">RS256</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">257</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">()</span>
+
+<div class="viewcode-block" id="RS256.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.RS256.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicNumbers</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span>
+            <span class="n">default_backend</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">padding</span><span class="o">.</span><span class="n">PKCS1v15</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RS256.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.RS256.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">e</span><span class="p">)})</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PS256">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.PS256">[docs]</a>
+<span class="k">class</span> <span class="nc">PS256</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">37</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PS256.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.PS256.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicNumbers</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span>
+            <span class="n">default_backend</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+            <span class="n">signature</span><span class="p">,</span>
+            <span class="n">message</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">.</span><span class="n">PSS</span><span class="p">(</span>
+                <span class="n">mgf</span><span class="o">=</span><span class="n">padding</span><span class="o">.</span><span class="n">MGF1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">),</span> <span class="n">salt_length</span><span class="o">=</span><span class="n">padding</span><span class="o">.</span><span class="n">PSS</span><span class="o">.</span><span class="n">MAX_LENGTH</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PS256.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.PS256.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">e</span><span class="p">)})</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EdDSA">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.EdDSA">[docs]</a>
+<span class="k">class</span> <span class="nc">EdDSA</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">8</span>
+
+<div class="viewcode-block" id="EdDSA.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.EdDSA.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported elliptic curve&quot;</span><span class="p">)</span>
+        <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PublicKey</span><span class="o">.</span><span class="n">from_public_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EdDSA.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.EdDSA.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span>
+                    <span class="n">serialization</span><span class="o">.</span><span class="n">Encoding</span><span class="o">.</span><span class="n">Raw</span><span class="p">,</span> <span class="n">serialization</span><span class="o">.</span><span class="n">PublicFormat</span><span class="o">.</span><span class="n">Raw</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RS1">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.RS1">[docs]</a>
+<span class="k">class</span> <span class="nc">RS1</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">65535</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA1</span><span class="p">()</span>  <span class="c1"># nosec</span>
+
+<div class="viewcode-block" id="RS1.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.RS1.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicNumbers</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span>
+            <span class="n">default_backend</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">padding</span><span class="o">.</span><span class="n">PKCS1v15</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RS1.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.RS1.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">({</span><span class="mi">1</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">n</span><span class="p">),</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">e</span><span class="p">)})</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ES256K">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256K">[docs]</a>
+<span class="k">class</span> <span class="nc">ES256K</span><span class="p">(</span><span class="n">CoseKey</span><span class="p">):</span>
+    <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="o">-</span><span class="mi">47</span>
+    <span class="n">_HASH_ALG</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ES256K.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256K.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">signature</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported elliptic curve&quot;</span><span class="p">)</span>
+        <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span>
+            <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span> <span class="n">bytes2int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]),</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP256K1</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span>
+            <span class="n">signature</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">ECDSA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_HASH_ALG</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ES256K.from_cryptography_key">
+<a class="viewcode-back" href="../../autoapi/fido2/cose/index.html#fido2.cose.ES256K.from_cryptography_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cryptography_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">public_key</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">public_key</span><span class="o">.</span><span class="n">public_numbers</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="mi">3</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ALGORITHM</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                <span class="o">-</span><span class="mi">2</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+                <span class="o">-</span><span class="mi">3</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pn</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
