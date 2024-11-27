@@ -1,0 +1,420 @@
+fido2.ctap
+==========
+
+.. py:module:: fido2.ctap
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   fido2.ctap.CtapError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.ctap.STATUS
+   fido2.ctap.CtapDevice
+
+
+Module Contents
+---------------
+
+.. py:class:: STATUS
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Status code for CTAP keep-alive message.
+
+
+   .. py:attribute:: PROCESSING
+      :value: 1
+
+
+
+   .. py:attribute:: UPNEEDED
+      :value: 2
+
+
+
+.. py:class:: CtapDevice
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   CTAP-capable device.
+
+   Subclasses of this should implement :func:`call`, as well as :func:`list_devices`,
+   which should return a generator over discoverable devices.
+
+
+   .. py:property:: capabilities
+      :type: int
+
+      :abstractmethod:
+
+
+      Get device capabilities
+
+
+
+   .. py:method:: call(cmd, data = b'', event = None, on_keepalive = None)
+      :abstractmethod:
+
+
+      Sends a command to the authenticator, and reads the response.
+
+      :param cmd: The integer value of the command.
+      :param data: The payload of the command.
+      :param event: An optional threading.Event which can be used to cancel
+          the invocation.
+      :param on_keepalive: An optional callback to handle keep-alive messages
+          from the authenticator. The function is only called once for
+          consecutive keep-alive messages with the same status.
+      :return: The response from the authenticator.
+
+
+
+   .. py:method:: close()
+
+      Close the device, releasing any held resources.
+
+
+
+   .. py:method:: __enter__()
+
+
+   .. py:method:: __exit__(typ, value, traceback)
+
+
+   .. py:method:: list_devices()
+      :classmethod:
+
+      :abstractmethod:
+
+
+      Generates instances of cls for discoverable devices.
+
+
+
+.. py:exception:: CtapError(code)
+
+   Bases: :py:obj:`Exception`
+
+
+   Error returned from the Authenticator when a command fails.
+
+
+   .. py:class:: UNKNOWN_ERR
+
+      Bases: :py:obj:`int`
+
+
+      CTAP error status code that is not recognized.
+
+
+      .. py:attribute:: name
+         :value: 'UNKNOWN_ERR'
+
+
+
+      .. py:property:: value
+         :type: int
+
+
+
+      .. py:method:: __repr__()
+
+         Return repr(self).
+
+
+
+      .. py:method:: __str__()
+
+         Return str(self).
+
+
+
+
+   .. py:class:: ERR
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      CTAP status codes.
+
+      https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#error-responses
+
+
+      .. py:attribute:: SUCCESS
+         :value: 0
+
+
+
+      .. py:attribute:: INVALID_COMMAND
+         :value: 1
+
+
+
+      .. py:attribute:: INVALID_PARAMETER
+         :value: 2
+
+
+
+      .. py:attribute:: INVALID_LENGTH
+         :value: 3
+
+
+
+      .. py:attribute:: INVALID_SEQ
+         :value: 4
+
+
+
+      .. py:attribute:: TIMEOUT
+         :value: 5
+
+
+
+      .. py:attribute:: CHANNEL_BUSY
+         :value: 6
+
+
+
+      .. py:attribute:: LOCK_REQUIRED
+         :value: 10
+
+
+
+      .. py:attribute:: INVALID_CHANNEL
+         :value: 11
+
+
+
+      .. py:attribute:: CBOR_UNEXPECTED_TYPE
+         :value: 17
+
+
+
+      .. py:attribute:: INVALID_CBOR
+         :value: 18
+
+
+
+      .. py:attribute:: MISSING_PARAMETER
+         :value: 20
+
+
+
+      .. py:attribute:: LIMIT_EXCEEDED
+         :value: 21
+
+
+
+      .. py:attribute:: FP_DATABASE_FULL
+         :value: 23
+
+
+
+      .. py:attribute:: LARGE_BLOB_STORAGE_FULL
+         :value: 24
+
+
+
+      .. py:attribute:: CREDENTIAL_EXCLUDED
+         :value: 25
+
+
+
+      .. py:attribute:: PROCESSING
+         :value: 33
+
+
+
+      .. py:attribute:: INVALID_CREDENTIAL
+         :value: 34
+
+
+
+      .. py:attribute:: USER_ACTION_PENDING
+         :value: 35
+
+
+
+      .. py:attribute:: OPERATION_PENDING
+         :value: 36
+
+
+
+      .. py:attribute:: NO_OPERATIONS
+         :value: 37
+
+
+
+      .. py:attribute:: UNSUPPORTED_ALGORITHM
+         :value: 38
+
+
+
+      .. py:attribute:: OPERATION_DENIED
+         :value: 39
+
+
+
+      .. py:attribute:: KEY_STORE_FULL
+         :value: 40
+
+
+
+      .. py:attribute:: UNSUPPORTED_OPTION
+         :value: 43
+
+
+
+      .. py:attribute:: INVALID_OPTION
+         :value: 44
+
+
+
+      .. py:attribute:: KEEPALIVE_CANCEL
+         :value: 45
+
+
+
+      .. py:attribute:: NO_CREDENTIALS
+         :value: 46
+
+
+
+      .. py:attribute:: USER_ACTION_TIMEOUT
+         :value: 47
+
+
+
+      .. py:attribute:: NOT_ALLOWED
+         :value: 48
+
+
+
+      .. py:attribute:: PIN_INVALID
+         :value: 49
+
+
+
+      .. py:attribute:: PIN_BLOCKED
+         :value: 50
+
+
+
+      .. py:attribute:: PIN_AUTH_INVALID
+         :value: 51
+
+
+
+      .. py:attribute:: PIN_AUTH_BLOCKED
+         :value: 52
+
+
+
+      .. py:attribute:: PIN_NOT_SET
+         :value: 53
+
+
+
+      .. py:attribute:: PUAT_REQUIRED
+         :value: 54
+
+
+
+      .. py:attribute:: PIN_POLICY_VIOLATION
+         :value: 55
+
+
+
+      .. py:attribute:: PIN_TOKEN_EXPIRED
+         :value: 56
+
+
+
+      .. py:attribute:: REQUEST_TOO_LARGE
+         :value: 57
+
+
+
+      .. py:attribute:: ACTION_TIMEOUT
+         :value: 58
+
+
+
+      .. py:attribute:: UP_REQUIRED
+         :value: 59
+
+
+
+      .. py:attribute:: UV_BLOCKED
+         :value: 60
+
+
+
+      .. py:attribute:: INTEGRITY_FAILURE
+         :value: 61
+
+
+
+      .. py:attribute:: INVALID_SUBCOMMAND
+         :value: 62
+
+
+
+      .. py:attribute:: UV_INVALID
+         :value: 63
+
+
+
+      .. py:attribute:: UNAUTHORIZED_PERMISSION
+         :value: 64
+
+
+
+      .. py:attribute:: OTHER
+         :value: 127
+
+
+
+      .. py:attribute:: SPEC_LAST
+         :value: 223
+
+
+
+      .. py:attribute:: EXTENSION_FIRST
+         :value: 224
+
+
+
+      .. py:attribute:: EXTENSION_LAST
+         :value: 239
+
+
+
+      .. py:attribute:: VENDOR_FIRST
+         :value: 240
+
+
+
+      .. py:attribute:: VENDOR_LAST
+         :value: 255
+
+
+
+      .. py:method:: __str__()
+
+         Return str(self).
+
+
+
+

@@ -1,0 +1,742 @@
+fido2.ctap2.extensions
+======================
+
+.. py:module:: fido2.ctap2.extensions
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.ctap2.extensions.ExtensionProcessor
+   fido2.ctap2.extensions.RegistrationExtensionProcessor
+   fido2.ctap2.extensions.AuthenticationExtensionProcessor
+   fido2.ctap2.extensions.Ctap2Extension
+   fido2.ctap2.extensions.HMACGetSecretInput
+   fido2.ctap2.extensions.HMACGetSecretOutput
+   fido2.ctap2.extensions.AuthenticatorExtensionsPRFValues
+   fido2.ctap2.extensions.AuthenticatorExtensionsPRFInputs
+   fido2.ctap2.extensions.AuthenticatorExtensionsPRFOutputs
+   fido2.ctap2.extensions.HmacSecretExtension
+   fido2.ctap2.extensions.AuthenticatorExtensionsLargeBlobInputs
+   fido2.ctap2.extensions.AuthenticatorExtensionsLargeBlobOutputs
+   fido2.ctap2.extensions.LargeBlobExtension
+   fido2.ctap2.extensions.CredBlobExtension
+   fido2.ctap2.extensions.CredProtectExtension
+   fido2.ctap2.extensions.MinPinLengthExtension
+   fido2.ctap2.extensions.CredentialPropertiesOutput
+   fido2.ctap2.extensions.CredPropsExtension
+
+
+Module Contents
+---------------
+
+.. py:class:: ExtensionProcessor(permissions = ClientPin.PERMISSION(0), inputs = None, outputs = None)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Base class for CTAP2 extension processing.
+
+   See: :class:`RegistrationExtensionProcessor` and
+   :class:`AuthenticationExtensionProcessor`.
+
+
+   .. py:attribute:: permissions
+
+
+.. py:class:: RegistrationExtensionProcessor(permissions = ClientPin.PERMISSION(0), inputs = None, outputs = None)
+
+   Bases: :py:obj:`ExtensionProcessor`
+
+
+   Processing state for a CTAP2 extension, for single use.
+
+   The ExtensionProcessor holds state and logic for client processing of an extension,
+   for a registration (MakeCredential) call.
+
+   :param permissions: PinUvAuthToken permissions required by the extension.
+   :param inputs: Default authenticator inputs, if prepare_inputs is not overridden.
+   :param outputs: Default client outputs, if prepare_outputs is not overridden.
+
+
+   .. py:method:: prepare_inputs(pin_token)
+
+      Prepare authenticator extension inputs, to be passed to the Authenenticator.
+
+
+
+   .. py:method:: prepare_outputs(response, pin_token)
+
+      Prepare client extension outputs, to be returned to the caller.
+
+
+
+.. py:class:: AuthenticationExtensionProcessor(permissions = ClientPin.PERMISSION(0), inputs = None, outputs = None)
+
+   Bases: :py:obj:`ExtensionProcessor`
+
+
+   Processing state for a CTAP2 extension, for single use.
+
+   The ExtensionProcessor holds state and logic for client processing of an extension,
+   for an authentication (GetAssertion) call.
+
+   :param permissions: PinUvAuthToken permissions required by the extension.
+   :param inputs: Default authenticator inputs, if prepare_inputs is not overridden.
+   :param outputs: Default client outputs, if prepare_outputs is not overridden.
+
+
+   .. py:method:: prepare_inputs(selected, pin_token)
+
+      Prepare authenticator extension inputs, to be passed to the Authenenticator.
+
+
+
+   .. py:method:: prepare_outputs(response, pin_token)
+
+      Prepare client extension outputs, to be returned to the caller.
+
+
+
+.. py:class:: Ctap2Extension(ctap = None)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Base class for CTAP2 extensions.
+
+   As of python-fido2 1.2 these instances can be used for multiple requests and
+   should be invoked via the make_credential and get_assertion methods.
+   Subclasses are instantiated for a single request, if the Authenticator supports
+   the extension.
+
+   From python-fido2 2.0 the following methods will be fully removed:
+       get_create_permissions, process_create_input, process_create_output,
+       process_create_input_with_permissions,
+       get_get_permissions, process_get_input, process_get_output,
+       process_get_input_with_permissions.
+
+   The following changes will also be made:
+       :func:`__init__` will no longer allow passing a ctap2 instance.
+       :func:`is_supported` will require a ctap2 instance to be passed.
+       :attr:`NAME` and :attr:`ctap` will be removed.
+
+
+   .. py:attribute:: NAME
+      :type:  str
+      :value: None
+
+
+
+   .. py:property:: ctap
+      :type: fido2.ctap2.base.Ctap2
+
+
+
+   .. py:method:: is_supported(ctap = None)
+
+      Whether or not the extension is supported by the authenticator.
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: get_assertion(ctap, options, pin_protocol)
+
+      Start client extension processing for authentication.
+
+
+
+   .. py:method:: get_create_permissions(inputs)
+
+      Get PinUvAuthToken permissions required for Registration.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_create_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_create_input_with_permissions(inputs)
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_create_output(attestation_response, token, pin_protocol)
+
+      Return client extension output given attestation_response, or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: get_get_permissions(inputs)
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+   .. py:method:: process_get_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+   .. py:method:: process_get_input_with_permissions(inputs)
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+   .. py:method:: process_get_output(assertion_response, token, pin_protocol)
+
+      Return client extension output given assertion_response, or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+.. py:class:: HMACGetSecretInput
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client inputs for hmac-secret.
+
+
+   .. py:attribute:: salt1
+      :type:  bytes
+
+
+   .. py:attribute:: salt2
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+.. py:class:: HMACGetSecretOutput
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client outputs for hmac-secret.
+
+
+   .. py:attribute:: output1
+      :type:  bytes
+
+
+   .. py:attribute:: output2
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+.. py:class:: AuthenticatorExtensionsPRFValues
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Salt values for use with prf.
+
+
+   .. py:attribute:: first
+      :type:  bytes
+
+
+   .. py:attribute:: second
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+.. py:class:: AuthenticatorExtensionsPRFInputs
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client inputs for prf.
+
+
+   .. py:attribute:: eval
+      :type:  Optional[AuthenticatorExtensionsPRFValues]
+      :value: None
+
+
+
+   .. py:attribute:: eval_by_credential
+      :type:  Optional[Mapping[str, AuthenticatorExtensionsPRFValues]]
+      :value: None
+
+
+
+.. py:class:: AuthenticatorExtensionsPRFOutputs
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client outputs for prf.
+
+
+   .. py:attribute:: enabled
+      :type:  Optional[bool]
+      :value: None
+
+
+
+   .. py:attribute:: results
+      :type:  Optional[AuthenticatorExtensionsPRFValues]
+      :value: None
+
+
+
+.. py:class:: HmacSecretExtension(ctap=None, pin_protocol=None, allow_hmac_secret=False)
+
+   Bases: :py:obj:`Ctap2Extension`
+
+
+   Implements the Pseudo-random function (prf) and the hmac-secret CTAP2 extensions.
+
+   The hmac-secret extension is not directly available to clients by default, instead
+   the prf extension is used.
+
+   https://www.w3.org/TR/webauthn-3/#prf-extension
+
+   https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-hmac-secret-extension
+
+   :param allow_hmac_secret: Set to True to allow hmac-secret, in addition to prf.
+
+
+   .. py:attribute:: NAME
+      :value: 'hmac-secret'
+
+
+
+   .. py:attribute:: SALT_LEN
+      :value: 32
+
+
+
+   .. py:attribute:: pin_protocol
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: get_assertion(ctap, options, pin_protocol)
+
+      Start client extension processing for authentication.
+
+
+
+   .. py:method:: process_create_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_create_output(attestation_response, *args, **kwargs)
+
+      Return client extension output given attestation_response, or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_get_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+   .. py:method:: process_get_output(assertion_response, *args, **kwargs)
+
+      Return client extension output given assertion_response, or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+.. py:class:: AuthenticatorExtensionsLargeBlobInputs
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client inputs for largeBlob.
+
+
+   .. py:attribute:: support
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: read
+      :type:  Optional[bool]
+      :value: None
+
+
+
+   .. py:attribute:: write
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+.. py:class:: AuthenticatorExtensionsLargeBlobOutputs
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client outputs for largeBlob.
+
+
+   .. py:attribute:: supported
+      :type:  Optional[bool]
+      :value: None
+
+
+
+   .. py:attribute:: blob
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+   .. py:attribute:: written
+      :type:  Optional[bool]
+      :value: None
+
+
+
+.. py:class:: LargeBlobExtension(ctap = None)
+
+   Bases: :py:obj:`Ctap2Extension`
+
+
+   Implements the Large Blob storage (largeBlob) WebAuthn extension.
+
+   https://www.w3.org/TR/webauthn-3/#sctn-large-blob-extension
+
+
+   .. py:attribute:: NAME
+      :value: 'largeBlobKey'
+
+
+
+   .. py:method:: is_supported(ctap=None)
+
+      Whether or not the extension is supported by the authenticator.
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: get_assertion(ctap, options, pin_protocol)
+
+      Start client extension processing for authentication.
+
+
+
+   .. py:method:: process_create_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_create_output(attestation_response, *args, **kwargs)
+
+      Return client extension output given attestation_response, or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: get_get_permissions(inputs)
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+   .. py:method:: process_get_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+   .. py:method:: process_get_output(assertion_response, token, pin_protocol)
+
+      Return client extension output given assertion_response, or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+.. py:class:: CredBlobExtension(ctap = None)
+
+   Bases: :py:obj:`Ctap2Extension`
+
+
+   Implements the Credential Blob (credBlob) CTAP2 extension.
+
+   https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credBlob-extension
+
+
+   .. py:attribute:: NAME
+      :value: 'credBlob'
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: get_assertion(ctap, options, pin_protocol)
+
+      Start client extension processing for authentication.
+
+
+
+   .. py:method:: process_create_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+   .. py:method:: process_get_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`get_assertion` instead.
+
+
+
+.. py:class:: CredProtectExtension(ctap = None)
+
+   Bases: :py:obj:`Ctap2Extension`
+
+
+   Implements the Credential Protection CTAP2 extension.
+
+   https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credProtect-extension
+
+
+   .. py:class:: POLICY(*args, **kwds)
+
+      Bases: :py:obj:`enum.Enum`
+
+
+      Create a collection of name/value pairs.
+
+      Example enumeration:
+
+      >>> class Color(Enum):
+      ...     RED = 1
+      ...     BLUE = 2
+      ...     GREEN = 3
+
+      Access them by:
+
+      - attribute access:
+
+        >>> Color.RED
+        <Color.RED: 1>
+
+      - value lookup:
+
+        >>> Color(1)
+        <Color.RED: 1>
+
+      - name lookup:
+
+        >>> Color['RED']
+        <Color.RED: 1>
+
+      Enumerations can be iterated over, and know how many members they have:
+
+      >>> len(Color)
+      3
+
+      >>> list(Color)
+      [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]
+
+      Methods can be added to enumerations, and members can have their own
+      attributes -- see the documentation for details.
+
+
+      .. py:attribute:: OPTIONAL
+         :value: 'userVerificationOptional'
+
+
+
+      .. py:attribute:: OPTIONAL_WITH_LIST
+         :value: 'userVerificationOptionalWithCredentialIDList'
+
+
+
+      .. py:attribute:: REQUIRED
+         :value: 'userVerificationRequired'
+
+
+
+
+   .. py:attribute:: NAME
+      :value: 'credProtect'
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: process_create_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+.. py:class:: MinPinLengthExtension(ctap = None)
+
+   Bases: :py:obj:`Ctap2Extension`
+
+
+   Implements the Minimum PIN Length (minPinLength) CTAP2 extension.
+
+   https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-minpinlength-extension
+
+
+   .. py:attribute:: NAME
+      :value: 'minPinLength'
+
+
+
+   .. py:method:: is_supported(ctap=None)
+
+      Whether or not the extension is supported by the authenticator.
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: process_create_input(inputs)
+
+      Returns a value to include in the authenticator extension input,
+      or None.
+
+      .. deprecated:: 1.2.0
+         Implement :func:`make_credential` instead.
+
+
+
+.. py:class:: CredentialPropertiesOutput
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Client outputs for credProps.
+
+
+   .. py:attribute:: rk
+      :type:  Optional[bool]
+      :value: None
+
+
+
+.. py:class:: CredPropsExtension(ctap = None)
+
+   Bases: :py:obj:`Ctap2Extension`
+
+
+   Implements the Credential Properties (credProps) WebAuthn extension.
+
+   https://www.w3.org/TR/webauthn-3/#sctn-authenticator-credential-properties-extension
+
+
+   .. py:attribute:: NAME
+      :value: 'credProps'
+
+
+
+   .. py:method:: is_supported(ctap=None)
+
+      Whether or not the extension is supported by the authenticator.
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+

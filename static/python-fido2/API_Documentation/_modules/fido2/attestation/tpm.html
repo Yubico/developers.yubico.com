@@ -1,0 +1,754 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.attestation.tpm &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.attestation.tpm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.attestation.tpm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="c1"># Copyright (c) 2019 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Attestation</span><span class="p">,</span>
+    <span class="n">AttestationType</span><span class="p">,</span>
+    <span class="n">AttestationResult</span><span class="p">,</span>
+    <span class="n">InvalidData</span><span class="p">,</span>
+    <span class="n">InvalidSignature</span><span class="p">,</span>
+    <span class="n">catch_builtins</span><span class="p">,</span>
+    <span class="n">_validate_cert_common</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..cose</span> <span class="kn">import</span> <span class="n">CoseKey</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">bytes2int</span><span class="p">,</span> <span class="n">ByteBuffer</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">ec</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">hashes</span>
+<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span> <span class="nn">cryptography.exceptions</span> <span class="kn">import</span> <span class="n">InvalidSignature</span> <span class="k">as</span> <span class="n">_InvalidSignature</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+
+
+<span class="n">TPM_ALG_NULL</span> <span class="o">=</span> <span class="mh">0x0010</span>
+<span class="n">OID_AIK_CERTIFICATE</span> <span class="o">=</span> <span class="n">x509</span><span class="o">.</span><span class="n">ObjectIdentifier</span><span class="p">(</span><span class="s2">&quot;2.23.133.8.3&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TpmRsaScheme">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmRsaScheme">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TpmRsaScheme</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">RSASSA</span> <span class="o">=</span> <span class="mh">0x0014</span>
+    <span class="n">RSAPSS</span> <span class="o">=</span> <span class="mh">0x0016</span>
+    <span class="n">OAEP</span> <span class="o">=</span> <span class="mh">0x0017</span>
+    <span class="n">RSAES</span> <span class="o">=</span> <span class="mh">0x0015</span></div>
+
+
+
+<div class="viewcode-block" id="TpmAlgAsym">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmAlgAsym">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TpmAlgAsym</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">RSA</span> <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">ECC</span> <span class="o">=</span> <span class="mh">0x0023</span></div>
+
+
+
+<div class="viewcode-block" id="TpmAlgHash">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmAlgHash">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TpmAlgHash</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">SHA1</span> <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">SHA256</span> <span class="o">=</span> <span class="mh">0x000B</span>
+    <span class="n">SHA384</span> <span class="o">=</span> <span class="mh">0x000C</span>
+    <span class="n">SHA512</span> <span class="o">=</span> <span class="mh">0x000D</span>
+
+    <span class="k">def</span> <span class="nf">_hash_alg</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmAlgHash</span><span class="o">.</span><span class="n">SHA1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA1</span><span class="p">()</span>  <span class="c1"># nosec</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmAlgHash</span><span class="o">.</span><span class="n">SHA256</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmAlgHash</span><span class="o">.</span><span class="n">SHA384</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA384</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmAlgHash</span><span class="o">.</span><span class="n">SHA512</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA512</span><span class="p">()</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_hash_alg is not implemented for </span><span class="si">{</span><span class="bp">self</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TpmsCertifyInfo">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsCertifyInfo">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TpmsCertifyInfo</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">qualified_name</span><span class="p">:</span> <span class="nb">bytes</span></div>
+
+
+
+<span class="n">TPM_GENERATED_VALUE</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xff</span><span class="s2">TCG&quot;</span>
+<span class="n">TPM_ST_ATTEST_CERTIFY</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x80\x17</span><span class="s2">&quot;</span>
+
+
+<div class="viewcode-block" id="TpmAttestationFormat">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmAttestationFormat">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TpmAttestationFormat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;the signature data is defined by [TPMv2-Part2] Section 10.12.8 (TPMS_ATTEST)</span>
+<span class="sd">    as:</span>
+<span class="sd">      TPM_GENERATED_VALUE (0xff544347 aka &quot;\xffTCG&quot;)</span>
+<span class="sd">      TPMI_ST_ATTEST - always TPM_ST_ATTEST_CERTIFY (0x8017)</span>
+<span class="sd">        because signing procedure defines it should call TPM_Certify</span>
+<span class="sd">        [TPMv2-Part3] Section 18.2</span>
+<span class="sd">      TPM2B_NAME</span>
+<span class="sd">        size (uint16)</span>
+<span class="sd">        name (size long)</span>
+<span class="sd">      TPM2B_DATA</span>
+<span class="sd">        size (uint16)</span>
+<span class="sd">        name (size long)</span>
+<span class="sd">      TPMS_CLOCK_INFO</span>
+<span class="sd">        clock (uint64)</span>
+<span class="sd">        resetCount (uint32)</span>
+<span class="sd">        restartCount (uint32)</span>
+<span class="sd">        safe (byte) 1 yes, 0 no</span>
+<span class="sd">      firmwareVersion uint64</span>
+<span class="sd">      attested TPMS_CERTIFY_INFO (because TPM_ST_ATTEST_CERTIFY)</span>
+<span class="sd">        name TPM2B_NAME</span>
+<span class="sd">        qualified_name TPM2B_NAME</span>
+<span class="sd">    See:</span>
+<span class="sd">      https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">      https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">clock_info</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span>
+    <span class="n">firmware_version</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">attested</span><span class="p">:</span> <span class="n">TpmsCertifyInfo</span>
+
+<div class="viewcode-block" id="TpmAttestationFormat.parse">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmAttestationFormat.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TpmAttestationFormat</span><span class="p">:</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">generated_value</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="c1"># Verify that magic is set to TPM_GENERATED_VALUE.</span>
+        <span class="c1"># see https://w3c.github.io/webauthn/#sctn-tpm-attestation</span>
+        <span class="c1">#     verification procedure</span>
+        <span class="k">if</span> <span class="n">generated_value</span> <span class="o">!=</span> <span class="n">TPM_GENERATED_VALUE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;generated value field is invalid&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Verify that type is set to TPM_ST_ATTEST_CERTIFY.</span>
+        <span class="c1"># see https://w3c.github.io/webauthn/#sctn-tpm-attestation</span>
+        <span class="c1">#     verification procedure</span>
+        <span class="n">tpmi_st_attest</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tpmi_st_attest</span> <span class="o">!=</span> <span class="n">TPM_ST_ATTEST_CERTIFY</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;tpmi_st_attest field is invalid&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+
+            <span class="n">clock</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!Q&quot;</span><span class="p">)</span>
+            <span class="n">reset_count</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!L&quot;</span><span class="p">)</span>
+            <span class="n">restart_count</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!L&quot;</span><span class="p">)</span>
+            <span class="n">safe_value</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">safe_value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid value 0x</span><span class="si">{</span><span class="n">safe_value</span><span class="si">:</span><span class="s2">x</span><span class="si">}</span><span class="s2"> for boolean&quot;</span><span class="p">)</span>
+            <span class="n">safe</span> <span class="o">=</span> <span class="n">safe_value</span> <span class="o">==</span> <span class="mi">1</span>
+
+            <span class="n">firmware_version</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!Q&quot;</span><span class="p">)</span>
+
+            <span class="n">attested_name</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+            <span class="n">attested_qualified_name</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">struct</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">clock_info</span><span class="o">=</span><span class="p">(</span><span class="n">clock</span><span class="p">,</span> <span class="n">reset_count</span><span class="p">,</span> <span class="n">restart_count</span><span class="p">,</span> <span class="n">safe</span><span class="p">),</span>
+            <span class="n">firmware_version</span><span class="o">=</span><span class="n">firmware_version</span><span class="p">,</span>
+            <span class="n">attested</span><span class="o">=</span><span class="n">TpmsCertifyInfo</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">attested_name</span><span class="p">,</span> <span class="n">qualified_name</span><span class="o">=</span><span class="n">attested_qualified_name</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TpmsRsaParms">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsRsaParms">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TpmsRsaParms</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse TPMS_RSA_PARMS struct</span>
+
+<span class="sd">    See:</span>
+<span class="sd">    https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">    section 12.2.3.5</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">symmetric</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">scheme</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">key_bits</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">exponent</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="TpmsRsaParms.parse">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsRsaParms.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">attributes</span><span class="p">):</span>
+        <span class="n">symmetric</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">)</span>
+
+        <span class="n">restricted_decryption</span> <span class="o">=</span> <span class="n">attributes</span> <span class="o">&amp;</span> <span class="p">(</span>
+            <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">RESTRICTED</span> <span class="o">|</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">DECRYPT</span>
+        <span class="p">)</span>
+        <span class="n">is_restricted_decryption_key</span> <span class="o">=</span> <span class="n">restricted_decryption</span> <span class="o">==</span> <span class="p">(</span>
+            <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">DECRYPT</span> <span class="o">|</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">RESTRICTED</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_restricted_decryption_key</span> <span class="ow">and</span> <span class="n">symmetric</span> <span class="o">!=</span> <span class="n">TPM_ALG_NULL</span><span class="p">:</span>
+            <span class="c1"># if the key is not a restricted decryption key, this field</span>
+            <span class="c1"># shall be set to TPM_ALG_NULL.</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;symmetric is expected to be NULL&quot;</span><span class="p">)</span>
+        <span class="c1"># Otherwise should be set to a supported symmetric algorithm, keysize and mode</span>
+        <span class="c1"># TODO(baloo): Should we have non-null value here, do we expect more data?</span>
+
+        <span class="n">scheme</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">)</span>
+
+        <span class="n">restricted_sign</span> <span class="o">=</span> <span class="n">attributes</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">RESTRICTED</span> <span class="o">|</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">SIGN_ENCRYPT</span><span class="p">)</span>
+        <span class="n">is_unrestricted_signing_key</span> <span class="o">=</span> <span class="n">restricted_sign</span> <span class="o">==</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">SIGN_ENCRYPT</span>
+        <span class="k">if</span> <span class="n">is_unrestricted_signing_key</span> <span class="ow">and</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">TPM_ALG_NULL</span><span class="p">,</span>
+            <span class="n">TpmRsaScheme</span><span class="o">.</span><span class="n">RSASSA</span><span class="p">,</span>
+            <span class="n">TpmRsaScheme</span><span class="o">.</span><span class="n">RSAPSS</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;key is an unrestricted signing key, scheme is &quot;</span>
+                <span class="s2">&quot;expected to be TPM_ALG_RSAPSS, TPM_ALG_RSASSA, &quot;</span>
+                <span class="s2">&quot;or TPM_ALG_NULL&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">is_restricted_signing_key</span> <span class="o">=</span> <span class="n">restricted_sign</span> <span class="o">==</span> <span class="p">(</span>
+            <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">RESTRICTED</span> <span class="o">|</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">SIGN_ENCRYPT</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_restricted_signing_key</span> <span class="ow">and</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">TpmRsaScheme</span><span class="o">.</span><span class="n">RSASSA</span><span class="p">,</span>
+            <span class="n">TpmRsaScheme</span><span class="o">.</span><span class="n">RSAPSS</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;key is a restricted signing key, scheme is &quot;</span>
+                <span class="s2">&quot;expected to be TPM_ALG_RSAPSS, or TPM_ALG_RSASSA&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">is_unrestricted_decryption_key</span> <span class="o">=</span> <span class="n">restricted_decryption</span> <span class="o">==</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">DECRYPT</span>
+        <span class="k">if</span> <span class="n">is_unrestricted_decryption_key</span> <span class="ow">and</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">TpmRsaScheme</span><span class="o">.</span><span class="n">OAEP</span><span class="p">,</span>
+            <span class="n">TpmRsaScheme</span><span class="o">.</span><span class="n">RSAES</span><span class="p">,</span>
+            <span class="n">TPM_ALG_NULL</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;key is an unrestricted decryption key, scheme is &quot;</span>
+                <span class="s2">&quot;expected to be TPM_ALG_RSAES, TPM_ALG_OAEP, or &quot;</span>
+                <span class="s2">&quot;TPM_ALG_NULL&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_restricted_decryption_key</span> <span class="ow">and</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">TPM_ALG_NULL</span><span class="p">,):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;key is an restricted decryption key, scheme is &quot;</span>
+                <span class="s2">&quot;expected to be TPM_ALG_NULL&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">key_bits</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">)</span>
+        <span class="n">exponent</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!L&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exponent</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># When  zero,  indicates  that  the  exponent  is  the  default  of 2^16 + 1</span>
+            <span class="n">exponent</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">symmetric</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">key_bits</span><span class="p">,</span> <span class="n">exponent</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Tpm2bPublicKeyRsa">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.Tpm2bPublicKeyRsa">[docs]</a>
+<span class="k">class</span> <span class="nc">Tpm2bPublicKeyRsa</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+<div class="viewcode-block" id="Tpm2bPublicKeyRsa.parse">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.Tpm2bPublicKeyRsa.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">ByteBuffer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tpm2bPublicKeyRsa</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">)))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TpmEccCurve">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmEccCurve">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TpmEccCurve</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;TPM_ECC_CURVE</span>
+<span class="sd">    https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">    section 6.4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">NIST_P192</span> <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">NIST_P224</span> <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">NIST_P256</span> <span class="o">=</span> <span class="mh">0x0003</span>
+    <span class="n">NIST_P384</span> <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">NIST_P521</span> <span class="o">=</span> <span class="mh">0x0005</span>
+    <span class="n">BN_P256</span> <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BN_P638</span> <span class="o">=</span> <span class="mh">0x0011</span>
+    <span class="n">SM2_P256</span> <span class="o">=</span> <span class="mh">0x0020</span>
+
+<div class="viewcode-block" id="TpmEccCurve.to_curve">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmEccCurve.to_curve">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurve</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmEccCurve</span><span class="o">.</span><span class="n">NONE</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No such curve&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmEccCurve</span><span class="o">.</span><span class="n">NIST_P192</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP192R1</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmEccCurve</span><span class="o">.</span><span class="n">NIST_P224</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP224R1</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmEccCurve</span><span class="o">.</span><span class="n">NIST_P256</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP256R1</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmEccCurve</span><span class="o">.</span><span class="n">NIST_P384</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP384R1</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">TpmEccCurve</span><span class="o">.</span><span class="n">NIST_P521</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">SECP521R1</span><span class="p">()</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;curve is not supported&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TpmiAlgKdf">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmiAlgKdf">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">TpmiAlgKdf</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;TPMI_ALG_KDF</span>
+<span class="sd">    https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">    section 9.28</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NULL</span> <span class="o">=</span> <span class="n">TPM_ALG_NULL</span>
+    <span class="n">KDF1_SP800_56A</span> <span class="o">=</span> <span class="mh">0x0020</span>
+    <span class="n">KDF2</span> <span class="o">=</span> <span class="mh">0x0021</span>
+    <span class="n">KDF1_SP800_108</span> <span class="o">=</span> <span class="mh">0x0022</span></div>
+
+
+
+<div class="viewcode-block" id="TpmsEccParms">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsEccParms">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TpmsEccParms</span><span class="p">:</span>
+    <span class="n">symmetric</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">scheme</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">curve_id</span><span class="p">:</span> <span class="n">TpmEccCurve</span>
+    <span class="n">kdf</span><span class="p">:</span> <span class="n">TpmiAlgKdf</span>
+
+<div class="viewcode-block" id="TpmsEccParms.parse">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsEccParms.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">ByteBuffer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TpmsEccParms</span><span class="p">:</span>
+        <span class="n">symmetric</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">)</span>
+        <span class="n">scheme</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">symmetric</span> <span class="o">!=</span> <span class="n">TPM_ALG_NULL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;symmetric is expected to be NULL&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">scheme</span> <span class="o">!=</span> <span class="n">TPM_ALG_NULL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;scheme is expected to be NULL&quot;</span><span class="p">)</span>
+
+        <span class="n">curve_id</span> <span class="o">=</span> <span class="n">TpmEccCurve</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+        <span class="n">kdf_scheme</span> <span class="o">=</span> <span class="n">TpmiAlgKdf</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">symmetric</span><span class="p">,</span> <span class="n">scheme</span><span class="p">,</span> <span class="n">curve_id</span><span class="p">,</span> <span class="n">kdf_scheme</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TpmsEccPoint">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsEccPoint">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TpmsEccPoint</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;TPMS_ECC_POINT</span>
+<span class="sd">    https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">    Section 11.2.5.2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">bytes</span>
+
+<div class="viewcode-block" id="TpmsEccPoint.parse">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmsEccPoint.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">ByteBuffer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TpmsEccPoint</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ATTRIBUTES">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.ATTRIBUTES">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">ATTRIBUTES</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Object attributes</span>
+<span class="sd">    see section 8.3</span>
+<span class="sd">      https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">FIXED_TPM</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="n">ST_CLEAR</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
+    <span class="n">FIXED_PARENT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span>
+    <span class="n">SENSITIVE_DATA_ORIGIN</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+    <span class="n">USER_WITH_AUTH</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span>
+    <span class="n">ADMIN_WITH_POLICY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span>
+    <span class="n">NO_DA</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">10</span>
+    <span class="n">ENCRYPTED_DUPLICATION</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">11</span>
+    <span class="n">RESTRICTED</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span>
+    <span class="n">DECRYPT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">17</span>
+    <span class="n">SIGN_ENCRYPT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">18</span>
+
+    <span class="n">SHALL_BE_ZERO</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># 0 Reserved</span>
+        <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># 3 Reserved</span>
+        <span class="o">|</span> <span class="p">(</span><span class="mh">0x3</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span>  <span class="c1"># 9:8 Reserved</span>
+        <span class="o">|</span> <span class="p">(</span><span class="mh">0xF</span> <span class="o">&lt;&lt;</span> <span class="mi">12</span><span class="p">)</span>  <span class="c1"># 15:12 Reserved</span>
+        <span class="o">|</span> <span class="p">((</span><span class="mh">0xFFFFFFFF</span> <span class="o">&lt;&lt;</span> <span class="mi">19</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># 31:19 Reserved</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="n">_PublicKey</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">]</span>
+<span class="n">_Parameters</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TpmsRsaParms</span><span class="p">,</span> <span class="n">TpmsEccParms</span><span class="p">]</span>
+<span class="n">_Unique</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tpm2bPublicKeyRsa</span><span class="p">,</span> <span class="n">TpmsEccPoint</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="TpmPublicFormat">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmPublicFormat">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TpmPublicFormat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;the public area structure is defined by [TPMv2-Part2] Section 12.2.4</span>
+<span class="sd">    (TPMT_PUBLIC)</span>
+<span class="sd">    as:</span>
+<span class="sd">      TPMI_ALG_PUBLIC - type</span>
+<span class="sd">      TPMI_ALG_HASH - nameAlg</span>
+<span class="sd">        or + to indicate TPM_ALG_NULL</span>
+<span class="sd">      TPMA_OBJECT - objectAttributes</span>
+<span class="sd">      TPM2B_DIGEST - authPolicy</span>
+<span class="sd">      TPMU_PUBLIC_PARMS - type parameters</span>
+<span class="sd">      TPMU_PUBLIC_ID - uniq</span>
+<span class="sd">    See:</span>
+<span class="sd">      https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sign_alg</span><span class="p">:</span> <span class="n">TpmAlgAsym</span>
+    <span class="n">name_alg</span><span class="p">:</span> <span class="n">TpmAlgHash</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">auth_policy</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">parameters</span><span class="p">:</span> <span class="n">_Parameters</span>
+    <span class="n">unique</span><span class="p">:</span> <span class="n">_Unique</span>
+    <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span>
+
+<div class="viewcode-block" id="TpmPublicFormat.parse">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmPublicFormat.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TpmPublicFormat</span><span class="p">:</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">sign_alg</span> <span class="o">=</span> <span class="n">TpmAlgAsym</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+        <span class="n">name_alg</span> <span class="o">=</span> <span class="n">TpmAlgHash</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!L&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attributes</span> <span class="o">&amp;</span> <span class="n">ATTRIBUTES</span><span class="o">.</span><span class="n">SHALL_BE_ZERO</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;attributes is not formated correctly: 0x</span><span class="si">{</span><span class="n">attributes</span><span class="si">:</span><span class="s2">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">auth_policy</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">sign_alg</span> <span class="o">==</span> <span class="n">TpmAlgAsym</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">:</span> <span class="n">_Parameters</span> <span class="o">=</span> <span class="n">TpmsRsaParms</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">attributes</span><span class="p">)</span>
+            <span class="n">unique</span><span class="p">:</span> <span class="n">_Unique</span> <span class="o">=</span> <span class="n">Tpm2bPublicKeyRsa</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sign_alg</span> <span class="o">==</span> <span class="n">TpmAlgAsym</span><span class="o">.</span><span class="n">ECC</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">TpmsEccParms</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+            <span class="n">unique</span> <span class="o">=</span> <span class="n">TpmsEccPoint</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sign alg </span><span class="si">{</span><span class="n">sign_alg</span><span class="si">:</span><span class="s2">x</span><span class="si">}</span><span class="s2"> is not supported&quot;</span><span class="p">)</span>
+
+        <span class="n">rest</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;there should not be any data left in buffer&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">sign_alg</span><span class="p">,</span> <span class="n">name_alg</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">auth_policy</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">data</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TpmPublicFormat.public_key">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmPublicFormat.public_key">[docs]</a>
+    <span class="k">def</span> <span class="nf">public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_PublicKey</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign_alg</span> <span class="o">==</span> <span class="n">TpmAlgAsym</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
+            <span class="n">exponent</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">TpmsRsaParms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">exponent</span>
+            <span class="n">modulus</span> <span class="o">=</span> <span class="n">bytes2int</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">Tpm2bPublicKeyRsa</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicNumbers</span><span class="p">(</span><span class="n">exponent</span><span class="p">,</span> <span class="n">modulus</span><span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sign_alg</span> <span class="o">==</span> <span class="n">TpmAlgAsym</span><span class="o">.</span><span class="n">ECC</span><span class="p">:</span>
+            <span class="n">unique</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">TpmsEccPoint</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span>
+                <span class="n">bytes2int</span><span class="p">(</span><span class="n">unique</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+                <span class="n">bytes2int</span><span class="p">(</span><span class="n">unique</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                <span class="n">cast</span><span class="p">(</span><span class="n">TpmsEccParms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">curve_id</span><span class="o">.</span><span class="n">to_curve</span><span class="p">(),</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span><span class="n">default_backend</span><span class="p">())</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;public_key not implemented for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sign_alg</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TpmPublicFormat.name">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmPublicFormat.name">[docs]</a>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computing Entity Names</span>
+
+<span class="sd">        see:</span>
+<span class="sd">          https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-1-Architecture-01.38.pdf</span>
+<span class="sd">        section 16 Names</span>
+
+<span class="sd">        Name ≔ nameAlg || HnameAlg (handle→nvPublicArea)</span>
+<span class="sd">          where</span>
+<span class="sd">            nameAlg algorithm used to compute Name</span>
+<span class="sd">            HnameAlg hash using the nameAlg parameter in the NV Index location</span>
+<span class="sd">                     associated with handle</span>
+<span class="sd">            nvPublicArea contents of the TPMS_NV_PUBLIC associated with handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_alg</span><span class="p">)</span>
+
+        <span class="n">digest</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">Hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_alg</span><span class="o">.</span><span class="n">_hash_alg</span><span class="p">(),</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">())</span>
+        <span class="n">digest</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="n">digest</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">output</span></div>
+</div>
+
+
+
+<span class="k">def</span> <span class="nf">_validate_tpm_cert</span><span class="p">(</span><span class="n">cert</span><span class="p">):</span>
+    <span class="c1"># https://www.w3.org/TR/webauthn/#tpm-cert-requirements</span>
+    <span class="n">_validate_cert_common</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">get_attributes_for_oid</span><span class="p">(</span><span class="n">x509</span><span class="o">.</span><span class="n">NameOID</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;Certificate should not have Subject&quot;</span><span class="p">)</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">get_extension_for_class</span><span class="p">(</span><span class="n">x509</span><span class="o">.</span><span class="n">SubjectAlternativeName</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;Certificate should have SubjectAlternativeName&quot;</span><span class="p">)</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">cert</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">get_extension_for_class</span><span class="p">(</span><span class="n">x509</span><span class="o">.</span><span class="n">ExtendedKeyUsage</span><span class="p">)</span>
+    <span class="n">has_aik</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">==</span> <span class="n">OID_AIK_CERTIFICATE</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ext</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+    <span class="k">if</span> <span class="kc">True</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">has_aik</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span>
+            <span class="s1">&#39;Extended key usage MUST contain the &quot;joint-iso-itu-t(2) &#39;</span>
+            <span class="s2">&quot;internationalorganizations(23) 133 tcg-kp(8) &quot;</span>
+            <span class="s1">&#39;tcg-kp-AIKCertificate(3)&quot; OID.&#39;</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="TpmAttestation">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmAttestation">[docs]</a>
+<span class="k">class</span> <span class="nc">TpmAttestation</span><span class="p">(</span><span class="n">Attestation</span><span class="p">):</span>
+    <span class="n">FORMAT</span> <span class="o">=</span> <span class="s2">&quot;tpm&quot;</span>
+
+<div class="viewcode-block" id="TpmAttestation.verify">
+<a class="viewcode-back" href="../../../autoapi/fido2/attestation/tpm/index.html#fido2.attestation.TpmAttestation.verify">[docs]</a>
+    <span class="nd">@catch_builtins</span>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;ecdaaKeyId&quot;</span> <span class="ow">in</span> <span class="n">statement</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ECDAA not implemented&quot;</span><span class="p">)</span>
+        <span class="n">alg</span> <span class="o">=</span> <span class="n">statement</span><span class="p">[</span><span class="s2">&quot;alg&quot;</span><span class="p">]</span>
+        <span class="n">x5c</span> <span class="o">=</span> <span class="n">statement</span><span class="p">[</span><span class="s2">&quot;x5c&quot;</span><span class="p">]</span>
+        <span class="n">cert_info</span> <span class="o">=</span> <span class="n">statement</span><span class="p">[</span><span class="s2">&quot;certInfo&quot;</span><span class="p">]</span>
+        <span class="n">cert</span> <span class="o">=</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">x5c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">default_backend</span><span class="p">())</span>
+        <span class="n">_validate_tpm_cert</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span>
+
+        <span class="n">pub_key</span> <span class="o">=</span> <span class="n">CoseKey</span><span class="o">.</span><span class="n">for_alg</span><span class="p">(</span><span class="n">alg</span><span class="p">)</span><span class="o">.</span><span class="n">from_cryptography_key</span><span class="p">(</span><span class="n">cert</span><span class="o">.</span><span class="n">public_key</span><span class="p">())</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pub_area</span> <span class="o">=</span> <span class="n">TpmPublicFormat</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">statement</span><span class="p">[</span><span class="s2">&quot;pubArea&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span><span class="s2">&quot;unable to parse pubArea&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="c1"># Verify that the public key specified by the parameters and unique</span>
+        <span class="c1"># fields of pubArea is identical to the credentialPublicKey in the</span>
+        <span class="c1"># attestedCredentialData in authenticatorData.</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">auth_data</span><span class="o">.</span><span class="n">credential_data</span><span class="o">.</span><span class="n">public_key</span><span class="o">.</span><span class="n">from_cryptography_key</span><span class="p">(</span>
+                <span class="n">pub_area</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="o">!=</span> <span class="n">auth_data</span><span class="o">.</span><span class="n">credential_data</span><span class="o">.</span><span class="n">public_key</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidSignature</span><span class="p">(</span>
+                <span class="s2">&quot;attestation pubArea does not match attestedCredentialData&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># TpmAttestationFormat.parse is reponsible for:</span>
+            <span class="c1">#   Verify that magic is set to TPM_GENERATED_VALUE.</span>
+            <span class="c1">#   Verify that type is set to TPM_ST_ATTEST_CERTIFY.</span>
+            <span class="n">tpm</span> <span class="o">=</span> <span class="n">TpmAttestationFormat</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">cert_info</span><span class="p">)</span>
+
+            <span class="c1"># Verify that extraData is set to the hash of attToBeSigned</span>
+            <span class="c1"># using the hash algorithm employed in &quot;alg&quot;.</span>
+            <span class="n">att_to_be_signed</span> <span class="o">=</span> <span class="n">auth_data</span> <span class="o">+</span> <span class="n">client_data_hash</span>
+            <span class="n">hash_alg</span> <span class="o">=</span> <span class="n">pub_key</span><span class="o">.</span><span class="n">_HASH_ALG</span>  <span class="c1"># type: ignore</span>
+            <span class="n">digest</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">Hash</span><span class="p">(</span><span class="n">hash_alg</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">())</span>
+            <span class="n">digest</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">att_to_be_signed</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">digest</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">tpm</span><span class="o">.</span><span class="n">data</span> <span class="o">!=</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidSignature</span><span class="p">(</span>
+                    <span class="s2">&quot;attestation does not sign for authData and ClientData&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Verify that attested contains a TPMS_CERTIFY_INFO structure as</span>
+            <span class="c1"># specified in [TPMv2-Part2] section 10.12.3, whose name field</span>
+            <span class="c1"># contains a valid Name for pubArea, as computed using the</span>
+            <span class="c1"># algorithm in the nameAlg field of pubArea using the procedure</span>
+            <span class="c1"># specified in [TPMv2-Part1] section 16.</span>
+            <span class="c1"># [TPMv2-Part2]:</span>
+            <span class="c1"># https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf</span>
+            <span class="c1"># [TPMv2-Part1]:</span>
+            <span class="c1"># https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-1-Architecture-01.38.pdf</span>
+            <span class="k">if</span> <span class="n">tpm</span><span class="o">.</span><span class="n">attested</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="n">pub_area</span><span class="o">.</span><span class="n">name</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">InvalidData</span><span class="p">(</span>
+                    <span class="s2">&quot;TPMS_CERTIFY_INFO does not include a valid name for pubArea&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">pub_key</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">cert_info</span><span class="p">,</span> <span class="n">statement</span><span class="p">[</span><span class="s2">&quot;sig&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">AttestationResult</span><span class="p">(</span><span class="n">AttestationType</span><span class="o">.</span><span class="n">ATT_CA</span><span class="p">,</span> <span class="n">x5c</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">_InvalidSignature</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidSignature</span><span class="p">(</span><span class="s2">&quot;signature of certInfo does not match&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

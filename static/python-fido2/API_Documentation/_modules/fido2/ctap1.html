@@ -1,0 +1,410 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.ctap1 &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.ctap1</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.ctap1</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2013 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">.hid</span> <span class="kn">import</span> <span class="n">CTAPHID</span>
+<span class="kn">from</span> <span class="nn">.ctap</span> <span class="kn">import</span> <span class="n">CtapDevice</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">websafe_encode</span><span class="p">,</span> <span class="n">websafe_decode</span><span class="p">,</span> <span class="n">bytes2int</span><span class="p">,</span> <span class="n">ByteBuffer</span>
+<span class="kn">from</span> <span class="nn">.cose</span> <span class="kn">import</span> <span class="n">ES256</span>
+<span class="kn">from</span> <span class="nn">.attestation</span> <span class="kn">import</span> <span class="n">FidoU2FAttestation</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+
+<div class="viewcode-block" id="APDU">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.APDU">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">APDU</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;APDU response codes.&quot;&quot;&quot;</span>
+
+    <span class="n">OK</span> <span class="o">=</span> <span class="mh">0x9000</span>
+    <span class="n">USE_NOT_SATISFIED</span> <span class="o">=</span> <span class="mh">0x6985</span>
+    <span class="n">WRONG_DATA</span> <span class="o">=</span> <span class="mh">0x6A80</span></div>
+
+
+
+<div class="viewcode-block" id="ApduError">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.ApduError">[docs]</a>
+<span class="k">class</span> <span class="nc">ApduError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An Exception thrown when a response APDU doesn&#39;t have an OK (0x9000)</span>
+<span class="sd">    status.</span>
+
+<span class="sd">    :param code: APDU response code.</span>
+<span class="sd">    :param data: APDU response body.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="ApduError.__repr__">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.ApduError.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;APDU error: 0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">code</span><span class="si">:</span><span class="s2">04X</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2"> bytes of data&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RegistrationData">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.RegistrationData">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RegistrationData</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary response data for a CTAP1 registration.</span>
+
+<span class="sd">    :param _: The binary contents of the response data.</span>
+<span class="sd">    :ivar public_key: Binary representation of the credential public key.</span>
+<span class="sd">    :ivar key_handle: Binary key handle of the credential.</span>
+<span class="sd">    :ivar certificate: Attestation certificate of the authenticator, DER</span>
+<span class="sd">        encoded.</span>
+<span class="sd">    :ivar signature: Attestation signature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">public_key</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">key_handle</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">certificate</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x05</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Reserved byte != 0x05&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">public_key</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">65</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_handle</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">))</span>
+
+        <span class="n">cert_buf</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Tag and first length byte</span>
+        <span class="n">cert_len</span> <span class="o">=</span> <span class="n">cert_buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cert_len</span> <span class="o">&gt;</span> <span class="mh">0x80</span><span class="p">:</span>  <span class="c1"># Multi-byte length</span>
+            <span class="n">n_bytes</span> <span class="o">=</span> <span class="n">cert_len</span> <span class="o">-</span> <span class="mh">0x80</span>
+            <span class="n">len_bytes</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n_bytes</span><span class="p">)</span>
+            <span class="n">cert_buf</span> <span class="o">+=</span> <span class="n">len_bytes</span>
+            <span class="n">cert_len</span> <span class="o">=</span> <span class="n">bytes2int</span><span class="p">(</span><span class="n">len_bytes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">certificate</span> <span class="o">=</span> <span class="n">cert_buf</span> <span class="o">+</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">cert_len</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">b64</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Websafe base64 encoded string of the RegistrationData.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RegistrationData.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.RegistrationData.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">client_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the included signature with regard to the given app and client</span>
+<span class="sd">        params.</span>
+
+<span class="sd">        :param app_param: SHA256 hash of the app ID used for the request.</span>
+<span class="sd">        :param client_param: SHA256 hash of the ClientData used for the request.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">FidoU2FAttestation</span><span class="o">.</span><span class="n">verify_signature</span><span class="p">(</span>
+            <span class="n">app_param</span><span class="p">,</span>
+            <span class="n">client_param</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_handle</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">public_key</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">certificate</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signature</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RegistrationData.from_b64">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.RegistrationData.from_b64">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_b64</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegistrationData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a RegistrationData from a websafe base64 encoded string.</span>
+
+<span class="sd">        :param data: Websafe base64 encoded string.</span>
+<span class="sd">        :return: The decoded and parsed RegistrationData.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">websafe_decode</span><span class="p">(</span><span class="n">data</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SignatureData">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.SignatureData">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SignatureData</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary response data for a CTAP1 authentication.</span>
+
+<span class="sd">    :param _: The binary contents of the response data.</span>
+<span class="sd">    :ivar user_presence: User presence byte.</span>
+<span class="sd">    :ivar counter: Signature counter.</span>
+<span class="sd">    :ivar signature: Cryptographic signature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">user_presence</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_presence</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;I&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signature</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">b64</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: Websafe base64 encoded string of the SignatureData.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SignatureData.verify">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.SignatureData.verify">[docs]</a>
+    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">client_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the included signature with regard to the given app and client</span>
+<span class="sd">        params, using the given public key.</span>
+
+<span class="sd">        :param app_param: SHA256 hash of the app ID used for the request.</span>
+<span class="sd">        :param client_param: SHA256 hash of the ClientData used for the request.</span>
+<span class="sd">        :param public_key: Binary representation of the credential public key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">app_param</span> <span class="o">+</span> <span class="bp">self</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="n">client_param</span>
+        <span class="n">ES256</span><span class="o">.</span><span class="n">from_ctap1</span><span class="p">(</span><span class="n">public_key</span><span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signature</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SignatureData.from_b64">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.SignatureData.from_b64">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_b64</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SignatureData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a SignatureData from a websafe base64 encoded string.</span>
+
+<span class="sd">        :param data: Websafe base64 encoded string.</span>
+<span class="sd">        :return: The decoded and parsed SignatureData.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">websafe_decode</span><span class="p">(</span><span class="n">data</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Ctap1">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.Ctap1">[docs]</a>
+<span class="k">class</span> <span class="nc">Ctap1</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of the CTAP1 specification.</span>
+
+<span class="sd">    :param device: A CtapHidDevice handle supporting CTAP1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Ctap1.INS">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.Ctap1.INS">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">INS</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">REGISTER</span> <span class="o">=</span> <span class="mh">0x01</span>
+        <span class="n">AUTHENTICATE</span> <span class="o">=</span> <span class="mh">0x02</span>
+        <span class="n">VERSION</span> <span class="o">=</span> <span class="mh">0x03</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">CtapDevice</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+
+<div class="viewcode-block" id="Ctap1.send_apdu">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.Ctap1.send_apdu">[docs]</a>
+    <span class="k">def</span> <span class="nf">send_apdu</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cla</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p1</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Packs and sends an APDU for use in CTAP1 commands.</span>
+<span class="sd">        This is a low-level method mainly used internally. Avoid calling it</span>
+<span class="sd">        directly if possible, and use the get_version, register, and</span>
+<span class="sd">        authenticate methods if possible instead.</span>
+
+<span class="sd">        :param cla: The CLA parameter of the request.</span>
+<span class="sd">        :param ins: The INS parameter of the request.</span>
+<span class="sd">        :param p1: The P1 parameter of the request.</span>
+<span class="sd">        :param p2: The P2 parameter of the request.</span>
+<span class="sd">        :param data: The body of the request.</span>
+<span class="sd">        :return: The response APDU data of a successful request.</span>
+<span class="sd">        :raise: ApduError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">apdu</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BBBBBH&quot;</span><span class="p">,</span> <span class="n">cla</span><span class="p">,</span> <span class="n">ins</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">+</span> <span class="n">data</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0\0</span><span class="s2">&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">CTAPHID</span><span class="o">.</span><span class="n">MSG</span><span class="p">,</span> <span class="n">apdu</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="n">APDU</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ApduError</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="Ctap1.get_version">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.Ctap1.get_version">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the U2F version implemented by the authenticator.</span>
+<span class="sd">        The only version specified is &quot;U2F_V2&quot;.</span>
+
+<span class="sd">        :return: A U2F version string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">ins</span><span class="o">=</span><span class="n">Ctap1</span><span class="o">.</span><span class="n">INS</span><span class="o">.</span><span class="n">VERSION</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Ctap1.register">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.Ctap1.register">[docs]</a>
+    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">app_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegistrationData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a new U2F credential.</span>
+
+<span class="sd">        :param client_param: SHA256 hash of the ClientData used for the request.</span>
+<span class="sd">        :param app_param: SHA256 hash of the app ID used for the request.</span>
+<span class="sd">        :return: The registration response from the authenticator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">client_param</span> <span class="o">+</span> <span class="n">app_param</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">ins</span><span class="o">=</span><span class="n">Ctap1</span><span class="o">.</span><span class="n">INS</span><span class="o">.</span><span class="n">REGISTER</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">RegistrationData</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ctap1.authenticate">
+<a class="viewcode-back" href="../../autoapi/fido2/ctap1/index.html#fido2.ctap1.Ctap1.authenticate">[docs]</a>
+    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">client_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">app_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">key_handle</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">check_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SignatureData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Authenticate a previously registered credential.</span>
+
+<span class="sd">        :param client_param: SHA256 hash of the ClientData used for the request.</span>
+<span class="sd">        :param app_param: SHA256 hash of the app ID used for the request.</span>
+<span class="sd">        :param key_handle: The binary key handle of the credential.</span>
+<span class="sd">        :param check_only: True to send a &quot;check-only&quot; request, which is used to</span>
+<span class="sd">            determine if a key handle is known.</span>
+<span class="sd">        :return: The authentication response from the authenticator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">client_param</span> <span class="o">+</span> <span class="n">app_param</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">key_handle</span><span class="p">))</span> <span class="o">+</span> <span class="n">key_handle</span>
+        <span class="p">)</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="mh">0x07</span> <span class="k">if</span> <span class="n">check_only</span> <span class="k">else</span> <span class="mh">0x03</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="n">ins</span><span class="o">=</span><span class="n">Ctap1</span><span class="o">.</span><span class="n">INS</span><span class="o">.</span><span class="n">AUTHENTICATE</span><span class="p">,</span> <span class="n">p1</span><span class="o">=</span><span class="n">p1</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SignatureData</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

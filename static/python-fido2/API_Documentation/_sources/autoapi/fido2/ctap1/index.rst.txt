@@ -1,0 +1,274 @@
+fido2.ctap1
+===========
+
+.. py:module:: fido2.ctap1
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   fido2.ctap1.ApduError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.ctap1.APDU
+   fido2.ctap1.RegistrationData
+   fido2.ctap1.SignatureData
+   fido2.ctap1.Ctap1
+
+
+Module Contents
+---------------
+
+.. py:class:: APDU
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   APDU response codes.
+
+
+   .. py:attribute:: OK
+      :value: 36864
+
+
+
+   .. py:attribute:: USE_NOT_SATISFIED
+      :value: 27013
+
+
+
+   .. py:attribute:: WRONG_DATA
+      :value: 27264
+
+
+
+.. py:exception:: ApduError(code, data = b'')
+
+   Bases: :py:obj:`Exception`
+
+
+   An Exception thrown when a response APDU doesn't have an OK (0x9000)
+   status.
+
+   :param code: APDU response code.
+   :param data: APDU response body.
+
+
+
+   .. py:attribute:: code
+
+
+   .. py:attribute:: data
+
+
+   .. py:method:: __repr__()
+
+      Return repr(self).
+
+
+
+.. py:class:: RegistrationData(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   Binary response data for a CTAP1 registration.
+
+   :param _: The binary contents of the response data.
+   :ivar public_key: Binary representation of the credential public key.
+   :ivar key_handle: Binary key handle of the credential.
+   :ivar certificate: Attestation certificate of the authenticator, DER
+       encoded.
+   :ivar signature: Attestation signature.
+
+
+   .. py:attribute:: public_key
+      :type:  bytes
+
+
+   .. py:attribute:: key_handle
+      :type:  bytes
+
+
+   .. py:attribute:: certificate
+      :type:  bytes
+
+
+   .. py:attribute:: signature
+      :type:  bytes
+
+
+   .. py:property:: b64
+      :type: str
+
+
+      Websafe base64 encoded string of the RegistrationData.
+
+
+
+   .. py:method:: verify(app_param, client_param)
+
+      Verify the included signature with regard to the given app and client
+      params.
+
+      :param app_param: SHA256 hash of the app ID used for the request.
+      :param client_param: SHA256 hash of the ClientData used for the request.
+
+
+
+   .. py:method:: from_b64(data)
+      :classmethod:
+
+
+      Parse a RegistrationData from a websafe base64 encoded string.
+
+      :param data: Websafe base64 encoded string.
+      :return: The decoded and parsed RegistrationData.
+
+
+
+.. py:class:: SignatureData(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   Binary response data for a CTAP1 authentication.
+
+   :param _: The binary contents of the response data.
+   :ivar user_presence: User presence byte.
+   :ivar counter: Signature counter.
+   :ivar signature: Cryptographic signature.
+
+
+   .. py:attribute:: user_presence
+      :type:  int
+
+
+   .. py:attribute:: counter
+      :type:  int
+
+
+   .. py:attribute:: signature
+      :type:  bytes
+
+
+   .. py:property:: b64
+      :type: str
+
+
+      str: Websafe base64 encoded string of the SignatureData.
+
+
+
+   .. py:method:: verify(app_param, client_param, public_key)
+
+      Verify the included signature with regard to the given app and client
+      params, using the given public key.
+
+      :param app_param: SHA256 hash of the app ID used for the request.
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param public_key: Binary representation of the credential public key.
+
+
+
+   .. py:method:: from_b64(data)
+      :classmethod:
+
+
+      Parse a SignatureData from a websafe base64 encoded string.
+
+      :param data: Websafe base64 encoded string.
+      :return: The decoded and parsed SignatureData.
+
+
+
+.. py:class:: Ctap1(device)
+
+   Implementation of the CTAP1 specification.
+
+   :param device: A CtapHidDevice handle supporting CTAP1.
+
+
+   .. py:class:: INS
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: REGISTER
+         :value: 1
+
+
+
+      .. py:attribute:: AUTHENTICATE
+         :value: 2
+
+
+
+      .. py:attribute:: VERSION
+         :value: 3
+
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:method:: send_apdu(cla = 0, ins = 0, p1 = 0, p2 = 0, data = b'')
+
+      Packs and sends an APDU for use in CTAP1 commands.
+      This is a low-level method mainly used internally. Avoid calling it
+      directly if possible, and use the get_version, register, and
+      authenticate methods if possible instead.
+
+      :param cla: The CLA parameter of the request.
+      :param ins: The INS parameter of the request.
+      :param p1: The P1 parameter of the request.
+      :param p2: The P2 parameter of the request.
+      :param data: The body of the request.
+      :return: The response APDU data of a successful request.
+      :raise: ApduError
+
+
+
+   .. py:method:: get_version()
+
+      Get the U2F version implemented by the authenticator.
+      The only version specified is "U2F_V2".
+
+      :return: A U2F version string.
+
+
+
+   .. py:method:: register(client_param, app_param)
+
+      Register a new U2F credential.
+
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param app_param: SHA256 hash of the app ID used for the request.
+      :return: The registration response from the authenticator.
+
+
+
+   .. py:method:: authenticate(client_param, app_param, key_handle, check_only = False)
+
+      Authenticate a previously registered credential.
+
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param app_param: SHA256 hash of the app ID used for the request.
+      :param key_handle: The binary key handle of the credential.
+      :param check_only: True to send a "check-only" request, which is used to
+          determine if a key handle is known.
+      :return: The authentication response from the authenticator.
+
+
+

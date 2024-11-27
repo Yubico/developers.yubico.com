@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.ctap2.credman &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.ctap2.credman</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.ctap2.credman</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">cbor</span>
+<span class="kn">from</span> <span class="nn">..ctap</span> <span class="kn">import</span> <span class="n">CtapError</span>
+<span class="kn">from</span> <span class="nn">..webauthn</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PublicKeyCredentialDescriptor</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialUserEntity</span><span class="p">,</span>
+    <span class="n">_as_cbor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">Info</span>
+<span class="kn">from</span> <span class="nn">.pin</span> <span class="kn">import</span> <span class="n">PinProtocol</span><span class="p">,</span> <span class="n">_PinUv</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CredentialManagement">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement">[docs]</a>
+<span class="k">class</span> <span class="nc">CredentialManagement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of a draft specification of the Credential Management API.</span>
+<span class="sd">    WARNING: This specification is not final and this class is likely to change.</span>
+
+<span class="sd">    :param ctap: An instance of a CTAP2 object.</span>
+<span class="sd">    :param pin_uv_protocol: An instance of a PinUvAuthProtocol.</span>
+<span class="sd">    :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CredentialManagement.CMD">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.CMD">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">CMD</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">GET_CREDS_METADATA</span> <span class="o">=</span> <span class="mh">0x01</span>
+        <span class="n">ENUMERATE_RPS_BEGIN</span> <span class="o">=</span> <span class="mh">0x02</span>
+        <span class="n">ENUMERATE_RPS_NEXT</span> <span class="o">=</span> <span class="mh">0x03</span>
+        <span class="n">ENUMERATE_CREDS_BEGIN</span> <span class="o">=</span> <span class="mh">0x04</span>
+        <span class="n">ENUMERATE_CREDS_NEXT</span> <span class="o">=</span> <span class="mh">0x05</span>
+        <span class="n">DELETE_CREDENTIAL</span> <span class="o">=</span> <span class="mh">0x06</span>
+        <span class="n">UPDATE_USER_INFO</span> <span class="o">=</span> <span class="mh">0x07</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.PARAM">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.PARAM">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">PARAM</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">RP_ID_HASH</span> <span class="o">=</span> <span class="mh">0x01</span>
+        <span class="n">CREDENTIAL_ID</span> <span class="o">=</span> <span class="mh">0x02</span>
+        <span class="n">USER</span> <span class="o">=</span> <span class="mh">0x03</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.RESULT">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.RESULT">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">RESULT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">EXISTING_CRED_COUNT</span> <span class="o">=</span> <span class="mh">0x01</span>
+        <span class="n">MAX_REMAINING_COUNT</span> <span class="o">=</span> <span class="mh">0x02</span>
+        <span class="n">RP</span> <span class="o">=</span> <span class="mh">0x03</span>
+        <span class="n">RP_ID_HASH</span> <span class="o">=</span> <span class="mh">0x04</span>
+        <span class="n">TOTAL_RPS</span> <span class="o">=</span> <span class="mh">0x05</span>
+        <span class="n">USER</span> <span class="o">=</span> <span class="mh">0x06</span>
+        <span class="n">CREDENTIAL_ID</span> <span class="o">=</span> <span class="mh">0x07</span>
+        <span class="n">PUBLIC_KEY</span> <span class="o">=</span> <span class="mh">0x08</span>
+        <span class="n">TOTAL_CREDENTIALS</span> <span class="o">=</span> <span class="mh">0x09</span>
+        <span class="n">CRED_PROTECT</span> <span class="o">=</span> <span class="mh">0x0A</span>
+        <span class="n">LARGE_BLOB_KEY</span> <span class="o">=</span> <span class="mh">0x0B</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.is_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.is_supported">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="n">info</span><span class="p">:</span> <span class="n">Info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;credMgmt&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># We also support the Prototype command</span>
+        <span class="k">if</span> <span class="s2">&quot;FIDO_2_1_PRE&quot;</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">versions</span> <span class="ow">and</span> <span class="s2">&quot;credentialMgmtPreview&quot;</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.is_update_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.is_update_supported">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_update_supported</span><span class="p">(</span><span class="n">info</span><span class="p">:</span> <span class="n">Info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="c1"># Not supported in credentialMgmtPreview</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;credMgmt&quot;</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">PinProtocol</span><span class="p">,</span>
+        <span class="n">pin_uv_token</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support Credential Management&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span> <span class="o">=</span> <span class="n">ctap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span> <span class="o">=</span> <span class="n">_PinUv</span><span class="p">(</span><span class="n">pin_uv_protocol</span><span class="p">,</span> <span class="n">pin_uv_token</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_cmd</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sub_cmd&quot;</span><span class="p">:</span> <span class="n">sub_cmd</span><span class="p">,</span> <span class="s2">&quot;sub_cmd_params&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">auth</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">sub_cmd</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="n">cbor</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pin_uv_protocol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">VERSION</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pin_uv_param&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="o">.</span><span class="n">token</span><span class="p">,</span> <span class="n">msg</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">credential_mgmt</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CredentialManagement.get_metadata">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.get_metadata">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get credentials metadata.</span>
+
+<span class="sd">        This returns the existing resident credentials count, and the max</span>
+<span class="sd">        possible number of remaining resident credentials (the actual number of</span>
+<span class="sd">        remaining credentials may depend on algorithm choice, etc).</span>
+
+<span class="sd">        :return: A dict containing EXISTING_CRED_COUNT, and MAX_REMAINING_COUNT.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">GET_CREDS_METADATA</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.enumerate_rps_begin">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.enumerate_rps_begin">[docs]</a>
+    <span class="k">def</span> <span class="nf">enumerate_rps_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start enumeration of RP entities of resident credentials.</span>
+
+<span class="sd">        This will begin enumeration of stored RP entities, returning the first</span>
+<span class="sd">        entity, as well as a count of the total number of entities stored.</span>
+
+<span class="sd">        :return: A dict containing RP, RP_ID_HASH, and TOTAL_RPS.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">ENUMERATE_RPS_BEGIN</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.enumerate_rps_next">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.enumerate_rps_next">[docs]</a>
+    <span class="k">def</span> <span class="nf">enumerate_rps_next</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the next RP entity stored.</span>
+
+<span class="sd">        This continues enumeration of stored RP entities, returning the next</span>
+<span class="sd">        entity.</span>
+
+<span class="sd">        :return: A dict containing RP, and RP_ID_HASH.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">ENUMERATE_RPS_NEXT</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.enumerate_rps">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.enumerate_rps">[docs]</a>
+    <span class="k">def</span> <span class="nf">enumerate_rps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience method to enumerate all RPs.</span>
+
+<span class="sd">        See enumerate_rps_begin and enumerate_rps_next for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enumerate_rps_begin</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">NO_CREDENTIALS</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">raise</span>  <span class="c1"># Other error</span>
+        <span class="n">n_rps</span> <span class="o">=</span> <span class="n">first</span><span class="p">[</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">RESULT</span><span class="o">.</span><span class="n">TOTAL_RPS</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n_rps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">rest</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">enumerate_rps_next</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_rps</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">first</span><span class="p">]</span> <span class="o">+</span> <span class="n">rest</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.enumerate_creds_begin">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.enumerate_creds_begin">[docs]</a>
+    <span class="k">def</span> <span class="nf">enumerate_creds_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rp_id_hash</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start enumeration of resident credentials.</span>
+
+<span class="sd">        This will begin enumeration of resident credentials for a given RP,</span>
+<span class="sd">        returning the first credential, as well as a count of the total number</span>
+<span class="sd">        of resident credentials stored for the given RP.</span>
+
+<span class="sd">        :param rp_id_hash: SHA256 hash of the RP ID.</span>
+<span class="sd">        :return: A dict containing USER, CREDENTIAL_ID, PUBLIC_KEY, and</span>
+<span class="sd">            TOTAL_CREDENTIALS.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span>
+            <span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">ENUMERATE_CREDS_BEGIN</span><span class="p">,</span>
+            <span class="p">{</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">RP_ID_HASH</span><span class="p">:</span> <span class="n">rp_id_hash</span><span class="p">},</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.enumerate_creds_next">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.enumerate_creds_next">[docs]</a>
+    <span class="k">def</span> <span class="nf">enumerate_creds_next</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the next resident credential stored.</span>
+
+<span class="sd">        This continues enumeration of resident credentials, returning the next</span>
+<span class="sd">        credential.</span>
+
+<span class="sd">        :return: A dict containing USER, CREDENTIAL_ID, and PUBLIC_KEY.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">ENUMERATE_CREDS_NEXT</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.enumerate_creds">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.enumerate_creds">[docs]</a>
+    <span class="k">def</span> <span class="nf">enumerate_creds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience method to enumerate all resident credentials for an RP.</span>
+
+<span class="sd">        See enumerate_creds_begin and enumerate_creds_next for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">first</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enumerate_creds_begin</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CtapError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">CtapError</span><span class="o">.</span><span class="n">ERR</span><span class="o">.</span><span class="n">NO_CREDENTIALS</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">raise</span>  <span class="c1"># Other error</span>
+        <span class="n">rest</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enumerate_creds_next</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
+                <span class="mi">1</span><span class="p">,</span> <span class="n">first</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">RESULT</span><span class="o">.</span><span class="n">TOTAL_CREDENTIALS</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">first</span><span class="p">]</span> <span class="o">+</span> <span class="n">rest</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.delete_cred">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.delete_cred">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_cred</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cred_id</span><span class="p">:</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a resident credential.</span>
+
+<span class="sd">        :param cred_id: The PublicKeyCredentialDescriptor of the credential to delete.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cred_id</span> <span class="o">=</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">cred_id</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting credential with ID: </span><span class="si">{</span><span class="n">cred_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span>
+            <span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">DELETE_CREDENTIAL</span><span class="p">,</span>
+            <span class="p">{</span><span class="n">CredentialManagement</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">CREDENTIAL_ID</span><span class="p">:</span> <span class="n">_as_cbor</span><span class="p">(</span><span class="n">cred_id</span><span class="p">)},</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Credential deleted&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CredentialManagement.update_user_info">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.credman.CredentialManagement.update_user_info">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_user_info</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cred_id</span><span class="p">:</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">,</span>
+        <span class="n">user_info</span><span class="p">:</span> <span class="n">PublicKeyCredentialUserEntity</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the user entity of a resident key.</span>
+
+<span class="sd">        :param cred_id: The PublicKeyCredentialDescriptor of the credential to update.</span>
+<span class="sd">        :param user_info: The user info update.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">CredentialManagement</span><span class="o">.</span><span class="n">is_update_supported</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support update_user_info&quot;</span><span class="p">)</span>
+
+        <span class="n">cred_id</span> <span class="o">=</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">cred_id</span><span class="p">)</span>
+        <span class="n">user_info</span> <span class="o">=</span> <span class="n">PublicKeyCredentialUserEntity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">user_info</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updating credential: </span><span class="si">{</span><span class="n">cred_id</span><span class="si">}</span><span class="s2"> with user info: </span><span class="si">{</span><span class="n">user_info</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span>
+            <span class="n">CredentialManagement</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">UPDATE_USER_INFO</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="n">CredentialManagement</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">CREDENTIAL_ID</span><span class="p">:</span> <span class="n">_as_cbor</span><span class="p">(</span><span class="n">cred_id</span><span class="p">),</span>
+                <span class="n">CredentialManagement</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">USER</span><span class="p">:</span> <span class="n">_as_cbor</span><span class="p">(</span><span class="n">user_info</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Credential user info updated&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

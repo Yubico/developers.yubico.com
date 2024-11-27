@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.ctap2.blob &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.ctap2.blob</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.ctap2.blob</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">cbor</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">sha256</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">Info</span>
+<span class="kn">from</span> <span class="nn">.pin</span> <span class="kn">import</span> <span class="n">PinProtocol</span><span class="p">,</span> <span class="n">_PinUv</span>
+
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.ciphers.aead</span> <span class="kn">import</span> <span class="n">AESGCM</span>
+<span class="kn">from</span> <span class="nn">cryptography.exceptions</span> <span class="kn">import</span> <span class="n">InvalidTag</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">zlib</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="k">def</span> <span class="nf">_compress</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compressobj</span><span class="p">(</span><span class="n">wbits</span><span class="o">=-</span><span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">o</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="n">o</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_decompress</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompressobj</span><span class="p">(</span><span class="n">wbits</span><span class="o">=-</span><span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">o</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="n">o</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_lb_ad</span><span class="p">(</span><span class="n">orig_size</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;blob&quot;</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">orig_size</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_lb_pack</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="n">orig_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">nonce</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">aesgcm</span> <span class="o">=</span> <span class="n">AESGCM</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="n">ciphertext</span> <span class="o">=</span> <span class="n">aesgcm</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="n">_compress</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">_lb_ad</span><span class="p">(</span><span class="n">orig_size</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">ciphertext</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">nonce</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="n">orig_size</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_lb_unpack</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">entry</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ciphertext</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">nonce</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">orig_size</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">aesgcm</span> <span class="o">=</span> <span class="n">AESGCM</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">compressed</span> <span class="o">=</span> <span class="n">aesgcm</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">,</span> <span class="n">_lb_ad</span><span class="p">(</span><span class="n">orig_size</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">compressed</span><span class="p">,</span> <span class="n">orig_size</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid entry&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">InvalidTag</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong key&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LargeBlobs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs">[docs]</a>
+<span class="k">class</span> <span class="nc">LargeBlobs</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of the CTAP2.1 Large Blobs API.</span>
+
+<span class="sd">    Getting a largeBlobKey for a credential is done via the LargeBlobKey extension.</span>
+
+<span class="sd">    :param ctap: An instance of a CTAP2 object.</span>
+<span class="sd">    :param pin_uv_protocol: An instance of a PinUvAuthProtocol.</span>
+<span class="sd">    :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LargeBlobs.is_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs.is_supported">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="n">info</span><span class="p">:</span> <span class="n">Info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlobs&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support LargeBlobs&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span> <span class="o">=</span> <span class="n">ctap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_fragment_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_msg_size</span> <span class="o">-</span> <span class="mi">64</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_PinUv</span><span class="p">(</span><span class="n">pin_uv_protocol</span><span class="p">,</span> <span class="n">pin_uv_token</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pin_uv_protocol</span> <span class="ow">and</span> <span class="n">pin_uv_token</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="LargeBlobs.read_blob_array">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs.read_blob_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_blob_array</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the entire contents of the Large Blobs array.</span>
+
+<span class="sd">        :return: The CBOR decoded list of Large Blobs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">fragment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">large_blobs</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_fragment_length</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">buf</span> <span class="o">+=</span> <span class="n">fragment</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fragment</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_fragment_length</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_fragment_length</span>
+
+        <span class="n">data</span><span class="p">,</span> <span class="n">check</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[:</span><span class="o">-</span><span class="mi">16</span><span class="p">],</span> <span class="n">buf</span><span class="p">[</span><span class="o">-</span><span class="mi">16</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">check</span> <span class="o">!=</span> <span class="n">sha256</span><span class="p">(</span><span class="n">data</span><span class="p">)[:</span><span class="o">-</span><span class="mi">16</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">cbor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">data</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobs.write_blob_array">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs.write_blob_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_blob_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blob_array</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the entire Large Blobs array.</span>
+
+<span class="sd">        :param blob_array: A list to write to the Authenticator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">blob_array</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;large-blob array must be a list&quot;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">cbor</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">blob_array</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="n">sha256</span><span class="p">(</span><span class="n">data</span><span class="p">)[:</span><span class="mi">16</span><span class="p">]</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
+            <span class="n">ln</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_fragment_length</span><span class="p">)</span>
+            <span class="n">_set</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">ln</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xff</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span>
+                    <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x0c\x00</span><span class="s2">&quot;</span>
+                    <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="n">sha256</span><span class="p">(</span><span class="n">_set</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">pin_uv_protocol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">VERSION</span>
+                <span class="n">pin_uv_param</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pin_uv</span><span class="o">.</span><span class="n">token</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pin_uv_param</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">pin_uv_protocol</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">large_blobs</span><span class="p">(</span>
+                <span class="n">offset</span><span class="p">,</span>
+                <span class="nb">set</span><span class="o">=</span><span class="n">_set</span><span class="p">,</span>
+                <span class="n">length</span><span class="o">=</span><span class="n">size</span> <span class="k">if</span> <span class="n">offset</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">pin_uv_protocol</span><span class="o">=</span><span class="n">pin_uv_protocol</span><span class="p">,</span>
+                <span class="n">pin_uv_param</span><span class="o">=</span><span class="n">pin_uv_param</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">ln</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobs.get_blob">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs.get_blob">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_blob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">large_blob_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the Large Blob stored for a single credential.</span>
+
+<span class="sd">        :param large_blob_key: The largeBlobKey for the credential, or None.</span>
+<span class="sd">        :returns: The decrypted and deflated value stored for the credential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_blob_array</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">compressed</span><span class="p">,</span> <span class="n">orig_size</span> <span class="o">=</span> <span class="n">_lb_unpack</span><span class="p">(</span><span class="n">large_blob_key</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+                <span class="n">decompressed</span> <span class="o">=</span> <span class="n">_decompress</span><span class="p">(</span><span class="n">compressed</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">decompressed</span><span class="p">)</span> <span class="o">==</span> <span class="n">orig_size</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">decompressed</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">zlib</span><span class="o">.</span><span class="n">error</span><span class="p">):</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobs.put_blob">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs.put_blob">[docs]</a>
+    <span class="k">def</span> <span class="nf">put_blob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">large_blob_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores a Large Blob for a single credential.</span>
+
+<span class="sd">        Any existing entries for the same credential will be replaced.</span>
+
+<span class="sd">        :param large_blob_key: The largeBlobKey for the credential.</span>
+<span class="sd">        :param data: The data to compress, encrypt and store.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">modified</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_blob_array</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_lb_unpack</span><span class="p">(</span><span class="n">large_blob_key</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+                <span class="n">modified</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_lb_pack</span><span class="p">(</span><span class="n">large_blob_key</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">modified</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_blob_array</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobs.delete_blob">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.blob.LargeBlobs.delete_blob">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_blob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">large_blob_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes any Large Blob(s) stored for a single credential.</span>
+
+<span class="sd">        :param large_blob_key: The largeBlobKey for the credential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">put_blob</span><span class="p">(</span><span class="n">large_blob_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

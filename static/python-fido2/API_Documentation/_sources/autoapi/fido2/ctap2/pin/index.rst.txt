@@ -1,0 +1,412 @@
+fido2.ctap2.pin
+===============
+
+.. py:module:: fido2.ctap2.pin
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.ctap2.pin.PinProtocol
+   fido2.ctap2.pin.PinProtocolV1
+   fido2.ctap2.pin.PinProtocolV2
+   fido2.ctap2.pin.ClientPin
+
+
+Module Contents
+---------------
+
+.. py:class:: PinProtocol
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: VERSION
+      :type:  ClassVar[int]
+
+
+   .. py:method:: encapsulate(peer_cose_key)
+      :abstractmethod:
+
+
+      Generates an encapsulation of the public key.
+      Returns the message to transmit and the shared secret.
+
+
+
+   .. py:method:: encrypt(key, plaintext)
+      :abstractmethod:
+
+
+      Encrypts data
+
+
+
+   .. py:method:: decrypt(key, ciphertext)
+      :abstractmethod:
+
+
+      Decrypts encrypted data
+
+
+
+   .. py:method:: authenticate(key, message)
+      :abstractmethod:
+
+
+      Computes a MAC of the given message.
+
+
+
+   .. py:method:: validate_token(token)
+      :abstractmethod:
+
+
+      Validates that a token is well-formed.
+      Returns the token, or if invalid, raises a ValueError.
+
+
+
+.. py:class:: PinProtocolV1
+
+   Bases: :py:obj:`PinProtocol`
+
+
+   Implementation of the CTAP2 PIN/UV protocol v1.
+
+   :param ctap: An instance of a CTAP2 object.
+   :cvar VERSION: The version number of the PIV/UV protocol.
+   :cvar IV: An all-zero IV used for some cryptographic operations.
+
+
+   .. py:attribute:: VERSION
+      :value: 1
+
+
+
+   .. py:attribute:: IV
+
+
+   .. py:method:: kdf(z)
+
+
+   .. py:method:: encapsulate(peer_cose_key)
+
+      Generates an encapsulation of the public key.
+      Returns the message to transmit and the shared secret.
+
+
+
+   .. py:method:: encrypt(key, plaintext)
+
+      Encrypts data
+
+
+
+   .. py:method:: decrypt(key, ciphertext)
+
+      Decrypts encrypted data
+
+
+
+   .. py:method:: authenticate(key, message)
+
+      Computes a MAC of the given message.
+
+
+
+   .. py:method:: validate_token(token)
+
+      Validates that a token is well-formed.
+      Returns the token, or if invalid, raises a ValueError.
+
+
+
+.. py:class:: PinProtocolV2
+
+   Bases: :py:obj:`PinProtocolV1`
+
+
+   Implementation of the CTAP2 PIN/UV protocol v2.
+
+   :param ctap: An instance of a CTAP2 object.
+   :cvar VERSION: The version number of the PIV/UV protocol.
+   :cvar IV: An all-zero IV used for some cryptographic operations.
+
+
+   .. py:attribute:: VERSION
+      :value: 2
+
+
+
+   .. py:attribute:: HKDF_SALT
+
+
+   .. py:attribute:: HKDF_INFO_HMAC
+      :value: b'CTAP2 HMAC key'
+
+
+
+   .. py:attribute:: HKDF_INFO_AES
+      :value: b'CTAP2 AES key'
+
+
+
+   .. py:method:: kdf(z)
+
+
+   .. py:method:: encrypt(key, plaintext)
+
+      Encrypts data
+
+
+
+   .. py:method:: decrypt(key, ciphertext)
+
+      Decrypts encrypted data
+
+
+
+   .. py:method:: authenticate(key, message)
+
+      Computes a MAC of the given message.
+
+
+
+   .. py:method:: validate_token(token)
+
+      Validates that a token is well-formed.
+      Returns the token, or if invalid, raises a ValueError.
+
+
+
+.. py:class:: ClientPin(ctap, protocol = None)
+
+   Implementation of the CTAP2 Client PIN API.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param protocol: An optional instance of a PinUvAuthProtocol object. If None is
+       provided then the latest protocol supported by both library and Authenticator
+       will be used.
+
+
+   .. py:attribute:: PROTOCOLS
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: GET_PIN_RETRIES
+         :value: 1
+
+
+
+      .. py:attribute:: GET_KEY_AGREEMENT
+         :value: 2
+
+
+
+      .. py:attribute:: SET_PIN
+         :value: 3
+
+
+
+      .. py:attribute:: CHANGE_PIN
+         :value: 4
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_PIN_LEGACY
+         :value: 5
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_UV
+         :value: 6
+
+
+
+      .. py:attribute:: GET_UV_RETRIES
+         :value: 7
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_PIN
+         :value: 9
+
+
+
+
+   .. py:class:: RESULT
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: KEY_AGREEMENT
+         :value: 1
+
+
+
+      .. py:attribute:: PIN_UV_TOKEN
+         :value: 2
+
+
+
+      .. py:attribute:: PIN_RETRIES
+         :value: 3
+
+
+
+      .. py:attribute:: POWER_CYCLE_STATE
+         :value: 4
+
+
+
+      .. py:attribute:: UV_RETRIES
+         :value: 5
+
+
+
+
+   .. py:class:: PERMISSION
+
+      Bases: :py:obj:`enum.IntFlag`
+
+
+      Support for integer-based Flags
+
+
+      .. py:attribute:: MAKE_CREDENTIAL
+         :value: 1
+
+
+
+      .. py:attribute:: GET_ASSERTION
+         :value: 2
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT
+         :value: 4
+
+
+
+      .. py:attribute:: BIO_ENROLL
+         :value: 8
+
+
+
+      .. py:attribute:: LARGE_BLOB_WRITE
+         :value: 16
+
+
+
+      .. py:attribute:: AUTHENTICATOR_CFG
+         :value: 32
+
+
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+      Checks if ClientPin functionality is supported.
+
+      Note that the ClientPin function is still usable without support for client
+      PIN functionality, as UV token may still be supported.
+
+
+
+   .. py:method:: is_token_supported(info)
+      :staticmethod:
+
+
+      Checks if pinUvAuthToken is supported.
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:method:: get_pin_token(pin, permissions = None, permissions_rpid = None)
+
+      Get a PIN/UV token from the authenticator using PIN.
+
+      :param pin: The PIN of the authenticator.
+      :param permissions: The permissions to associate with the token.
+      :param permissions_rpid: The permissions RPID to associate with the token.
+      :return: A PIN/UV token.
+
+
+
+   .. py:method:: get_uv_token(permissions = None, permissions_rpid = None, event = None, on_keepalive = None)
+
+      Get a PIN/UV token from the authenticator using built-in UV.
+
+      :param permissions: The permissions to associate with the token.
+      :param permissions_rpid: The permissions RPID to associate with the token.
+      :param event: An optional threading.Event which can be used to cancel
+          the invocation.
+      :param on_keepalive: An optional callback to handle keep-alive messages
+          from the authenticator. The function is only called once for
+          consecutive keep-alive messages with the same status.
+      :return: A PIN/UV token.
+
+
+
+   .. py:method:: get_pin_retries()
+
+      Get the number of PIN retries remaining.
+
+      :return: A tuple of the number of PIN attempts remaining until the
+      authenticator is locked, and the power cycle state, if available.
+
+
+
+   .. py:method:: get_uv_retries()
+
+      Get the number of UV retries remaining.
+
+      :return: A tuple of the number of UV attempts remaining until the
+      authenticator is locked, and the power cycle state, if available.
+
+
+
+   .. py:method:: set_pin(pin)
+
+      Set the PIN of the autenticator.
+
+      This only works when no PIN is set. To change the PIN when set, use
+      change_pin.
+
+      :param pin: A PIN to set.
+
+
+
+   .. py:method:: change_pin(old_pin, new_pin)
+
+      Change the PIN of the authenticator.
+
+      This only works when a PIN is already set. If no PIN is set, use
+      set_pin.
+
+      :param old_pin: The currently set PIN.
+      :param new_pin: The new PIN to set.
+
+
+

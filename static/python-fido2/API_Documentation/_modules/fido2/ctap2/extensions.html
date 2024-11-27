@@ -1,0 +1,1121 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.ctap2.extensions &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.ctap2.extensions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.ctap2.extensions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2020 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">AttestationResponse</span><span class="p">,</span> <span class="n">AssertionResponse</span><span class="p">,</span> <span class="n">Ctap2</span>
+<span class="kn">from</span> <span class="nn">.pin</span> <span class="kn">import</span> <span class="n">ClientPin</span><span class="p">,</span> <span class="n">PinProtocol</span>
+<span class="kn">from</span> <span class="nn">.blob</span> <span class="kn">import</span> <span class="n">LargeBlobs</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">sha256</span><span class="p">,</span> <span class="n">websafe_encode</span><span class="p">,</span> <span class="n">_JsonDataObject</span>
+<span class="kn">from</span> <span class="nn">..webauthn</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PublicKeyCredentialDescriptor</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+    <span class="n">AuthenticatorSelectionCriteria</span><span class="p">,</span>
+    <span class="n">ResidentKeyRequirement</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+
+<div class="viewcode-block" id="ExtensionProcessor">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.ExtensionProcessor">[docs]</a>
+<span class="k">class</span> <span class="nc">ExtensionProcessor</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for CTAP2 extension processing.</span>
+
+<span class="sd">    See: :class:`RegistrationExtensionProcessor` and</span>
+<span class="sd">    :class:`AuthenticationExtensionProcessor`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">permissions</span><span class="p">:</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">outputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">permissions</span> <span class="o">=</span> <span class="n">permissions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span> <span class="o">=</span> <span class="n">inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span> <span class="o">=</span> <span class="n">outputs</span></div>
+
+
+
+<div class="viewcode-block" id="RegistrationExtensionProcessor">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.RegistrationExtensionProcessor">[docs]</a>
+<span class="k">class</span> <span class="nc">RegistrationExtensionProcessor</span><span class="p">(</span><span class="n">ExtensionProcessor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Processing state for a CTAP2 extension, for single use.</span>
+
+<span class="sd">    The ExtensionProcessor holds state and logic for client processing of an extension,</span>
+<span class="sd">    for a registration (MakeCredential) call.</span>
+
+<span class="sd">    :param permissions: PinUvAuthToken permissions required by the extension.</span>
+<span class="sd">    :param inputs: Default authenticator inputs, if prepare_inputs is not overridden.</span>
+<span class="sd">    :param outputs: Default client outputs, if prepare_outputs is not overridden.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RegistrationExtensionProcessor.prepare_inputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.RegistrationExtensionProcessor.prepare_inputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="s2">&quot;Prepare authenticator extension inputs, to be passed to the Authenenticator.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span></div>
+
+
+<div class="viewcode-block" id="RegistrationExtensionProcessor.prepare_outputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.RegistrationExtensionProcessor.prepare_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">AttestationResponse</span><span class="p">,</span>
+        <span class="n">pin_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="s2">&quot;Prepare client extension outputs, to be returned to the caller.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AuthenticationExtensionProcessor">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticationExtensionProcessor">[docs]</a>
+<span class="k">class</span> <span class="nc">AuthenticationExtensionProcessor</span><span class="p">(</span><span class="n">ExtensionProcessor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Processing state for a CTAP2 extension, for single use.</span>
+
+<span class="sd">    The ExtensionProcessor holds state and logic for client processing of an extension,</span>
+<span class="sd">    for an authentication (GetAssertion) call.</span>
+
+<span class="sd">    :param permissions: PinUvAuthToken permissions required by the extension.</span>
+<span class="sd">    :param inputs: Default authenticator inputs, if prepare_inputs is not overridden.</span>
+<span class="sd">    :param outputs: Default client outputs, if prepare_outputs is not overridden.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AuthenticationExtensionProcessor.prepare_inputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticationExtensionProcessor.prepare_inputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">selected</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PublicKeyCredentialDescriptor</span><span class="p">],</span>
+        <span class="n">pin_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="s2">&quot;Prepare authenticator extension inputs, to be passed to the Authenenticator.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inputs</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationExtensionProcessor.prepare_outputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticationExtensionProcessor.prepare_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">AssertionResponse</span><span class="p">,</span>
+        <span class="n">pin_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="s2">&quot;Prepare client extension outputs, to be returned to the caller.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outputs</span></div>
+</div>
+
+
+
+<span class="c1"># TODO 2.0: Make changes as described below</span>
+<div class="viewcode-block" id="Ctap2Extension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension">[docs]</a>
+<span class="k">class</span> <span class="nc">Ctap2Extension</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for CTAP2 extensions.</span>
+
+<span class="sd">    As of python-fido2 1.2 these instances can be used for multiple requests and</span>
+<span class="sd">    should be invoked via the make_credential and get_assertion methods.</span>
+<span class="sd">    Subclasses are instantiated for a single request, if the Authenticator supports</span>
+<span class="sd">    the extension.</span>
+
+<span class="sd">    From python-fido2 2.0 the following methods will be fully removed:</span>
+<span class="sd">        get_create_permissions, process_create_input, process_create_output,</span>
+<span class="sd">        process_create_input_with_permissions,</span>
+<span class="sd">        get_get_permissions, process_get_input, process_get_output,</span>
+<span class="sd">        process_get_input_with_permissions.</span>
+
+<span class="sd">    The following changes will also be made:</span>
+<span class="sd">        :func:`__init__` will no longer allow passing a ctap2 instance.</span>
+<span class="sd">        :func:`is_supported` will require a ctap2 instance to be passed.</span>
+<span class="sd">        :attr:`NAME` and :attr:`ctap` will be removed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Ctap2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ctap</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Calling __init__ with a Ctap2 instance is deprecated.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span> <span class="o">=</span> <span class="n">ctap</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ctap</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ctap2</span><span class="p">:</span>
+        <span class="n">ctap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ctap</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Accessed self.ctap when no ctap instance has been passed to __init__&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ctap</span>
+
+<div class="viewcode-block" id="Ctap2Extension.is_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.is_supported">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Ctap2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether or not the extension is supported by the authenticator.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ctap</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Calling is_supported without a Ctap2 instance is deprecated.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">ctap</span> <span class="o">=</span> <span class="n">ctap</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ctap</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No Ctap2 instance available&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NAME</span> <span class="ow">in</span> <span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">extensions</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+        <span class="n">pin_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegistrationExtensionProcessor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start client extension processing for registration.&quot;&quot;&quot;</span>
+        <span class="c1"># This implementation is for LEGACY PURPOSES!</span>
+        <span class="c1"># Subclasses should override this method instead of:</span>
+        <span class="c1">#    process_create_input, process_create_output, and get_create_permissions</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;This extension does not override make_credential, which is deprecated.&quot;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span> <span class="o">=</span> <span class="n">ctap</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="k">class</span> <span class="nc">Processor</span><span class="p">(</span><span class="n">RegistrationExtensionProcessor</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                <span class="n">processed</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">process_create_input</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_has_input</span> <span class="o">=</span> <span class="n">processed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="p">{</span><span class="n">ext</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="n">processed</span><span class="p">}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_input</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_input</span><span class="p">:</span>
+                    <span class="n">processed</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">process_create_output</span><span class="p">(</span>
+                        <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">,</span> <span class="n">pin_protocol</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">processed</span>
+
+        <span class="k">return</span> <span class="n">Processor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_create_permissions</span><span class="p">(</span><span class="n">inputs</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.get_assertion">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.get_assertion">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+        <span class="n">pin_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticationExtensionProcessor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start client extension processing for authentication.&quot;&quot;&quot;</span>
+        <span class="c1"># This implementation is for LEGACY PURPOSES!</span>
+        <span class="c1"># Subclasses should override this method instead of:</span>
+        <span class="c1">#    process_get_input, process_get_output, and get_get_permissions</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;This extension does not override get_assertion, which is deprecated.&quot;</span><span class="p">,</span>
+            <span class="ne">DeprecationWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span> <span class="o">=</span> <span class="n">ctap</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="bp">self</span>
+
+        <span class="k">class</span> <span class="nc">Processor</span><span class="p">(</span><span class="n">AuthenticationExtensionProcessor</span><span class="p">):</span>
+            <span class="n">_has_input</span><span class="p">:</span> <span class="nb">bool</span>
+
+            <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selected</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                <span class="n">processed</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">process_get_input</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_has_input</span> <span class="o">=</span> <span class="n">processed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="p">{</span><span class="n">ext</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="n">processed</span><span class="p">}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_input</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_input</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ext</span><span class="o">.</span><span class="n">process_get_output</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Processor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_get_permissions</span><span class="p">(</span><span class="n">inputs</span><span class="p">))</span></div>
+
+
+    <span class="c1"># TODO 2.0: Remove the remaining methods of this class</span>
+<div class="viewcode-block" id="Ctap2Extension.get_create_permissions">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.get_create_permissions">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_create_permissions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get PinUvAuthToken permissions required for Registration.</span>
+
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`make_credential` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.process_create_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.process_create_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a value to include in the authenticator extension input,</span>
+<span class="sd">        or None.</span>
+
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`make_credential` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.process_create_input_with_permissions">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.process_create_input_with_permissions">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input_with_permissions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`make_credential` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;This method is deprecated, use make_credential().&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_create_input</span><span class="p">(</span><span class="n">inputs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_create_permissions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.process_create_output">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.process_create_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_output</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">attestation_response</span><span class="p">:</span> <span class="n">AttestationResponse</span><span class="p">,</span>
+        <span class="n">token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span>
+        <span class="n">pin_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return client extension output given attestation_response, or None.</span>
+
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`make_credential` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.get_get_permissions">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.get_get_permissions">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_get_permissions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`get_assertion` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.process_get_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.process_get_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a value to include in the authenticator extension input,</span>
+<span class="sd">        or None.</span>
+
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`get_assertion` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.process_get_input_with_permissions">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.process_get_input_with_permissions">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_input_with_permissions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`get_assertion` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;This method is deprecated, use get_assertion().&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_get_input</span><span class="p">(</span><span class="n">inputs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_get_permissions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ctap2Extension.process_get_output">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.Ctap2Extension.process_get_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_output</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">assertion_response</span><span class="p">:</span> <span class="n">AssertionResponse</span><span class="p">,</span>
+        <span class="n">token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">],</span>
+        <span class="n">pin_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PinProtocol</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return client extension output given assertion_response, or None.</span>
+
+<span class="sd">        .. deprecated:: 1.2.0</span>
+<span class="sd">           Implement :func:`get_assertion` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="HMACGetSecretInput">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HMACGetSecretInput">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HMACGetSecretInput</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client inputs for hmac-secret.&quot;&quot;&quot;</span>
+
+    <span class="n">salt1</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">salt2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="HMACGetSecretOutput">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HMACGetSecretOutput">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HMACGetSecretOutput</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client outputs for hmac-secret.&quot;&quot;&quot;</span>
+
+    <span class="n">output1</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">output2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_prf_salt</span><span class="p">(</span><span class="n">secret</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;WebAuthn PRF</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">secret</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AuthenticatorExtensionsPRFValues">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticatorExtensionsPRFValues">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorExtensionsPRFValues</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Salt values for use with prf.&quot;&quot;&quot;</span>
+
+    <span class="n">first</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">second</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorExtensionsPRFInputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticatorExtensionsPRFInputs">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorExtensionsPRFInputs</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client inputs for prf.&quot;&quot;&quot;</span>
+
+    <span class="nb">eval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorExtensionsPRFValues</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">eval_by_credential</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AuthenticatorExtensionsPRFValues</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorExtensionsPRFOutputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticatorExtensionsPRFOutputs">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorExtensionsPRFOutputs</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client outputs for prf.&quot;&quot;&quot;</span>
+
+    <span class="n">enabled</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">results</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorExtensionsPRFValues</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="HmacSecretExtension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension">[docs]</a>
+<span class="k">class</span> <span class="nc">HmacSecretExtension</span><span class="p">(</span><span class="n">Ctap2Extension</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Pseudo-random function (prf) and the hmac-secret CTAP2 extensions.</span>
+
+<span class="sd">    The hmac-secret extension is not directly available to clients by default, instead</span>
+<span class="sd">    the prf extension is used.</span>
+
+<span class="sd">    https://www.w3.org/TR/webauthn-3/#prf-extension</span>
+
+<span class="sd">    https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-hmac-secret-extension</span>
+
+<span class="sd">    :param allow_hmac_secret: Set to True to allow hmac-secret, in addition to prf.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;hmac-secret&quot;</span>
+    <span class="n">SALT_LEN</span> <span class="o">=</span> <span class="mi">32</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">allow_hmac_secret</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pin_protocol</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Initializing HmacSecretExtension with pin_protocol is deprecated, &quot;</span>
+                <span class="s2">&quot;pin_protocol will be ignored.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span> <span class="o">=</span> <span class="n">pin_protocol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_allow_hmac_secret</span> <span class="o">=</span> <span class="n">allow_hmac_secret</span>
+
+<div class="viewcode-block" id="HmacSecretExtension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">prf</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prf&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">hmac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allow_hmac_secret</span> <span class="ow">and</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hmacCreateSecret&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prf</span> <span class="ow">or</span> <span class="n">hmac</span><span class="p">):</span>
+
+            <span class="k">class</span> <span class="nc">Processor</span><span class="p">(</span><span class="n">RegistrationExtensionProcessor</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span><span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+                <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="n">extensions</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+                    <span class="n">enabled</span> <span class="o">=</span> <span class="n">extensions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">NAME</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">prf</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="p">{</span>
+                            <span class="s2">&quot;prf&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsPRFOutputs</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="n">enabled</span><span class="p">)</span>
+                        <span class="p">}</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;hmacCreateSecret&quot;</span><span class="p">:</span> <span class="n">enabled</span><span class="p">}</span>
+
+            <span class="k">return</span> <span class="n">Processor</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="HmacSecretExtension.get_assertion">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension.get_assertion">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">prf</span> <span class="o">=</span> <span class="n">AuthenticatorExtensionsPRFInputs</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prf&quot;</span><span class="p">))</span>
+        <span class="n">hmac</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">HMACGetSecretInput</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hmacGetSecret&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allow_hmac_secret</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pin_protocol</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prf</span> <span class="ow">or</span> <span class="n">hmac</span><span class="p">):</span>
+            <span class="n">client_pin</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="p">(</span><span class="n">ctap</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">)</span>
+            <span class="n">key_agreement</span><span class="p">,</span> <span class="n">shared_secret</span> <span class="o">=</span> <span class="n">client_pin</span><span class="o">.</span><span class="n">_get_shared_secret</span><span class="p">()</span>
+
+            <span class="k">class</span> <span class="nc">Processing</span><span class="p">(</span><span class="n">AuthenticationExtensionProcessor</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selected</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">prf</span><span class="p">:</span>
+                        <span class="n">secrets</span> <span class="o">=</span> <span class="n">prf</span><span class="o">.</span><span class="n">eval</span>
+                        <span class="n">by_creds</span> <span class="o">=</span> <span class="n">prf</span><span class="o">.</span><span class="n">eval_by_credential</span>
+                        <span class="k">if</span> <span class="n">by_creds</span><span class="p">:</span>
+                            <span class="c1"># Make sure all keys are valid IDs from allow_credentials</span>
+                            <span class="n">allow_list</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">allow_credentials</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_list</span><span class="p">:</span>
+                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                                    <span class="s2">&quot;evalByCredentials requires allowCredentials&quot;</span>
+                                <span class="p">)</span>
+                            <span class="n">ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">websafe_encode</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">allow_list</span><span class="p">}</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">ids</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span><span class="n">by_creds</span><span class="p">):</span>
+                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                                    <span class="s2">&quot;evalByCredentials contains invalid key&quot;</span>
+                                <span class="p">)</span>
+                            <span class="k">if</span> <span class="n">selected</span><span class="p">:</span>
+                                <span class="n">key</span> <span class="o">=</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="n">selected</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">by_creds</span><span class="p">:</span>
+                                    <span class="n">secrets</span> <span class="o">=</span> <span class="n">by_creds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">secrets</span><span class="p">:</span>
+                            <span class="k">return</span>
+
+                        <span class="n">salts</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">_prf_salt</span><span class="p">(</span><span class="n">secrets</span><span class="o">.</span><span class="n">first</span><span class="p">),</span>
+                            <span class="p">(</span>
+                                <span class="n">_prf_salt</span><span class="p">(</span><span class="n">secrets</span><span class="o">.</span><span class="n">second</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">secrets</span><span class="o">.</span><span class="n">second</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                                <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+                            <span class="p">),</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">hmac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+                        <span class="n">salts</span> <span class="o">=</span> <span class="n">hmac</span><span class="o">.</span><span class="n">salt1</span><span class="p">,</span> <span class="n">hmac</span><span class="o">.</span><span class="n">salt2</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">salts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span>
+                        <span class="ow">and</span> <span class="p">(</span>
+                            <span class="ow">not</span> <span class="n">salts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">salts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span>
+                        <span class="p">)</span>
+                    <span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid salt length&quot;</span><span class="p">)</span>
+
+                    <span class="n">salt_enc</span> <span class="o">=</span> <span class="n">pin_protocol</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">shared_secret</span><span class="p">,</span> <span class="n">salts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">salts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">salt_auth</span> <span class="o">=</span> <span class="n">pin_protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">shared_secret</span><span class="p">,</span> <span class="n">salt_enc</span><span class="p">)</span>
+
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="mi">1</span><span class="p">:</span> <span class="n">key_agreement</span><span class="p">,</span>
+                            <span class="mi">2</span><span class="p">:</span> <span class="n">salt_enc</span><span class="p">,</span>
+                            <span class="mi">3</span><span class="p">:</span> <span class="n">salt_auth</span><span class="p">,</span>
+                            <span class="mi">4</span><span class="p">:</span> <span class="n">pin_protocol</span><span class="o">.</span><span class="n">VERSION</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+
+                <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="n">extensions</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">extensions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">NAME</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="n">decrypted</span> <span class="o">=</span> <span class="n">client_pin</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">shared_secret</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                        <span class="n">output1</span> <span class="o">=</span> <span class="n">decrypted</span><span class="p">[:</span> <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span><span class="p">]</span>
+                        <span class="n">output2</span> <span class="o">=</span> <span class="n">decrypted</span><span class="p">[</span><span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span> <span class="p">:]</span> <span class="ow">or</span> <span class="kc">None</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+
+                    <span class="k">if</span> <span class="n">prf</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="p">{</span>
+                            <span class="s2">&quot;prf&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsPRFOutputs</span><span class="p">(</span>
+                                <span class="n">results</span><span class="o">=</span><span class="n">AuthenticatorExtensionsPRFValues</span><span class="p">(</span>
+                                    <span class="n">output1</span><span class="p">,</span> <span class="n">output2</span>
+                                <span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="p">}</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;hmacGetSecret&quot;</span><span class="p">:</span> <span class="n">HMACGetSecretOutput</span><span class="p">(</span><span class="n">output1</span><span class="p">,</span> <span class="n">output2</span><span class="p">)}</span>
+
+            <span class="k">return</span> <span class="n">Processing</span><span class="p">()</span></div>
+
+
+    <span class="c1"># TODO 2.0: Remove the remaining methods of this class</span>
+<div class="viewcode-block" id="HmacSecretExtension.process_create_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension.process_create_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">()</span> <span class="ow">and</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hmacCreateSecret&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="HmacSecretExtension.process_create_output">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension.process_create_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attestation_response</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">enabled</span> <span class="o">=</span> <span class="n">attestation_response</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;hmacCreateSecret&quot;</span><span class="p">:</span> <span class="n">enabled</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="HmacSecretExtension.process_get_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension.process_get_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">():</span>
+            <span class="k">return</span>
+
+        <span class="n">get_secret</span> <span class="o">=</span> <span class="n">HMACGetSecretInput</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hmacGetSecret&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">get_secret</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">salts</span> <span class="o">=</span> <span class="n">get_secret</span><span class="o">.</span><span class="n">salt1</span><span class="p">,</span> <span class="n">get_secret</span><span class="o">.</span><span class="n">salt2</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">salts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">salts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">salts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid salt length&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No Ctap2 instance available&quot;</span><span class="p">)</span>
+        <span class="n">client_pin</span> <span class="o">=</span> <span class="n">ClientPin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span><span class="p">)</span>
+        <span class="n">key_agreement</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_secret</span> <span class="o">=</span> <span class="n">client_pin</span><span class="o">.</span><span class="n">_get_shared_secret</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span> <span class="o">=</span> <span class="n">client_pin</span><span class="o">.</span><span class="n">protocol</span>
+
+        <span class="n">salt_enc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shared_secret</span><span class="p">,</span> <span class="n">salts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">salts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">salt_auth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shared_secret</span><span class="p">,</span> <span class="n">salt_enc</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="n">key_agreement</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="n">salt_enc</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="n">salt_auth</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span><span class="o">.</span><span class="n">VERSION</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="HmacSecretExtension.process_get_output">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.HmacSecretExtension.process_get_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assertion_response</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">assertion_response</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+        <span class="n">decrypted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pin_protocol</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shared_secret</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">output1</span> <span class="o">=</span> <span class="n">decrypted</span><span class="p">[:</span> <span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span><span class="p">]</span>
+        <span class="n">output2</span> <span class="o">=</span> <span class="n">decrypted</span><span class="p">[</span><span class="n">HmacSecretExtension</span><span class="o">.</span><span class="n">SALT_LEN</span> <span class="p">:]</span> <span class="ow">or</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;hmacGetSecret&quot;</span><span class="p">:</span> <span class="n">HMACGetSecretOutput</span><span class="p">(</span><span class="n">output1</span><span class="p">,</span> <span class="n">output2</span><span class="p">)}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorExtensionsLargeBlobInputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticatorExtensionsLargeBlobInputs">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorExtensionsLargeBlobInputs</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client inputs for largeBlob.&quot;&quot;&quot;</span>
+
+    <span class="n">support</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">read</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">write</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorExtensionsLargeBlobOutputs">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.AuthenticatorExtensionsLargeBlobOutputs">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client outputs for largeBlob.&quot;&quot;&quot;</span>
+
+    <span class="n">supported</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">blob</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">written</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="LargeBlobExtension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension">[docs]</a>
+<span class="k">class</span> <span class="nc">LargeBlobExtension</span><span class="p">(</span><span class="n">Ctap2Extension</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Large Blob storage (largeBlob) WebAuthn extension.</span>
+
+<span class="sd">    https://www.w3.org/TR/webauthn-3/#sctn-large-blob-extension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;largeBlobKey&quot;</span>
+
+<div class="viewcode-block" id="LargeBlobExtension.is_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.is_supported">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ctap</span> <span class="o">=</span> <span class="n">ctap</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span>
+        <span class="k">assert</span> <span class="n">ctap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlobs&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobExtension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AuthenticatorExtensionsLargeBlobInputs</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlob&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span> <span class="ow">or</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid set of parameters&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">support</span> <span class="o">==</span> <span class="s2">&quot;required&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support large blob storage&quot;</span><span class="p">)</span>
+
+            <span class="k">class</span> <span class="nc">Processor</span><span class="p">(</span><span class="n">RegistrationExtensionProcessor</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span><span class="n">LargeBlobExtension</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+                <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="s2">&quot;largeBlob&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span>
+                            <span class="n">supported</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">large_blob_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                        <span class="p">)</span>
+                    <span class="p">}</span>
+
+            <span class="k">return</span> <span class="n">Processor</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobExtension.get_assertion">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.get_assertion">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AuthenticatorExtensionsLargeBlobInputs</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlob&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">support</span> <span class="ow">or</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">read</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid set of parameters&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support large blob storage&quot;</span><span class="p">)</span>
+
+            <span class="k">class</span> <span class="nc">Processor</span><span class="p">(</span><span class="n">AuthenticationExtensionProcessor</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">prepare_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">):</span>
+                    <span class="n">blob_key</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">large_blob_key</span>
+                    <span class="k">if</span> <span class="n">blob_key</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">:</span>
+                            <span class="n">large_blobs</span> <span class="o">=</span> <span class="n">LargeBlobs</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span>
+                            <span class="n">blob</span> <span class="o">=</span> <span class="n">large_blobs</span><span class="o">.</span><span class="n">get_blob</span><span class="p">(</span><span class="n">blob_key</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="p">{</span>
+                                <span class="s2">&quot;largeBlob&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span>
+                                    <span class="n">blob</span><span class="o">=</span><span class="n">blob</span>
+                                <span class="p">)</span>
+                            <span class="p">}</span>
+                        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">:</span>
+                            <span class="n">large_blobs</span> <span class="o">=</span> <span class="n">LargeBlobs</span><span class="p">(</span><span class="n">ctap</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">)</span>
+                            <span class="n">large_blobs</span><span class="o">.</span><span class="n">put_blob</span><span class="p">(</span><span class="n">blob_key</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+                            <span class="k">return</span> <span class="p">{</span>
+                                <span class="s2">&quot;largeBlob&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span>
+                                    <span class="n">written</span><span class="o">=</span><span class="kc">True</span>
+                                <span class="p">)</span>
+                            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="n">Processor</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">LARGE_BLOB_WRITE</span>
+                    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span>
+                    <span class="k">else</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="p">),</span>
+                <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="n">LargeBlobExtension</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">)</span></div>
+
+
+    <span class="c1"># TODO 2.0: Remove the remaining methods of this class</span>
+<div class="viewcode-block" id="LargeBlobExtension.process_create_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.process_create_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AuthenticatorExtensionsLargeBlobInputs</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlob&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span> <span class="ow">or</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid set of parameters&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">support</span> <span class="o">==</span> <span class="s2">&quot;required&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support large blob storage&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobExtension.process_create_output">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.process_create_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attestation_response</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;largeBlob&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span>
+                <span class="n">supported</span><span class="o">=</span><span class="n">attestation_response</span><span class="o">.</span><span class="n">large_blob_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobExtension.get_get_permissions">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.get_get_permissions">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_get_permissions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AuthenticatorExtensionsLargeBlobInputs</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlob&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="o">.</span><span class="n">LARGE_BLOB_WRITE</span>
+        <span class="k">return</span> <span class="n">ClientPin</span><span class="o">.</span><span class="n">PERMISSION</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobExtension.process_get_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.process_get_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AuthenticatorExtensionsLargeBlobInputs</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;largeBlob&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">support</span> <span class="ow">or</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">read</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid set of parameters&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support large blob storage&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_action</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_action</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">write</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="LargeBlobExtension.process_get_output">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.LargeBlobExtension.process_get_output">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assertion_response</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">blob_key</span> <span class="o">=</span> <span class="n">assertion_response</span><span class="o">.</span><span class="n">large_blob_key</span>
+        <span class="k">if</span> <span class="n">blob_key</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># Read</span>
+                <span class="n">large_blobs</span> <span class="o">=</span> <span class="n">LargeBlobs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="p">)</span>
+                <span class="n">blob</span> <span class="o">=</span> <span class="n">large_blobs</span><span class="o">.</span><span class="n">get_blob</span><span class="p">(</span><span class="n">blob_key</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;largeBlob&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span><span class="n">blob</span><span class="o">=</span><span class="n">blob</span><span class="p">)}</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action</span><span class="p">:</span>  <span class="c1"># Write</span>
+                <span class="n">large_blobs</span> <span class="o">=</span> <span class="n">LargeBlobs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">,</span> <span class="n">token</span><span class="p">)</span>
+                <span class="n">large_blobs</span><span class="o">.</span><span class="n">put_blob</span><span class="p">(</span><span class="n">blob_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s2">&quot;largeBlob&quot;</span><span class="p">:</span> <span class="n">AuthenticatorExtensionsLargeBlobOutputs</span><span class="p">(</span><span class="n">written</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CredBlobExtension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredBlobExtension">[docs]</a>
+<span class="k">class</span> <span class="nc">CredBlobExtension</span><span class="p">(</span><span class="n">Ctap2Extension</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Credential Blob (credBlob) CTAP2 extension.</span>
+
+<span class="sd">    https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credBlob-extension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;credBlob&quot;</span>
+
+<div class="viewcode-block" id="CredBlobExtension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredBlobExtension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">():</span>
+            <span class="n">blob</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;credBlob&quot;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_cred_blob_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+            <span class="k">if</span> <span class="n">blob</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">blob</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_cred_blob_length</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">RegistrationExtensionProcessor</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="n">blob</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="CredBlobExtension.get_assertion">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredBlobExtension.get_assertion">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span> <span class="ow">and</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;getCredBlob&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">AuthenticationExtensionProcessor</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span></div>
+
+
+    <span class="c1"># TODO 2.0: Remove the remaining methods of this class</span>
+<div class="viewcode-block" id="CredBlobExtension.process_create_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredBlobExtension.process_create_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">():</span>
+            <span class="n">blob</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;credBlob&quot;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_cred_blob_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+            <span class="k">if</span> <span class="n">blob</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">blob</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">max_cred_blob_length</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">blob</span></div>
+
+
+<div class="viewcode-block" id="CredBlobExtension.process_get_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredBlobExtension.process_get_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_get_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">()</span> <span class="ow">and</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;getCredBlob&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CredProtectExtension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredProtectExtension">[docs]</a>
+<span class="k">class</span> <span class="nc">CredProtectExtension</span><span class="p">(</span><span class="n">Ctap2Extension</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Credential Protection CTAP2 extension.</span>
+
+<span class="sd">    https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-credProtect-extension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CredProtectExtension.POLICY">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredProtectExtension.POLICY">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">POLICY</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">OPTIONAL</span> <span class="o">=</span> <span class="s2">&quot;userVerificationOptional&quot;</span>
+        <span class="n">OPTIONAL_WITH_LIST</span> <span class="o">=</span> <span class="s2">&quot;userVerificationOptionalWithCredentialIDList&quot;</span>
+        <span class="n">REQUIRED</span> <span class="o">=</span> <span class="s2">&quot;userVerificationRequired&quot;</span></div>
+
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;credProtect&quot;</span>
+
+<div class="viewcode-block" id="CredProtectExtension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredProtectExtension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;credentialProtectionPolicy&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">policy</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">CredProtectExtension</span><span class="o">.</span><span class="n">POLICY</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
+                <span class="n">CredProtectExtension</span><span class="o">.</span><span class="n">POLICY</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">enforce</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enforceCredentialProtectionPolicy&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">enforce</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span> <span class="ow">and</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support Credential Protection&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">RegistrationExtensionProcessor</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">})</span></div>
+
+
+    <span class="c1"># TODO 2.0: Remove the remaining methods of this class</span>
+<div class="viewcode-block" id="CredProtectExtension.process_create_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredProtectExtension.process_create_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;credentialProtectionPolicy&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">policy</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">CredProtectExtension</span><span class="o">.</span><span class="n">POLICY</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span>
+                <span class="n">CredProtectExtension</span><span class="o">.</span><span class="n">POLICY</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">enforce</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enforceCredentialProtectionPolicy&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">enforce</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">()</span> <span class="ow">and</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support Credential Protection&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MinPinLengthExtension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.MinPinLengthExtension">[docs]</a>
+<span class="k">class</span> <span class="nc">MinPinLengthExtension</span><span class="p">(</span><span class="n">Ctap2Extension</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Minimum PIN Length (minPinLength) CTAP2 extension.</span>
+
+<span class="sd">    https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#sctn-minpinlength-extension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;minPinLength&quot;</span>
+
+<div class="viewcode-block" id="MinPinLengthExtension.is_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.MinPinLengthExtension.is_supported">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># NB: There is no key in the extensions field.</span>
+        <span class="n">ctap</span> <span class="o">=</span> <span class="n">ctap</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctap</span>
+        <span class="k">assert</span> <span class="n">ctap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
+        <span class="k">return</span> <span class="s2">&quot;setMinPINLength&quot;</span> <span class="ow">in</span> <span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span></div>
+
+
+<div class="viewcode-block" id="MinPinLengthExtension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.MinPinLengthExtension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="p">)</span> <span class="ow">and</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RegistrationExtensionProcessor</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span></div>
+
+
+    <span class="c1"># TODO 2.0: Remove the remaining methods of this class</span>
+<div class="viewcode-block" id="MinPinLengthExtension.process_create_input">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.MinPinLengthExtension.process_create_input">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_create_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">()</span> <span class="ow">and</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CredentialPropertiesOutput">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredentialPropertiesOutput">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CredentialPropertiesOutput</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Client outputs for credProps.&quot;&quot;&quot;</span>
+
+    <span class="n">rk</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="CredPropsExtension">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredPropsExtension">[docs]</a>
+<span class="k">class</span> <span class="nc">CredPropsExtension</span><span class="p">(</span><span class="n">Ctap2Extension</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Credential Properties (credProps) WebAuthn extension.</span>
+
+<span class="sd">    https://www.w3.org/TR/webauthn-3/#sctn-authenticator-credential-properties-extension</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;credProps&quot;</span>
+
+<div class="viewcode-block" id="CredPropsExtension.is_supported">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredPropsExtension.is_supported">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># NB: There is no key in the extensions field.</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="CredPropsExtension.make_credential">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/extensions/index.html#fido2.ctap2.extensions.CredPropsExtension.make_credential">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">pin_protocol</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">extensions</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">authenticator_selection</span> <span class="ow">or</span> <span class="n">AuthenticatorSelectionCriteria</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="n">rk</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">resident_key</span> <span class="o">==</span> <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">REQUIRED</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">selection</span><span class="o">.</span><span class="n">resident_key</span> <span class="o">==</span> <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">PREFERRED</span>
+                <span class="ow">and</span> <span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rk&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">RegistrationExtensionProcessor</span><span class="p">(</span>
+                <span class="n">outputs</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">NAME</span><span class="p">:</span> <span class="n">CredentialPropertiesOutput</span><span class="p">(</span><span class="n">rk</span><span class="o">=</span><span class="n">rk</span><span class="p">)}</span>
+            <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

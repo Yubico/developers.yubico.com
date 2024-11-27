@@ -1,0 +1,969 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fido2.webauthn &mdash; python-fido2 1.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            python-fido2
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">python-fido2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">fido2.webauthn</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for fido2.webauthn</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2018 Yubico AB</span>
+<span class="c1"># All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#   Redistribution and use in source and binary forms, with or</span>
+<span class="c1">#   without modification, are permitted provided that the following</span>
+<span class="c1">#   conditions are met:</span>
+<span class="c1">#</span>
+<span class="c1">#    1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#       notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">#    2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#       copyright notice, this list of conditions and the following</span>
+<span class="c1">#       disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#       with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1"># FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE</span>
+<span class="c1"># COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,</span>
+<span class="c1"># INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,</span>
+<span class="c1"># BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;</span>
+<span class="c1"># LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER</span>
+<span class="c1"># CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT</span>
+<span class="c1"># LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN</span>
+<span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">cbor</span>
+<span class="kn">from</span> <span class="nn">.cose</span> <span class="kn">import</span> <span class="n">CoseKey</span><span class="p">,</span> <span class="n">ES256</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">sha256</span><span class="p">,</span>
+    <span class="n">websafe_decode</span><span class="p">,</span>
+    <span class="n">websafe_encode</span><span class="p">,</span>
+    <span class="n">ByteBuffer</span><span class="p">,</span>
+    <span class="n">_JsonDataObject</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.features</span> <span class="kn">import</span> <span class="n">webauthn_json_mapping</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">EnumMeta</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">IntFlag</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Data classes based on the W3C WebAuthn specification (https://www.w3.org/TR/webauthn/).</span>
+
+<span class="sd">See the specification for a description and details on their usage.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Binary types</span>
+
+
+<div class="viewcode-block" id="Aaguid">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.Aaguid">[docs]</a>
+<span class="k">class</span> <span class="nc">Aaguid</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">16</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;AAGUID must be 16 bytes&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Aaguid.__bool__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.Aaguid.__bool__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">!=</span> <span class="n">Aaguid</span><span class="o">.</span><span class="n">NONE</span></div>
+
+
+<div class="viewcode-block" id="Aaguid.__str__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.Aaguid.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">h</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">h</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">12</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">h</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">h</span><span class="p">[</span><span class="mi">16</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">h</span><span class="p">[</span><span class="mi">20</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="Aaguid.__repr__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.Aaguid.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;AAGUID(</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="Aaguid.parse">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.Aaguid.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Aaguid</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span></div>
+
+
+    <span class="n">NONE</span><span class="p">:</span> <span class="n">Aaguid</span></div>
+
+
+
+<span class="c1"># Special instance of AAGUID used when there is no AAGUID</span>
+<span class="n">Aaguid</span><span class="o">.</span><span class="n">NONE</span> <span class="o">=</span> <span class="n">Aaguid</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AttestedCredentialData">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestedCredentialData">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AttestedCredentialData</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="n">aaguid</span><span class="p">:</span> <span class="n">Aaguid</span>
+    <span class="n">credential_id</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">CoseKey</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">AttestedCredentialData</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;aaguid&quot;</span><span class="p">,</span> <span class="n">parsed</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;credential_id&quot;</span><span class="p">,</span> <span class="n">parsed</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;public_key&quot;</span><span class="p">,</span> <span class="n">parsed</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">parsed</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong length&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AttestedCredentialData.__str__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestedCredentialData.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># Override default implementation from bytes.</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">CoseKey</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the components of an AttestedCredentialData from a binary</span>
+<span class="sd">        string, and return them.</span>
+
+<span class="sd">        :param data: A binary string containing an attested credential data.</span>
+<span class="sd">        :return: AAGUID, credential ID, public key, and remaining data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">aaguid</span> <span class="o">=</span> <span class="n">Aaguid</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span>
+        <span class="n">cred_id</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">))</span>
+        <span class="n">pub_key</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">cbor</span><span class="o">.</span><span class="n">decode_from</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">aaguid</span><span class="p">,</span> <span class="n">cred_id</span><span class="p">,</span> <span class="n">CoseKey</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">pub_key</span><span class="p">),</span> <span class="n">rest</span>
+
+<div class="viewcode-block" id="AttestedCredentialData.create">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestedCredentialData.create">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">aaguid</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">credential_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">CoseKey</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestedCredentialData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AttestedCredentialData by providing its components.</span>
+
+<span class="sd">        :param aaguid: The AAGUID of the authenticator.</span>
+<span class="sd">        :param credential_id: The binary ID of the credential.</span>
+<span class="sd">        :param public_key: A COSE formatted public key.</span>
+<span class="sd">        :return: The attested credential data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">aaguid</span>
+            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">credential_id</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">credential_id</span>
+            <span class="o">+</span> <span class="n">cbor</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">public_key</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AttestedCredentialData.unpack_from">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestedCredentialData.unpack_from">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">unpack_from</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unpack an AttestedCredentialData from a byte string, returning it and</span>
+<span class="sd">        any remaining data.</span>
+
+<span class="sd">        :param data: A binary string containing an attested credential data.</span>
+<span class="sd">        :return: The parsed AttestedCredentialData, and any remaining data from</span>
+<span class="sd">            the input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">aaguid</span><span class="p">,</span> <span class="n">cred_id</span><span class="p">,</span> <span class="n">pub_key</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">aaguid</span><span class="p">,</span> <span class="n">cred_id</span><span class="p">,</span> <span class="n">pub_key</span><span class="p">),</span> <span class="n">rest</span></div>
+
+
+<div class="viewcode-block" id="AttestedCredentialData.from_ctap1">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestedCredentialData.from_ctap1">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_ctap1</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key_handle</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestedCredentialData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AttestatedCredentialData from a CTAP1 RegistrationData instance.</span>
+
+<span class="sd">        :param key_handle: The CTAP1 credential key_handle.</span>
+<span class="sd">        :type key_handle: bytes</span>
+<span class="sd">        :param public_key: The CTAP1 65 byte public key.</span>
+<span class="sd">        :type public_key: bytes</span>
+<span class="sd">        :return: The credential data, using an all-zero AAGUID.</span>
+<span class="sd">        :rtype: AttestedCredentialData</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">Aaguid</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="n">key_handle</span><span class="p">,</span> <span class="n">ES256</span><span class="o">.</span><span class="n">from_ctap1</span><span class="p">(</span><span class="n">public_key</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorData">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorData</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary encoding of the authenticator data.</span>
+
+<span class="sd">    :param _: The binary representation of the authenticator data.</span>
+<span class="sd">    :ivar rp_id_hash: SHA256 hash of the RP ID.</span>
+<span class="sd">    :ivar flags: The flags of the authenticator data, see</span>
+<span class="sd">        AuthenticatorData.FLAG.</span>
+<span class="sd">    :ivar counter: The signature counter of the authenticator.</span>
+<span class="sd">    :ivar credential_data: Attested credential data, if available.</span>
+<span class="sd">    :ivar extensions: Authenticator extensions, if available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AuthenticatorData.FLAG">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.FLAG">[docs]</a>
+    <span class="k">class</span> <span class="nc">FLAG</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Authenticator data flags</span>
+
+<span class="sd">        See https://www.w3.org/TR/webauthn/#sec-authenticator-data for details</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Names used in WebAuthn</span>
+        <span class="n">UP</span> <span class="o">=</span> <span class="mh">0x01</span>
+        <span class="n">UV</span> <span class="o">=</span> <span class="mh">0x04</span>
+        <span class="n">BE</span> <span class="o">=</span> <span class="mh">0x08</span>
+        <span class="n">BS</span> <span class="o">=</span> <span class="mh">0x10</span>
+        <span class="n">AT</span> <span class="o">=</span> <span class="mh">0x40</span>
+        <span class="n">ED</span> <span class="o">=</span> <span class="mh">0x80</span>
+
+        <span class="c1"># Aliases (for historical purposes)</span>
+        <span class="n">USER_PRESENT</span> <span class="o">=</span> <span class="mh">0x01</span>
+        <span class="n">USER_VERIFIED</span> <span class="o">=</span> <span class="mh">0x04</span>
+        <span class="n">BACKUP_ELIGIBILITY</span> <span class="o">=</span> <span class="mh">0x08</span>
+        <span class="n">BACKUP_STATE</span> <span class="o">=</span> <span class="mh">0x10</span>
+        <span class="n">ATTESTED</span> <span class="o">=</span> <span class="mh">0x40</span>
+        <span class="n">EXTENSION_DATA</span> <span class="o">=</span> <span class="mh">0x80</span></div>
+
+
+    <span class="n">rp_id_hash</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">flags</span><span class="p">:</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span>
+    <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">credential_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">]</span>
+    <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;rp_id_hash&quot;</span><span class="p">,</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">32</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;flags&quot;</span><span class="p">,</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;counter&quot;</span><span class="p">,</span> <span class="n">reader</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;I&quot;</span><span class="p">))</span>
+        <span class="n">rest</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">AT</span><span class="p">:</span>
+            <span class="n">credential_data</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">AttestedCredentialData</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">credential_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;credential_data&quot;</span><span class="p">,</span> <span class="n">credential_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">ED</span><span class="p">:</span>
+            <span class="n">extensions</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">cbor</span><span class="o">.</span><span class="n">decode_from</span><span class="p">(</span><span class="n">rest</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">extensions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;extensions&quot;</span><span class="p">,</span> <span class="n">extensions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rest</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong length&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AuthenticatorData.__str__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># Override default implementation from bytes.</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.create">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.create">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">rp_id_hash</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">flags</span><span class="p">:</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="p">,</span>
+        <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">credential_data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AuthenticatorData instance.</span>
+
+<span class="sd">        :param rp_id_hash: SHA256 hash of the RP ID.</span>
+<span class="sd">        :param flags: Flags of the AuthenticatorData.</span>
+<span class="sd">        :param counter: Signature counter of the authenticator data.</span>
+<span class="sd">        :param credential_data: Authenticated credential data (only if attested</span>
+<span class="sd">            credential data flag is set).</span>
+<span class="sd">        :param extensions: Authenticator extensions (only if ED flag is set).</span>
+<span class="sd">        :return: The authenticator data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">rp_id_hash</span>
+            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BI&quot;</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">counter</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">credential_data</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">cbor</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">extensions</span><span class="p">)</span> <span class="k">if</span> <span class="n">extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.is_user_present">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.is_user_present">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_user_present</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if the User Present flag is set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">UP</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.is_user_verified">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.is_user_verified">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_user_verified</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if the User Verified flag is set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">UV</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.is_backup_eligible">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.is_backup_eligible">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_backup_eligible</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if the Backup Eligibility flag is set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">BE</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.is_backed_up">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.is_backed_up">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_backed_up</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if the Backup State flag is set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">BS</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.is_attested">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.is_attested">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_attested</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if the Attested credential data flag is set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">AT</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorData.has_extension_data">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorData.has_extension_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_extension_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return true if the Extenstion data flag is set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">ED</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AttestationObject">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestationObject">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AttestationObject</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>  <span class="c1"># , Mapping[str, Any]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary CBOR encoded attestation object.</span>
+
+<span class="sd">    :param _: The binary representation of the attestation object.</span>
+<span class="sd">    :ivar fmt: The type of attestation used.</span>
+<span class="sd">    :ivar auth_data: The attested authenticator data.</span>
+<span class="sd">    :ivar att_statement: The attestation statement.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span>
+    <span class="n">att_stmt</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">cbor</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;fmt&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;fmt&quot;</span><span class="p">])</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;auth_data&quot;</span><span class="p">,</span> <span class="n">AuthenticatorData</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;authData&quot;</span><span class="p">]))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;att_stmt&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attStmt&quot;</span><span class="p">])</span>
+
+<div class="viewcode-block" id="AttestationObject.__str__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestationObject.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># Override default implementation from bytes.</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AttestationObject.create">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestationObject.create">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span><span class="p">,</span> <span class="n">att_stmt</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestationObject</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">cbor</span><span class="o">.</span><span class="n">encode</span><span class="p">({</span><span class="s2">&quot;fmt&quot;</span><span class="p">:</span> <span class="n">fmt</span><span class="p">,</span> <span class="s2">&quot;authData&quot;</span><span class="p">:</span> <span class="n">auth_data</span><span class="p">,</span> <span class="s2">&quot;attStmt&quot;</span><span class="p">:</span> <span class="n">att_stmt</span><span class="p">})</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AttestationObject.from_ctap1">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestationObject.from_ctap1">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_ctap1</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">app_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">registration</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestationObject</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AttestationObject from a CTAP1 RegistrationData instance.</span>
+
+<span class="sd">        :param app_param: SHA256 hash of the RP ID used for the CTAP1 request.</span>
+<span class="sd">        :type app_param: bytes</span>
+<span class="sd">        :param registration: The CTAP1 registration data.</span>
+<span class="sd">        :type registration: RegistrationData</span>
+<span class="sd">        :return: The attestation object, using the &quot;fido-u2f&quot; format.</span>
+<span class="sd">        :rtype: AttestationObject</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="s2">&quot;fido-u2f&quot;</span><span class="p">,</span>
+            <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">app_param</span><span class="p">,</span>
+                <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">AT</span> <span class="o">|</span> <span class="n">AuthenticatorData</span><span class="o">.</span><span class="n">FLAG</span><span class="o">.</span><span class="n">UP</span><span class="p">,</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">AttestedCredentialData</span><span class="o">.</span><span class="n">from_ctap1</span><span class="p">(</span>
+                    <span class="n">registration</span><span class="o">.</span><span class="n">key_handle</span><span class="p">,</span> <span class="n">registration</span><span class="o">.</span><span class="n">public_key</span>
+                <span class="p">),</span>
+            <span class="p">),</span>
+            <span class="p">{</span><span class="s2">&quot;x5c&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">registration</span><span class="o">.</span><span class="n">certificate</span><span class="p">],</span> <span class="s2">&quot;sig&quot;</span><span class="p">:</span> <span class="n">registration</span><span class="o">.</span><span class="n">signature</span><span class="p">},</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CollectedClientData">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.CollectedClientData">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CollectedClientData</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+<div class="viewcode-block" id="CollectedClientData.TYPE">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.CollectedClientData.TYPE">[docs]</a>
+    <span class="nd">@unique</span>
+    <span class="k">class</span> <span class="nc">TYPE</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+        <span class="n">CREATE</span> <span class="o">=</span> <span class="s2">&quot;webauthn.create&quot;</span>
+        <span class="n">GET</span> <span class="o">=</span> <span class="s2">&quot;webauthn.get&quot;</span></div>
+
+
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">origin</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cross_origin</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">])</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;challenge&quot;</span><span class="p">,</span> <span class="n">websafe_decode</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;challenge&quot;</span><span class="p">]))</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;origin&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;origin&quot;</span><span class="p">])</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;cross_origin&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;crossOrigin&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+<div class="viewcode-block" id="CollectedClientData.create">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.CollectedClientData.create">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">challenge</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cross_origin</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CollectedClientData</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">challenge</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">encoded_challenge</span> <span class="o">=</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="n">challenge</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">encoded_challenge</span> <span class="o">=</span> <span class="n">challenge</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span>
+                    <span class="s2">&quot;challenge&quot;</span><span class="p">:</span> <span class="n">encoded_challenge</span><span class="p">,</span>
+                    <span class="s2">&quot;origin&quot;</span><span class="p">:</span> <span class="n">origin</span><span class="p">,</span>
+                    <span class="s2">&quot;crossOrigin&quot;</span><span class="p">:</span> <span class="n">cross_origin</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="p">},</span>
+                <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">),</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CollectedClientData.__str__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.CollectedClientData.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># Override default implementation from bytes.</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">b64</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">_StringEnumMeta</span><span class="p">(</span><span class="n">EnumMeta</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_StringEnum</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">_StringEnumMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enum of strings for WebAuthn types.</span>
+
+<span class="sd">    Unrecognized values are treated as missing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="AttestationConveyancePreference">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AttestationConveyancePreference">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">AttestationConveyancePreference</span><span class="p">(</span><span class="n">_StringEnum</span><span class="p">):</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+    <span class="n">INDIRECT</span> <span class="o">=</span> <span class="s2">&quot;indirect&quot;</span>
+    <span class="n">DIRECT</span> <span class="o">=</span> <span class="s2">&quot;direct&quot;</span>
+    <span class="n">ENTERPRISE</span> <span class="o">=</span> <span class="s2">&quot;enterprise&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="UserVerificationRequirement">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.UserVerificationRequirement">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">UserVerificationRequirement</span><span class="p">(</span><span class="n">_StringEnum</span><span class="p">):</span>
+    <span class="n">REQUIRED</span> <span class="o">=</span> <span class="s2">&quot;required&quot;</span>
+    <span class="n">PREFERRED</span> <span class="o">=</span> <span class="s2">&quot;preferred&quot;</span>
+    <span class="n">DISCOURAGED</span> <span class="o">=</span> <span class="s2">&quot;discouraged&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ResidentKeyRequirement">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.ResidentKeyRequirement">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">ResidentKeyRequirement</span><span class="p">(</span><span class="n">_StringEnum</span><span class="p">):</span>
+    <span class="n">REQUIRED</span> <span class="o">=</span> <span class="s2">&quot;required&quot;</span>
+    <span class="n">PREFERRED</span> <span class="o">=</span> <span class="s2">&quot;preferred&quot;</span>
+    <span class="n">DISCOURAGED</span> <span class="o">=</span> <span class="s2">&quot;discouraged&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorAttachment">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAttachment">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">AuthenticatorAttachment</span><span class="p">(</span><span class="n">_StringEnum</span><span class="p">):</span>
+    <span class="n">PLATFORM</span> <span class="o">=</span> <span class="s2">&quot;platform&quot;</span>
+    <span class="n">CROSS_PLATFORM</span> <span class="o">=</span> <span class="s2">&quot;cross-platform&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorTransport">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorTransport">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">AuthenticatorTransport</span><span class="p">(</span><span class="n">_StringEnum</span><span class="p">):</span>
+    <span class="n">USB</span> <span class="o">=</span> <span class="s2">&quot;usb&quot;</span>
+    <span class="n">NFC</span> <span class="o">=</span> <span class="s2">&quot;nfc&quot;</span>
+    <span class="n">BLE</span> <span class="o">=</span> <span class="s2">&quot;ble&quot;</span>
+    <span class="n">HYBRID</span> <span class="o">=</span> <span class="s2">&quot;hybrid&quot;</span>
+    <span class="n">INTERNAL</span> <span class="o">=</span> <span class="s2">&quot;internal&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="PublicKeyCredentialType">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialType">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialType</span><span class="p">(</span><span class="n">_StringEnum</span><span class="p">):</span>
+    <span class="n">PUBLIC_KEY</span> <span class="o">=</span> <span class="s2">&quot;public-key&quot;</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">_WebAuthnDataObject</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_parse_value</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">_parse_value</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">warn</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_as_cbor</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">_WebAuthnDataObject</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">super</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">data</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="PublicKeyCredentialRpEntity">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialRpEntity">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialRpEntity</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return SHA256 hash of the identifier.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">))</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="PublicKeyCredentialUserEntity">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialUserEntity">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialUserEntity</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">display_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="PublicKeyCredentialParameters">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialParameters">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialParameters</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">PublicKeyCredentialType</span>
+    <span class="n">alg</span><span class="p">:</span> <span class="nb">int</span></div>
+
+
+
+<div class="viewcode-block" id="PublicKeyCredentialDescriptor">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialDescriptor">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialDescriptor</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">PublicKeyCredentialType</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">transports</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AuthenticatorTransport</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticatorSelectionCriteria">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorSelectionCriteria">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorSelectionCriteria</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">authenticator_attachment</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorAttachment</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">resident_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResidentKeyRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">user_verification</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UserVerificationRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">require_resident_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="AuthenticatorSelectionCriteria.__post_init__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorSelectionCriteria.__post_init__">[docs]</a>
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__post_init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resident_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="s2">&quot;resident_key&quot;</span><span class="p">,</span>
+                <span class="p">(</span>
+                    <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">REQUIRED</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_resident_key</span>
+                    <span class="k">else</span> <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">DISCOURAGED</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="s2">&quot;require_resident_key&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resident_key</span> <span class="o">==</span> <span class="n">ResidentKeyRequirement</span><span class="o">.</span><span class="n">REQUIRED</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PublicKeyCredentialCreationOptions">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialCreationOptions">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialCreationOptions</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">rp</span><span class="p">:</span> <span class="n">PublicKeyCredentialRpEntity</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">PublicKeyCredentialUserEntity</span>
+    <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">pub_key_cred_params</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">PublicKeyCredentialParameters</span><span class="p">]</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">exclude_credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">PublicKeyCredentialDescriptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">authenticator_selection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorSelectionCriteria</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">attestation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AttestationConveyancePreference</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="PublicKeyCredentialRequestOptions">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.PublicKeyCredentialRequestOptions">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublicKeyCredentialRequestOptions</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rp_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">allow_credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">PublicKeyCredentialDescriptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">user_verification</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UserVerificationRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<span class="c1"># TODO 2.0: Move extension results to RegistrationResponse, remove methods</span>
+<div class="viewcode-block" id="AuthenticatorAttestationResponse">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAttestationResponse">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorAttestationResponse</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;clientDataJSON&quot;</span><span class="p">))</span>
+    <span class="n">attestation_object</span><span class="p">:</span> <span class="n">AttestationObject</span>
+    <span class="n">extension_results</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AuthenticatorAttestationResponse.__getitem__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAttestationResponse.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;clientData&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_data</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorAttestationResponse.from_dict">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAttestationResponse.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">value</span><span class="p">[</span><span class="s2">&quot;clientDataJSON&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;clientData&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+            <span class="c1"># Don&#39;t convert extension_results</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_parse_value</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO 2.0: Move extension results to AuthenticationResponse, remove methods</span>
+<div class="viewcode-block" id="AuthenticatorAssertionResponse">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAssertionResponse">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticatorAssertionResponse</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;clientDataJSON&quot;</span><span class="p">))</span>
+    <span class="n">authenticator_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span>
+    <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">user_handle</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">credential_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">extension_results</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AuthenticatorAssertionResponse.__getitem__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAssertionResponse.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;clientData&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_data</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticatorAssertionResponse.from_dict">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticatorAssertionResponse.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">value</span><span class="p">[</span><span class="s2">&quot;clientDataJSON&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;clientData&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+            <span class="c1"># Don&#39;t convert extension_results</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_parse_value</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO 2.0: Re-align against WebAuthn spec and use in client</span>
+<div class="viewcode-block" id="RegistrationResponse">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.RegistrationResponse">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RegistrationResponse</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">response</span><span class="p">:</span> <span class="n">AuthenticatorAttestationResponse</span>
+    <span class="n">authenticator_attachment</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorAttachment</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">client_extension_results</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PublicKeyCredentialType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="RegistrationResponse.__post_init__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.RegistrationResponse.__post_init__">[docs]</a>
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">require</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__post_init__</span><span class="p">()</span></div>
+</div>
+
+
+
+<span class="c1"># TODO 2.0: Re-align against WebAuthn spec and use in client</span>
+<div class="viewcode-block" id="AuthenticationResponse">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationResponse">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AuthenticationResponse</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">response</span><span class="p">:</span> <span class="n">AuthenticatorAssertionResponse</span>
+    <span class="n">authenticator_attachment</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorAttachment</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">client_extension_results</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticationExtensionsClientOutputs</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PublicKeyCredentialType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AuthenticationResponse.__post_init__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationResponse.__post_init__">[docs]</a>
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">webauthn_json_mapping</span><span class="o">.</span><span class="n">require</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__post_init__</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CredentialCreationOptions">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.CredentialCreationOptions">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CredentialCreationOptions</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">PublicKeyCredentialCreationOptions</span></div>
+
+
+
+<div class="viewcode-block" id="CredentialRequestOptions">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.CredentialRequestOptions">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CredentialRequestOptions</span><span class="p">(</span><span class="n">_WebAuthnDataObject</span><span class="p">):</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">PublicKeyCredentialRequestOptions</span></div>
+
+
+
+<div class="viewcode-block" id="AuthenticationExtensionsClientOutputs">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationExtensionsClientOutputs">[docs]</a>
+<span class="k">class</span> <span class="nc">AuthenticationExtensionsClientOutputs</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Holds extension output from a call to MakeCredential or GetAssertion.</span>
+
+<span class="sd">    When accessed as a dict, all bytes values will be serialized to base64url encoding,</span>
+<span class="sd">    capable of being serialized to JSON.</span>
+
+<span class="sd">    When accessed using attributes, richer types will instead be returned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_members</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+
+<div class="viewcode-block" id="AuthenticationExtensionsClientOutputs.__iter__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationExtensionsClientOutputs.__iter__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationExtensionsClientOutputs.__len__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationExtensionsClientOutputs.__len__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationExtensionsClientOutputs.__getitem__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationExtensionsClientOutputs.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationExtensionsClientOutputs.__getattr__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationExtensionsClientOutputs.__getattr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AuthenticationExtensionsClientOutputs.__repr__">
+<a class="viewcode-back" href="../../autoapi/fido2/webauthn/index.html#fido2.webauthn.AuthenticationExtensionsClientOutputs.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

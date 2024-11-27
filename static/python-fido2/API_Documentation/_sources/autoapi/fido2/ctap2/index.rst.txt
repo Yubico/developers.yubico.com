@@ -1,0 +1,1617 @@
+fido2.ctap2
+===========
+
+.. py:module:: fido2.ctap2
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/fido2/ctap2/base/index
+   /autoapi/fido2/ctap2/bio/index
+   /autoapi/fido2/ctap2/blob/index
+   /autoapi/fido2/ctap2/config/index
+   /autoapi/fido2/ctap2/credman/index
+   /autoapi/fido2/ctap2/extensions/index
+   /autoapi/fido2/ctap2/pin/index
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   fido2.ctap2.CaptureError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.ctap2.Ctap2
+   fido2.ctap2.Info
+   fido2.ctap2.AttestationResponse
+   fido2.ctap2.AssertionResponse
+   fido2.ctap2.ClientPin
+   fido2.ctap2.PinProtocolV1
+   fido2.ctap2.PinProtocolV2
+   fido2.ctap2.CredentialManagement
+   fido2.ctap2.FPBioEnrollment
+   fido2.ctap2.LargeBlobs
+   fido2.ctap2.Config
+
+
+Package Contents
+----------------
+
+.. py:class:: Ctap2(device, strict_cbor = True)
+
+   Implementation of the CTAP2 specification.
+
+   :param device: A CtapHidDevice handle supporting CTAP2.
+   :param strict_cbor: Validate that CBOR returned from the Authenticator is
+       canonical, defaults to True.
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: MAKE_CREDENTIAL
+         :value: 1
+
+
+
+      .. py:attribute:: GET_ASSERTION
+         :value: 2
+
+
+
+      .. py:attribute:: GET_INFO
+         :value: 4
+
+
+
+      .. py:attribute:: CLIENT_PIN
+         :value: 6
+
+
+
+      .. py:attribute:: RESET
+         :value: 7
+
+
+
+      .. py:attribute:: GET_NEXT_ASSERTION
+         :value: 8
+
+
+
+      .. py:attribute:: BIO_ENROLLMENT
+         :value: 9
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT
+         :value: 10
+
+
+
+      .. py:attribute:: SELECTION
+         :value: 11
+
+
+
+      .. py:attribute:: LARGE_BLOBS
+         :value: 12
+
+
+
+      .. py:attribute:: CONFIG
+         :value: 13
+
+
+
+      .. py:attribute:: BIO_ENROLLMENT_PRE
+         :value: 64
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT_PRE
+         :value: 65
+
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:property:: info
+      :type: Info
+
+
+      Get a cached Info object which can be used to determine capabilities.
+
+      :rtype: Info
+      :return: The response of calling GetAuthenticatorInfo.
+
+
+
+   .. py:method:: send_cbor(cmd, data = None, *, event = None, on_keepalive = None)
+
+      Sends a CBOR message to the device, and waits for a response.
+
+      :param cmd: The command byte of the request.
+      :param data: The payload to send (to be CBOR encoded).
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional function called when keep-alive is sent by
+          the authenticator.
+
+
+
+   .. py:method:: get_info()
+
+      CTAP2 getInfo command.
+
+      :return: Information about the authenticator.
+
+
+
+   .. py:method:: client_pin(pin_uv_protocol, sub_cmd, key_agreement = None, pin_uv_param = None, new_pin_enc = None, pin_hash_enc = None, permissions = None, permissions_rpid = None, *, event = None, on_keepalive = None)
+
+      CTAP2 clientPin command, used for various PIN operations.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the PinProtocolV1 class.
+
+      :param pin_uv_protocol: The PIN/UV protocol version to use.
+      :param sub_cmd: A clientPin sub command.
+      :param key_agreement: The keyAgreement parameter.
+      :param pin_uv_param: The pinAuth parameter.
+      :param new_pin_enc: The newPinEnc parameter.
+      :param pin_hash_enc: The pinHashEnc parameter.
+      :param permissions: The permissions parameter.
+      :param permissions_rpid: The permissions RPID parameter.
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive
+          messages from the authenticator.
+      :return: The response of the command, decoded.
+
+
+
+   .. py:method:: reset(*, event = None, on_keepalive = None)
+
+      CTAP2 reset command, erases all credentials and PIN.
+
+      :param event: Optional threading.Event object used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive
+          messages from the authenticator.
+
+
+
+   .. py:method:: make_credential(client_data_hash, rp, user, key_params, exclude_list = None, extensions = None, options = None, pin_uv_param = None, pin_uv_protocol = None, enterprise_attestation = None, *, event = None, on_keepalive = None)
+
+      CTAP2 makeCredential operation.
+
+      :param client_data_hash: SHA256 hash of the ClientData.
+      :param rp: PublicKeyCredentialRpEntity parameters.
+      :param user: PublicKeyCredentialUserEntity parameters.
+      :param key_params: List of acceptable credential types.
+      :param exclude_list: Optional list of PublicKeyCredentialDescriptors.
+      :param extensions: Optional dict of extensions.
+      :param options: Optional dict of options.
+      :param pin_uv_param: Optional PIN/UV auth parameter.
+      :param pin_uv_protocol: The version of PIN/UV protocol used, if any.
+      :param enterprise_attestation: Whether or not to request Enterprise Attestation.
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive
+          messages from the authenticator.
+      :return: The new credential.
+
+
+
+   .. py:method:: get_assertion(rp_id, client_data_hash, allow_list = None, extensions = None, options = None, pin_uv_param = None, pin_uv_protocol = None, *, event = None, on_keepalive = None)
+
+      CTAP2 getAssertion command.
+
+      :param rp_id: The RP ID of the credential.
+      :param client_data_hash: SHA256 hash of the ClientData used.
+      :param allow_list: Optional list of PublicKeyCredentialDescriptors.
+      :param extensions: Optional dict of extensions.
+      :param options: Optional dict of options.
+      :param pin_uv_param: Optional PIN/UV auth parameter.
+      :param pin_uv_protocol: The version of PIN/UV protocol used, if any.
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive messages
+          from the authenticator.
+      :return: The new assertion.
+
+
+
+   .. py:method:: get_next_assertion()
+
+      CTAP2 getNextAssertion command.
+
+      :return: The next available assertion response.
+
+
+
+   .. py:method:: get_assertions(*args, **kwargs)
+
+      Convenience method to get list of assertions.
+
+      See get_assertion and get_next_assertion for details.
+
+
+
+   .. py:method:: credential_mgmt(sub_cmd, sub_cmd_params = None, pin_uv_protocol = None, pin_uv_param = None)
+
+      CTAP2 credentialManagement command, used to manage resident
+      credentials.
+
+      NOTE: This implements the current draft version of the CTAP2 specification and
+      should be considered highly experimental.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the CredentialManagement class.
+
+      :param sub_cmd: A CredentialManagement sub command.
+      :param sub_cmd_params: Sub command specific parameters.
+      :param pin_uv_protocol: PIN/UV auth protocol version used.
+      :param pin_uv_param: PIN/UV Auth parameter.
+
+
+
+   .. py:method:: bio_enrollment(modality = None, sub_cmd = None, sub_cmd_params = None, pin_uv_protocol = None, pin_uv_param = None, get_modality = None, *, event = None, on_keepalive = None)
+
+      CTAP2 bio enrollment command. Used to provision/enumerate/delete bio
+      enrollments in the authenticator.
+
+      NOTE: This implements the current draft version of the CTAP2 specification and
+      should be considered highly experimental.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the BioEnrollment class.
+
+      :param modality: The user verification modality being used.
+      :param sub_cmd: A BioEnrollment sub command.
+      :param sub_cmd_params: Sub command specific parameters.
+      :param pin_uv_protocol: PIN/UV protocol version used.
+      :param pin_uv_param: PIN/UV auth param.
+      :param get_modality: Get the user verification type modality.
+
+
+
+   .. py:method:: selection(*, event = None, on_keepalive = None)
+
+      CTAP2 authenticator selection command.
+
+      This command allows the platform to let a user select a certain authenticator
+      by asking for user presence.
+
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive messages
+          from the authenticator.
+
+
+
+   .. py:method:: large_blobs(offset, get = None, set = None, length = None, pin_uv_param = None, pin_uv_protocol = None)
+
+      CTAP2 authenticator large blobs command.
+
+      This command is used to read and write the large blob array.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the LargeBlobs class.
+
+      :param offset: The offset of where to start reading/writing data.
+      :param get: Optional (max) length of data to read.
+      :param set: Optional data to write.
+      :param length: Length of the payload in set.
+      :param pin_uv_protocol: PIN/UV protocol version used.
+      :param pin_uv_param: PIN/UV auth param.
+
+
+
+   .. py:method:: config(sub_cmd, sub_cmd_params = None, pin_uv_protocol = None, pin_uv_param = None)
+
+      CTAP2 authenticator config command.
+
+      This command is used to configure various authenticator features through the
+      use of its subcommands.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the Config class.
+
+      :param sub_cmd: A Config sub command.
+      :param sub_cmd_params: Sub command specific parameters.
+      :param pin_uv_protocol: PIN/UV auth protocol version used.
+      :param pin_uv_param: PIN/UV Auth parameter.
+
+
+
+.. py:class:: Info
+
+   Bases: :py:obj:`_CborDataObject`
+
+
+   Binary CBOR encoded response data returned by the CTAP2 GET_INFO command.
+
+   :param _: The binary content of the Info data.
+   :ivar versions: The versions supported by the authenticator.
+   :ivar extensions: The extensions supported by the authenticator.
+   :ivar aaguid: The AAGUID of the authenticator.
+   :ivar options: The options supported by the authenticator.
+   :ivar max_msg_size: The max message size supported by the authenticator.
+   :ivar pin_uv_protocols: The PIN/UV protocol versions supported by the authenticator.
+   :ivar max_creds_in_list: Max number of credentials supported in list at a time.
+   :ivar max_cred_id_length: Max length of Credential ID supported.
+   :ivar transports: List of supported transports.
+   :ivar algorithms: List of supported algorithms for credential creation.
+   :ivar data: The Info members, in the form of a dict.
+
+
+   .. py:attribute:: versions
+      :type:  List[str]
+
+
+   .. py:attribute:: extensions
+      :type:  List[str]
+
+
+   .. py:attribute:: aaguid
+      :type:  fido2.webauthn.Aaguid
+
+
+   .. py:attribute:: options
+      :type:  Dict[str, bool]
+
+
+   .. py:attribute:: max_msg_size
+      :type:  int
+      :value: 1024
+
+
+
+   .. py:attribute:: pin_uv_protocols
+      :type:  List[int]
+
+
+   .. py:attribute:: max_creds_in_list
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: max_cred_id_length
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: transports
+      :type:  List[str]
+
+
+   .. py:attribute:: algorithms
+      :type:  Optional[List[Dict[str, Any]]]
+      :value: None
+
+
+
+   .. py:attribute:: max_large_blob
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: force_pin_change
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: min_pin_length
+      :type:  int
+      :value: 4
+
+
+
+   .. py:attribute:: firmware_version
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: max_cred_blob_length
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: max_rpids_for_min_pin
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: preferred_platform_uv_attempts
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: uv_modality
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: certifications
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: remaining_disc_creds
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: vendor_prototype_config_commands
+      :type:  Optional[List[int]]
+      :value: None
+
+
+
+.. py:class:: AttestationResponse
+
+   Bases: :py:obj:`_CborDataObject`
+
+
+   Binary CBOR encoded attestation object.
+
+   :param _: The binary representation of the attestation object.
+   :type _: bytes
+   :ivar fmt: The type of attestation used.
+   :type fmt: str
+   :ivar auth_data: The attested authenticator data.
+   :type auth_data: AuthenticatorData
+   :ivar att_stmt: The attestation statement.
+   :type att_stmt: Dict[str, Any]
+
+
+   .. py:attribute:: fmt
+      :type:  str
+
+
+   .. py:attribute:: auth_data
+      :type:  fido2.webauthn.AuthenticatorData
+
+
+   .. py:attribute:: att_stmt
+      :type:  Dict[str, Any]
+
+
+   .. py:attribute:: ep_att
+      :type:  Optional[bool]
+      :value: None
+
+
+
+   .. py:attribute:: large_blob_key
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+.. py:class:: AssertionResponse
+
+   Bases: :py:obj:`_CborDataObject`
+
+
+   Binary CBOR encoded assertion response.
+
+   :param _: The binary representation of the assertion response.
+   :ivar credential: The credential used for the assertion.
+   :ivar auth_data: The authenticator data part of the response.
+   :ivar signature: The digital signature of the assertion.
+   :ivar user: The user data of the credential.
+   :ivar number_of_credentials: The total number of responses available
+       (only set for the first response, if > 1).
+
+
+   .. py:attribute:: credential
+      :type:  Mapping[str, Any]
+
+
+   .. py:attribute:: auth_data
+      :type:  fido2.webauthn.AuthenticatorData
+
+
+   .. py:attribute:: signature
+      :type:  bytes
+
+
+   .. py:attribute:: user
+      :type:  Optional[Dict[str, Any]]
+      :value: None
+
+
+
+   .. py:attribute:: number_of_credentials
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: user_selected
+      :type:  Optional[bool]
+      :value: None
+
+
+
+   .. py:attribute:: large_blob_key
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+   .. py:method:: verify(client_param, public_key)
+
+      Verify the digital signature of the response with regard to the
+      client_param, using the given public key.
+
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param public_key: The public key of the credential, to verify.
+
+
+
+   .. py:method:: from_ctap1(app_param, credential, authentication)
+      :classmethod:
+
+
+      Create an AssertionResponse from a CTAP1 SignatureData instance.
+
+      :param app_param: SHA256 hash of the RP ID used for the CTAP1 request.
+      :param credential: Credential used for the CTAP1 request (from the
+          allowList).
+      :param authentication: The CTAP1 signature data.
+      :return: The assertion response.
+
+
+
+.. py:class:: ClientPin(ctap, protocol = None)
+
+   Implementation of the CTAP2 Client PIN API.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param protocol: An optional instance of a PinUvAuthProtocol object. If None is
+       provided then the latest protocol supported by both library and Authenticator
+       will be used.
+
+
+   .. py:attribute:: PROTOCOLS
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: GET_PIN_RETRIES
+         :value: 1
+
+
+
+      .. py:attribute:: GET_KEY_AGREEMENT
+         :value: 2
+
+
+
+      .. py:attribute:: SET_PIN
+         :value: 3
+
+
+
+      .. py:attribute:: CHANGE_PIN
+         :value: 4
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_PIN_LEGACY
+         :value: 5
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_UV
+         :value: 6
+
+
+
+      .. py:attribute:: GET_UV_RETRIES
+         :value: 7
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_PIN
+         :value: 9
+
+
+
+
+   .. py:class:: RESULT
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: KEY_AGREEMENT
+         :value: 1
+
+
+
+      .. py:attribute:: PIN_UV_TOKEN
+         :value: 2
+
+
+
+      .. py:attribute:: PIN_RETRIES
+         :value: 3
+
+
+
+      .. py:attribute:: POWER_CYCLE_STATE
+         :value: 4
+
+
+
+      .. py:attribute:: UV_RETRIES
+         :value: 5
+
+
+
+
+   .. py:class:: PERMISSION
+
+      Bases: :py:obj:`enum.IntFlag`
+
+
+      Support for integer-based Flags
+
+
+      .. py:attribute:: MAKE_CREDENTIAL
+         :value: 1
+
+
+
+      .. py:attribute:: GET_ASSERTION
+         :value: 2
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT
+         :value: 4
+
+
+
+      .. py:attribute:: BIO_ENROLL
+         :value: 8
+
+
+
+      .. py:attribute:: LARGE_BLOB_WRITE
+         :value: 16
+
+
+
+      .. py:attribute:: AUTHENTICATOR_CFG
+         :value: 32
+
+
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+      Checks if ClientPin functionality is supported.
+
+      Note that the ClientPin function is still usable without support for client
+      PIN functionality, as UV token may still be supported.
+
+
+
+   .. py:method:: is_token_supported(info)
+      :staticmethod:
+
+
+      Checks if pinUvAuthToken is supported.
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:method:: get_pin_token(pin, permissions = None, permissions_rpid = None)
+
+      Get a PIN/UV token from the authenticator using PIN.
+
+      :param pin: The PIN of the authenticator.
+      :param permissions: The permissions to associate with the token.
+      :param permissions_rpid: The permissions RPID to associate with the token.
+      :return: A PIN/UV token.
+
+
+
+   .. py:method:: get_uv_token(permissions = None, permissions_rpid = None, event = None, on_keepalive = None)
+
+      Get a PIN/UV token from the authenticator using built-in UV.
+
+      :param permissions: The permissions to associate with the token.
+      :param permissions_rpid: The permissions RPID to associate with the token.
+      :param event: An optional threading.Event which can be used to cancel
+          the invocation.
+      :param on_keepalive: An optional callback to handle keep-alive messages
+          from the authenticator. The function is only called once for
+          consecutive keep-alive messages with the same status.
+      :return: A PIN/UV token.
+
+
+
+   .. py:method:: get_pin_retries()
+
+      Get the number of PIN retries remaining.
+
+      :return: A tuple of the number of PIN attempts remaining until the
+      authenticator is locked, and the power cycle state, if available.
+
+
+
+   .. py:method:: get_uv_retries()
+
+      Get the number of UV retries remaining.
+
+      :return: A tuple of the number of UV attempts remaining until the
+      authenticator is locked, and the power cycle state, if available.
+
+
+
+   .. py:method:: set_pin(pin)
+
+      Set the PIN of the autenticator.
+
+      This only works when no PIN is set. To change the PIN when set, use
+      change_pin.
+
+      :param pin: A PIN to set.
+
+
+
+   .. py:method:: change_pin(old_pin, new_pin)
+
+      Change the PIN of the authenticator.
+
+      This only works when a PIN is already set. If no PIN is set, use
+      set_pin.
+
+      :param old_pin: The currently set PIN.
+      :param new_pin: The new PIN to set.
+
+
+
+.. py:class:: PinProtocolV1
+
+   Bases: :py:obj:`PinProtocol`
+
+
+   Implementation of the CTAP2 PIN/UV protocol v1.
+
+   :param ctap: An instance of a CTAP2 object.
+   :cvar VERSION: The version number of the PIV/UV protocol.
+   :cvar IV: An all-zero IV used for some cryptographic operations.
+
+
+   .. py:attribute:: VERSION
+      :value: 1
+
+
+
+   .. py:attribute:: IV
+
+
+   .. py:method:: kdf(z)
+
+
+   .. py:method:: encapsulate(peer_cose_key)
+
+      Generates an encapsulation of the public key.
+      Returns the message to transmit and the shared secret.
+
+
+
+   .. py:method:: encrypt(key, plaintext)
+
+      Encrypts data
+
+
+
+   .. py:method:: decrypt(key, ciphertext)
+
+      Decrypts encrypted data
+
+
+
+   .. py:method:: authenticate(key, message)
+
+      Computes a MAC of the given message.
+
+
+
+   .. py:method:: validate_token(token)
+
+      Validates that a token is well-formed.
+      Returns the token, or if invalid, raises a ValueError.
+
+
+
+.. py:class:: PinProtocolV2
+
+   Bases: :py:obj:`PinProtocolV1`
+
+
+   Implementation of the CTAP2 PIN/UV protocol v2.
+
+   :param ctap: An instance of a CTAP2 object.
+   :cvar VERSION: The version number of the PIV/UV protocol.
+   :cvar IV: An all-zero IV used for some cryptographic operations.
+
+
+   .. py:attribute:: VERSION
+      :value: 2
+
+
+
+   .. py:attribute:: HKDF_SALT
+
+
+   .. py:attribute:: HKDF_INFO_HMAC
+      :value: b'CTAP2 HMAC key'
+
+
+
+   .. py:attribute:: HKDF_INFO_AES
+      :value: b'CTAP2 AES key'
+
+
+
+   .. py:method:: kdf(z)
+
+
+   .. py:method:: encrypt(key, plaintext)
+
+      Encrypts data
+
+
+
+   .. py:method:: decrypt(key, ciphertext)
+
+      Decrypts encrypted data
+
+
+
+   .. py:method:: authenticate(key, message)
+
+      Computes a MAC of the given message.
+
+
+
+   .. py:method:: validate_token(token)
+
+      Validates that a token is well-formed.
+      Returns the token, or if invalid, raises a ValueError.
+
+
+
+.. py:class:: CredentialManagement(ctap, pin_uv_protocol, pin_uv_token)
+
+   Implementation of a draft specification of the Credential Management API.
+   WARNING: This specification is not final and this class is likely to change.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param pin_uv_protocol: An instance of a PinUvAuthProtocol.
+   :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: GET_CREDS_METADATA
+         :value: 1
+
+
+
+      .. py:attribute:: ENUMERATE_RPS_BEGIN
+         :value: 2
+
+
+
+      .. py:attribute:: ENUMERATE_RPS_NEXT
+         :value: 3
+
+
+
+      .. py:attribute:: ENUMERATE_CREDS_BEGIN
+         :value: 4
+
+
+
+      .. py:attribute:: ENUMERATE_CREDS_NEXT
+         :value: 5
+
+
+
+      .. py:attribute:: DELETE_CREDENTIAL
+         :value: 6
+
+
+
+      .. py:attribute:: UPDATE_USER_INFO
+         :value: 7
+
+
+
+
+   .. py:class:: PARAM
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: RP_ID_HASH
+         :value: 1
+
+
+
+      .. py:attribute:: CREDENTIAL_ID
+         :value: 2
+
+
+
+      .. py:attribute:: USER
+         :value: 3
+
+
+
+
+   .. py:class:: RESULT
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: EXISTING_CRED_COUNT
+         :value: 1
+
+
+
+      .. py:attribute:: MAX_REMAINING_COUNT
+         :value: 2
+
+
+
+      .. py:attribute:: RP
+         :value: 3
+
+
+
+      .. py:attribute:: RP_ID_HASH
+         :value: 4
+
+
+
+      .. py:attribute:: TOTAL_RPS
+         :value: 5
+
+
+
+      .. py:attribute:: USER
+         :value: 6
+
+
+
+      .. py:attribute:: CREDENTIAL_ID
+         :value: 7
+
+
+
+      .. py:attribute:: PUBLIC_KEY
+         :value: 8
+
+
+
+      .. py:attribute:: TOTAL_CREDENTIALS
+         :value: 9
+
+
+
+      .. py:attribute:: CRED_PROTECT
+         :value: 10
+
+
+
+      .. py:attribute:: LARGE_BLOB_KEY
+         :value: 11
+
+
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+
+   .. py:method:: is_update_supported(info)
+      :staticmethod:
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:attribute:: pin_uv
+
+
+   .. py:method:: get_metadata()
+
+      Get credentials metadata.
+
+      This returns the existing resident credentials count, and the max
+      possible number of remaining resident credentials (the actual number of
+      remaining credentials may depend on algorithm choice, etc).
+
+      :return: A dict containing EXISTING_CRED_COUNT, and MAX_REMAINING_COUNT.
+
+
+
+   .. py:method:: enumerate_rps_begin()
+
+      Start enumeration of RP entities of resident credentials.
+
+      This will begin enumeration of stored RP entities, returning the first
+      entity, as well as a count of the total number of entities stored.
+
+      :return: A dict containing RP, RP_ID_HASH, and TOTAL_RPS.
+
+
+
+   .. py:method:: enumerate_rps_next()
+
+      Get the next RP entity stored.
+
+      This continues enumeration of stored RP entities, returning the next
+      entity.
+
+      :return: A dict containing RP, and RP_ID_HASH.
+
+
+
+   .. py:method:: enumerate_rps()
+
+      Convenience method to enumerate all RPs.
+
+      See enumerate_rps_begin and enumerate_rps_next for details.
+
+
+
+   .. py:method:: enumerate_creds_begin(rp_id_hash)
+
+      Start enumeration of resident credentials.
+
+      This will begin enumeration of resident credentials for a given RP,
+      returning the first credential, as well as a count of the total number
+      of resident credentials stored for the given RP.
+
+      :param rp_id_hash: SHA256 hash of the RP ID.
+      :return: A dict containing USER, CREDENTIAL_ID, PUBLIC_KEY, and
+          TOTAL_CREDENTIALS.
+
+
+
+   .. py:method:: enumerate_creds_next()
+
+      Get the next resident credential stored.
+
+      This continues enumeration of resident credentials, returning the next
+      credential.
+
+      :return: A dict containing USER, CREDENTIAL_ID, and PUBLIC_KEY.
+
+
+
+   .. py:method:: enumerate_creds(*args, **kwargs)
+
+      Convenience method to enumerate all resident credentials for an RP.
+
+      See enumerate_creds_begin and enumerate_creds_next for details.
+
+
+
+   .. py:method:: delete_cred(cred_id)
+
+      Delete a resident credential.
+
+      :param cred_id: The PublicKeyCredentialDescriptor of the credential to delete.
+
+
+
+   .. py:method:: update_user_info(cred_id, user_info)
+
+      Update the user entity of a resident key.
+
+      :param cred_id: The PublicKeyCredentialDescriptor of the credential to update.
+      :param user_info: The user info update.
+
+
+
+.. py:class:: FPBioEnrollment(ctap, pin_uv_protocol, pin_uv_token)
+
+   Bases: :py:obj:`BioEnrollment`
+
+
+   Implementation of a draft specification of the bio enrollment API.
+   WARNING: This specification is not final and this class is likely to change.
+
+   NOTE: The get_fingerprint_sensor_info method does not require authentication, and
+   can be used by setting pin_uv_protocol and pin_uv_token to None.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param pin_uv_protocol: The PIN/UV protocol version used.
+   :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: ENROLL_BEGIN
+         :value: 1
+
+
+
+      .. py:attribute:: ENROLL_CAPTURE_NEXT
+         :value: 2
+
+
+
+      .. py:attribute:: ENROLL_CANCEL
+         :value: 3
+
+
+
+      .. py:attribute:: ENUMERATE_ENROLLMENTS
+         :value: 4
+
+
+
+      .. py:attribute:: SET_NAME
+         :value: 5
+
+
+
+      .. py:attribute:: REMOVE_ENROLLMENT
+         :value: 6
+
+
+
+      .. py:attribute:: GET_SENSOR_INFO
+         :value: 7
+
+
+
+
+   .. py:class:: PARAM
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: TEMPLATE_ID
+         :value: 1
+
+
+
+      .. py:attribute:: TEMPLATE_NAME
+         :value: 2
+
+
+
+      .. py:attribute:: TIMEOUT_MS
+         :value: 3
+
+
+
+
+   .. py:class:: FEEDBACK
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: FP_GOOD
+         :value: 0
+
+
+
+      .. py:attribute:: FP_TOO_HIGH
+         :value: 1
+
+
+
+      .. py:attribute:: FP_TOO_LOW
+         :value: 2
+
+
+
+      .. py:attribute:: FP_TOO_LEFT
+         :value: 3
+
+
+
+      .. py:attribute:: FP_TOO_RIGHT
+         :value: 4
+
+
+
+      .. py:attribute:: FP_TOO_FAST
+         :value: 5
+
+
+
+      .. py:attribute:: FP_TOO_SLOW
+         :value: 6
+
+
+
+      .. py:attribute:: FP_POOR_QUALITY
+         :value: 7
+
+
+
+      .. py:attribute:: FP_TOO_SKEWED
+         :value: 8
+
+
+
+      .. py:attribute:: FP_TOO_SHORT
+         :value: 9
+
+
+
+      .. py:attribute:: FP_MERGE_FAILURE
+         :value: 10
+
+
+
+      .. py:attribute:: FP_EXISTS
+         :value: 11
+
+
+
+      .. py:attribute:: FP_DATABASE_FULL
+         :value: 12
+
+
+
+      .. py:attribute:: NO_USER_ACTIVITY
+         :value: 13
+
+
+
+      .. py:attribute:: NO_UP_TRANSITION
+         :value: 14
+
+
+
+      .. py:method:: __str__()
+
+         Return str(self).
+
+
+
+
+   .. py:attribute:: pin_uv_protocol
+
+
+   .. py:attribute:: pin_uv_token
+
+
+   .. py:method:: get_fingerprint_sensor_info()
+
+      Get fingerprint sensor info.
+
+      :return: A dict containing FINGERPRINT_KIND and MAX_SAMPLES_REQUIRES.
+
+
+
+   .. py:method:: enroll_begin(timeout = None, event = None, on_keepalive = None)
+
+      Start fingerprint enrollment.
+
+      Starts the process of enrolling a new fingerprint, and will wait for the user
+      to scan their fingerprint once to provide an initial sample.
+
+      :param timeout: Optional timeout in milliseconds.
+      :return: A tuple containing the new template ID, the sample status, and the
+          number of samples remaining to complete the enrollment.
+
+
+
+   .. py:method:: enroll_capture_next(template_id, timeout = None, event = None, on_keepalive = None)
+
+      Continue fingerprint enrollment.
+
+      Continues enrolling a new fingerprint and will wait for the user to scan their
+      fingerpring once to provide a new sample.
+      Once the number of samples remaining is 0, the enrollment is completed.
+
+      :param template_id: The template ID returned by a call to `enroll_begin`.
+      :param timeout: Optional timeout in milliseconds.
+      :return: A tuple containing the sample status, and the number of samples
+          remaining to complete the enrollment.
+
+
+
+   .. py:method:: enroll_cancel()
+
+      Cancel any ongoing fingerprint enrollment.
+
+
+
+   .. py:method:: enroll(timeout = None)
+
+      Convenience wrapper for doing fingerprint enrollment.
+
+      See FPEnrollmentContext for details.
+      :return: An initialized FPEnrollmentContext.
+
+
+
+   .. py:method:: enumerate_enrollments()
+
+      Get a dict of enrolled fingerprint templates which maps template ID's to
+      their friendly names.
+
+      :return: A dict of enrolled template_id -> name pairs.
+
+
+
+   .. py:method:: set_name(template_id, name)
+
+      Set/Change the friendly name of a previously enrolled fingerprint template.
+
+      :param template_id: The ID of the template to change.
+      :param name: A friendly name to give the template.
+
+
+
+   .. py:method:: remove_enrollment(template_id)
+
+      Remove a previously enrolled fingerprint template.
+
+      :param template_id: The Id of the template to remove.
+
+
+
+.. py:exception:: CaptureError(code)
+
+   Bases: :py:obj:`Exception`
+
+
+   Common base class for all non-exit exceptions.
+
+
+   .. py:attribute:: code
+
+
+.. py:class:: LargeBlobs(ctap, pin_uv_protocol = None, pin_uv_token = None)
+
+   Implementation of the CTAP2.1 Large Blobs API.
+
+   Getting a largeBlobKey for a credential is done via the LargeBlobKey extension.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param pin_uv_protocol: An instance of a PinUvAuthProtocol.
+   :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:attribute:: max_fragment_length
+
+
+   .. py:attribute:: pin_uv
+
+
+   .. py:method:: read_blob_array()
+
+      Gets the entire contents of the Large Blobs array.
+
+      :return: The CBOR decoded list of Large Blobs.
+
+
+
+   .. py:method:: write_blob_array(blob_array)
+
+      Writes the entire Large Blobs array.
+
+      :param blob_array: A list to write to the Authenticator.
+
+
+
+   .. py:method:: get_blob(large_blob_key)
+
+      Gets the Large Blob stored for a single credential.
+
+      :param large_blob_key: The largeBlobKey for the credential, or None.
+      :returns: The decrypted and deflated value stored for the credential.
+
+
+
+   .. py:method:: put_blob(large_blob_key, data)
+
+      Stores a Large Blob for a single credential.
+
+      Any existing entries for the same credential will be replaced.
+
+      :param large_blob_key: The largeBlobKey for the credential.
+      :param data: The data to compress, encrypt and store.
+
+
+
+   .. py:method:: delete_blob(large_blob_key)
+
+      Deletes any Large Blob(s) stored for a single credential.
+
+      :param large_blob_key: The largeBlobKey for the credential.
+
+
+
+.. py:class:: Config(ctap, pin_uv_protocol = None, pin_uv_token = None)
+
+   Implementation of the CTAP2.1 Authenticator Config API.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param pin_uv_protocol: An instance of a PinUvAuthProtocol.
+   :param pin_uv_token: A valid PIN/UV Auth Token for the current CTAP session.
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: ENABLE_ENTERPRISE_ATT
+         :value: 1
+
+
+
+      .. py:attribute:: TOGGLE_ALWAYS_UV
+         :value: 2
+
+
+
+      .. py:attribute:: SET_MIN_PIN_LENGTH
+         :value: 3
+
+
+
+      .. py:attribute:: VENDOR_PROTOTYPE
+         :value: 255
+
+
+
+
+   .. py:class:: PARAM
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: NEW_MIN_PIN_LENGTH
+         :value: 1
+
+
+
+      .. py:attribute:: MIN_PIN_LENGTH_RPIDS
+         :value: 2
+
+
+
+      .. py:attribute:: FORCE_CHANGE_PIN
+         :value: 3
+
+
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:attribute:: pin_uv
+
+
+   .. py:method:: enable_enterprise_attestation()
+
+      Enables Enterprise Attestation.
+
+      If already enabled, this command is ignored.
+
+
+
+   .. py:method:: toggle_always_uv()
+
+      Toggle the alwaysUV setting.
+
+      When true, the Authenticator always requires UV for credential assertion.
+
+
+
+   .. py:method:: set_min_pin_length(min_pin_length = None, rp_ids = None, force_change_pin = False)
+
+      Set the minimum PIN length allowed when setting/changing the PIN.
+
+      :param min_pin_length: The minimum PIN length the Authenticator should allow.
+      :param rp_ids: A list of RP IDs which should be allowed to get the current
+          minimum PIN length.
+      :param force_change_pin: True if the Authenticator should enforce changing the
+          PIN before the next use.
+
+
+

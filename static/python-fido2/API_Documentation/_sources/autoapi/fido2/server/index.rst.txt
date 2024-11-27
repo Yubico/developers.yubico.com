@@ -1,0 +1,225 @@
+fido2.server
+============
+
+.. py:module:: fido2.server
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   fido2.server.VerifyAttestation
+   fido2.server.VerifyOrigin
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fido2.server.Fido2Server
+   fido2.server.U2FFido2Server
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   fido2.server.to_descriptor
+   fido2.server.verify_app_id
+
+
+Module Contents
+---------------
+
+.. py:data:: VerifyAttestation
+
+.. py:data:: VerifyOrigin
+
+.. py:function:: to_descriptor(credential, transports=None)
+
+   Converts an AttestedCredentialData to a PublicKeyCredentialDescriptor.
+
+   :param credential: AttestedCredentialData containing the credential ID to use.
+   :param transports: Optional list of AuthenticatorTransport strings to add to the
+       descriptor.
+   :return: A descriptor of the credential, for use with register_begin or
+       authenticate_begin.
+   :rtype: PublicKeyCredentialDescriptor
+
+
+.. py:class:: Fido2Server(rp, attestation = None, verify_origin = None, verify_attestation = None)
+
+   FIDO2 server.
+
+   :param rp: Relying party data as `PublicKeyCredentialRpEntity` instance.
+   :param attestation: (optional) Requirement on authenticator attestation.
+   :param verify_origin: (optional) Alternative function to validate an origin.
+   :param verify_attestation: (optional) function to validate attestation, which is
+       invoked with attestation_object and client_data_hash. It should return nothing
+       and raise an exception on failure. By default, attestation is ignored.
+       Attestation is also ignored if `attestation` is set to `none`.
+
+
+   .. py:attribute:: rp
+
+
+   .. py:attribute:: timeout
+      :value: None
+
+
+
+   .. py:attribute:: attestation
+
+
+   .. py:attribute:: allowed_algorithms
+
+
+   .. py:method:: register_begin(user, credentials = None, resident_key_requirement = None, user_verification = None, authenticator_attachment = None, challenge = None, extensions=None)
+
+      Return a PublicKeyCredentialCreationOptions registration object and
+      the internal state dictionary that needs to be passed as is to the
+      corresponding `register_complete` call.
+
+      :param user: The dict containing the user data.
+      :param credentials: The list of previously registered credentials, these can be
+          of type AttestedCredentialData, or PublicKeyCredentialDescriptor.
+      :param resident_key_requirement: The desired RESIDENT_KEY_REQUIREMENT level.
+      :param user_verification: The desired USER_VERIFICATION level.
+      :param authenticator_attachment: The desired AUTHENTICATOR_ATTACHMENT
+          or None to not provide a preference (and get both types).
+      :param challenge: A custom challenge to sign and verify or None to use
+          OS-specific random bytes.
+      :return: Registration data, internal state.
+
+
+
+   .. py:method:: register_complete(state, response: Union[fido2.webauthn.RegistrationResponse, Mapping[str, Any]]) -> fido2.webauthn.AuthenticatorData
+                  register_complete(state, client_data: fido2.webauthn.CollectedClientData, attestation_object: fido2.webauthn.AttestationObject) -> fido2.webauthn.AuthenticatorData
+
+      Verify the correctness of the registration data received from
+      the client.
+
+      :param state: The state data returned by the corresponding
+          `register_begin`.
+      :param client_data: The client data.
+      :param attestation_object: The attestation object.
+      :return: The authenticator data
+
+
+
+   .. py:method:: authenticate_begin(credentials = None, user_verification = None, challenge = None, extensions=None)
+
+      Return a PublicKeyCredentialRequestOptions assertion object and the internal
+      state dictionary that needs to be passed as is to the corresponding
+      `authenticate_complete` call.
+
+      :param credentials: The list of previously registered credentials, these can be
+          of type AttestedCredentialData, or PublicKeyCredentialDescriptor.
+      :param user_verification: The desired USER_VERIFICATION level.
+      :param challenge: A custom challenge to sign and verify or None to use
+          OS-specific random bytes.
+      :return: Assertion data, internal state.
+
+
+
+   .. py:method:: authenticate_complete(state, credentials: Sequence[fido2.webauthn.AttestedCredentialData], response: Union[fido2.webauthn.AuthenticationResponse, Mapping[str, Any]]) -> fido2.webauthn.AttestedCredentialData
+                  authenticate_complete(state, credentials: Sequence[fido2.webauthn.AttestedCredentialData], credential_id: bytes, client_data: fido2.webauthn.CollectedClientData, auth_data: fido2.webauthn.AuthenticatorData, signature: bytes) -> fido2.webauthn.AttestedCredentialData
+
+      Verify the correctness of the assertion data received from
+      the client.
+
+      :param state: The state data returned by the corresponding
+          `register_begin`.
+      :param credentials: The list of previously registered credentials.
+      :param credential_id: The credential id from the client response.
+      :param client_data: The client data.
+      :param auth_data: The authenticator data.
+      :param signature: The signature provided by the client.
+
+
+
+.. py:function:: verify_app_id(app_id, origin)
+
+   Checks if a FIDO U2F App ID is usable for a given origin.
+
+   :param app_id: The App ID to validate.
+   :param origin: The origin of the request.
+   :return: True if the App ID is usable by the origin, False if not.
+
+   .. deprecated:: 1.2.0
+      This will be removed in python-fido2 2.0.
+
+
+.. py:class:: U2FFido2Server(app_id, rp, verify_u2f_origin = None, *args, **kwargs)
+
+   Bases: :py:obj:`Fido2Server`
+
+
+   Fido2Server which can be used with existing U2F credentials.
+
+   This Fido2Server can be used with existing U2F credentials by using the
+   WebAuthn appid extension, as well as with new WebAuthn credentials.
+   See https://www.w3.org/TR/webauthn/#sctn-appid-extension for details.
+
+   :param app_id: The appId which was used for U2F registration.
+   :param verify_u2f_origin: (optional) Alternative function to validate an
+       origin for U2F credentials.
+
+   For other parameters, see Fido2Server.
+
+   .. deprecated:: 1.2.0
+      This will be removed in python-fido2 2.0.
+
+
+   .. py:method:: register_begin(*args, **kwargs)
+
+      Return a PublicKeyCredentialCreationOptions registration object and
+      the internal state dictionary that needs to be passed as is to the
+      corresponding `register_complete` call.
+
+      :param user: The dict containing the user data.
+      :param credentials: The list of previously registered credentials, these can be
+          of type AttestedCredentialData, or PublicKeyCredentialDescriptor.
+      :param resident_key_requirement: The desired RESIDENT_KEY_REQUIREMENT level.
+      :param user_verification: The desired USER_VERIFICATION level.
+      :param authenticator_attachment: The desired AUTHENTICATOR_ATTACHMENT
+          or None to not provide a preference (and get both types).
+      :param challenge: A custom challenge to sign and verify or None to use
+          OS-specific random bytes.
+      :return: Registration data, internal state.
+
+
+
+   .. py:method:: authenticate_begin(*args, **kwargs)
+
+      Return a PublicKeyCredentialRequestOptions assertion object and the internal
+      state dictionary that needs to be passed as is to the corresponding
+      `authenticate_complete` call.
+
+      :param credentials: The list of previously registered credentials, these can be
+          of type AttestedCredentialData, or PublicKeyCredentialDescriptor.
+      :param user_verification: The desired USER_VERIFICATION level.
+      :param challenge: A custom challenge to sign and verify or None to use
+          OS-specific random bytes.
+      :return: Assertion data, internal state.
+
+
+
+   .. py:method:: authenticate_complete(*args, **kwargs)
+
+      Verify the correctness of the assertion data received from
+      the client.
+
+      :param state: The state data returned by the corresponding
+          `register_begin`.
+      :param credentials: The list of previously registered credentials.
+      :param credential_id: The credential id from the client response.
+      :param client_data: The client data.
+      :param auth_data: The authenticator data.
+      :param signature: The signature provided by the client.
+
+
+
