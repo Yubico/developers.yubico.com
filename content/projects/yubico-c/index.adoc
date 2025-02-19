@@ -1,0 +1,163 @@
+YubiKey C Library: libyubikey
+=============================
+
+[Note]
+======
+We have officially announced the End of Life of yubico-c on February 19, 2025, in line with Yubico's https://www.yubico.com/support/terms-conditions/yubico-end-of-life-policy/[End-of-Life] policy. yubico-c will reach its End of Life on February 19, 2026.
+
+For more details please visit our website for https://www.yubico.com/support/terms-conditions/yubico-end-of-life-policy/eol-products/[End-of-Life products].
+======
+
+This package make up the low-level C software development kit for the
+Yubico https://www.yubico.com[YubiKey] authentication device.
+
+Building
+--------
+
+After downloading and unpacking the package tarball, you build it as
+follows.
+
+  ./configure
+  make check
+  sudo make install
+
+Another way to build the package is with a hand written short
+makefile, invoke using 'make -f simple.mk check'.  This is usually not
+recommended, and you will have to read simple.mk for further
+information.
+
+Building from version controlled sources
+----------------------------------------
+
+Warning!  This is only for developers and if you don't understand what
+you are doing, you should download the release files instead.
+
+You may check out the sources using Git with the following command:
+
+  git clone https://github.com/Yubico/yubico-c.git
+
+This will create a directory 'yubico-c'.  Enter the directory:
+
+  cd yubico-c
+
+Recent versions of autoconf, automake and libtool must be installed,
+if you want to use the normal ./configure based approach.  AsciiDoc's
+a2x tool is also required for building the man pages.  (See simple.mk
+if you want a slimmed down non-autoconf build approach.)
+
+Generate the build system:
+
+  autoreconf --install
+
+Then refer to the user sections above regarding building.
+
+Command-line tools
+------------------
+
+The 'modhex' program converts data between modhex, normal hex, and
+binary form.
+
+The 'ykparse' program decrypts and parses one OTP given the OTP and
+the AES key corresponding to that YubiKey.
+
+The 'ykgenerate' program constructs and encrypts one OTP given AES key
+and internal data values.
+
+Example usage:
+
+[source, sh]
+-------
+  $ ./modhex test
+  ifhgieif
+  $ ./modhex -d ifhgieif; echo
+  test
+  $ ./modhex -h b565716f
+  nghgibhv
+  $ ./modhex -h -d nghgibhv
+  b565716f
+  $ ./ykparse ecde18dbe76fbd0c33330f1c354871db dteffujedcflcindvdbrblehecuitvjkjevvehjd
+  warning: overlong token, ignoring prefix: dteffuje
+  Input:
+    token: dcflcindvdbrblehecuitvjkjevvehjd
+            20 4a 07 b2 f2 1c 1a 36 30 e7 df 89 83 ff 36 82
+    aeskey: ecde18dbe76fbd0c33330f1c354871db
+            ec de 18 db e7 6f bd 0c 33 33 0f 1c 35 48 71 db
+  Output:
+            87 92 eb fe 26 cc 13 00 a8 c0 00 10 b4 08 6f 5b
+
+  Struct:
+    uid: 87 92 eb fe 26 cc
+    counter: 19 (0x0013)
+    timestamp (low): 49320 (0xc0a8)
+    timestamp (high): 0 (0x00)
+    session use: 16 (0x10)
+    random: 2228 (0x8b4)
+    crc: 23407 (0x5b6f)
+
+  Derived:
+    cleaned counter: 19 (0x0013)
+    modhex uid: jikdunvudhrr
+    triggered by caps lock: no
+    crc: F0B8
+    crc check: ok
+  $ ./ykparse ecde18dbe76fbd0c33330f1c354871db dteffujehknhfjbrjnlnldnhcujvddbikngjrtgh
+  warning: overlong token, ignoring prefix: dteffuje
+  Input:
+    token: hknhfjbrjnlnldnhcujvddbikngjrtgh
+            69 b6 48 1c 8b ab a2 b6 0e 8f 22 17 9b 58 cd 56
+    aeskey: ecde18dbe76fbd0c33330f1c354871db
+            ec de 18 db e7 6f bd 0c 33 33 0f 1c 35 48 71 db
+  Output:
+            87 92 eb fe 26 cc 13 00 30 c2 00 11 c8 9f 23 c8
+
+  Struct:
+    uid: 87 92 eb fe 26 cc
+    counter: 19 (0x0013)
+    timestamp (low): 49712 (0xc230)
+    timestamp (high): 0 (0x00)
+    session use: 17 (0x11)
+    random: 40904 (0x9fc8)
+    crc: 51235 (0xc823)
+
+  Derived:
+    cleaned counter: 19 (0x0013)
+    modhex uid: jikdunvudhrr
+    triggered by caps lock: no
+    crc: F0B8
+    crc check: ok
+  $ ./ykgenerate ecde18dbe76fbd0c33330f1c354871db 8792ebfe26cc 0013 c0a8 00 10
+  hcfktknicvbcnhbkvigcfhgddhhhrknc
+  $ ./ykparse ecde18dbe76fbd0c33330f1c354871db `./ykgenerate ecde18dbe76fbd0c33330f1c354871db 8792ebfe26cc 0013 c0a8 00 10`
+  Input:
+    token: lihggvrgffbjnrehcgnkvknjkvubeekr
+            a7 65 5f c5 44 18 bc 36 05 b9 f9 b8 9f e1 33 9c
+    aeskey: ecde18dbe76fbd0c33330f1c354871db
+            ec de 18 db e7 6f bd 0c 33 33 0f 1c 35 48 71 db
+  Output:
+            87 92 eb fe 26 cc 13 00 a8 c0 00 10 95 44 ec e9
+
+  Struct:
+    uid: 87 92 eb fe 26 cc
+    counter: 19 (0x0013)
+    timestamp (low): 49320 (0xc0a8)
+    timestamp (high): 0 (0x00)
+    session use: 16 (0x10)
+    random: 17557 (0x4495)
+    crc: 59884 (0xe9ec)
+
+  Derived:
+    cleaned counter: 19 (0x0013)
+    modhex uid: jikdunvudhrr
+    triggered by caps lock: no
+    crc: F0B8
+    crc check: ok
+  $
+-------
+
+License
+-------
+
+The project is licensed under a BSD license.  See the file COPYING for
+exact wording.  For any copyright year range specified as YYYY-ZZZZ in
+this package note that the range specifies every single year in that
+closed interval.
