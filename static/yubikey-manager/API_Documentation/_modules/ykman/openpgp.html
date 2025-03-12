@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.openpgp &mdash; yubikey-manager 5.5.0 documentation</title>
+  <title>ykman.openpgp &mdash; yubikey-manager 5.6.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -13,7 +13,7 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=a385a3de"></script>
+        <script src="../../_static/documentation_options.js?v=31fa7d35"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -33,7 +33,7 @@
             yubikey-manager
           </a>
               <div class="version">
-                5.5
+                5.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -100,12 +100,110 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">yubikit.openpgp</span> <span class="kn">import</span> <span class="n">OpenPgpSession</span><span class="p">,</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">KdfNone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SmartCardConnection</span><span class="p">,</span>
+    <span class="n">SmartCardProtocol</span><span class="p">,</span>
+    <span class="n">ApduError</span><span class="p">,</span>
+    <span class="n">SW</span><span class="p">,</span>
+    <span class="n">AID</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.openpgp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">OpenPgpSession</span><span class="p">,</span>
+    <span class="n">KEY_REF</span><span class="p">,</span>
+    <span class="n">KdfNone</span><span class="p">,</span>
+    <span class="n">PW</span><span class="p">,</span>
+    <span class="n">INS</span><span class="p">,</span>
+    <span class="n">_INVALID_PIN</span><span class="p">,</span>
+    <span class="n">AlgorithmAttributes</span><span class="p">,</span>
+    <span class="n">RsaAttributes</span><span class="p">,</span>
+    <span class="n">EcAttributes</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="safe_reset">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.openpgp.safe_reset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_reset</span><span class="p">(</span><span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs an OpenPGP factory reset while avoiding any unneccessary commands.</span>
+
+<span class="sd">    If any data is unreadable preventing the OpenPgpSession from initializing, then</span>
+<span class="sd">    OpenPgpSession.reset() will not be able to be called. This function can instead</span>
+<span class="sd">    be  used to reset the application into a fresh state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Attempting safe OpenPGP factory reset&quot;</span><span class="p">)</span>
+    <span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+    <span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">OPENPGP</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">pw</span> <span class="ow">in</span> <span class="p">(</span><span class="n">PW</span><span class="o">.</span><span class="n">USER</span><span class="p">,</span> <span class="n">PW</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verify </span><span class="si">{</span><span class="n">pw</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> PIN with invalid attempts until blocked&quot;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS</span><span class="o">.</span><span class="n">VERIFY</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pw</span><span class="p">,</span> <span class="n">_INVALID_PIN</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">SECURITY_CONDITION_NOT_SATISFIED</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Either blocked, or an unexpected error, move to the next step</span>
+                <span class="k">break</span>
+
+    <span class="c1"># Reset the application</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending TERMINATE, then ACTIVATE&quot;</span><span class="p">)</span>
+    <span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS</span><span class="o">.</span><span class="n">TERMINATE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS</span><span class="o">.</span><span class="n">ACTIVATE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;OpenPGP application data reset performed&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">ref</span> <span class="o">==</span> <span class="n">KEY_REF</span><span class="o">.</span><span class="n">SIG</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Signature key&quot;</span>
+    <span class="k">if</span> <span class="n">ref</span> <span class="o">==</span> <span class="n">KEY_REF</span><span class="o">.</span><span class="n">DEC</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Decryption key&quot;</span>
+    <span class="k">if</span> <span class="n">ref</span> <span class="o">==</span> <span class="n">KEY_REF</span><span class="o">.</span><span class="n">AUT</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Authentication key&quot;</span>
+    <span class="k">if</span> <span class="n">ref</span> <span class="o">==</span> <span class="n">KEY_REF</span><span class="o">.</span><span class="n">ATT</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Attestation key&quot;</span>
+    <span class="k">return</span> <span class="n">ref</span><span class="o">.</span><span class="n">name</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_fingerprint</span><span class="p">(</span><span class="n">fp</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;  &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fp</span><span class="p">[</span><span class="n">h</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="n">s</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">:][:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_date</span><span class="p">(</span><span class="n">timestamp</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_algorithm</span><span class="p">(</span><span class="n">alg</span><span class="p">:</span> <span class="n">AlgorithmAttributes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alg</span><span class="p">,</span> <span class="n">RsaAttributes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;RSA</span><span class="si">{</span><span class="n">alg</span><span class="o">.</span><span class="n">n_len</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alg</span><span class="p">,</span> <span class="n">EcAttributes</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alg</span><span class="o">.</span><span class="n">oid</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;Unknown key type&quot;</span>
+
+
+<div class="viewcode-block" id="get_key_info">
+<a class="viewcode-back" href="../../rst/ykman.html#ykman.openpgp.get_key_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_key_info</span><span class="p">(</span><span class="n">discretionary</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+    <span class="n">alg</span> <span class="o">=</span> <span class="n">discretionary</span><span class="o">.</span><span class="n">get_algorithm_attributes</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;Key slot&quot;</span><span class="p">:</span> <span class="n">_format_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span>
+        <span class="s2">&quot;Fingerprint&quot;</span><span class="p">:</span> <span class="n">_format_fingerprint</span><span class="p">(</span><span class="n">discretionary</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">[</span><span class="n">ref</span><span class="p">]),</span>
+        <span class="s2">&quot;Algorithm&quot;</span><span class="p">:</span> <span class="n">_format_algorithm</span><span class="p">(</span><span class="n">alg</span><span class="p">),</span>
+        <span class="s2">&quot;Origin&quot;</span><span class="p">:</span> <span class="n">status</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Created&quot;</span><span class="p">:</span> <span class="n">_format_date</span><span class="p">(</span><span class="n">discretionary</span><span class="o">.</span><span class="n">generation_times</span><span class="p">[</span><span class="n">ref</span><span class="p">]),</span>
+        <span class="s2">&quot;Touch policy&quot;</span><span class="p">:</span> <span class="n">discretionary</span><span class="o">.</span><span class="n">get_uif</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
 
 
 <div class="viewcode-block" id="get_openpgp_info">
 <a class="viewcode-back" href="../../rst/ykman.html#ykman.openpgp.get_openpgp_info">[docs]</a>
-<span class="k">def</span> <span class="nf">get_openpgp_info</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">OpenPgpSession</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_openpgp_info</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">OpenPgpSession</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get human readable information about the OpenPGP configuration.</span>
 
 <span class="sd">    :param session: The OpenPGP session.</span>
@@ -123,16 +221,18 @@
         <span class="s2">&quot;KDF enabled&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">get_kdf</span><span class="p">(),</span> <span class="n">KdfNone</span><span class="p">),</span>
     <span class="p">}</span>
 
-    <span class="c1"># Touch only available on YK4 and later</span>
-    <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>
-        <span class="n">touch</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Signature key&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get_uif</span><span class="p">(</span><span class="n">KEY_REF</span><span class="o">.</span><span class="n">SIG</span><span class="p">),</span>
-            <span class="s2">&quot;Encryption key&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get_uif</span><span class="p">(</span><span class="n">KEY_REF</span><span class="o">.</span><span class="n">DEC</span><span class="p">),</span>
-            <span class="s2">&quot;Authentication key&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">get_uif</span><span class="p">(</span><span class="n">KEY_REF</span><span class="o">.</span><span class="n">AUT</span><span class="p">),</span>
+    <span class="k">for</span> <span class="n">ref</span><span class="p">,</span> <span class="n">fp</span> <span class="ow">in</span> <span class="n">discretionary</span><span class="o">.</span><span class="n">fingerprints</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">discretionary</span><span class="o">.</span><span class="n">key_information</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span> <span class="ow">or</span> <span class="n">ref</span> <span class="o">==</span> <span class="n">KEY_REF</span><span class="o">.</span><span class="n">ATT</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+        <span class="n">info</span><span class="p">[</span><span class="n">_format_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Fingerprint&quot;</span><span class="p">:</span> <span class="n">_format_fingerprint</span><span class="p">(</span><span class="n">fp</span><span class="p">),</span>
+            <span class="s2">&quot;Touch policy&quot;</span><span class="p">:</span> <span class="n">discretionary</span><span class="o">.</span><span class="n">get_uif</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="n">discretionary</span><span class="o">.</span><span class="n">attributes_att</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">touch</span><span class="p">[</span><span class="s2">&quot;Attestation key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_uif</span><span class="p">(</span><span class="n">KEY_REF</span><span class="o">.</span><span class="n">ATT</span><span class="p">)</span>
-        <span class="n">info</span><span class="p">[</span><span class="s2">&quot;Touch policies&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">touch</span>
 
     <span class="k">return</span> <span class="n">info</span></div>
 
