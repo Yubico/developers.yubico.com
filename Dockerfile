@@ -40,7 +40,7 @@ COPY content ./content
 COPY devyco ./devyco
 COPY static ./static
 COPY templates ./templates
-COPY .bowerrc bower.json build settings.json ./
+COPY .bowerrc bower.json build settings.json generate_sitemap.py ./
 
 # Build
 RUN umask 0077 \
