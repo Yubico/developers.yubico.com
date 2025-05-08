@@ -10,10 +10,14 @@ Usage:
 
 To test against local development:
     TEST_DOMAIN=localhost:8080 TEST_PROTOCOL=http pytest test_redirects.py -v
+    
+To test against staging using ID_TOKEN:
+    ID_TOKEN=your_token_here TEST_DOMAIN=developers.stage.yubico.com TEST_PROTOCOL=https pytest test_redirects.py -v
 """
 
 import pytest
 import os
+import requests
 from urllib.parse import urljoin
 
 
