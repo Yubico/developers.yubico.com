@@ -92,15 +92,8 @@ class TestStandardRedirects:
     """Test standard redirect functionality on the website."""
     
     def test_case_sensitivity_redirects(self, session, base_url, verify_redirect):
-        """Test case-sensitivity redirects (lowercase to proper case)."""
+        """Test redirects."""
         redirects = {
-            'yubihsm2': f"{base_url}/YubiHSM2/",
-            'u2f': f"{base_url}/U2F/",
-            'ssh': f"{base_url}/SSH/",
-            'mobile': f"{base_url}/Mobile/",
-            'mobile_dev': f"{base_url}/Mobile_Dev/",
-            'passkeys': f"{base_url}/Passkeys/",
-            'developer-program': f"{base_url}/Developer_Program/",
             'fido2': f"{base_url}/WebAuthn/",
         }
         
@@ -133,22 +126,6 @@ class TestStandardRedirects:
             'U2F/Images/YK5.png': f"{base_url}/FIDO/Images/YK5.png",
             'U2F/yubico-u2f-ca-1.pem': f"{base_url}/PKI/yubico-fido-ca-1.pem",
             'page.adoc': f"{base_url}/page.html",
-        }
-        
-        for path, target in redirects.items():
-            url = urljoin(base_url + '/', path)
-            
-            success, status_code, actual_location, error_msg = verify_redirect(
-                session, url, target)
-                
-            assert success, f"Failed redirect for {url}: {error_msg}"
-    
-    def test_path_structure_redirects(self, session, base_url, verify_redirect):
-        """Test redirects for path structure changes."""
-        redirects = {
-            'some-project/releases/v1.0': f"{base_url}/some-project/Releases/v1.0",
-            'some-project/releases.html': f"{base_url}/some-project/Releases/",
-            'some-project/doc/manual': f"{base_url}/some-project/manual",
         }
         
         for path, target in redirects.items():

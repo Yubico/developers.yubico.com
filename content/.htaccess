@@ -3,73 +3,40 @@ RewriteEngine On
 RewriteBase /
 
 # Redirect FIDO2 to WebAuthn
-RewriteRule ^FIDO2/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/WebAuthn/$1 [L,R=301,NC]
-RewriteRule ^FIDO2$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/WebAuthn/ [L,R=301,NC]
+#RewriteRule ^FIDO2/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/WebAuthn/$1 [L,R=301,NC]
+#RewriteRule ^FIDO2$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/WebAuthn/ [L,R=301,NC]
+RewriteCond %{THE_REQUEST} ^[A-Z]+\s+/fido2[/\s?] [NC]
+RewriteRule ^fido2/?$ /WebAuthn/ [L,R=301]
 
-# Redirect yubihsm2 to YubiHSM2
-RewriteRule ^yubihsm2/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/YubiHSM2/$1 [L,R=301,NC]
-RewriteRule ^yubihsm2$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/YubiHSM2/ [L,R=301,NC]
+RewriteCond %{THE_REQUEST} ^[A-Z]+\s+/fido2/(.+) [NC]
+RewriteRule ^fido2/(.+)$ /WebAuthn/$1 [L,R=301]
 
-# Redirect u2f to U2F
-RewriteRule ^u2f/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/U2F/$1 [L,R=301,NC]
-RewriteRule ^u2f$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/U2F/ [L,R=301,NC]
+# Redirect all images from U2F/Images to FIDO/Images (already optimized)
+RewriteRule ^U2F/Images/(.+)\.([a-z]+)$ FIDO/Images/$1.$2 [L,R=301,NC]
 
-# Redirect renamed U2F files
-RewriteRule ^U2F/Images/BIO.png$ FIDO/Images/BIO.png [L,R=301,NC]
-RewriteRule ^U2F/Images/NEO.png$ FIDO/Images/NEO.png [L,R=301,NC]
-RewriteRule ^U2F/Images/PLS.png$ FIDO/Images/PLS.png [L,R=301,NC]
-RewriteRule ^U2F/Images/SKY-NFC.png$ FIDO/Images/SKY-NFC.png [L,R=301,NC]
-RewriteRule ^U2F/Images/SKY.png$ FIDO/Images/SKY.png [L,R=301,NC]
-RewriteRule ^U2F/Images/YK4.png$ FIDO/Images/YK4.png [L,R=301,NC]
-RewriteRule ^U2F/Images/YK5-series.png$ FIDO/Images/YK5-series.png [L,R=301,NC]
-RewriteRule ^U2F/Images/YK5.png$ FIDO/Images/YK5.png [L,R=301,NC]
-RewriteRule ^U2F/Images/YK5Ci.png$ FIDO/Images/YK5Ci.png [L,R=301,NC]
-RewriteRule ^U2F/Images/YK5NFC-CNFC.png$ FIDO/Images/YK5NFC-CNFC.png [L,R=301,NC]
-RewriteRule ^U2F/Images/YKE.png$ FIDO/Images/YKE.png [L,R=301,NC]
-RewriteRule ^U2F/Images/yubico.png$ FIDO/Images/yubico.png [L,R=301,NC]
-RewriteRule ^U2F/fido-preview-ca-cert-2019.pem$ FIDO/yubico-fido-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^U2F/fido-preview-ca-cert-2023.pem$ FIDO/yubico-fido-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^U2F/fido-preview-ca-cert.pem$ FIDO/yubico-fido-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^U2F/yubico-metadata.json$ FIDO/yubico-metadata.json [L,R=301,NC]
+# Redirect all U2F preview CA cert variations to the same FIDO destination
+RewriteRule ^U2F/fido-preview-ca-cert(-2019|-2023)?\.pem$ FIDO/yubico-fido-preview-ca-certs.pem [L,R=301,NC]
 
-# Cert files renamed and moved from /U2F/ to /FIDO/ then to /PKI/
-RewriteRule ^U2F/yubico-u2f-ca-1.pem$ PKI/yubico-fido-ca-1.pem [L,R=301,NC]
-RewriteRule ^U2F/yubico-u2f-ca-certs.txt$ PKI/yubico-ca-certs.txt [L,R=301,NC]
-RewriteRule ^U2F/yubico-u2f-ca-certs.txt.sig$ PKI/yubico-ca-certs.txt.sig [L,R=301,NC]
+# Redirect U2F metadata file
+RewriteRule ^U2F/yubico-metadata\.json$ FIDO/yubico-metadata.json [L,R=301,NC]
 
-# Cert files renamed and moved from /FIDO/ to /PKI/
-RewriteRule ^FIDO/yubico-fido-ca-1.pem$ PKI/yubico-fido-ca-1.pem [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-ca-1.pem.sig$ PKI/yubico-fido-ca-1.pem.sig [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-ca-2.pem$ PKI/yubico-fido-ca-2.pem [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-ca-2.pem.sig$ PKI/yubico-fido-ca-2.pem.sig [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-ca-certs.txt$ PKI/yubico-ca-certs.txt [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-ca-certs.txt.sig$ PKI/yubico-ca-certs.txt.sig [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-preview-ca-certs.pem$ PKI/preview/yubico-fido-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^FIDO/yubico-fido-preview-ca-certs.pem.sig$ PKI/preview/yubico-fido-preview-ca-certs.pem.sig [L,R=301,NC]
+# U2F cert files to PKI redirects
+RewriteRule ^U2F/yubico-u2f-ca-1\.pem$ PKI/yubico-fido-ca-1.pem [L,R=301,NC]
+RewriteRule ^U2F/yubico-u2f-ca-certs\.txt(\.sig)?$ PKI/yubico-ca-certs.txt$1 [L,R=301,NC]
 
-# Cert files moved to /PKI/
-RewriteRule ^PGP/opgp-attestation-ca.pem$ PKI/yubico-opgp-ca-1.pem [L,R=301,NC]
-RewriteRule ^PGP/opgp-preview-ca-2023-cert.pem$ PKI/preview/yubico-opgp-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^PIV/Introduction/piv-attestation-ca.pem$ PKI/yubico-piv-ca-1.pem [L,R=301,NC]
-RewriteRule ^PIV/Introduction/piv-attestation-preview-ca.pem$ PKI/preview/yubico-piv-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^PIV/Introduction/piv-preview-ca-2023-cert.pem$ PKI/preview/yubico-piv-preview-ca-certs.pem [L,R=301,NC]
-RewriteRule ^PIV/Introduction/piv-preview-ca-cert.pem$ PKI/preview/yubico-piv-preview-ca-certs.pem [L,R=301,NC]
+# FIDO to PKI redirects for CA files and signatures
+RewriteRule ^FIDO/yubico-fido-ca-([12])\.pem(\.sig)?$ PKI/yubico-fido-ca-$1.pem$2 [L,R=301,NC]
+RewriteRule ^FIDO/yubico-fido-ca-certs\.txt(\.sig)?$ PKI/yubico-ca-certs.txt$1 [L,R=301,NC]
+RewriteRule ^FIDO/yubico-fido-preview-ca-certs\.pem(\.sig)?$ PKI/preview/yubico-fido-preview-ca-certs.pem$1 [L,R=301,NC]
 
-# Redirect ssh to SSH
-RewriteRule ^ssh/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/SSH/$1 [L,R=301,NC]
-RewriteRule ^ssh$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/SSH/ [L,R=301,NC]
+# PGP certificate redirects
+RewriteRule ^PGP/opgp-attestation-ca\.pem$ PKI/yubico-opgp-ca-1.pem [L,R=301,NC]
+RewriteRule ^PGP/opgp-preview-ca-2023-cert\.pem$ PKI/preview/yubico-opgp-preview-ca-certs.pem [L,R=301,NC]
 
-# Redirect mobile to Mobile
-RewriteRule ^mobile/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Mobile/$1 [L,R=301,NC]
-RewriteRule ^mobile$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Mobile/ [L,R=301,NC]
-
-# Redirect mobile to Mobile
-RewriteRule ^mobile_dev/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Mobile_Dev/$1 [L,R=301,NC]
-RewriteRule ^mobile_dev$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Mobile_Dev/ [L,R=301,NC]
-
-# Redirect mobile to Passkeys
-RewriteRule ^passkeys/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Passkeys/$1 [L,R=301,NC]
-RewriteRule ^passkeys$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Passkeys/ [L,R=301,NC]
+# PIV certificate redirects
+RewriteRule ^PIV/Introduction/piv-attestation-ca\.pem$ PKI/yubico-piv-ca-1.pem [L,R=301,NC]
+# Combine all PIV preview redirects
+RewriteRule ^PIV/Introduction/piv-(attestation-preview|preview-ca(-2023-cert)?|preview-ca-cert)\.pem$ PKI/preview/yubico-piv-preview-ca-certs.pem [L,R=301,NC]
 
 # Redirect yubikey5ci to Mobile
 RewriteRule ^yubikey5ci/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/Mobile/$1 [L,R=301,NC]
