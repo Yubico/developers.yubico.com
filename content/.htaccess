@@ -5,10 +5,16 @@ RewriteBase /
 # Redirect FIDO2 to WebAuthn
 #RewriteRule ^FIDO2/(.*)$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/WebAuthn/$1 [L,R=301,NC]
 #RewriteRule ^FIDO2$ %{ENV:REQUEST_PROTO}://%{HTTP_HOST}/WebAuthn/ [L,R=301,NC]
-RewriteCond %{THE_REQUEST} ^[A-Z]+\s+/fido2[/\s?] [NC]
-RewriteRule ^fido2/?$ /WebAuthn/ [L,R=301]
+# Match /fido2 exactly (no trailing slash)
+RewriteCond %{REQUEST_URI} ^/fido2$
+RewriteRule ^fido2$ /WebAuthn/ [L,R=301]
 
-RewriteCond %{THE_REQUEST} ^[A-Z]+\s+/fido2/(.+) [NC]
+# Match /fido2/ exactly (with trailing slash)
+RewriteCond %{REQUEST_URI} ^/fido2/$
+RewriteRule ^fido2/$ /WebAuthn/ [L,R=301]
+
+# Match /fido2/anything
+RewriteCond %{REQUEST_URI} ^/fido2/(.+)
 RewriteRule ^fido2/(.+)$ /WebAuthn/$1 [L,R=301]
 
 # Redirect all images from U2F/Images to FIDO/Images (already optimized)
