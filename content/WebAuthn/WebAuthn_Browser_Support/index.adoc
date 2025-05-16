@@ -1,123 +1,88 @@
 :imagesdir: ./
-:callout3: ***
+
+:fn-win10: footnote:win10[Windows 10 allows for the enrollment of new fingerprints, but will not prompt for it automatically.]
+:fn-win11: footnote:win11[Windows 11 allows for the enrollment of new fingerprints, but will not prompt for it automatically.]
+:fn-chrome: footnote:chrome[Chrome on macOS and Linux will prompt for biometric enrollment any time the user registers the YubiKey on a new site if fingerprints aren’t already enrolled.]
+:fn-ffandroid: footnote:ffandroid[Firefox for Android lacks full support for the AlwaysUV feature.]
 
 == WebAuthn Compatibility ==
-WebAuthn support is not uniform across browsers. For services implementing WebAuthn, it is vital to note which user environments are supported, and have the appropriate error handling in the event of an unsupported browser.
+WebAuthn support is not uniform across browsers. For services implementing WebAuthn, it is vital to note which operating systems and browsers are supported, and have the appropriate error handling in the event of an unsupported browser.
 
-==== Key: ====
-[%header,cols="^.^,^.^" width=20]
+The information provided is based on general availability (GA) operating system and browser releases and YubiKeys that support the FIDO standards. 
+
+Since the arrival of the FIDO2 standard in 2018, there has been a steady shift away from web browsers providing support for WebAuthn credentials, and towards APIs that are made available by the operating system. There is now a mix of support provided by operating systems and by browsers, collectively referred to as platforms.
+
+=== Operating systems, browsers and platforms ===
+While there are a large number of browser and operating system combinations, because of the differences in ways that support for FIDO is delivered on different platforms, some of those combinations may use the same underlying mechanism to provide FIDO credential support.
+
+Use this chart to determine which FIDO platform is in use for each browser and platform combination.
+
+[%header,cols="7*"]
 |===
-|Feature is supported | Feature is not supported
-a|image::yes.png[] a|image::no.png[]
+| | Windows 10 | Windows 11 | MacOS | iOS / iPadOS | Android | Linux
+| Chrome & Edge (Chromium-based browsers | Windows 10 | Windows 11 | Chrome on MacOS & Linux | Safari | Google Play Services | Chrome on MacOS and Linux
+| Safari | N/A | N/A | Safari | Safari | N/A | N/A
+| Firefox | Windows 10 | Windows 11 | Safari | Safari | Google Play Services | Firefox on Linux
 |===
 
-==== Features ====
+On Windows 10 and Windows 11, the FIDO support is provided by a Windows API, and all applications including web browsers must use that support unless they’re run with administrative privileges. 
 
-*link:https://www.w3.org/TR/webauthn/#test-of-user-presence[User Presence]* - The browser supports a physical user interaction to establish an event is not being initiated by a remote attacker.  Support for user presence is mandatory for environments supporting WebAuthn, and for devices to be certified by the FIDO alliance.  Support for Resident Key / Discoverable Credentials, User Verification or Passkeys means User Presence over FIDO2 is possible. 
+On iOS and iPadOS, the FIDO support is provided by an Apple API, and all web browsers must utilize that support.
 
-*link:https://www.w3.org/TR/webauthn/#resident-credential[Resident Key / Discoverable Credential]* - The browser supports WebAuthn credentials stored on the authenticator. These credentials can be read to identify the user account without the user manually providing them.
+On macOS, a FIDO API is provided, but its use is not mandatory:  
+* Safari uses the built-in Apple API
+* Firefox uses the built-in API by default, but that is configurable
+* Chrome does not use the built-in API for hardware security keys
 
-*link:https://www.w3.org/TR/webauthn/#user-verification[User Verification (PIN / Biometric)]* - The browser supports an interface to allow a user to verify their identity via entering a WebAuthn PIN or Biometric.
+On Android (version 9 or higher), FIDO support may be provided by Google Play Services (version 24 or higher) on devices that have it installed.  
 
-*link:https://developers.yubico.com/Passkeys/[Passkeys]* - The browser supports securely creating and using passkeys on a roaming authenticator.
+On Linux-based operating systems, there is no system wide API available, so each browser must provide its own FIDO support.
 
-*link:https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-overview-v1.2-ps-20170411.html[CTAP 1 / U2F Legacy Support]* - The browser has legacy support for authenticators only supporting User Presence over U2F.
+=== Common use cases ===
 
-=== Windows 11 23H2 ===
+When using FIDO on a YubiKey with a web browser to log in to a website or identity provider, there are three distinct flows:
 
-[%header,cols="^.^,^.,^.,^.,^.,^."]
+* The first, which is most similar to the original U2F standard, is FIDO as a second factor. This relies on traditional username and password authentication, and then using a YubiKey or similar FIDO device as an MFA factor. This flow is typically used with web sites that have security key support, and requires that the browser support *link:https://www.w3.org/TR/webauthn/#test-of-user-presence[User Presence]*
+* The second, passwordless, was introduced with FIDO2. It relies on getting the username either by prompting the user or using persistent cookies, and then prompting the user to use their YubiKey with a PIN (or Fingerprint on the YubiKey Bio series).  This flow requires support for *link:https://www.w3.org/TR/webauthn/#user-verification[User Verification (PIN / Biometric)]* in the platform and the YubiKey.
+* The third, usernameless, was also introduced with FIDO2, and has been popularized as *link:https://developers.yubico.com/Passkeys/[passkey]* logon, where the user only needs to activate their FIDO device using a PIN or biometric, and they can be securely logged into a service. It requires support for *link:https://www.w3.org/TR/webauthn/#resident-credential[Discoverable Credentials]*, previously known as Resident Keys.    
+
+Additionally, there are two more common use cases:
+
+* Initial PIN setup happens the first time a user encounters a situation that requires use of a PIN. PIN setup must be successful to continue, but it can be done beforehand on a supported operating system or browser.
+* Initial fingerprint setup refers to the first time a user enrolls a fingerprint on a YubiKey Bio Series device. This is optional on YubiKey Bio Series devices, and can be done at any time.  You do not need to use the same browser or device to enroll fingerprints.
+
+Passwordless, usernameless, and initial PIN setup are not supported on U2F-only devices such as the YubiKey 4 Series and the YubiKey NEO.  
+
+=== Use case support ===
+
+[%header,cols="7*"]
 |===
-2+|Browser |Resident Key / Discoverable Credential |User Verification (PIN / Biometric) |Passkeys on the YubiKey |CTAP 1 /
-U2F Legacy Support
-.2+|*Edge Chromium 124* |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-.2+|*Chrome 124** |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-.2+|*Firefox 125* |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
+|               | Windows 10   | Windows 11   | Chrome on macOS and Linux | Safari                    | Google Play Services (Android) | Firefox on Linux
+| Usernameless  | ✅USB ✅NFC | ✅USB ✅NFC | ✅USB                     | ✅USB ✅NFC ✅Lightning | ✅USB ❌NFC                   | ✅USB
+| Passwordless  | ✅USB ✅NFC | ✅USB ✅NFC | ✅USB                     | ✅USB ✅NFC ✅Lightning | ✅USB ❌NFC                   | ✅USB
+| Second Factor | ✅USB ✅NFC | ✅USB ✅NFC | ✅USB                     | ✅USB ✅NFC ✅Lightning | ✅USB ✅NFC                   | ✅USB
+| Initial PIN Setup | ✅USB ✅NFC | ✅USB ✅NFC | ✅USB                 | ✅USB ✅NFC ✅Lightning | ✅USB ❌NFC                   | ❌
+| Initial Fingerprint Setup | ✅USB{fn-win10} | ✅USB{fn-win11} |  ✅USB{fn-chrome}                     | ❌                       | ❌                             | ❌
+|=== 
+
+
+=== Feature support ===
+
+[%header,cols="7*"]
 |===
-*Notes on Chrome differences from other browsers
-
-* When a request to create a credential with a resident key is made User Verification is enforced even if the request has UV = 0.
-
-=== MacOS 14.4.1 ===
-NFC support has been excluded since NFC is not supported on macOS browsers.
-
-[%header,cols="^.^,^.,^.,^.,^.,^."]
+|               | Windows 10   | Windows 11   | Chrome on macOS and Linux | Safari                    | Google Play Services (Android) | Firefox on Linux
+| AlwaysUV      | ✅USB ✅NFC | ✅USB ✅NFC | ✅USB                     | ❌                       | ✅USB{fn-ffandroid} ❌NFC                   | ✅USB
+| Force PIN Change | ❌       | ✅USB ✅NFC | ✅USB                      | ❌                       | ❌                            | ❌
 |===
-2+|Browser |Resident Key / Discoverable Credential |User Verification (PIN / Biometric) |Passkeys on the YubiKey |CTAP 1 /
-U2F Legacy Support
-.2+|*Safari 17.4.1** |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image:yes.png[] **
-^.^|NFC a|N/A a|N/A a|N/A a|N/A
-.2+|*Chrome 124* |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|N/A a|N/A a|N/A a|N/A
-.2+|*Firefox 125** |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|N/A a|N/A a|N/A a|N/A
+
+=== Key: ===
+
+[%header,cols="^.^,^.^" ]
 |===
-*Safari & Firefox will not allow users to set a PIN for User Verification if one is not already set.
-
-**Bug for FIDO/U2F registration issues for WebKit/Safari:
-https://bugs.webkit.org/show_bug.cgi?id=247344
-
-=== iOS 17.4.1 ===
-Verified with iPhone XR
-
-Most browsers on Apple mobile devices use link:https://developer.apple.com/documentation/webkit[Apple WebKit]. As such, these browsers will have all the same functionality available.
-
-[%header,cols="^.^,^.,^.,^.,^.,^."]
+| | Description
+| ✅USB | Feature is supported over USB only.
+| ✅USB ✅NFC | Feature is supported over USB or NFC, if a supported NFC reader is attached.
+| ✅USB ✅NFC ✅Lightning | Feature is supported over USB, NFC or Lightning, if available on the device.
+| ✅USB ❌NFC | Feature is supported over USB, but not NFC, even if an NFC reader is present.
+| ❌ | Feature is not supported over any transport.
 |===
-2+|Browser |Resident Key / Discoverable Credential |User Verification (PIN / Biometric) |Passkeys on the YubiKey |CTAP 1 /
-U2F Legacy Support
-.2+|*Safari 17.4.1** |Lightning a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-.2+|*Chrome 124** |Lightning  a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-.2+|*Firefox 125** |Lightning  a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-|===
-*Browsers on iOS are not able to set a PIN for user verification (UV) if one is not already set.  Requests to create a credential that requires UV may appear to succeed, but create a credential that will not require a PIN.
-
-=== iPadOS 17.4.1 ===
-Verified with iPad 6th generation (Lightning), iPad Air (USB-C) 4th generation, and iPad Pro 2018 (USB-C)
-
-Most browsers on Apple mobile devices use link:https://developer.apple.com/documentation/webkit[Apple WebKit]. As such, these browsers will have all the same functionality available.
-
-NFC tests have been excluded since NFC is not supported on iPadOS browsers.
-USB-C is only available on iPad Pro and 4th and 5th generation iPad Air models.
-
-[%header,cols="^.^,^.,^.,^.,^.,^."]
-|===
-2+|Browser |Resident Key / Discoverable Credential |User Verification (PIN / Biometric) |Passkeys on the YubiKey |CTAP 1 /
-U2F Legacy Support
-.3+|*Safari 17.4.1** |Lightning a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|USB-C a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|N/A a|N/A a|N/A a|N/A
-.3+|*Chrome 124** |Lightning a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|USB-C a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|N/A a|N/A a|N/A a|N/A
-.3+|*Firefox 125** |Lightning a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|USB-C a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|N/A a|N/A a|N/A a|N/A
-|===
-*Browsers on iPadOS are not able to set a PIN for user verification (UV) if one is not already set.  Requests to create a credential that requires UV may appear to succeed, but create a credential that will not require a PIN.
-
-=== Android 14 ===
-Verified with Pixel 6 & Google Play Services 24.16
-
-Android support for FIDO2 is linked to Google Play Services, and may be available on link:https://support.google.com/googleplay/answer/7165974[Google Play Protect] certified devices running Android 9 or later, as long as they are running a current version of Google Play Services, and have a screen lock configured.
-
-Currently the Android platform only supports the CTAP 1 (U2F) protocol over NFC.
-Support for Resident Keys / Discoverable Credentials, User Verification, and passkeys is available over USB.
-
-[%header,cols="^.^,^.,^.,^.,^.,^."]
-|===
-2+|Browser |Resident Key / Discoverable Credential* |User Verification (PIN / Biometric) |Passkeys on the YubiKey* |CTAP 1 /
-U2F Legacy Support
-.2+|*Chrome 124* |USB a|image::yes.png[] a|image::yes.png[] a|image::yes.png[] a|image::yes.png[]
-^.^|NFC a|image::no.png[] a|image::no.png[] a|image::no.png[] a|image::yes.png[]
-.2+|*Firefox 125* |USB a|image::no.png[] a|image::no.png[] a|image::no.png[] a|image::no.png[]
-^.^|NFC a|image::no.png[] a|image::no.png[] a|image::no.png[] a|image::no.png[]
-|===
-*Android will prevent the use of passkeys / resident keys / discoverable credentials on a security key, if there is already at least one synced passkey in Google password manager for the same web site.
-
-**Bug for Firefox mobile support of security keys: https://bugzilla.mozilla.org/show_bug.cgi?id=1888654
