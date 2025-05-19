@@ -111,7 +111,6 @@ def verify_redirect(session, url, expected_final_url, max_redirects=5):
     except Exception as e:
         return False, 0, "", f"Error: {str(e)}"
 
-
 class TestEolRedirects:
     """Test that EOL project URLs redirect to the EOL policy page."""
     
@@ -165,8 +164,8 @@ class TestStandardRedirects:
                 assert success, f"Failed redirect for {url}: {error_msg}"
         finally:
             # Restore original headers
-            session.headers = original_headers
-    
+            session.headers = original_headers    
+            
     def test_renamed_urls(self, session, base_url, verify_redirect):
         """Test redirects for renamed URLs."""
         redirects = {

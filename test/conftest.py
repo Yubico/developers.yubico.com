@@ -86,7 +86,7 @@ def session(base_url):
     with requests.Session() as session:
         # Set reasonable timeout
         session.timeout = 10
-        
+
         # Check if we're testing the staging environment
         if 'stage.yubico.com' in base_url:
             # Add token to session headers
@@ -97,7 +97,7 @@ def session(base_url):
             print(f"Added authorization header to requests")
         else:
             print(f"Testing environment: {base_url} (no authentication required)")
-            
+
         yield session
 
 
