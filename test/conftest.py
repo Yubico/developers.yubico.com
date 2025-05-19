@@ -6,8 +6,48 @@ across multiple test files in the project.
 """
 
 import os
+import sys
 import pytest
 import requests
+from token_utils import check_id_token
+
+
+# Check for staging environment and token validity early
+def check_staging_token():
+    """
+    Check if we're testing staging and if a valid token is available.
+    Exit early if running against staging without a valid token.
+    """
+    domain = os.environ.get('TEST_DOMAIN', 'developers.yubico.com')
+    
+    # Only check for staging environment
+    if 'stage.yubico.com' in domain:
+        print("\n=== Checking staging environment authentication ===")
+        id_token = os.environ.get('ID_TOKEN')
+        
+        if not id_token:
+            print("ERROR: No ID_TOKEN environment variable found for staging environment.")
+            print("Tests against staging will fail due to IAP authentication.")
+            print("Run 'source ./get_token.sh' to generate a token.")
+            print("Exiting test suite to avoid running tests that will certainly fail.")
+            sys.exit(1)
+        
+        # Check token validity
+        is_valid, message = check_id_token()
+        if not is_valid:
+            print(f"ERROR: ID token invalid or expired: {message}")
+            print("Tests against staging will fail with this token.")
+            print("Run 'source ./get_token.sh' to generate a new token.")
+            print("Exiting test suite to avoid running tests that will certainly fail.")
+            sys.exit(1)
+        
+        print(f"✅ Using ID_TOKEN for authentication: {message}")
+        
+    return True
+
+
+# Run the check early when this module is imported
+check_staging_token()
 
 
 @pytest.fixture(scope="session")
@@ -35,16 +75,29 @@ def eol_redirect_target():
 
 
 @pytest.fixture(scope="module")
-def session():
+def session(base_url):
     """
     Create a session for better performance across tests.
     
     This reuses the same HTTP connection for multiple requests,
-    which improves testing speed.
+    which improves testing speed. Also applies authorization headers
+    if ID_TOKEN environment variable is set (used for staging environment).
     """
     with requests.Session() as session:
         # Set reasonable timeout
         session.timeout = 10
+
+        # Check if we're testing the staging environment
+        if 'stage.yubico.com' in base_url:
+            # Add token to session headers
+            id_token = os.environ.get('ID_TOKEN')
+            session.headers.update({
+                'Authorization': f'Bearer {id_token}'
+            })
+            print(f"Added authorization header to requests")
+        else:
+            print(f"Testing environment: {base_url} (no authentication required)")
+
         yield session
 
 
@@ -74,6 +127,14 @@ def verify_redirect():
             
             # Get the final URL after all redirects
             final_url = response.url
+            
+            # Debug output
+            print(f"Testing redirect: {url} → {final_url}")
+            print(f"Expected: {expected_location}")
+            
+            # Check for Google login redirect
+            if 'accounts.google.com' in final_url:
+                return False, response.status_code, final_url, "Redirected to Google login page. Authentication failed."
             
             # Normalize the expected location and final URL for comparison
             # This handles minor differences like trailing slashes
