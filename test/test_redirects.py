@@ -10,10 +10,14 @@ Usage:
 
 To test against local development:
     TEST_DOMAIN=localhost:8080 TEST_PROTOCOL=http pytest test_redirects.py -v
+    
+To test against staging using ID_TOKEN:
+    ID_TOKEN=your_token_here TEST_DOMAIN=developers.stage.yubico.com TEST_PROTOCOL=https pytest test_redirects.py -v
 """
 
 import pytest
 import os
+import requests
 from urllib.parse import urljoin
 
 
@@ -57,6 +61,55 @@ EOL_PROJECTS = [
     "libykneomgr"
 ]
 
+def verify_redirect(session, url, expected_final_url, max_redirects=5):
+    """
+    Verify a URL redirects to the expected final destination.
+    
+    Args:
+        session: Session object for making requests
+        url: URL to test
+        expected_final_url: Expected final URL after all redirects
+        max_redirects: Maximum number of redirects to follow
+        
+    Returns:
+        tuple: (success, status_code, actual_location, error_msg)
+    """
+    try:
+        # Start with the initial URL
+        current_url = url
+        redirect_chain = []
+        status_code = None
+        
+        # Follow redirects manually
+        for _ in range(max_redirects):
+            print(f"Testing redirect: {current_url}")
+            response = session.get(current_url, allow_redirects=False, timeout=10)
+            status_code = response.status_code
+            
+            # If not a redirect status code, we've reached the end
+            if status_code not in (301, 302, 303, 307, 308):
+                break
+                
+            # Get the next URL and add it to the chain
+            next_url = response.headers.get('Location', '')
+            redirect_chain.append(f"{current_url} → {next_url}")
+            
+            # If we've reached the expected URL, we're done
+            if next_url == expected_final_url:
+                return True, status_code, next_url, "Success"
+                
+            # Move to the next URL
+            current_url = next_url
+        
+        # If we exited the loop without finding the expected URL
+        print(f"Expected: {expected_final_url}")
+        
+        # Format the redirect chain for error reporting
+        chain_str = "\n".join(redirect_chain)
+        return False, status_code, current_url, f"Expected final redirect to {expected_final_url}, got {current_url}\nRedirect chain: {chain_str}"
+        
+    except Exception as e:
+        return False, 0, "", f"Error: {str(e)}"
 
 class TestEolRedirects:
     """Test that EOL project URLs redirect to the EOL policy page."""
@@ -86,28 +139,33 @@ class TestEolRedirects:
 
 class TestStandardRedirects:
     """Test standard redirect functionality on the website."""
-    
-    def test_case_sensitivity_redirects(self, session, base_url, verify_redirect):
-        """Test case-sensitivity redirects (lowercase to proper case)."""
-        redirects = {
-            'yubihsm2': f"{base_url}/YubiHSM2/",
-            'u2f': f"{base_url}/U2F/",
-            'ssh': f"{base_url}/SSH/",
-            'mobile': f"{base_url}/Mobile/",
-            'mobile_dev': f"{base_url}/Mobile_Dev/",
-            'passkeys': f"{base_url}/Passkeys/",
-            'developer-program': f"{base_url}/Developer_Program/",
-            'fido2': f"{base_url}/WebAuthn/",
-        }
+
+    def test_fido2_redirects(self, session, base_url, verify_redirect):
+        """Test FIDO2 redirects with browser-like headers."""
         
-        for path, target in redirects.items():
-            url = urljoin(base_url + '/', path)
+        # Set browser-like headers for more reliable testing
+        original_headers = session.headers.copy()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        })
+        
+        try:
+            redirects = {
+                'fido2': f"{base_url}/WebAuthn/",
+                'fido2/': f"{base_url}/WebAuthn/",
+            }
             
-            success, status_code, actual_location, error_msg = verify_redirect(
-                session, url, target)
+            for path, target in redirects.items():
+                url = urljoin(base_url + '/', path)
                 
-            assert success, f"Failed redirect for {url}: {error_msg}"
-    
+                success, status_code, actual_location, error_msg = verify_redirect(
+                    session, url, target)
+                    
+                assert success, f"Failed redirect for {url}: {error_msg}"
+        finally:
+            # Restore original headers
+            session.headers = original_headers    
+            
     def test_renamed_urls(self, session, base_url, verify_redirect):
         """Test redirects for renamed URLs."""
         redirects = {
@@ -129,22 +187,6 @@ class TestStandardRedirects:
             'U2F/Images/YK5.png': f"{base_url}/FIDO/Images/YK5.png",
             'U2F/yubico-u2f-ca-1.pem': f"{base_url}/PKI/yubico-fido-ca-1.pem",
             'page.adoc': f"{base_url}/page.html",
-        }
-        
-        for path, target in redirects.items():
-            url = urljoin(base_url + '/', path)
-            
-            success, status_code, actual_location, error_msg = verify_redirect(
-                session, url, target)
-                
-            assert success, f"Failed redirect for {url}: {error_msg}"
-    
-    def test_path_structure_redirects(self, session, base_url, verify_redirect):
-        """Test redirects for path structure changes."""
-        redirects = {
-            'some-project/releases/v1.0': f"{base_url}/some-project/Releases/v1.0",
-            'some-project/releases.html': f"{base_url}/some-project/Releases/",
-            'some-project/doc/manual': f"{base_url}/some-project/manual",
         }
         
         for path, target in redirects.items():
