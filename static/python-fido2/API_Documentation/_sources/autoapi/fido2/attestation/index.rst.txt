@@ -34,17 +34,17 @@ Classes
 
 .. autoapisummary::
 
-   fido2.attestation.Attestation
-   fido2.attestation.NoneAttestation
-   fido2.attestation.AttestationType
-   fido2.attestation.AttestationResult
-   fido2.attestation.UnsupportedAttestation
-   fido2.attestation.AttestationVerifier
-   fido2.attestation.AppleAttestation
    fido2.attestation.AndroidSafetynetAttestation
+   fido2.attestation.AppleAttestation
+   fido2.attestation.Attestation
+   fido2.attestation.AttestationResult
+   fido2.attestation.AttestationType
+   fido2.attestation.AttestationVerifier
+   fido2.attestation.NoneAttestation
+   fido2.attestation.UnsupportedAttestation
    fido2.attestation.PackedAttestation
-   fido2.attestation.FidoU2FAttestation
    fido2.attestation.TpmAttestation
+   fido2.attestation.FidoU2FAttestation
 
 
 Functions
@@ -57,6 +57,53 @@ Functions
 
 Package Contents
 ----------------
+
+.. py:class:: AndroidSafetynetAttestation(allow_rooted = False)
+
+   Bases: :py:obj:`fido2.attestation.base.Attestation`
+
+
+   Implements verification of a specific attestation type.
+
+
+   .. py:attribute:: FORMAT
+      :value: 'android-safetynet'
+
+
+
+   .. py:attribute:: allow_rooted
+      :value: False
+
+
+
+   .. py:method:: verify(statement, auth_data, client_data_hash)
+
+      Verifies attestation statement.
+
+      :return: An AttestationResult if successful.
+
+
+
+.. py:class:: AppleAttestation
+
+   Bases: :py:obj:`fido2.attestation.base.Attestation`
+
+
+   Implements verification of a specific attestation type.
+
+
+   .. py:attribute:: FORMAT
+      :value: 'apple'
+
+
+
+   .. py:method:: verify(statement, auth_data, client_data_hash)
+
+      Verifies attestation statement.
+
+      :return: An AttestationResult if successful.
+
+
 
 .. py:class:: Attestation
 
@@ -84,25 +131,17 @@ Package Contents
 
 
 
-.. py:class:: NoneAttestation
+.. py:class:: AttestationResult
 
-   Bases: :py:obj:`Attestation`
-
-
-   Implements verification of a specific attestation type.
+   The result of verifying an attestation.
 
 
-   .. py:attribute:: FORMAT
-      :value: 'none'
+   .. py:attribute:: attestation_type
+      :type:  AttestationType
 
 
-
-   .. py:method:: verify(statement, auth_data, client_data_hash)
-
-      Verifies attestation statement.
-
-      :return: An AttestationResult if successful.
-
+   .. py:attribute:: trust_path
+      :type:  list[bytes]
 
 
 .. py:class:: AttestationType
@@ -138,84 +177,6 @@ Package Contents
 
 
 
-.. py:class:: AttestationResult
-
-   The result of verifying an attestation.
-
-
-   .. py:attribute:: attestation_type
-      :type:  AttestationType
-
-
-   .. py:attribute:: trust_path
-      :type:  List[bytes]
-
-
-.. py:exception:: InvalidData
-
-   Bases: :py:obj:`InvalidAttestation`
-
-
-   Attestation contains invalid data.
-
-
-.. py:exception:: InvalidSignature
-
-   Bases: :py:obj:`InvalidAttestation`
-
-
-   The signature of the attestation could not be verified.
-
-
-.. py:exception:: UnsupportedType(auth_data, fmt=None)
-
-   Bases: :py:obj:`InvalidAttestation`
-
-
-   The attestation format is not supported.
-
-
-   .. py:attribute:: auth_data
-
-
-   .. py:attribute:: fmt
-
-
-.. py:class:: UnsupportedAttestation(fmt=None)
-
-   Bases: :py:obj:`Attestation`
-
-
-   Implements verification of a specific attestation type.
-
-
-   .. py:attribute:: fmt
-
-
-   .. py:method:: verify(statement, auth_data, client_data_hash)
-
-      Verifies attestation statement.
-
-      :return: An AttestationResult if successful.
-
-
-
-.. py:exception:: UntrustedAttestation
-
-   Bases: :py:obj:`InvalidAttestation`
-
-
-   The CA of the attestation is not trusted.
-
-
-.. py:function:: verify_x509_chain(chain)
-
-   Verifies a chain of certificates.
-
-   Checks that the first item in the chain is signed by the next, and so on.
-   The first item is the leaf, the last is the root.
-
-
 .. py:class:: AttestationVerifier(attestation_types = None)
 
    Bases: :py:obj:`abc.ABC`
@@ -247,22 +208,32 @@ Package Contents
 
 
 
-   .. py:method:: __call__(*args)
+.. py:exception:: InvalidData
 
-      Allows passing an instance to Fido2Server as verify_attestation
+   Bases: :py:obj:`InvalidAttestation`
 
 
+   Attestation contains invalid data.
 
-.. py:class:: AppleAttestation
 
-   Bases: :py:obj:`fido2.attestation.base.Attestation`
+.. py:exception:: InvalidSignature
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   The signature of the attestation could not be verified.
+
+
+.. py:class:: NoneAttestation
+
+   Bases: :py:obj:`Attestation`
 
 
    Implements verification of a specific attestation type.
 
 
    .. py:attribute:: FORMAT
-      :value: 'apple'
+      :value: 'none'
 
 
 
@@ -274,20 +245,17 @@ Package Contents
 
 
 
-.. py:class:: AndroidSafetynetAttestation(allow_rooted = False)
+.. py:class:: UnsupportedAttestation(fmt=None)
 
-   Bases: :py:obj:`fido2.attestation.base.Attestation`
+   Bases: :py:obj:`Attestation`
 
 
    Implements verification of a specific attestation type.
 
 
-   .. py:attribute:: FORMAT
-      :value: 'android-safetynet'
+   .. py:attribute:: fmt
+      :value: None
 
-
-
-   .. py:attribute:: allow_rooted
 
 
    .. py:method:: verify(statement, auth_data, client_data_hash)
@@ -296,6 +264,38 @@ Package Contents
 
       :return: An AttestationResult if successful.
 
+
+
+.. py:exception:: UnsupportedType(auth_data, fmt=None)
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   The attestation format is not supported.
+
+
+   .. py:attribute:: auth_data
+
+
+   .. py:attribute:: fmt
+      :value: None
+
+
+
+.. py:exception:: UntrustedAttestation
+
+   Bases: :py:obj:`InvalidAttestation`
+
+
+   The CA of the attestation is not trusted.
+
+
+.. py:function:: verify_x509_chain(chain)
+
+   Verifies a chain of certificates.
+
+   Checks that the first item in the chain is signed by the next, and so on.
+   The first item is the leaf, the last is the root.
 
 
 .. py:class:: PackedAttestation
@@ -308,6 +308,27 @@ Package Contents
 
    .. py:attribute:: FORMAT
       :value: 'packed'
+
+
+
+   .. py:method:: verify(statement, auth_data, client_data_hash)
+
+      Verifies attestation statement.
+
+      :return: An AttestationResult if successful.
+
+
+
+.. py:class:: TpmAttestation
+
+   Bases: :py:obj:`fido2.attestation.base.Attestation`
+
+
+   Implements verification of a specific attestation type.
+
+
+   .. py:attribute:: FORMAT
+      :value: 'tpm'
 
 
 
@@ -342,27 +363,6 @@ Package Contents
 
    .. py:method:: verify_signature(app_param, client_param, key_handle, public_key, cert_bytes, signature)
       :staticmethod:
-
-
-
-.. py:class:: TpmAttestation
-
-   Bases: :py:obj:`fido2.attestation.base.Attestation`
-
-
-   Implements verification of a specific attestation type.
-
-
-   .. py:attribute:: FORMAT
-      :value: 'tpm'
-
-
-
-   .. py:method:: verify(statement, auth_data, client_data_hash)
-
-      Verifies attestation statement.
-
-      :return: An AttestationResult if successful.
 
 
 

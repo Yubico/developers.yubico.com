@@ -5,8 +5,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fido2.attestation.android &mdash; python-fido2 1.2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+  <title>fido2.attestation.android &mdash; python-fido2 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
 
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -98,37 +98,37 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.constant_time</span><span class="w"> </span><span class="kn">import</span> <span class="n">bytes_eq</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..cose</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoseKey</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256</span><span class="p">,</span> <span class="n">websafe_decode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Attestation</span><span class="p">,</span>
-    <span class="n">AttestationType</span><span class="p">,</span>
     <span class="n">AttestationResult</span><span class="p">,</span>
+    <span class="n">AttestationType</span><span class="p">,</span>
     <span class="n">InvalidData</span><span class="p">,</span>
     <span class="n">catch_builtins</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">..cose</span> <span class="kn">import</span> <span class="n">CoseKey</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">sha256</span><span class="p">,</span> <span class="n">websafe_decode</span>
-
-<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.constant_time</span> <span class="kn">import</span> <span class="n">bytes_eq</span>
-
-<span class="kn">import</span> <span class="nn">json</span>
 
 
 <div class="viewcode-block" id="AndroidSafetynetAttestation">
 <a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.android.AndroidSafetynetAttestation">[docs]</a>
-<span class="k">class</span> <span class="nc">AndroidSafetynetAttestation</span><span class="p">(</span><span class="n">Attestation</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AndroidSafetynetAttestation</span><span class="p">(</span><span class="n">Attestation</span><span class="p">):</span>
     <span class="n">FORMAT</span> <span class="o">=</span> <span class="s2">&quot;android-safetynet&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allow_rooted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allow_rooted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allow_rooted</span> <span class="o">=</span> <span class="n">allow_rooted</span>
 
 <div class="viewcode-block" id="AndroidSafetynetAttestation.verify">
 <a class="viewcode-back" href="../../../autoapi/fido2/attestation/index.html#fido2.attestation.android.AndroidSafetynetAttestation.verify">[docs]</a>
     <span class="nd">@catch_builtins</span>
-    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">):</span>
         <span class="n">jwt</span> <span class="o">=</span> <span class="n">statement</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">]</span>
         <span class="n">header</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">sig</span> <span class="o">=</span> <span class="p">(</span><span class="n">websafe_decode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">jwt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;.&quot;</span><span class="p">))</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">))</span>

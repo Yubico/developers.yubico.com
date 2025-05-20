@@ -345,26 +345,29 @@ Package Contents
 
    Binary CBOR encoded response data returned by the CTAP2 GET_INFO command.
 
+   See:
+   https://fidoalliance.org/specs/fido-v2.2-rd-20230321/fido-client-to-authenticator-protocol-v2.2-rd-20230321.html#authenticatorGetInfo
+   for descriptions of these fields.
+
+   Note that while many fields are optional when returned by the authenticator,
+   this dataclass uses defaults to represent a missing value such as empty lists
+   or dicts, or the integer value 0. These are used rather than None for omitted
+   values as long as this can be done without introducing any practical ambiguity.
+   This also means that several of these fields may have a 0 value even if the
+   specification states that they should be non-zero when returned from the
+   authenticator.
+
    :param _: The binary content of the Info data.
-   :ivar versions: The versions supported by the authenticator.
-   :ivar extensions: The extensions supported by the authenticator.
-   :ivar aaguid: The AAGUID of the authenticator.
-   :ivar options: The options supported by the authenticator.
-   :ivar max_msg_size: The max message size supported by the authenticator.
-   :ivar pin_uv_protocols: The PIN/UV protocol versions supported by the authenticator.
-   :ivar max_creds_in_list: Max number of credentials supported in list at a time.
-   :ivar max_cred_id_length: Max length of Credential ID supported.
-   :ivar transports: List of supported transports.
-   :ivar algorithms: List of supported algorithms for credential creation.
-   :ivar data: The Info members, in the form of a dict.
 
 
    .. py:attribute:: versions
-      :type:  List[str]
+      :type:  list[str]
 
 
    .. py:attribute:: extensions
-      :type:  List[str]
+      :type:  list[str]
+      :value: []
+
 
 
    .. py:attribute:: aaguid
@@ -372,7 +375,7 @@ Package Contents
 
 
    .. py:attribute:: options
-      :type:  Dict[str, bool]
+      :type:  dict[str, bool]
 
 
    .. py:attribute:: max_msg_size
@@ -382,34 +385,38 @@ Package Contents
 
 
    .. py:attribute:: pin_uv_protocols
-      :type:  List[int]
+      :type:  list[int]
+      :value: []
+
 
 
    .. py:attribute:: max_creds_in_list
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
    .. py:attribute:: max_cred_id_length
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
    .. py:attribute:: transports
-      :type:  List[str]
+      :type:  list[str]
+      :value: []
+
 
 
    .. py:attribute:: algorithms
-      :type:  Optional[List[Dict[str, Any]]]
-      :value: None
+      :type:  list[dict[str, Any]]
+      :value: []
 
 
 
    .. py:attribute:: max_large_blob
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
@@ -426,14 +433,14 @@ Package Contents
 
 
    .. py:attribute:: firmware_version
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
    .. py:attribute:: max_cred_blob_length
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
@@ -444,32 +451,84 @@ Package Contents
 
 
    .. py:attribute:: preferred_platform_uv_attempts
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
    .. py:attribute:: uv_modality
-      :type:  Optional[int]
-      :value: None
+      :type:  int
+      :value: 0
 
 
 
    .. py:attribute:: certifications
-      :type:  Optional[Dict]
-      :value: None
-
+      :type:  dict
 
 
    .. py:attribute:: remaining_disc_creds
-      :type:  Optional[int]
+      :type:  int | None
       :value: None
 
 
 
    .. py:attribute:: vendor_prototype_config_commands
-      :type:  Optional[List[int]]
+      :type:  list[int]
+      :value: []
+
+
+
+   .. py:attribute:: attestation_formats
+      :type:  list[str]
+      :value: ['packed']
+
+
+
+   .. py:attribute:: uv_count_since_pin
+      :type:  int | None
       :value: None
+
+
+
+   .. py:attribute:: long_touch_for_reset
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: enc_identifier
+      :type:  bytes | None
+      :value: None
+
+
+
+   .. py:attribute:: transports_for_reset
+      :type:  list[str]
+      :value: []
+
+
+
+   .. py:attribute:: pin_complexity_policy
+      :type:  bool | None
+      :value: None
+
+
+
+   .. py:attribute:: pin_complexity_policy_url
+      :type:  bytes | None
+      :value: None
+
+
+
+   .. py:attribute:: max_pin_length
+      :type:  int
+      :value: 63
+
+
+
+   .. py:method:: get_identifier(pin_token)
+
+      Decrypt the device identifier using a persistent PUAT.
 
 
 
@@ -481,13 +540,12 @@ Package Contents
    Binary CBOR encoded attestation object.
 
    :param _: The binary representation of the attestation object.
-   :type _: bytes
    :ivar fmt: The type of attestation used.
-   :type fmt: str
    :ivar auth_data: The attested authenticator data.
-   :type auth_data: AuthenticatorData
    :ivar att_stmt: The attestation statement.
-   :type att_stmt: Dict[str, Any]
+   :ivar ep_att: Whether an enterprise attestation was returned for this credential.
+   :ivar large_blob_key: The largeBlobKey for the credential, if requested.
+   :ivar unsigned_extension_outputs: Any unsigned outputs of extensions.
 
 
    .. py:attribute:: fmt
@@ -499,19 +557,23 @@ Package Contents
 
 
    .. py:attribute:: att_stmt
-      :type:  Dict[str, Any]
+      :type:  dict[str, Any]
 
 
    .. py:attribute:: ep_att
-      :type:  Optional[bool]
+      :type:  bool | None
       :value: None
 
 
 
    .. py:attribute:: large_blob_key
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
+
+
+   .. py:attribute:: unsigned_extension_outputs
+      :type:  dict[str, Any]
 
 
 .. py:class:: AssertionResponse
@@ -543,25 +605,25 @@ Package Contents
 
 
    .. py:attribute:: user
-      :type:  Optional[Dict[str, Any]]
+      :type:  dict[str, Any] | None
       :value: None
 
 
 
    .. py:attribute:: number_of_credentials
-      :type:  Optional[int]
+      :type:  int | None
       :value: None
 
 
 
    .. py:attribute:: user_selected
-      :type:  Optional[bool]
+      :type:  bool | None
       :value: None
 
 
 
    .. py:attribute:: large_blob_key
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
 
@@ -724,6 +786,11 @@ Package Contents
 
 
 
+      .. py:attribute:: PERSISTENT_CREDENTIAL_MGMT
+         :value: 64
+
+
+
 
    .. py:method:: is_supported(info)
       :staticmethod:
@@ -832,6 +899,8 @@ Package Contents
 
 
    .. py:attribute:: IV
+      :value: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
 
 
    .. py:method:: kdf(z)
@@ -887,6 +956,8 @@ Package Contents
 
 
    .. py:attribute:: HKDF_SALT
+      :value: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0...
+
 
 
    .. py:attribute:: HKDF_INFO_HMAC
@@ -1079,6 +1150,11 @@ Package Contents
 
 
 
+   .. py:method:: is_readonly_supported(info)
+      :staticmethod:
+
+
+
    .. py:attribute:: ctap
 
 
@@ -1182,8 +1258,7 @@ Package Contents
    Bases: :py:obj:`BioEnrollment`
 
 
-   Implementation of a draft specification of the bio enrollment API.
-   WARNING: This specification is not final and this class is likely to change.
+   Implementation of the bio enrollment API.
 
    NOTE: The get_fingerprint_sensor_info method does not require authentication, and
    can be used by setting pin_uv_protocol and pin_uv_token to None.
@@ -1344,12 +1419,6 @@ Package Contents
 
 
 
-      .. py:method:: __str__()
-
-         Return str(self).
-
-
-
 
    .. py:attribute:: pin_uv_protocol
 
@@ -1468,6 +1537,8 @@ Package Contents
 
 
    .. py:attribute:: pin_uv
+      :value: None
+
 
 
    .. py:method:: read_blob_array()
@@ -1585,6 +1656,8 @@ Package Contents
 
 
    .. py:attribute:: pin_uv
+      :value: None
+
 
 
    .. py:method:: enable_enterprise_attestation()
