@@ -5,8 +5,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fido2.ctap2.bio &mdash; python-fido2 1.2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+  <title>fido2.ctap2.bio &mdash; python-fido2 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
 
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -98,42 +98,43 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">cbor</span>
-<span class="kn">from</span> <span class="nn">..ctap</span> <span class="kn">import</span> <span class="n">CtapError</span>
-<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">Info</span>
-<span class="kn">from</span> <span class="nn">.pin</span> <span class="kn">import</span> <span class="n">PinProtocol</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span>
 
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Event</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
-<span class="kn">import</span> <span class="nn">struct</span>
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">cbor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..ctap</span><span class="w"> </span><span class="kn">import</span> <span class="n">CtapError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">Info</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.pin</span><span class="w"> </span><span class="kn">import</span> <span class="n">PinProtocol</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="BioEnrollment">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.BioEnrollment">[docs]</a>
-<span class="k">class</span> <span class="nc">BioEnrollment</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BioEnrollment</span><span class="p">:</span>
 <div class="viewcode-block" id="BioEnrollment.RESULT">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.BioEnrollment.RESULT">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">RESULT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">RESULT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">MODALITY</span> <span class="o">=</span> <span class="mh">0x01</span>
         <span class="n">FINGERPRINT_KIND</span> <span class="o">=</span> <span class="mh">0x02</span>
         <span class="n">MAX_SAMPLES_REQUIRED</span> <span class="o">=</span> <span class="mh">0x03</span>
         <span class="n">TEMPLATE_ID</span> <span class="o">=</span> <span class="mh">0x04</span>
         <span class="n">LAST_SAMPLE_STATUS</span> <span class="o">=</span> <span class="mh">0x05</span>
         <span class="n">REMAINING_SAMPLES</span> <span class="o">=</span> <span class="mh">0x06</span>
-        <span class="n">TEMPLATE_INFOS</span> <span class="o">=</span> <span class="mh">0x07</span></div>
+        <span class="n">TEMPLATE_INFOS</span> <span class="o">=</span> <span class="mh">0x07</span>
+        <span class="n">MAX_TEMPLATE_FRIENDLY_NAME</span> <span class="o">=</span> <span class="mh">0x08</span></div>
 
 
 <div class="viewcode-block" id="BioEnrollment.TEMPLATE_INFO">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.BioEnrollment.TEMPLATE_INFO">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">TEMPLATE_INFO</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">TEMPLATE_INFO</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">ID</span> <span class="o">=</span> <span class="mh">0x01</span>
         <span class="n">NAME</span> <span class="o">=</span> <span class="mh">0x02</span></div>
 
@@ -141,14 +142,14 @@
 <div class="viewcode-block" id="BioEnrollment.MODALITY">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.BioEnrollment.MODALITY">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">MODALITY</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">MODALITY</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">FINGERPRINT</span> <span class="o">=</span> <span class="mh">0x01</span></div>
 
 
 <div class="viewcode-block" id="BioEnrollment.is_supported">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.BioEnrollment.is_supported">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">is_supported</span><span class="p">(</span><span class="n">info</span><span class="p">:</span> <span class="n">Info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_supported</span><span class="p">(</span><span class="n">info</span><span class="p">:</span> <span class="n">Info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;bioEnroll&quot;</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">options</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="c1"># We also support the Prototype command</span>
@@ -160,7 +161,7 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">modality</span><span class="p">:</span> <span class="n">MODALITY</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">modality</span><span class="p">:</span> <span class="n">MODALITY</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_supported</span><span class="p">(</span><span class="n">ctap</span><span class="o">.</span><span class="n">info</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Authenticator does not support BioEnroll&quot;</span><span class="p">)</span>
 
@@ -171,7 +172,7 @@
 
 <div class="viewcode-block" id="BioEnrollment.get_modality">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.BioEnrollment.get_modality">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_modality</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_modality</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get bio modality.</span>
 
 <span class="sd">        :return: The type of modality supported by the authenticator.</span>
@@ -185,8 +186,8 @@
 
 <div class="viewcode-block" id="CaptureError">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.CaptureError">[docs]</a>
-<span class="k">class</span> <span class="nc">CaptureError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CaptureError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fingerprint capture error: </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -194,7 +195,7 @@
 
 <div class="viewcode-block" id="FPEnrollmentContext">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.FPEnrollmentContext">[docs]</a>
-<span class="k">class</span> <span class="nc">FPEnrollmentContext</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FPEnrollmentContext</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper object to perform fingerprint enrollment.</span>
 
 <span class="sd">    :param bio: An instance of FPBioEnrollment.</span>
@@ -204,19 +205,19 @@
 <span class="sd">        sample has been captured).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bio</span><span class="p">:</span> <span class="s2">&quot;FPBioEnrollment&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bio</span><span class="p">:</span> <span class="s2">&quot;FPBioEnrollment&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bio</span> <span class="o">=</span> <span class="n">bio</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">template_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_id</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remaining</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="FPEnrollmentContext.capture">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.FPEnrollmentContext.capture">[docs]</a>
-    <span class="k">def</span> <span class="nf">capture</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">capture</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Capture a fingerprint sample.</span>
 
 <span class="sd">        This call will block for up to timeout milliseconds (or indefinitely, if</span>
@@ -243,7 +244,7 @@
 
 <div class="viewcode-block" id="FPEnrollmentContext.cancel">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/bio/index.html#fido2.ctap2.bio.FPEnrollmentContext.cancel">[docs]</a>
-    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cancels ongoing enrollment.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_bio</span><span class="o">.</span><span class="n">enroll_cancel</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">template_id</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -253,9 +254,8 @@
 
 <div class="viewcode-block" id="FPBioEnrollment">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment">[docs]</a>
-<span class="k">class</span> <span class="nc">FPBioEnrollment</span><span class="p">(</span><span class="n">BioEnrollment</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of a draft specification of the bio enrollment API.</span>
-<span class="sd">    WARNING: This specification is not final and this class is likely to change.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FPBioEnrollment</span><span class="p">(</span><span class="n">BioEnrollment</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of the bio enrollment API.</span>
 
 <span class="sd">    NOTE: The get_fingerprint_sensor_info method does not require authentication, and</span>
 <span class="sd">    can be used by setting pin_uv_protocol and pin_uv_token to None.</span>
@@ -268,7 +268,7 @@
 <div class="viewcode-block" id="FPBioEnrollment.CMD">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.CMD">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">CMD</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">CMD</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">ENROLL_BEGIN</span> <span class="o">=</span> <span class="mh">0x01</span>
         <span class="n">ENROLL_CAPTURE_NEXT</span> <span class="o">=</span> <span class="mh">0x02</span>
         <span class="n">ENROLL_CANCEL</span> <span class="o">=</span> <span class="mh">0x03</span>
@@ -281,7 +281,7 @@
 <div class="viewcode-block" id="FPBioEnrollment.PARAM">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.PARAM">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">PARAM</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">PARAM</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">TEMPLATE_ID</span> <span class="o">=</span> <span class="mh">0x01</span>
         <span class="n">TEMPLATE_NAME</span> <span class="o">=</span> <span class="mh">0x02</span>
         <span class="n">TIMEOUT_MS</span> <span class="o">=</span> <span class="mh">0x03</span></div>
@@ -290,7 +290,7 @@
 <div class="viewcode-block" id="FPBioEnrollment.FEEDBACK">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.FEEDBACK">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">FEEDBACK</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">FEEDBACK</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">FP_GOOD</span> <span class="o">=</span> <span class="mh">0x00</span>
         <span class="n">FP_TOO_HIGH</span> <span class="o">=</span> <span class="mh">0x01</span>
         <span class="n">FP_TOO_LOW</span> <span class="o">=</span> <span class="mh">0x02</span>
@@ -307,19 +307,16 @@
         <span class="n">NO_USER_ACTIVITY</span> <span class="o">=</span> <span class="mh">0x0D</span>
         <span class="n">NO_UP_TRANSITION</span> <span class="o">=</span> <span class="mh">0x0E</span>
 
-<div class="viewcode-block" id="FPBioEnrollment.FEEDBACK.__str__">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.FEEDBACK.__str__">[docs]</a>
-        <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">:</span><span class="s2">02X</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span></div>
-</div>
 
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">PinProtocol</span><span class="p">,</span> <span class="n">pin_uv_token</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctap</span><span class="p">:</span> <span class="n">Ctap2</span><span class="p">,</span> <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">PinProtocol</span><span class="p">,</span> <span class="n">pin_uv_token</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ctap</span><span class="p">,</span> <span class="n">BioEnrollment</span><span class="o">.</span><span class="n">MODALITY</span><span class="o">.</span><span class="n">FINGERPRINT</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv_protocol</span> <span class="o">=</span> <span class="n">pin_uv_protocol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pin_uv_token</span> <span class="o">=</span> <span class="n">pin_uv_token</span>
 
-    <span class="k">def</span> <span class="nf">_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_cmd</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_keepalive</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_cmd</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_keepalive</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;modality&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">modality</span><span class="p">,</span>
             <span class="s2">&quot;sub_cmd&quot;</span><span class="p">:</span> <span class="n">sub_cmd</span><span class="p">,</span>
@@ -339,7 +336,7 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.get_fingerprint_sensor_info">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.get_fingerprint_sensor_info">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_fingerprint_sensor_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_fingerprint_sensor_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get fingerprint sensor info.</span>
 
 <span class="sd">        :return: A dict containing FINGERPRINT_KIND and MAX_SAMPLES_REQUIRES.</span>
@@ -349,12 +346,12 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.enroll_begin">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.enroll_begin">[docs]</a>
-    <span class="k">def</span> <span class="nf">enroll_begin</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enroll_begin</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">FEEDBACK</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">FEEDBACK</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start fingerprint enrollment.</span>
 
 <span class="sd">        Starts the process of enrolling a new fingerprint, and will wait for the user</span>
@@ -385,13 +382,13 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.enroll_capture_next">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.enroll_capture_next">[docs]</a>
-    <span class="k">def</span> <span class="nf">enroll_capture_next</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enroll_capture_next</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">template_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">FEEDBACK</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">FEEDBACK</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Continue fingerprint enrollment.</span>
 
 <span class="sd">        Continues enrolling a new fingerprint and will wait for the user to scan their</span>
@@ -404,7 +401,7 @@
 <span class="sd">            remaining to complete the enrollment.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Capturing next sample with (timeout=</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-        <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">TEMPLATE_ID</span><span class="p">:</span> <span class="n">template_id</span><span class="p">}</span>
+        <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">TEMPLATE_ID</span><span class="p">:</span> <span class="n">template_id</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">params</span><span class="p">[</span><span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">PARAM</span><span class="o">.</span><span class="n">TIMEOUT_MS</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span>
@@ -422,7 +419,7 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.enroll_cancel">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.enroll_cancel">[docs]</a>
-    <span class="k">def</span> <span class="nf">enroll_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enroll_cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Cancel any ongoing fingerprint enrollment.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cancelling fingerprint enrollment.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="n">FPBioEnrollment</span><span class="o">.</span><span class="n">CMD</span><span class="o">.</span><span class="n">ENROLL_CANCEL</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
@@ -430,7 +427,7 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.enroll">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.enroll">[docs]</a>
-    <span class="k">def</span> <span class="nf">enroll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FPEnrollmentContext</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enroll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FPEnrollmentContext</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience wrapper for doing fingerprint enrollment.</span>
 
 <span class="sd">        See FPEnrollmentContext for details.</span>
@@ -441,7 +438,7 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.enumerate_enrollments">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.enumerate_enrollments">[docs]</a>
-    <span class="k">def</span> <span class="nf">enumerate_enrollments</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enumerate_enrollments</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a dict of enrolled fingerprint templates which maps template ID&#39;s to</span>
 <span class="sd">        their friendly names.</span>
 
@@ -462,7 +459,7 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.set_name">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.set_name">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set/Change the friendly name of a previously enrolled fingerprint template.</span>
 
 <span class="sd">        :param template_id: The ID of the template to change.</span>
@@ -481,7 +478,7 @@
 
 <div class="viewcode-block" id="FPBioEnrollment.remove_enrollment">
 <a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.bio.FPBioEnrollment.remove_enrollment">[docs]</a>
-    <span class="k">def</span> <span class="nf">remove_enrollment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_enrollment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a previously enrolled fingerprint template.</span>
 
 <span class="sd">        :param template_id: The Id of the template to remove.</span>

@@ -4,11 +4,23 @@ fido2.client
 .. py:module:: fido2.client
 
 
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/fido2/client/win_api/index
+   /autoapi/fido2/client/windows/index
+
+
 Exceptions
 ----------
 
 .. autoapisummary::
 
+   fido2.client.CtapError
+   fido2.client.ApduError
    fido2.client.ClientError
    fido2.client.PinRequiredError
 
@@ -18,15 +30,2105 @@ Classes
 
 .. autoapisummary::
 
+   fido2.client.ES256
+   fido2.client.CtapDevice
+   fido2.client.APDU
+   fido2.client.Ctap1
+   fido2.client.AssertionResponse
+   fido2.client.Ctap2
+   fido2.client.Info
+   fido2.client.AuthenticationExtensionProcessor
+   fido2.client.Ctap2Extension
+   fido2.client.RegistrationExtensionProcessor
+   fido2.client.ClientPin
+   fido2.client.PinProtocol
+   fido2.client.Aaguid
+   fido2.client.AttestationConveyancePreference
+   fido2.client.AttestationObject
+   fido2.client.AuthenticationExtensionsClientOutputs
+   fido2.client.AuthenticationResponse
+   fido2.client.AuthenticatorAssertionResponse
+   fido2.client.AuthenticatorAttachment
+   fido2.client.AuthenticatorAttestationResponse
+   fido2.client.AuthenticatorSelectionCriteria
+   fido2.client.CollectedClientData
+   fido2.client.PublicKeyCredentialCreationOptions
+   fido2.client.PublicKeyCredentialDescriptor
+   fido2.client.PublicKeyCredentialRequestOptions
+   fido2.client.PublicKeyCredentialType
+   fido2.client.RegistrationResponse
+   fido2.client.ResidentKeyRequirement
+   fido2.client.UserVerificationRequirement
    fido2.client.AssertionSelection
    fido2.client.WebAuthnClient
    fido2.client.UserInteraction
+   fido2.client.ClientDataCollector
+   fido2.client.DefaultClientDataCollector
    fido2.client.Fido2Client
-   fido2.client.WindowsClient
 
 
-Module Contents
----------------
+Functions
+---------
+
+.. autoapisummary::
+
+   fido2.client.verify_rp_id
+   fido2.client.sha256
+
+
+Package Contents
+----------------
+
+.. py:class:: ES256
+
+   Bases: :py:obj:`CoseKey`
+
+
+   A COSE formatted public key.
+
+   :param _: The COSE key paramters.
+   :cvar ALGORITHM: COSE algorithm identifier.
+
+
+   .. py:attribute:: ALGORITHM
+      :value: -7
+
+
+
+   .. py:method:: verify(message, signature)
+
+      Validates a digital signature over a given message.
+
+      :param message: The message which was signed.
+      :param signature: The signature to check.
+
+
+
+   .. py:method:: from_cryptography_key(public_key)
+      :classmethod:
+
+
+      Converts a PublicKey object from Cryptography into a COSE key.
+
+      :param public_key: Either an EC or RSA public key.
+      :return: A CoseKey.
+
+
+
+   .. py:method:: from_ctap1(data)
+      :classmethod:
+
+
+      Creates an ES256 key from a CTAP1 formatted public key byte string.
+
+      :param data: A 65 byte SECP256R1 public key.
+      :return: A ES256 key.
+
+
+
+.. py:class:: CtapDevice
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   CTAP-capable device.
+
+   Subclasses of this should implement :func:`call`, as well as :func:`list_devices`,
+   which should return a generator over discoverable devices.
+
+
+   .. py:property:: capabilities
+      :type: int
+
+      :abstractmethod:
+
+
+      Get device capabilities
+
+
+
+   .. py:method:: call(cmd, data = b'', event = None, on_keepalive = None)
+      :abstractmethod:
+
+
+      Sends a command to the authenticator, and reads the response.
+
+      :param cmd: The integer value of the command.
+      :param data: The payload of the command.
+      :param event: An optional threading.Event which can be used to cancel
+          the invocation.
+      :param on_keepalive: An optional callback to handle keep-alive messages
+          from the authenticator. The function is only called once for
+          consecutive keep-alive messages with the same status.
+      :return: The response from the authenticator.
+
+
+
+   .. py:method:: close()
+
+      Close the device, releasing any held resources.
+
+
+
+   .. py:method:: list_devices()
+      :classmethod:
+
+      :abstractmethod:
+
+
+      Generates instances of cls for discoverable devices.
+
+
+
+.. py:exception:: CtapError(code)
+
+   Bases: :py:obj:`Exception`
+
+
+   Error returned from the Authenticator when a command fails.
+
+
+   .. py:class:: UNKNOWN_ERR
+
+      Bases: :py:obj:`int`
+
+
+      CTAP error status code that is not recognized.
+
+
+      .. py:attribute:: name
+         :value: 'UNKNOWN_ERR'
+
+
+
+      .. py:property:: value
+         :type: int
+
+
+
+
+   .. py:class:: ERR
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      CTAP status codes.
+
+      https://fidoalliance.org/specs/fido-v2.1-rd-20201208/fido-client-to-authenticator-protocol-v2.1-rd-20201208.html#error-responses
+
+
+      .. py:attribute:: SUCCESS
+         :value: 0
+
+
+
+      .. py:attribute:: INVALID_COMMAND
+         :value: 1
+
+
+
+      .. py:attribute:: INVALID_PARAMETER
+         :value: 2
+
+
+
+      .. py:attribute:: INVALID_LENGTH
+         :value: 3
+
+
+
+      .. py:attribute:: INVALID_SEQ
+         :value: 4
+
+
+
+      .. py:attribute:: TIMEOUT
+         :value: 5
+
+
+
+      .. py:attribute:: CHANNEL_BUSY
+         :value: 6
+
+
+
+      .. py:attribute:: LOCK_REQUIRED
+         :value: 10
+
+
+
+      .. py:attribute:: INVALID_CHANNEL
+         :value: 11
+
+
+
+      .. py:attribute:: CBOR_UNEXPECTED_TYPE
+         :value: 17
+
+
+
+      .. py:attribute:: INVALID_CBOR
+         :value: 18
+
+
+
+      .. py:attribute:: MISSING_PARAMETER
+         :value: 20
+
+
+
+      .. py:attribute:: LIMIT_EXCEEDED
+         :value: 21
+
+
+
+      .. py:attribute:: FP_DATABASE_FULL
+         :value: 23
+
+
+
+      .. py:attribute:: LARGE_BLOB_STORAGE_FULL
+         :value: 24
+
+
+
+      .. py:attribute:: CREDENTIAL_EXCLUDED
+         :value: 25
+
+
+
+      .. py:attribute:: PROCESSING
+         :value: 33
+
+
+
+      .. py:attribute:: INVALID_CREDENTIAL
+         :value: 34
+
+
+
+      .. py:attribute:: USER_ACTION_PENDING
+         :value: 35
+
+
+
+      .. py:attribute:: OPERATION_PENDING
+         :value: 36
+
+
+
+      .. py:attribute:: NO_OPERATIONS
+         :value: 37
+
+
+
+      .. py:attribute:: UNSUPPORTED_ALGORITHM
+         :value: 38
+
+
+
+      .. py:attribute:: OPERATION_DENIED
+         :value: 39
+
+
+
+      .. py:attribute:: KEY_STORE_FULL
+         :value: 40
+
+
+
+      .. py:attribute:: UNSUPPORTED_OPTION
+         :value: 43
+
+
+
+      .. py:attribute:: INVALID_OPTION
+         :value: 44
+
+
+
+      .. py:attribute:: KEEPALIVE_CANCEL
+         :value: 45
+
+
+
+      .. py:attribute:: NO_CREDENTIALS
+         :value: 46
+
+
+
+      .. py:attribute:: USER_ACTION_TIMEOUT
+         :value: 47
+
+
+
+      .. py:attribute:: NOT_ALLOWED
+         :value: 48
+
+
+
+      .. py:attribute:: PIN_INVALID
+         :value: 49
+
+
+
+      .. py:attribute:: PIN_BLOCKED
+         :value: 50
+
+
+
+      .. py:attribute:: PIN_AUTH_INVALID
+         :value: 51
+
+
+
+      .. py:attribute:: PIN_AUTH_BLOCKED
+         :value: 52
+
+
+
+      .. py:attribute:: PIN_NOT_SET
+         :value: 53
+
+
+
+      .. py:attribute:: PUAT_REQUIRED
+         :value: 54
+
+
+
+      .. py:attribute:: PIN_POLICY_VIOLATION
+         :value: 55
+
+
+
+      .. py:attribute:: PIN_TOKEN_EXPIRED
+         :value: 56
+
+
+
+      .. py:attribute:: REQUEST_TOO_LARGE
+         :value: 57
+
+
+
+      .. py:attribute:: ACTION_TIMEOUT
+         :value: 58
+
+
+
+      .. py:attribute:: UP_REQUIRED
+         :value: 59
+
+
+
+      .. py:attribute:: UV_BLOCKED
+         :value: 60
+
+
+
+      .. py:attribute:: INTEGRITY_FAILURE
+         :value: 61
+
+
+
+      .. py:attribute:: INVALID_SUBCOMMAND
+         :value: 62
+
+
+
+      .. py:attribute:: UV_INVALID
+         :value: 63
+
+
+
+      .. py:attribute:: UNAUTHORIZED_PERMISSION
+         :value: 64
+
+
+
+      .. py:attribute:: OTHER
+         :value: 127
+
+
+
+      .. py:attribute:: SPEC_LAST
+         :value: 223
+
+
+
+      .. py:attribute:: EXTENSION_FIRST
+         :value: 224
+
+
+
+      .. py:attribute:: EXTENSION_LAST
+         :value: 239
+
+
+
+      .. py:attribute:: VENDOR_FIRST
+         :value: 240
+
+
+
+      .. py:attribute:: VENDOR_LAST
+         :value: 255
+
+
+
+
+.. py:class:: APDU
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   APDU response codes.
+
+
+   .. py:attribute:: OK
+      :value: 36864
+
+
+
+   .. py:attribute:: USE_NOT_SATISFIED
+      :value: 27013
+
+
+
+   .. py:attribute:: WRONG_DATA
+      :value: 27264
+
+
+
+.. py:exception:: ApduError(code, data = b'')
+
+   Bases: :py:obj:`Exception`
+
+
+   An Exception thrown when a response APDU doesn't have an OK (0x9000)
+   status.
+
+   :param code: APDU response code.
+   :param data: APDU response body.
+
+
+
+   .. py:attribute:: code
+
+
+   .. py:attribute:: data
+      :value: b''
+
+
+
+.. py:class:: Ctap1(device)
+
+   Implementation of the CTAP1 specification.
+
+   :param device: A CtapHidDevice handle supporting CTAP1.
+
+
+   .. py:class:: INS
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: REGISTER
+         :value: 1
+
+
+
+      .. py:attribute:: AUTHENTICATE
+         :value: 2
+
+
+
+      .. py:attribute:: VERSION
+         :value: 3
+
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:method:: send_apdu(cla = 0, ins = 0, p1 = 0, p2 = 0, data = b'')
+
+      Packs and sends an APDU for use in CTAP1 commands.
+      This is a low-level method mainly used internally. Avoid calling it
+      directly if possible, and use the get_version, register, and
+      authenticate methods if possible instead.
+
+      :param cla: The CLA parameter of the request.
+      :param ins: The INS parameter of the request.
+      :param p1: The P1 parameter of the request.
+      :param p2: The P2 parameter of the request.
+      :param data: The body of the request.
+      :return: The response APDU data of a successful request.
+      :raise: ApduError
+
+
+
+   .. py:method:: get_version()
+
+      Get the U2F version implemented by the authenticator.
+      The only version specified is "U2F_V2".
+
+      :return: A U2F version string.
+
+
+
+   .. py:method:: register(client_param, app_param)
+
+      Register a new U2F credential.
+
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param app_param: SHA256 hash of the app ID used for the request.
+      :return: The registration response from the authenticator.
+
+
+
+   .. py:method:: authenticate(client_param, app_param, key_handle, check_only = False)
+
+      Authenticate a previously registered credential.
+
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param app_param: SHA256 hash of the app ID used for the request.
+      :param key_handle: The binary key handle of the credential.
+      :param check_only: True to send a "check-only" request, which is used to
+          determine if a key handle is known.
+      :return: The authentication response from the authenticator.
+
+
+
+.. py:class:: AssertionResponse
+
+   Bases: :py:obj:`_CborDataObject`
+
+
+   Binary CBOR encoded assertion response.
+
+   :param _: The binary representation of the assertion response.
+   :ivar credential: The credential used for the assertion.
+   :ivar auth_data: The authenticator data part of the response.
+   :ivar signature: The digital signature of the assertion.
+   :ivar user: The user data of the credential.
+   :ivar number_of_credentials: The total number of responses available
+       (only set for the first response, if > 1).
+
+
+   .. py:attribute:: credential
+      :type:  Mapping[str, Any]
+
+
+   .. py:attribute:: auth_data
+      :type:  fido2.webauthn.AuthenticatorData
+
+
+   .. py:attribute:: signature
+      :type:  bytes
+
+
+   .. py:attribute:: user
+      :type:  dict[str, Any] | None
+      :value: None
+
+
+
+   .. py:attribute:: number_of_credentials
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: user_selected
+      :type:  bool | None
+      :value: None
+
+
+
+   .. py:attribute:: large_blob_key
+      :type:  bytes | None
+      :value: None
+
+
+
+   .. py:method:: verify(client_param, public_key)
+
+      Verify the digital signature of the response with regard to the
+      client_param, using the given public key.
+
+      :param client_param: SHA256 hash of the ClientData used for the request.
+      :param public_key: The public key of the credential, to verify.
+
+
+
+   .. py:method:: from_ctap1(app_param, credential, authentication)
+      :classmethod:
+
+
+      Create an AssertionResponse from a CTAP1 SignatureData instance.
+
+      :param app_param: SHA256 hash of the RP ID used for the CTAP1 request.
+      :param credential: Credential used for the CTAP1 request (from the
+          allowList).
+      :param authentication: The CTAP1 signature data.
+      :return: The assertion response.
+
+
+
+.. py:class:: Ctap2(device, strict_cbor = True)
+
+   Implementation of the CTAP2 specification.
+
+   :param device: A CtapHidDevice handle supporting CTAP2.
+   :param strict_cbor: Validate that CBOR returned from the Authenticator is
+       canonical, defaults to True.
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: MAKE_CREDENTIAL
+         :value: 1
+
+
+
+      .. py:attribute:: GET_ASSERTION
+         :value: 2
+
+
+
+      .. py:attribute:: GET_INFO
+         :value: 4
+
+
+
+      .. py:attribute:: CLIENT_PIN
+         :value: 6
+
+
+
+      .. py:attribute:: RESET
+         :value: 7
+
+
+
+      .. py:attribute:: GET_NEXT_ASSERTION
+         :value: 8
+
+
+
+      .. py:attribute:: BIO_ENROLLMENT
+         :value: 9
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT
+         :value: 10
+
+
+
+      .. py:attribute:: SELECTION
+         :value: 11
+
+
+
+      .. py:attribute:: LARGE_BLOBS
+         :value: 12
+
+
+
+      .. py:attribute:: CONFIG
+         :value: 13
+
+
+
+      .. py:attribute:: BIO_ENROLLMENT_PRE
+         :value: 64
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT_PRE
+         :value: 65
+
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:property:: info
+      :type: Info
+
+
+      Get a cached Info object which can be used to determine capabilities.
+
+      :rtype: Info
+      :return: The response of calling GetAuthenticatorInfo.
+
+
+
+   .. py:method:: send_cbor(cmd, data = None, *, event = None, on_keepalive = None)
+
+      Sends a CBOR message to the device, and waits for a response.
+
+      :param cmd: The command byte of the request.
+      :param data: The payload to send (to be CBOR encoded).
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional function called when keep-alive is sent by
+          the authenticator.
+
+
+
+   .. py:method:: get_info()
+
+      CTAP2 getInfo command.
+
+      :return: Information about the authenticator.
+
+
+
+   .. py:method:: client_pin(pin_uv_protocol, sub_cmd, key_agreement = None, pin_uv_param = None, new_pin_enc = None, pin_hash_enc = None, permissions = None, permissions_rpid = None, *, event = None, on_keepalive = None)
+
+      CTAP2 clientPin command, used for various PIN operations.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the PinProtocolV1 class.
+
+      :param pin_uv_protocol: The PIN/UV protocol version to use.
+      :param sub_cmd: A clientPin sub command.
+      :param key_agreement: The keyAgreement parameter.
+      :param pin_uv_param: The pinAuth parameter.
+      :param new_pin_enc: The newPinEnc parameter.
+      :param pin_hash_enc: The pinHashEnc parameter.
+      :param permissions: The permissions parameter.
+      :param permissions_rpid: The permissions RPID parameter.
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive
+          messages from the authenticator.
+      :return: The response of the command, decoded.
+
+
+
+   .. py:method:: reset(*, event = None, on_keepalive = None)
+
+      CTAP2 reset command, erases all credentials and PIN.
+
+      :param event: Optional threading.Event object used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive
+          messages from the authenticator.
+
+
+
+   .. py:method:: make_credential(client_data_hash, rp, user, key_params, exclude_list = None, extensions = None, options = None, pin_uv_param = None, pin_uv_protocol = None, enterprise_attestation = None, *, event = None, on_keepalive = None)
+
+      CTAP2 makeCredential operation.
+
+      :param client_data_hash: SHA256 hash of the ClientData.
+      :param rp: PublicKeyCredentialRpEntity parameters.
+      :param user: PublicKeyCredentialUserEntity parameters.
+      :param key_params: List of acceptable credential types.
+      :param exclude_list: Optional list of PublicKeyCredentialDescriptors.
+      :param extensions: Optional dict of extensions.
+      :param options: Optional dict of options.
+      :param pin_uv_param: Optional PIN/UV auth parameter.
+      :param pin_uv_protocol: The version of PIN/UV protocol used, if any.
+      :param enterprise_attestation: Whether or not to request Enterprise Attestation.
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive
+          messages from the authenticator.
+      :return: The new credential.
+
+
+
+   .. py:method:: get_assertion(rp_id, client_data_hash, allow_list = None, extensions = None, options = None, pin_uv_param = None, pin_uv_protocol = None, *, event = None, on_keepalive = None)
+
+      CTAP2 getAssertion command.
+
+      :param rp_id: The RP ID of the credential.
+      :param client_data_hash: SHA256 hash of the ClientData used.
+      :param allow_list: Optional list of PublicKeyCredentialDescriptors.
+      :param extensions: Optional dict of extensions.
+      :param options: Optional dict of options.
+      :param pin_uv_param: Optional PIN/UV auth parameter.
+      :param pin_uv_protocol: The version of PIN/UV protocol used, if any.
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive messages
+          from the authenticator.
+      :return: The new assertion.
+
+
+
+   .. py:method:: get_next_assertion()
+
+      CTAP2 getNextAssertion command.
+
+      :return: The next available assertion response.
+
+
+
+   .. py:method:: get_assertions(*args, **kwargs)
+
+      Convenience method to get list of assertions.
+
+      See get_assertion and get_next_assertion for details.
+
+
+
+   .. py:method:: credential_mgmt(sub_cmd, sub_cmd_params = None, pin_uv_protocol = None, pin_uv_param = None)
+
+      CTAP2 credentialManagement command, used to manage resident
+      credentials.
+
+      NOTE: This implements the current draft version of the CTAP2 specification and
+      should be considered highly experimental.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the CredentialManagement class.
+
+      :param sub_cmd: A CredentialManagement sub command.
+      :param sub_cmd_params: Sub command specific parameters.
+      :param pin_uv_protocol: PIN/UV auth protocol version used.
+      :param pin_uv_param: PIN/UV Auth parameter.
+
+
+
+   .. py:method:: bio_enrollment(modality = None, sub_cmd = None, sub_cmd_params = None, pin_uv_protocol = None, pin_uv_param = None, get_modality = None, *, event = None, on_keepalive = None)
+
+      CTAP2 bio enrollment command. Used to provision/enumerate/delete bio
+      enrollments in the authenticator.
+
+      NOTE: This implements the current draft version of the CTAP2 specification and
+      should be considered highly experimental.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the BioEnrollment class.
+
+      :param modality: The user verification modality being used.
+      :param sub_cmd: A BioEnrollment sub command.
+      :param sub_cmd_params: Sub command specific parameters.
+      :param pin_uv_protocol: PIN/UV protocol version used.
+      :param pin_uv_param: PIN/UV auth param.
+      :param get_modality: Get the user verification type modality.
+
+
+
+   .. py:method:: selection(*, event = None, on_keepalive = None)
+
+      CTAP2 authenticator selection command.
+
+      This command allows the platform to let a user select a certain authenticator
+      by asking for user presence.
+
+      :param event: Optional threading.Event used to cancel the request.
+      :param on_keepalive: Optional callback function to handle keep-alive messages
+          from the authenticator.
+
+
+
+   .. py:method:: large_blobs(offset, get = None, set = None, length = None, pin_uv_param = None, pin_uv_protocol = None)
+
+      CTAP2 authenticator large blobs command.
+
+      This command is used to read and write the large blob array.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the LargeBlobs class.
+
+      :param offset: The offset of where to start reading/writing data.
+      :param get: Optional (max) length of data to read.
+      :param set: Optional data to write.
+      :param length: Length of the payload in set.
+      :param pin_uv_protocol: PIN/UV protocol version used.
+      :param pin_uv_param: PIN/UV auth param.
+
+
+
+   .. py:method:: config(sub_cmd, sub_cmd_params = None, pin_uv_protocol = None, pin_uv_param = None)
+
+      CTAP2 authenticator config command.
+
+      This command is used to configure various authenticator features through the
+      use of its subcommands.
+
+      This method is not intended to be called directly. It is intended to be used by
+      an instance of the Config class.
+
+      :param sub_cmd: A Config sub command.
+      :param sub_cmd_params: Sub command specific parameters.
+      :param pin_uv_protocol: PIN/UV auth protocol version used.
+      :param pin_uv_param: PIN/UV Auth parameter.
+
+
+
+.. py:class:: Info
+
+   Bases: :py:obj:`_CborDataObject`
+
+
+   Binary CBOR encoded response data returned by the CTAP2 GET_INFO command.
+
+   See:
+   https://fidoalliance.org/specs/fido-v2.2-rd-20230321/fido-client-to-authenticator-protocol-v2.2-rd-20230321.html#authenticatorGetInfo
+   for descriptions of these fields.
+
+   Note that while many fields are optional when returned by the authenticator,
+   this dataclass uses defaults to represent a missing value such as empty lists
+   or dicts, or the integer value 0. These are used rather than None for omitted
+   values as long as this can be done without introducing any practical ambiguity.
+   This also means that several of these fields may have a 0 value even if the
+   specification states that they should be non-zero when returned from the
+   authenticator.
+
+   :param _: The binary content of the Info data.
+
+
+   .. py:attribute:: versions
+      :type:  list[str]
+
+
+   .. py:attribute:: extensions
+      :type:  list[str]
+      :value: []
+
+
+
+   .. py:attribute:: aaguid
+      :type:  fido2.webauthn.Aaguid
+
+
+   .. py:attribute:: options
+      :type:  dict[str, bool]
+
+
+   .. py:attribute:: max_msg_size
+      :type:  int
+      :value: 1024
+
+
+
+   .. py:attribute:: pin_uv_protocols
+      :type:  list[int]
+      :value: []
+
+
+
+   .. py:attribute:: max_creds_in_list
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: max_cred_id_length
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: transports
+      :type:  list[str]
+      :value: []
+
+
+
+   .. py:attribute:: algorithms
+      :type:  list[dict[str, Any]]
+      :value: []
+
+
+
+   .. py:attribute:: max_large_blob
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: force_pin_change
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: min_pin_length
+      :type:  int
+      :value: 4
+
+
+
+   .. py:attribute:: firmware_version
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: max_cred_blob_length
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: max_rpids_for_min_pin
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: preferred_platform_uv_attempts
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: uv_modality
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: certifications
+      :type:  dict
+
+
+   .. py:attribute:: remaining_disc_creds
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: vendor_prototype_config_commands
+      :type:  list[int]
+      :value: []
+
+
+
+   .. py:attribute:: attestation_formats
+      :type:  list[str]
+      :value: ['packed']
+
+
+
+   .. py:attribute:: uv_count_since_pin
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: long_touch_for_reset
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: enc_identifier
+      :type:  bytes | None
+      :value: None
+
+
+
+   .. py:attribute:: transports_for_reset
+      :type:  list[str]
+      :value: []
+
+
+
+   .. py:attribute:: pin_complexity_policy
+      :type:  bool | None
+      :value: None
+
+
+
+   .. py:attribute:: pin_complexity_policy_url
+      :type:  bytes | None
+      :value: None
+
+
+
+   .. py:attribute:: max_pin_length
+      :type:  int
+      :value: 63
+
+
+
+   .. py:method:: get_identifier(pin_token)
+
+      Decrypt the device identifier using a persistent PUAT.
+
+
+
+.. py:class:: AuthenticationExtensionProcessor(permissions = ClientPin.PERMISSION(0), inputs = None, outputs = None)
+
+   Bases: :py:obj:`ExtensionProcessor`
+
+
+   Processing state for a CTAP2 extension, for single use.
+
+   The ExtensionProcessor holds state and logic for client processing of an extension,
+   for an authentication (GetAssertion) call.
+
+   :param permissions: PinUvAuthToken permissions required by the extension.
+   :param inputs: Default authenticator inputs, if prepare_inputs is not overridden.
+   :param outputs: Default client outputs, if prepare_outputs is not overridden.
+
+
+   .. py:method:: prepare_inputs(selected, pin_token)
+
+      Prepare authenticator extension inputs, to be passed to the Authenenticator.
+
+
+
+   .. py:method:: prepare_outputs(response, pin_token)
+
+      Prepare client extension outputs, to be returned to the caller.
+
+
+
+.. py:class:: Ctap2Extension
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Base class for CTAP2 extensions.
+
+   As of python-fido2 1.2 these instances can be used for multiple requests and
+   should be invoked via the make_credential and get_assertion methods.
+   Subclasses are instantiated for a single request, if the Authenticator supports
+   the extension.
+
+
+   .. py:method:: is_supported(ctap)
+      :abstractmethod:
+
+
+      Whether or not the extension is supported by the authenticator.
+
+
+
+   .. py:method:: make_credential(ctap, options, pin_protocol)
+
+      Start client extension processing for registration.
+
+
+
+   .. py:method:: get_assertion(ctap, options, pin_protocol)
+
+      Start client extension processing for authentication.
+
+
+
+.. py:class:: RegistrationExtensionProcessor(permissions = ClientPin.PERMISSION(0), inputs = None, outputs = None)
+
+   Bases: :py:obj:`ExtensionProcessor`
+
+
+   Processing state for a CTAP2 extension, for single use.
+
+   The ExtensionProcessor holds state and logic for client processing of an extension,
+   for a registration (MakeCredential) call.
+
+   :param permissions: PinUvAuthToken permissions required by the extension.
+   :param inputs: Default authenticator inputs, if prepare_inputs is not overridden.
+   :param outputs: Default client outputs, if prepare_outputs is not overridden.
+
+
+   .. py:method:: prepare_inputs(pin_token)
+
+      Prepare authenticator extension inputs, to be passed to the Authenenticator.
+
+
+
+   .. py:method:: prepare_outputs(response, pin_token)
+
+      Prepare client extension outputs, to be returned to the caller.
+
+
+
+.. py:class:: ClientPin(ctap, protocol = None)
+
+   Implementation of the CTAP2 Client PIN API.
+
+   :param ctap: An instance of a CTAP2 object.
+   :param protocol: An optional instance of a PinUvAuthProtocol object. If None is
+       provided then the latest protocol supported by both library and Authenticator
+       will be used.
+
+
+   .. py:attribute:: PROTOCOLS
+
+
+   .. py:class:: CMD
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: GET_PIN_RETRIES
+         :value: 1
+
+
+
+      .. py:attribute:: GET_KEY_AGREEMENT
+         :value: 2
+
+
+
+      .. py:attribute:: SET_PIN
+         :value: 3
+
+
+
+      .. py:attribute:: CHANGE_PIN
+         :value: 4
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_PIN_LEGACY
+         :value: 5
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_UV
+         :value: 6
+
+
+
+      .. py:attribute:: GET_UV_RETRIES
+         :value: 7
+
+
+
+      .. py:attribute:: GET_TOKEN_USING_PIN
+         :value: 9
+
+
+
+
+   .. py:class:: RESULT
+
+      Bases: :py:obj:`enum.IntEnum`
+
+
+      Enum where members are also (and must be) ints
+
+
+      .. py:attribute:: KEY_AGREEMENT
+         :value: 1
+
+
+
+      .. py:attribute:: PIN_UV_TOKEN
+         :value: 2
+
+
+
+      .. py:attribute:: PIN_RETRIES
+         :value: 3
+
+
+
+      .. py:attribute:: POWER_CYCLE_STATE
+         :value: 4
+
+
+
+      .. py:attribute:: UV_RETRIES
+         :value: 5
+
+
+
+
+   .. py:class:: PERMISSION
+
+      Bases: :py:obj:`enum.IntFlag`
+
+
+      Support for integer-based Flags
+
+
+      .. py:attribute:: MAKE_CREDENTIAL
+         :value: 1
+
+
+
+      .. py:attribute:: GET_ASSERTION
+         :value: 2
+
+
+
+      .. py:attribute:: CREDENTIAL_MGMT
+         :value: 4
+
+
+
+      .. py:attribute:: BIO_ENROLL
+         :value: 8
+
+
+
+      .. py:attribute:: LARGE_BLOB_WRITE
+         :value: 16
+
+
+
+      .. py:attribute:: AUTHENTICATOR_CFG
+         :value: 32
+
+
+
+      .. py:attribute:: PERSISTENT_CREDENTIAL_MGMT
+         :value: 64
+
+
+
+
+   .. py:method:: is_supported(info)
+      :staticmethod:
+
+
+      Checks if ClientPin functionality is supported.
+
+      Note that the ClientPin function is still usable without support for client
+      PIN functionality, as UV token may still be supported.
+
+
+
+   .. py:method:: is_token_supported(info)
+      :staticmethod:
+
+
+      Checks if pinUvAuthToken is supported.
+
+
+
+   .. py:attribute:: ctap
+
+
+   .. py:method:: get_pin_token(pin, permissions = None, permissions_rpid = None)
+
+      Get a PIN/UV token from the authenticator using PIN.
+
+      :param pin: The PIN of the authenticator.
+      :param permissions: The permissions to associate with the token.
+      :param permissions_rpid: The permissions RPID to associate with the token.
+      :return: A PIN/UV token.
+
+
+
+   .. py:method:: get_uv_token(permissions = None, permissions_rpid = None, event = None, on_keepalive = None)
+
+      Get a PIN/UV token from the authenticator using built-in UV.
+
+      :param permissions: The permissions to associate with the token.
+      :param permissions_rpid: The permissions RPID to associate with the token.
+      :param event: An optional threading.Event which can be used to cancel
+          the invocation.
+      :param on_keepalive: An optional callback to handle keep-alive messages
+          from the authenticator. The function is only called once for
+          consecutive keep-alive messages with the same status.
+      :return: A PIN/UV token.
+
+
+
+   .. py:method:: get_pin_retries()
+
+      Get the number of PIN retries remaining.
+
+      :return: A tuple of the number of PIN attempts remaining until the
+      authenticator is locked, and the power cycle state, if available.
+
+
+
+   .. py:method:: get_uv_retries()
+
+      Get the number of UV retries remaining.
+
+      :return: A tuple of the number of UV attempts remaining until the
+      authenticator is locked, and the power cycle state, if available.
+
+
+
+   .. py:method:: set_pin(pin)
+
+      Set the PIN of the autenticator.
+
+      This only works when no PIN is set. To change the PIN when set, use
+      change_pin.
+
+      :param pin: A PIN to set.
+
+
+
+   .. py:method:: change_pin(old_pin, new_pin)
+
+      Change the PIN of the authenticator.
+
+      This only works when a PIN is already set. If no PIN is set, use
+      set_pin.
+
+      :param old_pin: The currently set PIN.
+      :param new_pin: The new PIN to set.
+
+
+
+.. py:class:: PinProtocol
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: VERSION
+      :type:  ClassVar[int]
+
+
+   .. py:method:: encapsulate(peer_cose_key)
+      :abstractmethod:
+
+
+      Generates an encapsulation of the public key.
+      Returns the message to transmit and the shared secret.
+
+
+
+   .. py:method:: encrypt(key, plaintext)
+      :abstractmethod:
+
+
+      Encrypts data
+
+
+
+   .. py:method:: decrypt(key, ciphertext)
+      :abstractmethod:
+
+
+      Decrypts encrypted data
+
+
+
+   .. py:method:: authenticate(key, message)
+      :abstractmethod:
+
+
+      Computes a MAC of the given message.
+
+
+
+   .. py:method:: validate_token(token)
+      :abstractmethod:
+
+
+      Validates that a token is well-formed.
+      Returns the token, or if invalid, raises a ValueError.
+
+
+
+.. py:function:: verify_rp_id(rp_id, origin)
+
+   Checks if a Webauthn RP ID is usable for a given origin.
+
+   :param rp_id: The RP ID to validate.
+   :param origin: The origin of the request.
+   :return: True if the RP ID is usable by the origin, False if not.
+
+
+.. py:function:: sha256(data)
+
+   Produces a SHA256 hash of the input.
+
+   :param data: The input data to hash.
+   :return: The resulting hash.
+
+
+.. py:class:: Aaguid(data)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:method:: parse(value)
+      :classmethod:
+
+
+
+   .. py:attribute:: NONE
+      :type:  Aaguid
+
+
+.. py:class:: AttestationConveyancePreference
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: NONE
+      :value: 'none'
+
+
+
+   .. py:attribute:: INDIRECT
+      :value: 'indirect'
+
+
+
+   .. py:attribute:: DIRECT
+      :value: 'direct'
+
+
+
+   .. py:attribute:: ENTERPRISE
+      :value: 'enterprise'
+
+
+
+.. py:class:: AttestationObject(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   Binary CBOR encoded attestation object.
+
+   :param _: The binary representation of the attestation object.
+   :ivar fmt: The type of attestation used.
+   :ivar auth_data: The attested authenticator data.
+   :ivar att_statement: The attestation statement.
+
+
+   .. py:attribute:: fmt
+      :type:  str
+
+
+   .. py:attribute:: auth_data
+      :type:  AuthenticatorData
+
+
+   .. py:attribute:: att_stmt
+      :type:  Mapping[str, Any]
+
+
+   .. py:method:: create(fmt, auth_data, att_stmt)
+      :classmethod:
+
+
+
+   .. py:method:: from_ctap1(app_param, registration)
+      :classmethod:
+
+
+      Create an AttestationObject from a CTAP1 RegistrationData instance.
+
+      :param app_param: SHA256 hash of the RP ID used for the CTAP1 request.
+      :type app_param: bytes
+      :param registration: The CTAP1 registration data.
+      :type registration: RegistrationData
+      :return: The attestation object, using the "fido-u2f" format.
+      :rtype: AttestationObject
+
+
+
+.. py:class:: AuthenticationExtensionsClientOutputs(outputs = {})
+
+   Bases: :py:obj:`Mapping`\ [\ :py:obj:`str`\ , :py:obj:`Any`\ ]
+
+
+   Holds extension output from a call to MakeCredential or GetAssertion.
+
+   When accessed as a dict, all bytes values will be serialized to base64url encoding,
+   capable of being serialized to JSON.
+
+   When accessed using attributes, richer types will instead be returned.
+
+
+.. py:class:: AuthenticationResponse
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Represents the AuthenticationResponse structure from the WebAuthn specification,
+   with fields modeled after the JSON serialization.
+
+   Serializing this object to JSON can be done by using json.dumps(dict(response)).
+
+   See: https://www.w3.org/TR/webauthn-3/#dictdef-authenticationresponsejson
+
+
+   .. py:attribute:: id
+      :type:  str
+
+
+   .. py:attribute:: raw_id
+      :type:  bytes
+
+
+   .. py:attribute:: response
+      :type:  AuthenticatorAssertionResponse
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  AuthenticatorAttachment | None
+      :value: None
+
+
+
+   .. py:attribute:: client_extension_results
+      :type:  AuthenticationExtensionsClientOutputs
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:method:: from_dict(data)
+      :classmethod:
+
+
+
+.. py:class:: AuthenticatorAssertionResponse
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: client_data
+      :type:  CollectedClientData
+
+
+   .. py:attribute:: authenticator_data
+      :type:  AuthenticatorData
+
+
+   .. py:attribute:: signature
+      :type:  bytes
+
+
+   .. py:attribute:: user_handle
+      :type:  bytes | None
+      :value: None
+
+
+
+.. py:class:: AuthenticatorAttachment
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: PLATFORM
+      :value: 'platform'
+
+
+
+   .. py:attribute:: CROSS_PLATFORM
+      :value: 'cross-platform'
+
+
+
+.. py:class:: AuthenticatorAttestationResponse
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: client_data
+      :type:  CollectedClientData
+
+
+   .. py:attribute:: attestation_object
+      :type:  AttestationObject
+
+
+.. py:class:: AuthenticatorSelectionCriteria
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  AuthenticatorAttachment | None
+      :value: None
+
+
+
+   .. py:attribute:: resident_key
+      :type:  ResidentKeyRequirement | None
+      :value: None
+
+
+
+   .. py:attribute:: user_verification
+      :type:  UserVerificationRequirement | None
+      :value: None
+
+
+
+   .. py:attribute:: require_resident_key
+      :type:  bool | None
+      :value: False
+
+
+
+.. py:class:: CollectedClientData(_)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:class:: TYPE
+
+      Bases: :py:obj:`str`, :py:obj:`enum.Enum`
+
+
+      str(object='') -> str
+      str(bytes_or_buffer[, encoding[, errors]]) -> str
+
+      Create a new string object from the given object. If encoding or
+      errors is specified, then the object must expose a data buffer
+      that will be decoded using the given encoding and error handler.
+      Otherwise, returns the result of object.__str__() (if defined)
+      or repr(object).
+      encoding defaults to 'utf-8'.
+      errors defaults to 'strict'.
+
+
+      .. py:attribute:: CREATE
+         :value: 'webauthn.create'
+
+
+
+      .. py:attribute:: GET
+         :value: 'webauthn.get'
+
+
+
+
+   .. py:attribute:: type
+      :type:  str
+
+
+   .. py:attribute:: challenge
+      :type:  bytes
+
+
+   .. py:attribute:: origin
+      :type:  str
+
+
+   .. py:attribute:: cross_origin
+      :type:  bool
+      :value: False
+
+
+
+   .. py:method:: create(type, challenge, origin, cross_origin = False, **kwargs)
+      :classmethod:
+
+
+
+   .. py:property:: b64
+      :type: str
+
+
+
+   .. py:property:: hash
+      :type: bytes
+
+
+
+.. py:class:: PublicKeyCredentialCreationOptions
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: rp
+      :type:  PublicKeyCredentialRpEntity
+
+
+   .. py:attribute:: user
+      :type:  PublicKeyCredentialUserEntity
+
+
+   .. py:attribute:: challenge
+      :type:  bytes
+
+
+   .. py:attribute:: pub_key_cred_params
+      :type:  Sequence[PublicKeyCredentialParameters]
+
+
+   .. py:attribute:: timeout
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: exclude_credentials
+      :type:  Sequence[PublicKeyCredentialDescriptor] | None
+      :value: None
+
+
+
+   .. py:attribute:: authenticator_selection
+      :type:  AuthenticatorSelectionCriteria | None
+      :value: None
+
+
+
+   .. py:attribute:: hints
+      :type:  Sequence[PublicKeyCredentialHint] | None
+      :value: None
+
+
+
+   .. py:attribute:: attestation
+      :type:  AttestationConveyancePreference | None
+      :value: None
+
+
+
+   .. py:attribute:: attestation_formats
+      :type:  Sequence[str] | None
+      :value: None
+
+
+
+   .. py:attribute:: extensions
+      :type:  Mapping[str, Any] | None
+      :value: None
+
+
+
+.. py:class:: PublicKeyCredentialDescriptor
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:attribute:: id
+      :type:  bytes
+
+
+   .. py:attribute:: transports
+      :type:  Sequence[AuthenticatorTransport] | None
+      :value: None
+
+
+
+.. py:class:: PublicKeyCredentialRequestOptions
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: challenge
+      :type:  bytes
+
+
+   .. py:attribute:: timeout
+      :type:  int | None
+      :value: None
+
+
+
+   .. py:attribute:: rp_id
+      :type:  str | None
+      :value: None
+
+
+
+   .. py:attribute:: allow_credentials
+      :type:  Sequence[PublicKeyCredentialDescriptor] | None
+      :value: None
+
+
+
+   .. py:attribute:: user_verification
+      :type:  UserVerificationRequirement | None
+      :value: None
+
+
+
+   .. py:attribute:: hints
+      :type:  Sequence[PublicKeyCredentialHint] | None
+      :value: None
+
+
+
+   .. py:attribute:: extensions
+      :type:  Mapping[str, Any] | None
+      :value: None
+
+
+
+.. py:class:: PublicKeyCredentialType
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: PUBLIC_KEY
+      :value: 'public-key'
+
+
+
+.. py:class:: RegistrationResponse
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Represents the RegistrationResponse structure from the WebAuthn specification,
+   with fields modeled after the JSON serialization.
+
+   Serializing this object to JSON can be done by using json.dumps(dict(response)).
+
+   See: https://www.w3.org/TR/webauthn-3/#dictdef-registrationresponsejson
+
+
+   .. py:attribute:: id
+      :type:  str
+
+
+   .. py:attribute:: raw_id
+      :type:  bytes
+
+
+   .. py:attribute:: response
+      :type:  AuthenticatorAttestationResponse
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  AuthenticatorAttachment | None
+      :value: None
+
+
+
+   .. py:attribute:: client_extension_results
+      :type:  AuthenticationExtensionsClientOutputs
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:method:: from_dict(data)
+      :classmethod:
+
+
+
+.. py:class:: ResidentKeyRequirement
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: REQUIRED
+      :value: 'required'
+
+
+
+   .. py:attribute:: PREFERRED
+      :value: 'preferred'
+
+
+
+   .. py:attribute:: DISCOURAGED
+      :value: 'discouraged'
+
+
+
+.. py:class:: UserVerificationRequirement
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: REQUIRED
+      :value: 'required'
+
+
+
+   .. py:attribute:: PREFERRED
+      :value: 'preferred'
+
+
+
+   .. py:attribute:: DISCOURAGED
+      :value: 'discouraged'
+
+
 
 .. py:exception:: ClientError(code, cause=None)
 
@@ -69,19 +2171,12 @@ Module Contents
 
 
 
-      .. py:method:: __call__(cause=None)
-
-
 
    .. py:attribute:: code
 
 
    .. py:attribute:: cause
-
-
-   .. py:method:: __repr__()
-
-      Return repr(self).
+      :value: None
 
 
 
@@ -93,7 +2188,7 @@ Module Contents
    Raised when a call cannot be completed without providing PIN.
 
 
-.. py:class:: AssertionSelection(client_data, assertions, extension_results=None)
+.. py:class:: AssertionSelection(client_data, assertions, extension_results = {})
 
    GetAssertion result holding one or more assertions.
 
@@ -173,9 +2268,69 @@ Module Contents
 
 
 
-.. py:class:: Fido2Client(device, origin, verify = verify_rp_id, extension_types = _default_extensions(), user_interaction = UserInteraction(), extensions = [])
+.. py:class:: ClientDataCollector
 
-   Bases: :py:obj:`WebAuthnClient`, :py:obj:`_BaseClient`
+   Bases: :py:obj:`abc.ABC`
+
+
+   Provides client data and logic to the Client.
+
+   Users should subclass this to implement custom behavior for determining the origin,
+   validating the RP ID, and providing client data for a request.
+
+
+   .. py:method:: collect_client_data(options)
+      :abstractmethod:
+
+
+      Called when the client is preparing a request.
+
+      Should return a CollectedClientData object with the client data for the request,
+      as well as the RP ID of the credential.
+
+
+
+.. py:class:: DefaultClientDataCollector(origin, verify = verify_rp_id)
+
+   Bases: :py:obj:`ClientDataCollector`
+
+
+   Default implementation of ClientDataProvider.
+
+   This implementation uses a fixed origin, it can be subclassed to customize specific
+   behavior.
+
+
+   .. py:method:: get_rp_id(options, origin)
+
+      Get the RP ID for the given options and origin.
+
+
+
+   .. py:method:: verify_rp_id(rp_id, origin)
+
+      Verify the RP ID for the given origin.
+
+
+
+   .. py:method:: get_request_type(options)
+
+      Get the request type for the given options.
+
+
+
+   .. py:method:: collect_client_data(options)
+
+      Called when the client is preparing a request.
+
+      Should return a CollectedClientData object with the client data for the request,
+      as well as the RP ID of the credential.
+
+
+
+.. py:class:: Fido2Client(device, client_data_collector, user_interaction = UserInteraction(), extensions = _DEFAULT_EXTENSIONS)
+
+   Bases: :py:obj:`WebAuthnClient`
 
 
    WebAuthn-like client implementation.
@@ -208,54 +2363,6 @@ Module Contents
    .. py:method:: get_assertion(options, event = None)
 
       Get an assertion.
-
-      :param options: PublicKeyCredentialRequestOptions data.
-      :param threading.Event event: (optional) Signal to abort the operation.
-
-
-
-.. py:class:: WindowsClient(origin, verify = verify_rp_id, handle=None, allow_hmac_secret=False)
-
-   Bases: :py:obj:`WebAuthnClient`, :py:obj:`_BaseClient`
-
-
-   Fido2Client-like class using the Windows WebAuthn API.
-
-   Note: This class only works on Windows 10 19H1 or later. This is also when Windows
-   started restricting access to FIDO devices, causing the standard client classes to
-   require admin priveleges to run (unlike this one).
-
-   The make_credential and get_assertion methods are intended to work as a drop-in
-   replacement for the Fido2Client methods of the same name.
-
-   :param str origin: The origin to use.
-   :param verify: Function to verify an RP ID for a given origin.
-   :param ctypes.wintypes.HWND handle: (optional) Window reference to use.
-
-
-   .. py:attribute:: api
-
-
-   .. py:attribute:: info
-
-
-   .. py:method:: is_available()
-      :staticmethod:
-
-
-
-   .. py:method:: make_credential(options, event=None)
-
-      Create a credential using Windows WebAuthN APIs.
-
-      :param options: PublicKeyCredentialCreationOptions data.
-      :param threading.Event event: (optional) Signal to abort the operation.
-
-
-
-   .. py:method:: get_assertion(options, event=None)
-
-      Get assertion using Windows WebAuthN APIs.
 
       :param options: PublicKeyCredentialRequestOptions data.
       :param threading.Event event: (optional) Signal to abort the operation.
