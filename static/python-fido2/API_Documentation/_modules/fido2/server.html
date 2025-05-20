@@ -5,8 +5,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fido2.server &mdash; python-fido2 1.2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  <title>fido2.server &mdash; python-fido2 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -98,42 +98,40 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">.rpid</span> <span class="kn">import</span> <span class="n">verify_rp_id</span>
-<span class="kn">from</span> <span class="nn">.cose</span> <span class="kn">import</span> <span class="n">CoseKey</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">websafe_encode</span><span class="p">,</span> <span class="n">websafe_decode</span>
-<span class="kn">from</span> <span class="nn">.webauthn</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">CollectedClientData</span><span class="p">,</span>
-    <span class="n">AuthenticatorData</span><span class="p">,</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidSignature</span> <span class="k">as</span> <span class="n">_InvalidSignature</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">constant_time</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.cose</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoseKey</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.rpid</span><span class="w"> </span><span class="kn">import</span> <span class="n">verify_rp_id</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">websafe_decode</span><span class="p">,</span> <span class="n">websafe_encode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.webauthn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AttestationConveyancePreference</span><span class="p">,</span>
     <span class="n">AttestationObject</span><span class="p">,</span>
     <span class="n">AttestedCredentialData</span><span class="p">,</span>
-    <span class="n">AttestationConveyancePreference</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialRpEntity</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialUserEntity</span><span class="p">,</span>
-    <span class="n">AuthenticatorSelectionCriteria</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialDescriptor</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialType</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialParameters</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
-    <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
-    <span class="n">UserVerificationRequirement</span><span class="p">,</span>
-    <span class="n">ResidentKeyRequirement</span><span class="p">,</span>
-    <span class="n">AuthenticatorAttachment</span><span class="p">,</span>
-    <span class="n">RegistrationResponse</span><span class="p">,</span>
     <span class="n">AuthenticationResponse</span><span class="p">,</span>
+    <span class="n">AuthenticatorAttachment</span><span class="p">,</span>
+    <span class="n">AuthenticatorData</span><span class="p">,</span>
+    <span class="n">AuthenticatorSelectionCriteria</span><span class="p">,</span>
+    <span class="n">CollectedClientData</span><span class="p">,</span>
     <span class="n">CredentialCreationOptions</span><span class="p">,</span>
     <span class="n">CredentialRequestOptions</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialDescriptor</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialParameters</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialRpEntity</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialType</span><span class="p">,</span>
+    <span class="n">PublicKeyCredentialUserEntity</span><span class="p">,</span>
+    <span class="n">RegistrationResponse</span><span class="p">,</span>
+    <span class="n">ResidentKeyRequirement</span><span class="p">,</span>
+    <span class="n">UserVerificationRequirement</span><span class="p">,</span>
 <span class="p">)</span>
-
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">constant_time</span>
-<span class="kn">from</span> <span class="nn">cryptography.exceptions</span> <span class="kn">import</span> <span class="n">InvalidSignature</span> <span class="k">as</span> <span class="n">_InvalidSignature</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">replace</span>
-<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">overload</span>
-
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -142,11 +140,11 @@
 <span class="n">VerifyOrigin</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_verify_origin_for_rp</span><span class="p">(</span><span class="n">rp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VerifyOrigin</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_verify_origin_for_rp</span><span class="p">(</span><span class="n">rp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VerifyOrigin</span><span class="p">:</span>
     <span class="k">return</span> <span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">verify_rp_id</span><span class="p">(</span><span class="n">rp_id</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_validata_challenge</span><span class="p">(</span><span class="n">challenge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_validata_challenge</span><span class="p">(</span><span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">challenge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">challenge</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -159,7 +157,7 @@
 
 <div class="viewcode-block" id="to_descriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.to_descriptor">[docs]</a>
-<span class="k">def</span> <span class="nf">to_descriptor</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_descriptor</span><span class="p">(</span>
     <span class="n">credential</span><span class="p">:</span> <span class="n">AttestedCredentialData</span><span class="p">,</span> <span class="n">transports</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts an AttestedCredentialData to a PublicKeyCredentialDescriptor.</span>
@@ -172,16 +170,16 @@
 <span class="sd">    :rtype: PublicKeyCredentialDescriptor</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">(</span>
-        <span class="n">PublicKeyCredentialType</span><span class="o">.</span><span class="n">PUBLIC_KEY</span><span class="p">,</span> <span class="n">credential</span><span class="o">.</span><span class="n">credential_id</span><span class="p">,</span> <span class="n">transports</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">PublicKeyCredentialType</span><span class="o">.</span><span class="n">PUBLIC_KEY</span><span class="p">,</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">credential</span><span class="o">.</span><span class="n">credential_id</span><span class="p">,</span>
+        <span class="n">transports</span><span class="o">=</span><span class="n">transports</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
 
-<span class="k">def</span> <span class="nf">_wrap_credentials</span><span class="p">(</span>
-    <span class="n">creds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-        <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">,</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">]]</span>
-    <span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">PublicKeyCredentialDescriptor</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_wrap_credentials</span><span class="p">(</span>
+    <span class="n">creds</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AttestedCredentialData</span> <span class="o">|</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">PublicKeyCredentialDescriptor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">creds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="p">[</span>
@@ -194,7 +192,7 @@
     <span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_ignore_attestation</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ignore_attestation</span><span class="p">(</span>
     <span class="n">attestation_object</span><span class="p">:</span> <span class="n">AttestationObject</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">:</span> <span class="nb">bytes</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Ignore attestation.&quot;&quot;&quot;</span>
@@ -202,7 +200,7 @@
 
 <div class="viewcode-block" id="Fido2Server">
 <a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.Fido2Server">[docs]</a>
-<span class="k">class</span> <span class="nc">Fido2Server</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Fido2Server</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;FIDO2 server.</span>
 
 <span class="sd">    :param rp: Relying party data as `PublicKeyCredentialRpEntity` instance.</span>
@@ -214,19 +212,22 @@
 <span class="sd">        Attestation is also ignored if `attestation` is set to `none`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">rp</span><span class="p">:</span> <span class="n">PublicKeyCredentialRpEntity</span><span class="p">,</span>
-        <span class="n">attestation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AttestationConveyancePreference</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">verify_origin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">VerifyOrigin</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">verify_attestation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">VerifyAttestation</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">attestation</span><span class="p">:</span> <span class="n">AttestationConveyancePreference</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verify_origin</span><span class="p">:</span> <span class="n">VerifyOrigin</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verify_attestation</span><span class="p">:</span> <span class="n">VerifyAttestation</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rp</span> <span class="o">=</span> <span class="n">PublicKeyCredentialRpEntity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_verify</span> <span class="o">=</span> <span class="n">verify_origin</span> <span class="ow">or</span> <span class="n">_verify_origin_for_rp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attestation</span> <span class="o">=</span> <span class="n">AttestationConveyancePreference</span><span class="p">(</span><span class="n">attestation</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">allowed_algorithms</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">PublicKeyCredentialParameters</span><span class="p">(</span><span class="n">PublicKeyCredentialType</span><span class="o">.</span><span class="n">PUBLIC_KEY</span><span class="p">,</span> <span class="n">alg</span><span class="p">)</span>
+            <span class="n">PublicKeyCredentialParameters</span><span class="p">(</span>
+                <span class="nb">type</span><span class="o">=</span><span class="n">PublicKeyCredentialType</span><span class="o">.</span><span class="n">PUBLIC_KEY</span><span class="p">,</span> <span class="n">alg</span><span class="o">=</span><span class="n">alg</span>
+            <span class="p">)</span>
             <span class="k">for</span> <span class="n">alg</span> <span class="ow">in</span> <span class="n">CoseKey</span><span class="o">.</span><span class="n">supported_algorithms</span><span class="p">()</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_verify_attestation</span> <span class="o">=</span> <span class="n">verify_attestation</span> <span class="ow">or</span> <span class="n">_ignore_attestation</span>
@@ -234,18 +235,18 @@
 
 <div class="viewcode-block" id="Fido2Server.register_begin">
 <a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.Fido2Server.register_begin">[docs]</a>
-    <span class="k">def</span> <span class="nf">register_begin</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_begin</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">user</span><span class="p">:</span> <span class="n">PublicKeyCredentialUserEntity</span><span class="p">,</span>
-        <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-            <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">,</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">]]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">resident_key_requirement</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResidentKeyRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">user_verification</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UserVerificationRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">authenticator_attachment</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AuthenticatorAttachment</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">challenge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">Sequence</span><span class="p">[</span><span class="n">AttestedCredentialData</span> <span class="o">|</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resident_key_requirement</span><span class="p">:</span> <span class="n">ResidentKeyRequirement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">user_verification</span><span class="p">:</span> <span class="n">UserVerificationRequirement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">authenticator_attachment</span><span class="p">:</span> <span class="n">AuthenticatorAttachment</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">extensions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">CredentialCreationOptions</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">CredentialCreationOptions</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a PublicKeyCredentialCreationOptions registration object and</span>
 <span class="sd">        the internal state dictionary that needs to be passed as is to the</span>
 <span class="sd">        corresponding `register_complete` call.</span>
@@ -273,18 +274,18 @@
 
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">CredentialCreationOptions</span><span class="p">(</span>
-                <span class="n">PublicKeyCredentialCreationOptions</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="p">,</span>
-                    <span class="n">PublicKeyCredentialUserEntity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">user</span><span class="p">),</span>
-                    <span class="n">challenge</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">allowed_algorithms</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
-                    <span class="n">descriptors</span><span class="p">,</span>
-                    <span class="p">(</span>
+                <span class="n">public_key</span><span class="o">=</span><span class="n">PublicKeyCredentialCreationOptions</span><span class="p">(</span>
+                    <span class="n">rp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="p">,</span>
+                    <span class="n">user</span><span class="o">=</span><span class="n">PublicKeyCredentialUserEntity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">user</span><span class="p">),</span>
+                    <span class="n">challenge</span><span class="o">=</span><span class="n">challenge</span><span class="p">,</span>
+                    <span class="n">pub_key_cred_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">allowed_algorithms</span><span class="p">,</span>
+                    <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+                    <span class="n">exclude_credentials</span><span class="o">=</span><span class="n">descriptors</span><span class="p">,</span>
+                    <span class="n">authenticator_selection</span><span class="o">=</span><span class="p">(</span>
                         <span class="n">AuthenticatorSelectionCriteria</span><span class="p">(</span>
-                            <span class="n">authenticator_attachment</span><span class="p">,</span>
-                            <span class="n">resident_key_requirement</span><span class="p">,</span>
-                            <span class="n">user_verification</span><span class="p">,</span>
+                            <span class="n">authenticator_attachment</span><span class="o">=</span><span class="n">authenticator_attachment</span><span class="p">,</span>
+                            <span class="n">resident_key</span><span class="o">=</span><span class="n">resident_key_requirement</span><span class="p">,</span>
+                            <span class="n">user_verification</span><span class="o">=</span><span class="n">user_verification</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
                             <span class="p">(</span>
@@ -295,60 +296,32 @@
                         <span class="p">)</span>
                         <span class="k">else</span> <span class="kc">None</span>
                     <span class="p">),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">attestation</span><span class="p">,</span>
-                    <span class="n">extensions</span><span class="p">,</span>
+                    <span class="n">attestation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attestation</span><span class="p">,</span>
+                    <span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">),</span>
             <span class="n">state</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
-    <span class="nd">@overload</span>
-    <span class="k">def</span> <span class="nf">register_complete</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">state</span><span class="p">,</span>
-        <span class="n">response</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">RegistrationResponse</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorData</span><span class="p">:</span>
-        <span class="k">pass</span>
-
-    <span class="nd">@overload</span>
-    <span class="k">def</span> <span class="nf">register_complete</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">state</span><span class="p">,</span>
-        <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span><span class="p">,</span>
-        <span class="n">attestation_object</span><span class="p">:</span> <span class="n">AttestationObject</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorData</span><span class="p">:</span>
-        <span class="k">pass</span>
-
 <div class="viewcode-block" id="Fido2Server.register_complete">
 <a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.Fido2Server.register_complete">[docs]</a>
-    <span class="k">def</span> <span class="nf">register_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_complete</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">RegistrationResponse</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AuthenticatorData</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the correctness of the registration data received from</span>
 <span class="sd">        the client.</span>
 
 <span class="sd">        :param state: The state data returned by the corresponding</span>
 <span class="sd">            `register_begin`.</span>
-<span class="sd">        :param client_data: The client data.</span>
-<span class="sd">        :param attestation_object: The attestation object.</span>
+<span class="sd">        :param response: The registration response from the client.</span>
 <span class="sd">        :return: The authenticator data</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;response&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
-            <span class="n">registration</span> <span class="o">=</span> <span class="n">RegistrationResponse</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-            <span class="n">client_data</span> <span class="o">=</span> <span class="n">registration</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">client_data</span>
-            <span class="n">attestation_object</span> <span class="o">=</span> <span class="n">registration</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">attestation_object</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;client_data&quot;</span><span class="p">,</span> <span class="s2">&quot;attestation_object&quot;</span><span class="p">]</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">pos</span><span class="p">}</span>
-            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;incorrect arguments passed to register_complete()&quot;</span><span class="p">)</span>
-            <span class="n">client_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-            <span class="n">attestation_object</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">registration</span> <span class="o">=</span> <span class="n">RegistrationResponse</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="n">client_data</span> <span class="o">=</span> <span class="n">registration</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">client_data</span>
+        <span class="n">attestation_object</span> <span class="o">=</span> <span class="n">registration</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">attestation_object</span>
 
         <span class="k">if</span> <span class="n">client_data</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">TYPE</span><span class="o">.</span><span class="n">CREATE</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect type in CollectedClientData.&quot;</span><span class="p">)</span>
@@ -359,7 +332,7 @@
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong challenge in response.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">constant_time</span><span class="o">.</span><span class="n">bytes_eq</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id_hash</span><span class="p">,</span> <span class="n">attestation_object</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">rp_id_hash</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id_hash</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">attestation_object</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">rp_id_hash</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong RP ID hash in response.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">attestation_object</span><span class="o">.</span><span class="n">auth_data</span><span class="o">.</span><span class="n">is_user_present</span><span class="p">():</span>
@@ -390,15 +363,15 @@
 
 <div class="viewcode-block" id="Fido2Server.authenticate_begin">
 <a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.Fido2Server.authenticate_begin">[docs]</a>
-    <span class="k">def</span> <span class="nf">authenticate_begin</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">authenticate_begin</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-            <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">,</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">]]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">user_verification</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UserVerificationRequirement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">challenge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">Sequence</span><span class="p">[</span><span class="n">AttestedCredentialData</span> <span class="o">|</span> <span class="n">PublicKeyCredentialDescriptor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">user_verification</span><span class="p">:</span> <span class="n">UserVerificationRequirement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">extensions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">CredentialRequestOptions</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">CredentialRequestOptions</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a PublicKeyCredentialRequestOptions assertion object and the internal</span>
 <span class="sd">        state dictionary that needs to be passed as is to the corresponding</span>
 <span class="sd">        `authenticate_complete` call.</span>
@@ -422,43 +395,27 @@
 
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">CredentialRequestOptions</span><span class="p">(</span>
-                <span class="n">PublicKeyCredentialRequestOptions</span><span class="p">(</span>
-                    <span class="n">challenge</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-                    <span class="n">descriptors</span><span class="p">,</span>
-                    <span class="n">user_verification</span><span class="p">,</span>
-                    <span class="n">extensions</span><span class="p">,</span>
+                <span class="n">public_key</span><span class="o">=</span><span class="n">PublicKeyCredentialRequestOptions</span><span class="p">(</span>
+                    <span class="n">challenge</span><span class="o">=</span><span class="n">challenge</span><span class="p">,</span>
+                    <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span>
+                    <span class="n">rp_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="n">allow_credentials</span><span class="o">=</span><span class="n">descriptors</span><span class="p">,</span>
+                    <span class="n">user_verification</span><span class="o">=</span><span class="n">user_verification</span><span class="p">,</span>
+                    <span class="n">extensions</span><span class="o">=</span><span class="n">extensions</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">),</span>
             <span class="n">state</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
-    <span class="nd">@overload</span>
-    <span class="k">def</span> <span class="nf">authenticate_complete</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">state</span><span class="p">,</span>
-        <span class="n">credentials</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">],</span>
-        <span class="n">response</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AuthenticationResponse</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestedCredentialData</span><span class="p">:</span>
-        <span class="k">pass</span>
-
-    <span class="nd">@overload</span>
-    <span class="k">def</span> <span class="nf">authenticate_complete</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">state</span><span class="p">,</span>
-        <span class="n">credentials</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">],</span>
-        <span class="n">credential_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">client_data</span><span class="p">:</span> <span class="n">CollectedClientData</span><span class="p">,</span>
-        <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span><span class="p">,</span>
-        <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestedCredentialData</span><span class="p">:</span>
-        <span class="k">pass</span>
-
 <div class="viewcode-block" id="Fido2Server.authenticate_complete">
 <a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.Fido2Server.authenticate_complete">[docs]</a>
-    <span class="k">def</span> <span class="nf">authenticate_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">authenticate_complete</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AttestedCredentialData</span><span class="p">],</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">AuthenticationResponse</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestedCredentialData</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the correctness of the assertion data received from</span>
 <span class="sd">        the client.</span>
 
@@ -470,27 +427,11 @@
 <span class="sd">        :param auth_data: The authenticator data.</span>
 <span class="sd">        :param signature: The signature provided by the client.&quot;&quot;&quot;</span>
 
-        <span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;response&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;response&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
-            <span class="n">authentication</span> <span class="o">=</span> <span class="n">AuthenticationResponse</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
-            <span class="n">credential_id</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">id</span>
-            <span class="n">client_data</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">client_data</span>
-            <span class="n">auth_data</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">authenticator_data</span>
-            <span class="n">signature</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">signature</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;credential_id&quot;</span><span class="p">,</span> <span class="s2">&quot;client_data&quot;</span><span class="p">,</span> <span class="s2">&quot;auth_data&quot;</span><span class="p">,</span> <span class="s2">&quot;signature&quot;</span><span class="p">]</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">pos</span><span class="p">}</span>
-            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;incorrect arguments passed to authenticate_complete()&quot;</span><span class="p">)</span>
-            <span class="n">credential_id</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-            <span class="n">client_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-            <span class="n">auth_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
-            <span class="n">signature</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span>
+        <span class="n">authentication</span> <span class="o">=</span> <span class="n">AuthenticationResponse</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="n">credential_id</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">raw_id</span>
+        <span class="n">client_data</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">client_data</span>
+        <span class="n">auth_data</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">authenticator_data</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">authentication</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">signature</span>
 
         <span class="k">if</span> <span class="n">client_data</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">CollectedClientData</span><span class="o">.</span><span class="n">TYPE</span><span class="o">.</span><span class="n">GET</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect type in CollectedClientData.&quot;</span><span class="p">)</span>
@@ -498,7 +439,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid origin in CollectedClientData.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">websafe_decode</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;challenge&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="n">client_data</span><span class="o">.</span><span class="n">challenge</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong challenge in response.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">constant_time</span><span class="o">.</span><span class="n">bytes_eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id_hash</span><span class="p">,</span> <span class="n">auth_data</span><span class="o">.</span><span class="n">rp_id_hash</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">constant_time</span><span class="o">.</span><span class="n">bytes_eq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rp</span><span class="o">.</span><span class="n">id_hash</span> <span class="ow">or</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">auth_data</span><span class="o">.</span><span class="n">rp_id_hash</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Wrong RP ID hash in response.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_data</span><span class="o">.</span><span class="n">is_user_present</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;User Present flag not set.&quot;</span><span class="p">)</span>
@@ -523,106 +464,13 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_make_internal_state</span><span class="p">(</span>
-        <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">user_verification</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UserVerificationRequirement</span><span class="p">]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_internal_state</span><span class="p">(</span>
+        <span class="n">challenge</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">user_verification</span><span class="p">:</span> <span class="n">UserVerificationRequirement</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;challenge&quot;</span><span class="p">:</span> <span class="n">websafe_encode</span><span class="p">(</span><span class="n">challenge</span><span class="p">),</span>
             <span class="s2">&quot;user_verification&quot;</span><span class="p">:</span> <span class="n">user_verification</span><span class="p">,</span>
         <span class="p">}</span></div>
-
-
-
-<span class="c1"># TODO 2.0: Delete, or move to an example</span>
-<div class="viewcode-block" id="verify_app_id">
-<a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.verify_app_id">[docs]</a>
-<span class="k">def</span> <span class="nf">verify_app_id</span><span class="p">(</span><span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks if a FIDO U2F App ID is usable for a given origin.</span>
-
-<span class="sd">    :param app_id: The App ID to validate.</span>
-<span class="sd">    :param origin: The origin of the request.</span>
-<span class="sd">    :return: True if the App ID is usable by the origin, False if not.</span>
-
-<span class="sd">    .. deprecated:: 1.2.0</span>
-<span class="sd">       This will be removed in python-fido2 2.0.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
-    <span class="n">hostname</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">hostname</span>
-    <span class="c1"># Note that FIDO U2F requires a secure context, i.e. an origin with https scheme.</span>
-    <span class="c1"># However, most browsers also treat http://localhost as a secure context. See</span>
-    <span class="c1"># https://groups.google.com/a/chromium.org/g/blink-dev/c/RC9dSw-O3fE/m/E3_0XaT0BAAJ</span>
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">scheme</span> <span class="o">!=</span> <span class="s2">&quot;https&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">url</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="n">hostname</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;localhost&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">hostname</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">return</span> <span class="n">verify_rp_id</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">origin</span><span class="p">)</span></div>
-
-
-
-<span class="c1"># TODO 2.0: Delete, or move to an example</span>
-<div class="viewcode-block" id="U2FFido2Server">
-<a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.U2FFido2Server">[docs]</a>
-<span class="k">class</span> <span class="nc">U2FFido2Server</span><span class="p">(</span><span class="n">Fido2Server</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fido2Server which can be used with existing U2F credentials.</span>
-
-<span class="sd">    This Fido2Server can be used with existing U2F credentials by using the</span>
-<span class="sd">    WebAuthn appid extension, as well as with new WebAuthn credentials.</span>
-<span class="sd">    See https://www.w3.org/TR/webauthn/#sctn-appid-extension for details.</span>
-
-<span class="sd">    :param app_id: The appId which was used for U2F registration.</span>
-<span class="sd">    :param verify_u2f_origin: (optional) Alternative function to validate an</span>
-<span class="sd">        origin for U2F credentials.</span>
-
-<span class="sd">    For other parameters, see Fido2Server.</span>
-
-<span class="sd">    .. deprecated:: 1.2.0</span>
-<span class="sd">       This will be removed in python-fido2 2.0.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">rp</span><span class="p">:</span> <span class="n">PublicKeyCredentialRpEntity</span><span class="p">,</span>
-        <span class="n">verify_u2f_origin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">VerifyOrigin</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rp</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">verify_u2f_origin</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;verify_origin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">verify_u2f_origin</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;verify_origin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">verify_app_id</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_app_id</span> <span class="o">=</span> <span class="n">app_id</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_app_id_server</span> <span class="o">=</span> <span class="n">Fido2Server</span><span class="p">(</span>
-            <span class="n">replace</span><span class="p">(</span><span class="n">PublicKeyCredentialRpEntity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="n">app_id</span><span class="p">),</span>
-            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-        <span class="p">)</span>
-
-<div class="viewcode-block" id="U2FFido2Server.register_begin">
-<a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.U2FFido2Server.register_begin">[docs]</a>
-    <span class="k">def</span> <span class="nf">register_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;extensions&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="s2">&quot;appidExclude&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app_id</span>
-        <span class="n">req</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">register_begin</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">req</span><span class="p">,</span> <span class="n">state</span></div>
-
-
-<div class="viewcode-block" id="U2FFido2Server.authenticate_begin">
-<a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.U2FFido2Server.authenticate_begin">[docs]</a>
-    <span class="k">def</span> <span class="nf">authenticate_begin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;extensions&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="s2">&quot;appid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app_id</span>
-        <span class="n">req</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">authenticate_begin</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">req</span><span class="p">,</span> <span class="n">state</span></div>
-
-
-<div class="viewcode-block" id="U2FFido2Server.authenticate_complete">
-<a class="viewcode-back" href="../../autoapi/fido2/server/index.html#fido2.server.U2FFido2Server.authenticate_complete">[docs]</a>
-    <span class="k">def</span> <span class="nf">authenticate_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">authenticate_complete</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app_id_server</span><span class="o">.</span><span class="n">authenticate_complete</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-</div>
 
 </pre></div>
 

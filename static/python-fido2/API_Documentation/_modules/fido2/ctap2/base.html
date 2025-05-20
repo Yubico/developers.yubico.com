@@ -5,8 +5,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fido2.ctap2.base &mdash; python-fido2 1.2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+  <title>fido2.ctap2.base &mdash; python-fido2 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
 
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -98,28 +98,33 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">cbor</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_DataClassMapping</span>
-<span class="kn">from</span> <span class="nn">..ctap</span> <span class="kn">import</span> <span class="n">CtapDevice</span><span class="p">,</span> <span class="n">CtapError</span>
-<span class="kn">from</span> <span class="nn">..cose</span> <span class="kn">import</span> <span class="n">CoseKey</span>
-<span class="kn">from</span> <span class="nn">..hid</span> <span class="kn">import</span> <span class="n">CTAPHID</span><span class="p">,</span> <span class="n">CAPABILITY</span>
-<span class="kn">from</span> <span class="nn">..webauthn</span> <span class="kn">import</span> <span class="n">AuthenticatorData</span><span class="p">,</span> <span class="n">Aaguid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fields</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span>
 
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Event</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
-<span class="kn">import</span> <span class="nn">struct</span>
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">hashes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cipher</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">,</span> <span class="n">modes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.kdf.hkdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HKDF</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">cbor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..cose</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoseKey</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..ctap</span><span class="w"> </span><span class="kn">import</span> <span class="n">CtapDevice</span><span class="p">,</span> <span class="n">CtapError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..hid</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAPABILITY</span><span class="p">,</span> <span class="n">CTAPHID</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_DataClassMapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..webauthn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Aaguid</span><span class="p">,</span> <span class="n">AuthenticatorData</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="args">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/base/index.html#fido2.ctap2.base.args">[docs]</a>
-<span class="k">def</span> <span class="nf">args</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/base/index.html#fido2.client.args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">args</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs a dict from a list of arguments for sending a CBOR command.</span>
 <span class="sd">    None elements will be omitted.</span>
 
@@ -130,84 +135,114 @@
 
 
 
-<span class="k">class</span> <span class="nc">_CborDataObject</span><span class="p">(</span><span class="n">_DataClassMapping</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_CborDataObject</span><span class="p">(</span><span class="n">_DataClassMapping</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_get_field_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">Field</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_field_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">Field</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># type: ignore</span>
 
 
 <div class="viewcode-block" id="Info">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Info">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Info">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">Info</span><span class="p">(</span><span class="n">_CborDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Info</span><span class="p">(</span><span class="n">_CborDataObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary CBOR encoded response data returned by the CTAP2 GET_INFO command.</span>
 
+<span class="sd">    See:</span>
+<span class="sd">    https://fidoalliance.org/specs/fido-v2.2-rd-20230321/fido-client-to-authenticator-protocol-v2.2-rd-20230321.html#authenticatorGetInfo</span>
+<span class="sd">    for descriptions of these fields.</span>
+
+<span class="sd">    Note that while many fields are optional when returned by the authenticator,</span>
+<span class="sd">    this dataclass uses defaults to represent a missing value such as empty lists</span>
+<span class="sd">    or dicts, or the integer value 0. These are used rather than None for omitted</span>
+<span class="sd">    values as long as this can be done without introducing any practical ambiguity.</span>
+<span class="sd">    This also means that several of these fields may have a 0 value even if the</span>
+<span class="sd">    specification states that they should be non-zero when returned from the</span>
+<span class="sd">    authenticator.</span>
+
 <span class="sd">    :param _: The binary content of the Info data.</span>
-<span class="sd">    :ivar versions: The versions supported by the authenticator.</span>
-<span class="sd">    :ivar extensions: The extensions supported by the authenticator.</span>
-<span class="sd">    :ivar aaguid: The AAGUID of the authenticator.</span>
-<span class="sd">    :ivar options: The options supported by the authenticator.</span>
-<span class="sd">    :ivar max_msg_size: The max message size supported by the authenticator.</span>
-<span class="sd">    :ivar pin_uv_protocols: The PIN/UV protocol versions supported by the authenticator.</span>
-<span class="sd">    :ivar max_creds_in_list: Max number of credentials supported in list at a time.</span>
-<span class="sd">    :ivar max_cred_id_length: Max length of Credential ID supported.</span>
-<span class="sd">    :ivar transports: List of supported transports.</span>
-<span class="sd">    :ivar algorithms: List of supported algorithms for credential creation.</span>
-<span class="sd">    :ivar data: The Info members, in the form of a dict.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="n">extensions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">versions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">extensions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">aaguid</span><span class="p">:</span> <span class="n">Aaguid</span> <span class="o">=</span> <span class="n">Aaguid</span><span class="o">.</span><span class="n">NONE</span>
-    <span class="n">options</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">options</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">max_msg_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>
-    <span class="n">pin_uv_protocols</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
-    <span class="n">max_creds_in_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">max_cred_id_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">transports</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
-    <span class="n">algorithms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">max_large_blob</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">pin_uv_protocols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">max_creds_in_list</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">max_cred_id_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">transports</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">algorithms</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">max_large_blob</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">force_pin_change</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">min_pin_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="n">firmware_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">max_cred_blob_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">firmware_version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">max_cred_blob_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">max_rpids_for_min_pin</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">preferred_platform_uv_attempts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">uv_modality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">certifications</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">remaining_disc_creds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">vendor_prototype_config_commands</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">preferred_platform_uv_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">uv_modality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">certifications</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">remaining_disc_creds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">vendor_prototype_config_commands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">attestation_formats</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;packed&quot;</span><span class="p">])</span>
+    <span class="n">uv_count_since_pin</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">long_touch_for_reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">enc_identifier</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">transports_for_reset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">pin_complexity_policy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">pin_complexity_policy_url</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">max_pin_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">63</span>
+
+<div class="viewcode-block" id="Info.get_identifier">
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Info.get_identifier">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_token</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt the device identifier using a persistent PUAT.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc_identifier</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">iv</span><span class="p">,</span> <span class="n">ct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc_identifier</span><span class="p">[:</span><span class="mi">16</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc_identifier</span><span class="p">[</span><span class="mi">16</span><span class="p">:]</span>
+        <span class="n">be</span> <span class="o">=</span> <span class="n">default_backend</span><span class="p">()</span>
+        <span class="n">secret</span> <span class="o">=</span> <span class="n">HKDF</span><span class="p">(</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">(),</span>
+            <span class="n">length</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+            <span class="n">salt</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">32</span><span class="p">,</span>
+            <span class="n">info</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;encIdentifier&quot;</span><span class="p">,</span>
+            <span class="n">backend</span><span class="o">=</span><span class="n">be</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">derive</span><span class="p">(</span><span class="n">pin_token</span><span class="p">)</span>
+
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span><span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">secret</span><span class="p">),</span> <span class="n">modes</span><span class="o">.</span><span class="n">CBC</span><span class="p">(</span><span class="n">iv</span><span class="p">),</span> <span class="n">be</span><span class="p">)</span><span class="o">.</span><span class="n">decryptor</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">dec</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ct</span><span class="p">)</span> <span class="o">+</span> <span class="n">dec</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="AttestationResponse">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.AttestationResponse">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.AttestationResponse">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">AttestationResponse</span><span class="p">(</span><span class="n">_CborDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AttestationResponse</span><span class="p">(</span><span class="n">_CborDataObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary CBOR encoded attestation object.</span>
 
 <span class="sd">    :param _: The binary representation of the attestation object.</span>
-<span class="sd">    :type _: bytes</span>
 <span class="sd">    :ivar fmt: The type of attestation used.</span>
-<span class="sd">    :type fmt: str</span>
 <span class="sd">    :ivar auth_data: The attested authenticator data.</span>
-<span class="sd">    :type auth_data: AuthenticatorData</span>
 <span class="sd">    :ivar att_stmt: The attestation statement.</span>
-<span class="sd">    :type att_stmt: Dict[str, Any]</span>
+<span class="sd">    :ivar ep_att: Whether an enterprise attestation was returned for this credential.</span>
+<span class="sd">    :ivar large_blob_key: The largeBlobKey for the credential, if requested.</span>
+<span class="sd">    :ivar unsigned_extension_outputs: Any unsigned outputs of extensions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span>
-    <span class="n">att_stmt</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-    <span class="n">ep_att</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">large_blob_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">att_stmt</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">ep_att</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">large_blob_key</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">unsigned_extension_outputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="AssertionResponse">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.AssertionResponse">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.AssertionResponse">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">AssertionResponse</span><span class="p">(</span><span class="n">_CborDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AssertionResponse</span><span class="p">(</span><span class="n">_CborDataObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary CBOR encoded assertion response.</span>
 
 <span class="sd">    :param _: The binary representation of the assertion response.</span>
@@ -222,14 +257,14 @@
     <span class="n">credential</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
     <span class="n">auth_data</span><span class="p">:</span> <span class="n">AuthenticatorData</span>
     <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">number_of_credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">user_selected</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">large_blob_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">user</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">number_of_credentials</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">user_selected</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">large_blob_key</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="AssertionResponse.verify">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.AssertionResponse.verify">[docs]</a>
-    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">CoseKey</span><span class="p">):</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.AssertionResponse.verify">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">CoseKey</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the digital signature of the response with regard to the</span>
 <span class="sd">        client_param, using the given public key.</span>
 
@@ -240,9 +275,9 @@
 
 
 <div class="viewcode-block" id="AssertionResponse.from_ctap1">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.AssertionResponse.from_ctap1">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.AssertionResponse.from_ctap1">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_ctap1</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_ctap1</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">app_param</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">credential</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">authentication</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AssertionResponse&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an AssertionResponse from a CTAP1 SignatureData instance.</span>
@@ -267,8 +302,8 @@
 
 
 <div class="viewcode-block" id="Ctap2">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2">[docs]</a>
-<span class="k">class</span> <span class="nc">Ctap2</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Ctap2</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of the CTAP2 specification.</span>
 
 <span class="sd">    :param device: A CtapHidDevice handle supporting CTAP2.</span>
@@ -277,9 +312,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Ctap2.CMD">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.CMD">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.CMD">[docs]</a>
     <span class="nd">@unique</span>
-    <span class="k">class</span> <span class="nc">CMD</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">CMD</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
         <span class="n">MAKE_CREDENTIAL</span> <span class="o">=</span> <span class="mh">0x01</span>
         <span class="n">GET_ASSERTION</span> <span class="o">=</span> <span class="mh">0x02</span>
         <span class="n">GET_INFO</span> <span class="o">=</span> <span class="mh">0x04</span>
@@ -296,7 +331,7 @@
         <span class="n">CREDENTIAL_MGMT_PRE</span> <span class="o">=</span> <span class="mh">0x41</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">CtapDevice</span><span class="p">,</span> <span class="n">strict_cbor</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">CtapDevice</span><span class="p">,</span> <span class="n">strict_cbor</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">device</span><span class="o">.</span><span class="n">capabilities</span> <span class="o">&amp;</span> <span class="n">CAPABILITY</span><span class="o">.</span><span class="n">CBOR</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Device does not support CTAP2.&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
@@ -304,7 +339,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_info</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Info</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Info</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a cached Info object which can be used to determine capabilities.</span>
 
 <span class="sd">        :rtype: Info</span>
@@ -313,14 +348,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span>
 
 <div class="viewcode-block" id="Ctap2.send_cbor">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.send_cbor">[docs]</a>
-    <span class="k">def</span> <span class="nf">send_cbor</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.send_cbor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_cbor</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a CBOR message to the device, and waits for a response.</span>
 
@@ -354,8 +389,8 @@
 
 
 <div class="viewcode-block" id="Ctap2.get_info">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.get_info">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Info</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.get_info">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Info</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 getInfo command.</span>
 
 <span class="sd">        :return: Information about the authenticator.</span>
@@ -364,20 +399,20 @@
 
 
 <div class="viewcode-block" id="Ctap2.client_pin">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.client_pin">[docs]</a>
-    <span class="k">def</span> <span class="nf">client_pin</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.client_pin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">client_pin</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">sub_cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">key_agreement</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">new_pin_enc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_hash_enc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">permissions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">permissions_rpid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">key_agreement</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">new_pin_enc</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_hash_enc</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">permissions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">permissions_rpid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 clientPin command, used for various PIN operations.</span>
 
@@ -417,12 +452,12 @@
 
 
 <div class="viewcode-block" id="Ctap2.reset">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.reset">[docs]</a>
-    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.reset">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 reset command, erases all credentials and PIN.</span>
 
@@ -435,22 +470,22 @@
 
 
 <div class="viewcode-block" id="Ctap2.make_credential">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.make_credential">[docs]</a>
-    <span class="k">def</span> <span class="nf">make_credential</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.make_credential">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_credential</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">client_data_hash</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
         <span class="n">rp</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">user</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
-        <span class="n">key_params</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
-        <span class="n">exclude_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">enterprise_attestation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">key_params</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+        <span class="n">exclude_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enterprise_attestation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttestationResponse</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 makeCredential operation.</span>
 
@@ -492,19 +527,19 @@
 
 
 <div class="viewcode-block" id="Ctap2.get_assertion">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.get_assertion">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_assertion</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.get_assertion">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_assertion</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">rp_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">client_data_hash</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">allow_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">allow_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssertionResponse</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 getAssertion command.</span>
 
@@ -540,8 +575,8 @@
 
 
 <div class="viewcode-block" id="Ctap2.get_next_assertion">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.get_next_assertion">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_next_assertion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssertionResponse</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.get_next_assertion">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_next_assertion</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AssertionResponse</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 getNextAssertion command.</span>
 
 <span class="sd">        :return: The next available assertion response.</span>
@@ -550,8 +585,8 @@
 
 
 <div class="viewcode-block" id="Ctap2.get_assertions">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.get_assertions">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_assertions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">AssertionResponse</span><span class="p">]:</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.get_assertions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_assertions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">AssertionResponse</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience method to get list of assertions.</span>
 
 <span class="sd">        See get_assertion and get_next_assertion for details.</span>
@@ -565,13 +600,13 @@
 
 
 <div class="viewcode-block" id="Ctap2.credential_mgmt">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.credential_mgmt">[docs]</a>
-    <span class="k">def</span> <span class="nf">credential_mgmt</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.credential_mgmt">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">credential_mgmt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sub_cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">sub_cmd_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_cmd_params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 credentialManagement command, used to manage resident</span>
 <span class="sd">        credentials.</span>
@@ -602,18 +637,18 @@
 
 
 <div class="viewcode-block" id="Ctap2.bio_enrollment">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.bio_enrollment">[docs]</a>
-    <span class="k">def</span> <span class="nf">bio_enrollment</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.bio_enrollment">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bio_enrollment</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">modality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">sub_cmd</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">sub_cmd_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">get_modality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">modality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_cmd</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_cmd_params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">get_modality</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 bio enrollment command. Used to provision/enumerate/delete bio</span>
 <span class="sd">        enrollments in the authenticator.</span>
@@ -653,12 +688,12 @@
 
 
 <div class="viewcode-block" id="Ctap2.selection">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.selection">[docs]</a>
-    <span class="k">def</span> <span class="nf">selection</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.selection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">selection</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 authenticator selection command.</span>
 
@@ -673,15 +708,15 @@
 
 
 <div class="viewcode-block" id="Ctap2.large_blobs">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.large_blobs">[docs]</a>
-    <span class="k">def</span> <span class="nf">large_blobs</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.large_blobs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">large_blobs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">get</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="nb">set</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">get</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="nb">set</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 authenticator large blobs command.</span>
 
@@ -704,13 +739,13 @@
 
 
 <div class="viewcode-block" id="Ctap2.config">
-<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.ctap2.base.Ctap2.config">[docs]</a>
-    <span class="k">def</span> <span class="nf">config</span><span class="p">(</span>
+<a class="viewcode-back" href="../../../autoapi/fido2/ctap2/index.html#fido2.client.Ctap2.config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">config</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sub_cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">sub_cmd_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sub_cmd_params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_protocol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pin_uv_param</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;CTAP2 authenticator config command.</span>
 
