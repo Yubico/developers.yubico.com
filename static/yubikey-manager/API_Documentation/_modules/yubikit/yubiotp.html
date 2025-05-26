@@ -1,21 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.yubiotp &mdash; yubikey-manager 5.6.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>yubikit.yubiotp &mdash; yubikey-manager 5.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=31fa7d35"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -32,9 +33,6 @@
           <a href="../../index.html" class="icon icon-home">
             yubikey-manager
           </a>
-              <div class="version">
-                5.6
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -45,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
 </ul>
 
         </div>
@@ -100,32 +98,33 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">TRANSPORT</span><span class="p">,</span>
-    <span class="n">Version</span><span class="p">,</span>
-    <span class="n">bytes2int</span><span class="p">,</span>
-    <span class="n">require_version</span><span class="p">,</span>
-    <span class="n">NotSupportedError</span><span class="p">,</span>
-    <span class="n">BadResponseError</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApplicationNotAvailableError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">check_crc</span><span class="p">,</span>
-    <span class="n">calculate_crc</span><span class="p">,</span>
-    <span class="n">OtpConnection</span><span class="p">,</span>
-    <span class="n">OtpProtocol</span><span class="p">,</span>
-    <span class="n">CommandRejectedError</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="n">AID</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">,</span> <span class="n">SmartCardProtocol</span><span class="p">,</span> <span class="n">ScpKeyParams</span>
-
 <span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hashlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha1</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">unique</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Callable</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TRANSPORT</span><span class="p">,</span>
+    <span class="n">ApplicationNotAvailableError</span><span class="p">,</span>
+    <span class="n">BadResponseError</span><span class="p">,</span>
+    <span class="n">NotSupportedError</span><span class="p">,</span>
+    <span class="n">Version</span><span class="p">,</span>
+    <span class="n">_override_version</span><span class="p">,</span>
+    <span class="n">bytes2int</span><span class="p">,</span>
+    <span class="n">require_version</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CommandRejectedError</span><span class="p">,</span>
+    <span class="n">OtpConnection</span><span class="p">,</span>
+    <span class="n">OtpProtocol</span><span class="p">,</span>
+    <span class="n">calculate_crc</span><span class="p">,</span>
+    <span class="n">check_crc</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="n">AID</span><span class="p">,</span> <span class="n">ScpKeyParams</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">,</span> <span class="n">SmartCardProtocol</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -134,14 +133,14 @@
 
 
 <div class="viewcode-block" id="SLOT">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SLOT">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SLOT">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SLOT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">ONE</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">TWO</span> <span class="o">=</span> <span class="mi">2</span>
 
 <div class="viewcode-block" id="SLOT.map">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SLOT.map">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SLOT.map">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="n">slot</span><span class="p">:</span> <span class="s2">&quot;SLOT&quot;</span><span class="p">,</span> <span class="n">one</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">two</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">slot</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -154,7 +153,7 @@
 
 
 <div class="viewcode-block" id="CONFIG_SLOT">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.CONFIG_SLOT">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.CONFIG_SLOT">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CONFIG_SLOT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">CONFIG_1</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># First (default / V1) configuration</span>
@@ -181,7 +180,7 @@
 
 
 <div class="viewcode-block" id="TKTFLAG">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.TKTFLAG">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.TKTFLAG">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TKTFLAG</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
     <span class="c1"># Yubikey 1 and above</span>
     <span class="n">TAB_FIRST</span> <span class="o">=</span> <span class="mh">0x01</span>  <span class="c1"># Send TAB before first part</span>
@@ -204,7 +203,7 @@
 
 
 <div class="viewcode-block" id="CFGFLAG">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.CFGFLAG">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.CFGFLAG">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CFGFLAG</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
     <span class="c1"># Yubikey 1 and above</span>
     <span class="n">SEND_REF</span> <span class="o">=</span> <span class="mh">0x01</span>  <span class="c1"># Send reference string (0..F) before data</span>
@@ -238,7 +237,7 @@
 
 
 <div class="viewcode-block" id="EXTFLAG">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.EXTFLAG">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.EXTFLAG">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">EXTFLAG</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
     <span class="n">SERIAL_BTN_VISIBLE</span> <span class="o">=</span> <span class="mh">0x01</span>  <span class="c1"># Serial number visible at startup (button press)</span>
     <span class="n">SERIAL_USB_VISIBLE</span> <span class="o">=</span> <span class="mh">0x02</span>  <span class="c1"># Serial number visible in USB iSerial field</span>
@@ -293,7 +292,7 @@
 
 
 <div class="viewcode-block" id="NDEF_TYPE">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.NDEF_TYPE">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.NDEF_TYPE">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">NDEF_TYPE</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">TEXT</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
@@ -388,7 +387,7 @@
 
 
 <div class="viewcode-block" id="CFGSTATE">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.CFGSTATE">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.CFGSTATE">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CFGSTATE</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
     <span class="c1"># Bits in touch_level</span>
@@ -412,7 +411,7 @@
 
 
 <div class="viewcode-block" id="SlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SlotConfiguration</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fixed</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
@@ -429,13 +428,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_flags</span><span class="p">[</span><span class="n">flag_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">|</span> <span class="n">flag</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">flag</span>
 
 <div class="viewcode-block" id="SlotConfiguration.is_supported_by">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.is_supported_by">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.is_supported_by">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_supported_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="SlotConfiguration.get_config">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.get_config">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acc_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_build_config</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fixed</span><span class="p">,</span>
@@ -449,42 +448,42 @@
 
 
 <div class="viewcode-block" id="SlotConfiguration.serial_api_visible">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.serial_api_visible">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.serial_api_visible">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">serial_api_visible</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">SERIAL_API_VISIBLE</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="SlotConfiguration.serial_usb_visible">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.serial_usb_visible">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.serial_usb_visible">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">serial_usb_visible</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">SERIAL_USB_VISIBLE</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="SlotConfiguration.allow_update">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.allow_update">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.allow_update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">allow_update</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">ALLOW_UPDATE</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="SlotConfiguration.dormant">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.dormant">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.dormant">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">dormant</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">DORMANT</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="SlotConfiguration.invert_led">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.invert_led">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.invert_led">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">invert_led</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">LED_INV</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="SlotConfiguration.protect_slot2">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.SlotConfiguration.protect_slot2">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.SlotConfiguration.protect_slot2">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">protect_slot2</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">TKTFLAG</span><span class="o">.</span><span class="n">PROTECT_CFG2</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -493,7 +492,7 @@
 
 
 <div class="viewcode-block" id="HmacSha1SlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HmacSha1SlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HmacSha1SlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HmacSha1SlotConfiguration</span><span class="p">(</span><span class="n">SlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">HmacSha1SlotConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -509,20 +508,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">HMAC_LT64</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="HmacSha1SlotConfiguration.is_supported_by">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HmacSha1SlotConfiguration.is_supported_by">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HmacSha1SlotConfiguration.is_supported_by">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_supported_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span></div>
+        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HmacSha1SlotConfiguration.require_touch">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HmacSha1SlotConfiguration.require_touch">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HmacSha1SlotConfiguration.require_touch">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">require_touch</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">CHAL_BTN_TRIG</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="HmacSha1SlotConfiguration.lt64">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HmacSha1SlotConfiguration.lt64">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HmacSha1SlotConfiguration.lt64">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">lt64</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">HMAC_LT64</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -531,7 +530,7 @@
 
 
 <div class="viewcode-block" id="KeyboardSlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.KeyboardSlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.KeyboardSlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KeyboardSlotConfiguration</span><span class="p">(</span><span class="n">SlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">KeyboardSlotConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -539,21 +538,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">FAST_TRIG</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="KeyboardSlotConfiguration.append_cr">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.KeyboardSlotConfiguration.append_cr">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.KeyboardSlotConfiguration.append_cr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append_cr</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">TKTFLAG</span><span class="o">.</span><span class="n">APPEND_CR</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="KeyboardSlotConfiguration.fast_trigger">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.KeyboardSlotConfiguration.fast_trigger">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.KeyboardSlotConfiguration.fast_trigger">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fast_trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">FAST_TRIG</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="KeyboardSlotConfiguration.pacing">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.KeyboardSlotConfiguration.pacing">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.KeyboardSlotConfiguration.pacing">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">pacing</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">pacing_10ms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">pacing_20ms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">PACING_10MS</span><span class="p">,</span> <span class="n">pacing_10ms</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">PACING_20MS</span><span class="p">,</span> <span class="n">pacing_20ms</span><span class="p">)</span>
@@ -561,7 +560,7 @@
 
 
 <div class="viewcode-block" id="KeyboardSlotConfiguration.use_numeric">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.KeyboardSlotConfiguration.use_numeric">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.KeyboardSlotConfiguration.use_numeric">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">use_numeric</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">EXTFLAG</span><span class="o">.</span><span class="n">USE_NUMERIC_KEYPAD</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -570,7 +569,7 @@
 
 
 <div class="viewcode-block" id="HotpSlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HotpSlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HotpSlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HotpSlotConfiguration</span><span class="p">(</span><span class="n">KeyboardSlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">HotpSlotConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -585,20 +584,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">OATH_FIXED_MODHEX2</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="HotpSlotConfiguration.is_supported_by">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HotpSlotConfiguration.is_supported_by">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HotpSlotConfiguration.is_supported_by">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_supported_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span></div>
+        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HotpSlotConfiguration.digits8">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HotpSlotConfiguration.digits8">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HotpSlotConfiguration.digits8">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">digits8</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">OATH_HOTP8</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="HotpSlotConfiguration.token_id">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HotpSlotConfiguration.token_id">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HotpSlotConfiguration.token_id">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">token_id</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span>
         <span class="n">token_id</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
@@ -615,7 +614,7 @@
 
 
 <div class="viewcode-block" id="HotpSlotConfiguration.imf">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.HotpSlotConfiguration.imf">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.HotpSlotConfiguration.imf">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">imf</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">imf</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">imf</span> <span class="o">%</span> <span class="mi">16</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">imf</span> <span class="o">&lt;=</span> <span class="mh">0xFFFF0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -628,7 +627,7 @@
 
 
 <div class="viewcode-block" id="StaticPasswordSlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.StaticPasswordSlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.StaticPasswordSlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StaticPasswordSlotConfiguration</span><span class="p">(</span><span class="n">KeyboardSlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_codes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">StaticPasswordSlotConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -645,15 +644,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">SHORT_TICKET</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="StaticPasswordSlotConfiguration.is_supported_by">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.StaticPasswordSlotConfiguration.is_supported_by">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.StaticPasswordSlotConfiguration.is_supported_by">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_supported_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span></div>
+        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="YubiOtpSlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">YubiOtpSlotConfiguration</span><span class="p">(</span><span class="n">KeyboardSlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fixed</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">uid</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">YubiOtpSlotConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -672,7 +671,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="n">key</span>
 
 <div class="viewcode-block" id="YubiOtpSlotConfiguration.tabs">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSlotConfiguration.tabs">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSlotConfiguration.tabs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">tabs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span>
         <span class="n">before</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -686,7 +685,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSlotConfiguration.delay">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSlotConfiguration.delay">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSlotConfiguration.delay">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delay</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">after_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">after_second</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">TKTFLAG</span><span class="o">.</span><span class="n">APPEND_DELAY1</span><span class="p">,</span> <span class="n">after_first</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">TKTFLAG</span><span class="o">.</span><span class="n">APPEND_DELAY2</span><span class="p">,</span> <span class="n">after_second</span><span class="p">)</span>
@@ -694,7 +693,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSlotConfiguration.send_reference">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSlotConfiguration.send_reference">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSlotConfiguration.send_reference">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">send_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">SEND_REF</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -703,7 +702,7 @@
 
 
 <div class="viewcode-block" id="StaticTicketSlotConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.StaticTicketSlotConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.StaticTicketSlotConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StaticTicketSlotConfiguration</span><span class="p">(</span><span class="n">KeyboardSlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fixed</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">uid</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">StaticTicketSlotConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -724,14 +723,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">STATIC_TICKET</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="StaticTicketSlotConfiguration.short_ticket">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.StaticTicketSlotConfiguration.short_ticket">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.StaticTicketSlotConfiguration.short_ticket">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">short_ticket</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">SHORT_TICKET</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="StaticTicketSlotConfiguration.strong_password">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.StaticTicketSlotConfiguration.strong_password">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.StaticTicketSlotConfiguration.strong_password">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">strong_password</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">upper_case</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">digit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">special</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
@@ -742,7 +741,7 @@
 
 
 <div class="viewcode-block" id="StaticTicketSlotConfiguration.manual_update">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.StaticTicketSlotConfiguration.manual_update">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.StaticTicketSlotConfiguration.manual_update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">manual_update</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">CFGFLAG</span><span class="o">.</span><span class="n">MAN_UPDATE</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -751,7 +750,7 @@
 
 
 <div class="viewcode-block" id="UpdateConfiguration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.UpdateConfiguration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.UpdateConfiguration">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">UpdateConfiguration</span><span class="p">(</span><span class="n">KeyboardSlotConfiguration</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">UpdateConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -761,9 +760,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="n">KEY_SIZE</span>
 
 <div class="viewcode-block" id="UpdateConfiguration.is_supported_by">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.UpdateConfiguration.is_supported_by">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.UpdateConfiguration.is_supported_by">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_supported_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span></div>
+        <span class="k">return</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -777,13 +776,13 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">UpdateConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
 <div class="viewcode-block" id="UpdateConfiguration.protect_slot2">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.UpdateConfiguration.protect_slot2">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">protect_slot2</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.UpdateConfiguration.protect_slot2">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">protect_slot2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;protect_slot2 cannot be applied to UpdateConfiguration&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="UpdateConfiguration.tabs">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.UpdateConfiguration.tabs">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.UpdateConfiguration.tabs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">tabs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span>
         <span class="n">before</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -797,7 +796,7 @@
 
 
 <div class="viewcode-block" id="UpdateConfiguration.delay">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.UpdateConfiguration.delay">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.UpdateConfiguration.delay">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delay</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Cfg</span><span class="p">,</span> <span class="n">after_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">after_second</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cfg</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">TKTFLAG</span><span class="o">.</span><span class="n">APPEND_DELAY1</span><span class="p">,</span> <span class="n">after_first</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update_flags</span><span class="p">(</span><span class="n">TKTFLAG</span><span class="o">.</span><span class="n">APPEND_DELAY2</span><span class="p">,</span> <span class="n">after_second</span><span class="p">)</span>
@@ -807,7 +806,7 @@
 
 
 <div class="viewcode-block" id="ConfigState">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.ConfigState">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.ConfigState">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConfigState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The configuration state of the YubiOTP application.&quot;&quot;&quot;</span>
 
@@ -816,7 +815,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">CFGSTATE</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">touch_level</span>
 
 <div class="viewcode-block" id="ConfigState.is_configured">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.ConfigState.is_configured">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.ConfigState.is_configured">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_configured</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks of a slot is programmed, or empty&quot;&quot;&quot;</span>
         <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
@@ -824,7 +823,7 @@
 
 
 <div class="viewcode-block" id="ConfigState.is_touch_triggered">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.ConfigState.is_touch_triggered">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.ConfigState.is_touch_triggered">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_touch_triggered</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if a (programmed) state is triggered by touch (not challenge-response)</span>
 <span class="sd">        Requires YubiKey 3 or later.</span>
@@ -834,12 +833,14 @@
 
 
 <div class="viewcode-block" id="ConfigState.is_led_inverted">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.ConfigState.is_led_inverted">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.ConfigState.is_led_inverted">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_led_inverted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if the LED behavior is inverted.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">CFGSTATE</span><span class="o">.</span><span class="n">LED_INV</span> <span class="o">!=</span> <span class="mi">0</span></div>
 
 
+<div class="viewcode-block" id="ConfigState.__repr__">
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.ConfigState.__repr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">try</span><span class="p">:</span>
@@ -855,17 +856,16 @@
         <span class="k">except</span> <span class="n">NotSupportedError</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ConfigState(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+</div>
 
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_Backend</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">CONFIG_SLOT</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">CONFIG_SLOT</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">send_and_receive</span><span class="p">(</span>
@@ -875,8 +875,7 @@
         <span class="n">expected_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span> <span class="o">...</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_YubiOtpOtpBackend</span><span class="p">(</span><span class="n">_Backend</span><span class="p">):</span>
@@ -933,7 +932,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">YubiOtpSession</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A session with the YubiOTP application.&quot;&quot;&quot;</span>
 
@@ -947,7 +946,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SCP can only be used with SmartCardConnection&quot;</span><span class="p">)</span>
             <span class="n">otp_protocol</span> <span class="o">=</span> <span class="n">OtpProtocol</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">otp_protocol</span><span class="o">.</span><span class="n">read_status</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">otp_protocol</span><span class="o">.</span><span class="n">version</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">_override_version</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">otp_protocol</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">:</span> <span class="n">_Backend</span> <span class="o">=</span> <span class="n">_YubiOtpOtpBackend</span><span class="p">(</span><span class="n">otp_protocol</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">):</span>
             <span class="n">card_protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
@@ -967,7 +966,7 @@
                 <span class="c1"># NEO reports the highest of these two</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mgmt_version</span><span class="p">,</span> <span class="n">otp_version</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">mgmt_version</span> <span class="ow">or</span> <span class="n">otp_version</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">=</span> <span class="n">_override_version</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">mgmt_version</span> <span class="ow">or</span> <span class="n">otp_version</span><span class="p">)</span>
             <span class="n">card_protocol</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">scp_key_params</span><span class="p">:</span>
                 <span class="n">card_protocol</span><span class="o">.</span><span class="n">init_scp</span><span class="p">(</span><span class="n">scp_key_params</span><span class="p">)</span>
@@ -983,7 +982,7 @@
         <span class="p">)</span>
 
 <div class="viewcode-block" id="YubiOtpSession.close">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.close">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the underlying connection.</span>
 
@@ -1003,7 +1002,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span>
 
 <div class="viewcode-block" id="YubiOtpSession.get_serial">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.get_serial">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.get_serial">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get serial number.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">bytes2int</span><span class="p">(</span>
@@ -1012,7 +1011,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.get_config_state">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.get_config_state">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.get_config_state">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigState</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get configuration state of the YubiOTP application.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">ConfigState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span></div>
@@ -1027,7 +1026,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Configuration written&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="YubiOtpSession.put_configuration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.put_configuration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.put_configuration">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">put_configuration</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
@@ -1059,7 +1058,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.update_configuration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.update_configuration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.update_configuration">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_configuration</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
@@ -1093,7 +1092,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.swap_slots">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.swap_slots">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.swap_slots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">swap_slots</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Swap the two slot configurations.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Swapping touch slots&quot;</span><span class="p">)</span>
@@ -1101,7 +1100,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.delete_slot">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.delete_slot">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.delete_slot">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span> <span class="n">cur_acc_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete configuration stored in slot.</span>
 
@@ -1118,7 +1117,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.set_scan_map">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.set_scan_map">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.set_scan_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_scan_map</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">scan_map</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">cur_acc_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1132,7 +1131,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.set_ndef_configuration">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.set_ndef_configuration">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.set_ndef_configuration">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_ndef_configuration</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
@@ -1157,7 +1156,7 @@
 
 
 <div class="viewcode-block" id="YubiOtpSession.calculate_hmac_sha1">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.yubiotp.YubiOtpSession.calculate_hmac_sha1">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/yubiotp/index.html#yubikit.yubiotp.YubiOtpSession.calculate_hmac_sha1">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_hmac_sha1</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>

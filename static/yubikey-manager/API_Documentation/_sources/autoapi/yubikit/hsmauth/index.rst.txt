@@ -1,0 +1,410 @@
+yubikit.hsmauth
+===============
+
+.. py:module:: yubikit.hsmauth
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubikit.hsmauth.TAG_LABEL
+   yubikit.hsmauth.TAG_LABEL_LIST
+   yubikit.hsmauth.TAG_CREDENTIAL_PASSWORD
+   yubikit.hsmauth.TAG_ALGORITHM
+   yubikit.hsmauth.TAG_KEY_ENC
+   yubikit.hsmauth.TAG_KEY_MAC
+   yubikit.hsmauth.TAG_CONTEXT
+   yubikit.hsmauth.TAG_RESPONSE
+   yubikit.hsmauth.TAG_VERSION
+   yubikit.hsmauth.TAG_TOUCH
+   yubikit.hsmauth.TAG_MANAGEMENT_KEY
+   yubikit.hsmauth.TAG_PUBLIC_KEY
+   yubikit.hsmauth.TAG_PRIVATE_KEY
+   yubikit.hsmauth.INS_PUT
+   yubikit.hsmauth.INS_DELETE
+   yubikit.hsmauth.INS_CALCULATE
+   yubikit.hsmauth.INS_GET_CHALLENGE
+   yubikit.hsmauth.INS_LIST
+   yubikit.hsmauth.INS_RESET
+   yubikit.hsmauth.INS_GET_VERSION
+   yubikit.hsmauth.INS_PUT_MANAGEMENT_KEY
+   yubikit.hsmauth.INS_GET_MANAGEMENT_KEY_RETRIES
+   yubikit.hsmauth.INS_GET_PUBLIC_KEY
+   yubikit.hsmauth.MANAGEMENT_KEY_LEN
+   yubikit.hsmauth.CREDENTIAL_PASSWORD_LEN
+   yubikit.hsmauth.MIN_LABEL_LEN
+   yubikit.hsmauth.MAX_LABEL_LEN
+   yubikit.hsmauth.DEFAULT_MANAGEMENT_KEY
+   yubikit.hsmauth.INITIAL_RETRY_COUNTER
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubikit.hsmauth.ALGORITHM
+   yubikit.hsmauth.Credential
+   yubikit.hsmauth.SessionKeys
+   yubikit.hsmauth.HsmAuthSession
+
+
+Module Contents
+---------------
+
+.. py:data:: TAG_LABEL
+   :value: 113
+
+
+.. py:data:: TAG_LABEL_LIST
+   :value: 114
+
+
+.. py:data:: TAG_CREDENTIAL_PASSWORD
+   :value: 115
+
+
+.. py:data:: TAG_ALGORITHM
+   :value: 116
+
+
+.. py:data:: TAG_KEY_ENC
+   :value: 117
+
+
+.. py:data:: TAG_KEY_MAC
+   :value: 118
+
+
+.. py:data:: TAG_CONTEXT
+   :value: 119
+
+
+.. py:data:: TAG_RESPONSE
+   :value: 120
+
+
+.. py:data:: TAG_VERSION
+   :value: 121
+
+
+.. py:data:: TAG_TOUCH
+   :value: 122
+
+
+.. py:data:: TAG_MANAGEMENT_KEY
+   :value: 123
+
+
+.. py:data:: TAG_PUBLIC_KEY
+   :value: 124
+
+
+.. py:data:: TAG_PRIVATE_KEY
+   :value: 125
+
+
+.. py:data:: INS_PUT
+   :value: 1
+
+
+.. py:data:: INS_DELETE
+   :value: 2
+
+
+.. py:data:: INS_CALCULATE
+   :value: 3
+
+
+.. py:data:: INS_GET_CHALLENGE
+   :value: 4
+
+
+.. py:data:: INS_LIST
+   :value: 5
+
+
+.. py:data:: INS_RESET
+   :value: 6
+
+
+.. py:data:: INS_GET_VERSION
+   :value: 7
+
+
+.. py:data:: INS_PUT_MANAGEMENT_KEY
+   :value: 8
+
+
+.. py:data:: INS_GET_MANAGEMENT_KEY_RETRIES
+   :value: 9
+
+
+.. py:data:: INS_GET_PUBLIC_KEY
+   :value: 10
+
+
+.. py:data:: MANAGEMENT_KEY_LEN
+   :value: 16
+
+
+.. py:data:: CREDENTIAL_PASSWORD_LEN
+   :value: 16
+
+
+.. py:data:: MIN_LABEL_LEN
+   :value: 1
+
+
+.. py:data:: MAX_LABEL_LEN
+   :value: 64
+
+
+.. py:data:: DEFAULT_MANAGEMENT_KEY
+   :value: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+
+.. py:data:: INITIAL_RETRY_COUNTER
+   :value: 8
+
+
+.. py:class:: ALGORITHM
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Algorithms for YubiHSM Auth credentials.
+
+
+   .. py:attribute:: AES128_YUBICO_AUTHENTICATION
+      :value: 38
+
+
+
+   .. py:attribute:: EC_P256_YUBICO_AUTHENTICATION
+      :value: 39
+
+
+
+   .. py:property:: key_len
+      :type: int
+
+
+
+   .. py:property:: pubkey_len
+
+
+.. py:class:: Credential
+
+   A YubiHSM Auth credential object.
+
+
+   .. py:attribute:: label
+      :type:  str
+
+
+   .. py:attribute:: algorithm
+      :type:  ALGORITHM
+
+
+   .. py:attribute:: counter
+      :type:  int
+
+
+   .. py:attribute:: touch_required
+      :type:  Optional[bool]
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __eq__(other)
+
+
+   .. py:method:: __hash__()
+
+
+.. py:class:: SessionKeys
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   YubiHSM Session Keys.
+
+
+   .. py:attribute:: key_senc
+      :type:  bytes
+
+
+   .. py:attribute:: key_smac
+      :type:  bytes
+
+
+   .. py:attribute:: key_srmac
+      :type:  bytes
+
+
+   .. py:method:: parse(response)
+      :classmethod:
+
+
+
+.. py:class:: HsmAuthSession(connection, scp_key_params = None)
+
+   A session with the YubiHSM Auth application.
+
+
+   .. py:attribute:: protocol
+
+
+   .. py:property:: version
+      :type: yubikit.core.Version
+
+
+      The YubiHSM Auth application version.
+
+
+
+   .. py:method:: reset()
+
+      Perform a factory reset on the YubiHSM Auth application.
+
+
+
+   .. py:method:: list_credentials()
+
+      List YubiHSM Auth credentials on YubiKey
+
+
+
+   .. py:method:: put_credential_symmetric(management_key, label, key_enc, key_mac, credential_password, touch_required = False)
+
+      Import a symmetric YubiHSM Auth credential.
+
+      :param management_key: The management key.
+      :param label: The label of the credential.
+      :param key_enc: The static K-ENC.
+      :param key_mac: The static K-MAC.
+      :param credential_password: The password used to protect
+          access to the credential.
+      :param touch_required: The touch requirement policy.
+
+
+
+   .. py:method:: put_credential_derived(management_key, label, derivation_password, credential_password, touch_required = False)
+
+      Import a symmetric YubiHSM Auth credential derived from password.
+
+      :param management_key: The management key.
+      :param label: The label of the credential.
+      :param derivation_password: The password used to derive the keys from.
+      :param credential_password: The password used to protect
+          access to the credential.
+      :param touch_required: The touch requirement policy.
+
+
+
+   .. py:method:: put_credential_asymmetric(management_key, label, private_key, credential_password, touch_required = False)
+
+      Import an asymmetric YubiHSM Auth credential.
+
+      :param management_key: The management key.
+      :param label: The label of the credential.
+      :param private_key: Private key corresponding to the public
+          authentication key object on the YubiHSM.
+      :param credential_password: The password used to protect
+          access to the credential.
+      :param touch_required: The touch requirement policy.
+
+
+
+   .. py:method:: generate_credential_asymmetric(management_key, label, credential_password, touch_required = False)
+
+      Generate an asymmetric YubiHSM Auth credential.
+
+      Generates a private key on the YubiKey, whose corresponding
+      public key can be retrieved using `get_public_key`.
+
+      :param management_key: The management key.
+      :param label: The label of the credential.
+      :param credential_password: The password used to protect
+          access to the credential.
+      :param touch_required: The touch requirement policy.
+
+
+
+   .. py:method:: get_public_key(label)
+
+      Get the public key for an asymmetric credential.
+
+      This will return the long-term public key "PK-OCE" for an
+      asymmetric credential.
+
+      :param label: The label of the credential.
+
+
+
+   .. py:method:: delete_credential(management_key, label)
+
+      Delete a YubiHSM Auth credential.
+
+      :param management_key: The management key.
+      :param label: The label of the credential.
+
+
+
+   .. py:method:: put_management_key(management_key, new_management_key)
+
+      Change YubiHSM Auth management key
+
+      :param management_key: The current management key.
+      :param new_management_key: The new management key.
+
+
+
+   .. py:method:: get_management_key_retries()
+
+      Get retries remaining for Management key
+
+
+
+   .. py:method:: calculate_session_keys_symmetric(label, context, credential_password, card_crypto = None)
+
+      Calculate session keys from a symmetric YubiHSM Auth credential.
+
+      :param label: The label of the credential.
+      :param context: The context (host challenge + hsm challenge).
+      :param credential_password: The password used to protect
+          access to the credential.
+      :param card_crypto: The card cryptogram.
+
+
+
+   .. py:method:: calculate_session_keys_asymmetric(label, context, public_key, credential_password, card_crypto)
+
+      Calculate session keys from an asymmetric YubiHSM Auth credential.
+
+      :param label: The label of the credential.
+      :param context: The context (EPK.OCE + EPK.SD).
+      :param public_key: The YubiHSM device's public key.
+      :param credential_password: The password used to protect
+          access to the credential.
+      :param card_crypto: The card cryptogram.
+
+
+
+   .. py:method:: get_challenge(label, credential_password = None)
+
+      Get the Host Challenge.
+
+      For symmetric credentials this is Host Challenge, a random 8 byte value.
+      For asymmetric credentials this is EPK-OCE.
+
+      :param label: The label of the credential.
+      :param credential_password: The password used to protect access to the
+          credential, needed for asymmetric credentials.
+
+
+

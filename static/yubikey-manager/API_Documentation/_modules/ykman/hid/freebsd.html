@@ -1,0 +1,456 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ykman.hid.freebsd &mdash; yubikey-manager 5.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            yubikey-manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">yubikey-manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../hid.html">ykman.hid</a></li>
+      <li class="breadcrumb-item active">ykman.hid.freebsd</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ykman.hid.freebsd</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Original work Copyright 2016 Google Inc. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#    http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># Modified work Copyright 2022 Michael Gmelin. All Rights Reserved.</span>
+<span class="c1"># This file, with modifications, is licensed under the above Apache License.</span>
+<span class="c1">#</span>
+<span class="c1"># Modified work Copyright 2022 Yubico AB. All Rights Reserved.</span>
+<span class="c1"># This file, with modifications, is licensed under the above Apache License.</span>
+
+<span class="c1"># FreeBSD HID driver.</span>
+<span class="c1">#</span>
+<span class="c1"># There are two options to access UHID on FreeBSD:</span>
+<span class="c1">#</span>
+<span class="c1"># hidraw(4) - New method, not enabled by default</span>
+<span class="c1">#             on FreeBSD 13.x and earlier</span>
+<span class="c1"># uhid(4) - Classic method, default option on</span>
+<span class="c1">#           FreeBSD 13.x and earlier</span>
+<span class="c1">#</span>
+<span class="c1"># To avoid attaching the Yubikey as a keyboard, do:</span>
+<span class="c1">#</span>
+<span class="c1">#     usbconfig ugenX.Y add_quirk UQ_KBD_IGNORE</span>
+<span class="c1">#     usbconfig ugenX.Y reset</span>
+<span class="c1">#</span>
+<span class="c1"># The list of available devices is shown using `usbconfig list`</span>
+<span class="c1"># You can make these changes permanent by altering loader.conf.</span>
+<span class="c1">#</span>
+<span class="c1"># Starting from FreeBSD 13 hidraw(4) can be enabled using:</span>
+<span class="c1">#</span>
+<span class="c1">#     sysrc kld_list+=&quot;hidraw hkbd&quot;</span>
+<span class="c1">#     cat &gt;&gt;/boot/loader.conf&lt;&lt;EOF</span>
+<span class="c1">#     hw.usb.usbhid.enable=&quot;1&quot;</span>
+<span class="c1">#     hw.usb.quirk.0=&quot;0x1050 0x0010 0 0xffff UQ_KBD_IGNORE&quot;  # YKS_OTP</span>
+<span class="c1">#     hw.usb.quirk.1=&quot;0x1050 0x0110 0 0xffff UQ_KBD_IGNORE&quot;  # NEO_OTP</span>
+<span class="c1">#     hw.usb.quirk.2=&quot;0x1050 0x0111 0 0xffff UQ_KBD_IGNORE&quot;  # NEO_OTP_CCID</span>
+<span class="c1">#     hw.usb.quirk.3=&quot;0x1050 0x0114 0 0xffff UQ_KBD_IGNORE&quot;  # NEO_OTP_FIDO</span>
+<span class="c1">#     hw.usb.quirk.4=&quot;0x1050 0x0116 0 0xffff UQ_KBD_IGNORE&quot;  # NEO_OTP_FIDO_CCID</span>
+<span class="c1">#     hw.usb.quirk.5=&quot;0x1050 0x0401 0 0xffff UQ_KBD_IGNORE&quot;  # YK4_OTP</span>
+<span class="c1">#     hw.usb.quirk.6=&quot;0x1050 0x0403 0 0xffff UQ_KBD_IGNORE&quot;  # YK4_OTP_FIDO</span>
+<span class="c1">#     hw.usb.quirk.7=&quot;0x1050 0x0405 0 0xffff UQ_KBD_IGNORE&quot;  # YK4_OTP_CCID</span>
+<span class="c1">#     hw.usb.quirk.8=&quot;0x1050 0x0407 0 0xffff UQ_KBD_IGNORE&quot;  # YK4_OTP_FIDO_CCID</span>
+<span class="c1">#     hw.usb.quirk.9=&quot;0x1050 0x0410 0 0xffff UQ_KBD_IGNORE&quot;  # YKP_OTP_FIDO</span>
+<span class="c1">#     EOF</span>
+<span class="c1">#     reboot</span>
+<span class="c1">#</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">fcntl</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ctypes.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_library</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="n">OtpConnection</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">USAGE_OTP</span><span class="p">,</span> <span class="n">YUBICO_VID</span><span class="p">,</span> <span class="n">OtpYubiKeyDevice</span>
+
+<span class="c1"># Don&#39;t typecheck this file on Windows</span>
+<span class="k">assert</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">!=</span> <span class="s2">&quot;win32&quot;</span>  <span class="c1"># nosec</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">devdir</span> <span class="o">=</span> <span class="s2">&quot;/dev/&quot;</span>
+
+<span class="c1"># /usr/include/dev/usb/usb_ioctl.h</span>
+<span class="n">USB_GET_REPORT</span> <span class="o">=</span> <span class="mh">0xC0205517</span>
+<span class="n">USB_SET_REPORT</span> <span class="o">=</span> <span class="mh">0x80205518</span>
+<span class="n">USB_GET_REPORT_DESC</span> <span class="o">=</span> <span class="mh">0xC0205515</span>
+
+<span class="c1"># /usr/include/dev/hid/hidraw.h&gt;</span>
+<span class="n">HIDIOCGRAWINFO</span> <span class="o">=</span> <span class="mh">0x40085520</span>
+<span class="n">HIDIOCGRDESC</span> <span class="o">=</span> <span class="mh">0x2000551F</span>
+<span class="n">HIDIOCGRDESCSIZE</span> <span class="o">=</span> <span class="mh">0x4004551E</span>
+<span class="n">HIDIOCGFEATURE_9</span> <span class="o">=</span> <span class="mh">0xC0095524</span>
+<span class="n">HIDIOCSFEATURE_9</span> <span class="o">=</span> <span class="mh">0x80095523</span>
+
+
+<div class="viewcode-block" id="HidrawConnection">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HidrawConnection</span><span class="p">(</span><span class="n">OtpConnection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    hidraw(4) is FreeBSD&#39;s modern raw access driver, based on usbhid(4).</span>
+<span class="sd">    It is available since FreeBSD 13 and can be activated by adding</span>
+<span class="sd">    `hw.usb.usbhid.enable=&quot;1&quot;` to `/boot/loader.conf`. The actual kernel</span>
+<span class="sd">    module is loaded with `kldload hidraw`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">O_RDWR</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HidrawConnection.close">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.close">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HidrawConnection.receive">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.receive">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fd</span><span class="p">,</span> <span class="n">HIDIOCGFEATURE_9</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span></div>
+
+
+<div class="viewcode-block" id="HidrawConnection.send">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.send">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">data</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fd</span><span class="p">,</span> <span class="n">HIDIOCSFEATURE_9</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HidrawConnection.get_info">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.get_info">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_info</span><span class="p">(</span><span class="n">dev</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">HIDIOCGRAWINFO</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;IHH&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HidrawConnection.get_descriptor">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.get_descriptor">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_descriptor</span><span class="p">(</span><span class="n">dev</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">HIDIOCGRDESCSIZE</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">HIDIOCGRDESC</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span></div>
+
+
+<div class="viewcode-block" id="HidrawConnection.get_usage">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.get_usage">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_usage</span><span class="p">(</span><span class="n">dev</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">HidrawConnection</span><span class="o">.</span><span class="n">get_descriptor</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span>
+        <span class="n">usage</span><span class="p">,</span> <span class="n">usage_page</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">buf</span><span class="p">:</span>
+            <span class="n">head</span><span class="p">,</span> <span class="n">buf</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">typ</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="mh">0xFC</span> <span class="o">&amp;</span> <span class="n">head</span><span class="p">,</span> <span class="mh">0x03</span> <span class="o">&amp;</span> <span class="n">head</span>
+            <span class="n">value</span><span class="p">,</span> <span class="n">buf</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[:</span><span class="n">size</span><span class="p">],</span> <span class="n">buf</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+            <span class="k">if</span> <span class="n">typ</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>  <span class="c1"># Usage page</span>
+                <span class="n">usage_page</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">usage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">usage_page</span><span class="p">,</span> <span class="n">usage</span>
+            <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>  <span class="c1"># Usage</span>
+                <span class="n">usage</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">usage_page</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">usage_page</span><span class="p">,</span> <span class="n">usage</span></div>
+
+
+<div class="viewcode-block" id="HidrawConnection.list_devices">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.HidrawConnection.list_devices">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_devices</span><span class="p">():</span>
+        <span class="n">devices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">hidraw</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">devdir</span> <span class="o">+</span> <span class="s2">&quot;hidraw?*&quot;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">hidraw</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">bustype</span><span class="p">,</span> <span class="n">vid</span><span class="p">,</span> <span class="n">pid</span> <span class="o">=</span> <span class="n">HidrawConnection</span><span class="o">.</span><span class="n">get_info</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">vid</span> <span class="o">==</span> <span class="n">YUBICO_VID</span> <span class="ow">and</span> <span class="n">HidrawConnection</span><span class="o">.</span><span class="n">get_usage</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">==</span> <span class="n">USAGE_OTP</span><span class="p">:</span>
+                        <span class="n">devices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OtpYubiKeyDevice</span><span class="p">(</span><span class="n">hidraw</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">HidrawConnection</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed opening HID device&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">devices</span></div>
+</div>
+
+
+
+<span class="c1"># For UhidConnection</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">find_library</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="usb_gen_descriptor">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.usb_gen_descriptor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">usb_gen_descriptor</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="s2">&quot;ugd_data&quot;</span><span class="p">,</span>
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_lang_id&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint16</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_maxlen&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint16</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_actlen&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint16</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_offset&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint16</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_config_index&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_string_index&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_iface_index&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_altif_index&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_endpt_index&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;ugd_report_type&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;reserved&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint8</span> <span class="o">*</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="UhidConnection">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UhidConnection</span><span class="p">(</span><span class="n">OtpConnection</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    uhid(4) is FreeBSD&#39;s classic USB hid access driver and enabled</span>
+<span class="sd">    by default in FreeBSD 13.x and earlier.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">O_RDWR</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UhidConnection.close">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection.close">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UhidConnection.receive">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection.receive">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">usb_gen_descriptor</span><span class="p">(</span>
+            <span class="n">ugd_data</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span>
+            <span class="n">ugd_maxlen</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span>
+            <span class="n">ugd_report_type</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fd</span><span class="p">,</span> <span class="n">USB_GET_REPORT</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">desc</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ioctl failed: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">buf</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="UhidConnection.send">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection.send">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+            <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">usb_gen_descriptor</span><span class="p">(</span>
+            <span class="n">ugd_data</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span>
+            <span class="n">ugd_maxlen</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span>
+            <span class="n">ugd_report_type</span><span class="o">=</span><span class="mh">0x3</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fd</span><span class="p">,</span> <span class="n">USB_SET_REPORT</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">desc</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ioctl failed: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ret</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="UhidConnection.get_usage">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection.get_usage">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_usage</span><span class="p">(</span><span class="n">dev</span><span class="p">):</span>
+        <span class="n">c_data</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="n">usb_gen_descriptor</span><span class="p">(</span>
+            <span class="n">ugd_data</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">c_data</span><span class="p">),</span>
+            <span class="n">ugd_maxlen</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">c_data</span><span class="p">),</span>
+            <span class="n">ugd_report_type</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">USB_GET_REPORT_DESC</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">desc</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ioctl failed&quot;</span><span class="p">)</span>
+
+        <span class="n">REPORT_DESCRIPTOR_KEY_MASK</span> <span class="o">=</span> <span class="mh">0xFC</span>
+        <span class="n">SIZE_MASK</span> <span class="o">=</span> <span class="o">~</span><span class="n">REPORT_DESCRIPTOR_KEY_MASK</span>
+        <span class="n">USAGE_PAGE</span> <span class="o">=</span> <span class="mh">0x04</span>
+        <span class="n">USAGE</span> <span class="o">=</span> <span class="mh">0x08</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">c_data</span><span class="o">.</span><span class="n">raw</span>
+        <span class="n">usage</span><span class="p">,</span> <span class="n">usage_page</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">data</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">usage</span> <span class="ow">and</span> <span class="n">usage_page</span><span class="p">):</span>
+            <span class="n">head</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">key</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">REPORT_DESCRIPTOR_KEY_MASK</span> <span class="o">&amp;</span> <span class="n">head</span><span class="p">,</span> <span class="n">SIZE_MASK</span> <span class="o">&amp;</span> <span class="n">head</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">USAGE_PAGE</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">usage_page</span><span class="p">:</span>
+                <span class="n">usage_page</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="n">USAGE</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">usage</span><span class="p">:</span>
+                <span class="n">usage</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">usage_page</span><span class="p">,</span> <span class="n">usage</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UhidConnection.get_info">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection.get_info">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_info</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+        <span class="n">vendor_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;vendor=(0x[0-9a-fA-F]+)&quot;</span><span class="p">)</span>
+        <span class="n">product_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;product=(0x[0-9a-fA-F]+)&quot;</span><span class="p">)</span>
+        <span class="n">sernum_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;sernum=&quot;([^&quot;]+)&#39;</span><span class="p">)</span>
+
+        <span class="n">pnpinfo</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;dev.uhid.&quot;</span> <span class="o">+</span> <span class="n">index</span> <span class="o">+</span> <span class="s2">&quot;.%pnpinfo&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+
+        <span class="n">ovalue</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">olen</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_size_t</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">ovalue</span><span class="p">))</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">(</span><span class="n">pnpinfo</span><span class="p">)</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">sysctlbyname</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ovalue</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">olen</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">retval</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;sysctlbyname failed&quot;</span><span class="p">)</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">ovalue</span><span class="o">.</span><span class="n">value</span><span class="p">[:</span> <span class="n">olen</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">vendor_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">vid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">product_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">sernum_re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">serial</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">vid</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">serial</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UhidConnection.list_devices">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.UhidConnection.list_devices">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_devices</span><span class="p">():</span>
+        <span class="n">devices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">uhid</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">devdir</span> <span class="o">+</span> <span class="s2">&quot;uhid?*&quot;</span><span class="p">):</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">uhid</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">devdir</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="s2">&quot;uhid&quot;</span><span class="p">)</span> <span class="p">:]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">index</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="k">continue</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">vid</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">serial</span><span class="p">)</span> <span class="o">=</span> <span class="n">UhidConnection</span><span class="o">.</span><span class="n">get_info</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">vid</span> <span class="o">==</span> <span class="n">YUBICO_VID</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">uhid</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">UhidConnection</span><span class="o">.</span><span class="n">get_usage</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span> <span class="o">==</span> <span class="n">USAGE_OTP</span><span class="p">:</span>
+                            <span class="n">devices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OtpYubiKeyDevice</span><span class="p">(</span><span class="n">uhid</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">UhidConnection</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Failed opening HID device&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">devices</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="list_devices">
+<a class="viewcode-back" href="../../../autoapi/ykman/hid/freebsd/index.html#ykman.hid.freebsd.list_devices">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_devices</span><span class="p">():</span>
+    <span class="n">devices</span> <span class="o">=</span> <span class="n">HidrawConnection</span><span class="o">.</span><span class="n">list_devices</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">devices</span><span class="p">:</span>
+        <span class="n">devices</span> <span class="o">=</span> <span class="n">UhidConnection</span><span class="o">.</span><span class="n">list_devices</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">devices</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yubico.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

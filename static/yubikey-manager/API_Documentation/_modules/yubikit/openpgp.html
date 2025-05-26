@@ -1,21 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.openpgp &mdash; yubikey-manager 5.6.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>yubikit.openpgp &mdash; yubikey-manager 5.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=31fa7d35"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -32,9 +33,6 @@
           <a href="../../index.html" class="icon icon-home">
             yubikey-manager
           </a>
-              <div class="version">
-                5.6
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -45,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
 </ul>
 
         </div>
@@ -100,56 +98,54 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Tlv</span><span class="p">,</span>
-    <span class="n">Version</span><span class="p">,</span>
-    <span class="n">NotSupportedError</span><span class="p">,</span>
-    <span class="n">InvalidPinError</span><span class="p">,</span>
-    <span class="n">require_version</span><span class="p">,</span>
-    <span class="n">int2bytes</span><span class="p">,</span>
-    <span class="n">bytes2int</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">SmartCardConnection</span><span class="p">,</span>
-    <span class="n">SmartCardProtocol</span><span class="p">,</span>
-    <span class="n">ApduError</span><span class="p">,</span>
-    <span class="n">AID</span><span class="p">,</span>
-    <span class="n">SW</span><span class="p">,</span>
-    <span class="n">ScpKeyParams</span><span class="p">,</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClassVar</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">SupportsBytes</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">hashes</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Encoding</span><span class="p">,</span>
-    <span class="n">PrivateFormat</span><span class="p">,</span>
-    <span class="n">PublicFormat</span><span class="p">,</span>
-    <span class="n">NoEncryption</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric</span><span class="w"> </span><span class="kn">import</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">ec</span><span class="p">,</span> <span class="n">ed25519</span><span class="p">,</span> <span class="n">x25519</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric</span><span class="w"> </span><span class="kn">import</span> <span class="n">ec</span><span class="p">,</span> <span class="n">ed25519</span><span class="p">,</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">x25519</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Prehashed</span><span class="p">,</span>
     <span class="n">encode_dss_signature</span><span class="p">,</span>
 <span class="p">)</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Optional</span><span class="p">,</span>
-    <span class="n">Tuple</span><span class="p">,</span>
-    <span class="n">ClassVar</span><span class="p">,</span>
-    <span class="n">Mapping</span><span class="p">,</span>
-    <span class="n">Sequence</span><span class="p">,</span>
-    <span class="n">SupportsBytes</span><span class="p">,</span>
-    <span class="n">Union</span><span class="p">,</span>
-    <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">List</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Encoding</span><span class="p">,</span>
+    <span class="n">NoEncryption</span><span class="p">,</span>
+    <span class="n">PrivateFormat</span><span class="p">,</span>
+    <span class="n">PublicFormat</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InvalidPinError</span><span class="p">,</span>
+    <span class="n">NotSupportedError</span><span class="p">,</span>
+    <span class="n">Tlv</span><span class="p">,</span>
+    <span class="n">Version</span><span class="p">,</span>
+    <span class="n">_override_version</span><span class="p">,</span>
+    <span class="n">bytes2int</span><span class="p">,</span>
+    <span class="n">int2bytes</span><span class="p">,</span>
+    <span class="n">require_version</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AID</span><span class="p">,</span>
+    <span class="n">SW</span><span class="p">,</span>
+    <span class="n">ApduError</span><span class="p">,</span>
+    <span class="n">ScpKeyParams</span><span class="p">,</span>
+    <span class="n">SmartCardConnection</span><span class="p">,</span>
+    <span class="n">SmartCardProtocol</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -158,7 +154,7 @@
 
 
 <div class="viewcode-block" id="UIF">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.UIF">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.UIF">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UIF</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>  <span class="c1"># noqa: N801</span>
     <span class="n">OFF</span> <span class="o">=</span> <span class="mh">0x00</span>
@@ -168,14 +164,17 @@
     <span class="n">CACHED_FIXED</span> <span class="o">=</span> <span class="mh">0x04</span>
 
 <div class="viewcode-block" id="UIF.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.UIF.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.UIF.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
 
 
+<div class="viewcode-block" id="UIF.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.UIF.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">GENERAL_FEATURE_MANAGEMENT</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;BB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">GENERAL_FEATURE_MANAGEMENT</span><span class="o">.</span><span class="n">BUTTON</span><span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_fixed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -185,29 +184,35 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">is_cached</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span> <span class="ow">in</span> <span class="p">(</span><span class="n">UIF</span><span class="o">.</span><span class="n">CACHED</span><span class="p">,</span> <span class="n">UIF</span><span class="o">.</span><span class="n">CACHED_FIXED</span><span class="p">)</span>
 
+<div class="viewcode-block" id="UIF.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.UIF.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">UIF</span><span class="o">.</span><span class="n">FIXED</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;On (fixed)&quot;</span>
         <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">UIF</span><span class="o">.</span><span class="n">CACHED_FIXED</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;Cached (fixed)&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="PIN_POLICY">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PIN_POLICY">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PIN_POLICY">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PIN_POLICY</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>  <span class="c1"># noqa: N801</span>
     <span class="n">ALWAYS</span> <span class="o">=</span> <span class="mh">0x00</span>
     <span class="n">ONCE</span> <span class="o">=</span> <span class="mh">0x01</span>
 
+<div class="viewcode-block" id="PIN_POLICY.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PIN_POLICY.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="INS">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.INS">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.INS">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">INS</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>  <span class="c1"># noqa: N801</span>
     <span class="n">VERIFY</span> <span class="o">=</span> <span class="mh">0x20</span>
@@ -243,7 +248,7 @@
 
 
 <div class="viewcode-block" id="PW">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PW">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PW">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PW</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">USER</span> <span class="o">=</span> <span class="mh">0x81</span>
@@ -253,7 +258,7 @@
 
 
 <div class="viewcode-block" id="DO">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.DO">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.DO">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DO</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">PRIVATE_USE_1</span> <span class="o">=</span> <span class="mh">0x0101</span>
@@ -306,7 +311,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpAid">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpAid">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpAid">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OpenPgpAid</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;OpenPGP Application Identifier (AID)</span>
 
@@ -315,7 +320,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;OpenPGP version (tuple of 2 integers: main version, secondary version).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">_bcd</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="n">_bcd</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="mi">7</span><span class="p">]))</span>
 
@@ -344,7 +349,7 @@
 
 
 <div class="viewcode-block" id="EXTENDED_CAPABILITY_FLAGS">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.EXTENDED_CAPABILITY_FLAGS">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.EXTENDED_CAPABILITY_FLAGS">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EXTENDED_CAPABILITY_FLAGS</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
     <span class="n">KDF</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span>
@@ -359,7 +364,7 @@
 
 
 <div class="viewcode-block" id="CardholderRelatedData">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.CardholderRelatedData">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.CardholderRelatedData">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CardholderRelatedData</span><span class="p">:</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">bytes</span>
@@ -367,7 +372,7 @@
     <span class="n">sex</span><span class="p">:</span> <span class="nb">int</span>
 
 <div class="viewcode-block" id="CardholderRelatedData.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.CardholderRelatedData.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.CardholderRelatedData.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CardholderRelatedData&quot;</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">CARDHOLDER_RELATED_DATA</span><span class="p">,</span> <span class="n">encoded</span><span class="p">))</span>
@@ -381,14 +386,14 @@
 
 
 <div class="viewcode-block" id="ExtendedLengthInfo">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.ExtendedLengthInfo">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.ExtendedLengthInfo">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ExtendedLengthInfo</span><span class="p">:</span>
     <span class="n">request_max_bytes</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">response_max_bytes</span><span class="p">:</span> <span class="nb">int</span>
 
 <div class="viewcode-block" id="ExtendedLengthInfo.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.ExtendedLengthInfo.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.ExtendedLengthInfo.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ExtendedLengthInfo&quot;</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span>
@@ -401,7 +406,7 @@
 
 
 <div class="viewcode-block" id="GENERAL_FEATURE_MANAGEMENT">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.GENERAL_FEATURE_MANAGEMENT">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.GENERAL_FEATURE_MANAGEMENT">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GENERAL_FEATURE_MANAGEMENT</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
     <span class="n">TOUCHSCREEN</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span>
@@ -416,7 +421,7 @@
 
 
 <div class="viewcode-block" id="ExtendedCapabilities">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.ExtendedCapabilities">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.ExtendedCapabilities">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ExtendedCapabilities</span><span class="p">:</span>
     <span class="n">flags</span><span class="p">:</span> <span class="n">EXTENDED_CAPABILITY_FLAGS</span>
@@ -428,7 +433,7 @@
     <span class="n">mse_command</span><span class="p">:</span> <span class="nb">bool</span>
 
 <div class="viewcode-block" id="ExtendedCapabilities.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.ExtendedCapabilities.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.ExtendedCapabilities.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ExtendedCapabilities&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
@@ -445,7 +450,7 @@
 
 
 <div class="viewcode-block" id="PwStatus">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PwStatus">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PwStatus">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PwStatus</span><span class="p">:</span>
     <span class="n">pin_policy_user</span><span class="p">:</span> <span class="n">PIN_POLICY</span>
@@ -457,19 +462,19 @@
     <span class="n">attempts_admin</span><span class="p">:</span> <span class="nb">int</span>
 
 <div class="viewcode-block" id="PwStatus.get_max_len">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PwStatus.get_max_len">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PwStatus.get_max_len">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_max_len</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">:</span> <span class="n">PW</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;max_len_</span><span class="si">{</span><span class="n">pw</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PwStatus.get_attempts">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PwStatus.get_attempts">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PwStatus.get_attempts">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_attempts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">:</span> <span class="n">PW</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;attempts_</span><span class="si">{</span><span class="n">pw</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PwStatus.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PwStatus.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PwStatus.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PwStatus&quot;</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -490,7 +495,7 @@
 
 
 <div class="viewcode-block" id="CRT">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.CRT">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.CRT">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CRT</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Control Reference Template values.&quot;&quot;&quot;</span>
@@ -503,7 +508,7 @@
 
 
 <div class="viewcode-block" id="KEY_REF">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KEY_REF">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KEY_REF">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">KEY_REF</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>  <span class="c1"># noqa: N801</span>
     <span class="n">SIG</span> <span class="o">=</span> <span class="mh">0x01</span>
@@ -534,7 +539,7 @@
 
 
 <div class="viewcode-block" id="KEY_STATUS">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KEY_STATUS">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KEY_STATUS">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">KEY_STATUS</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
@@ -565,7 +570,7 @@
 
 <span class="c1"># mypy doesn&#39;t handle abstract dataclasses well</span>
 <div class="viewcode-block" id="AlgorithmAttributes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.AlgorithmAttributes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.AlgorithmAttributes">[docs]</a>
 <span class="nd">@dataclass</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AlgorithmAttributes</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;OpenPGP key algorithm attributes.&quot;&quot;&quot;</span>
@@ -574,7 +579,7 @@
     <span class="n">algorithm_id</span><span class="p">:</span> <span class="nb">int</span>
 
 <div class="viewcode-block" id="AlgorithmAttributes.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.AlgorithmAttributes.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.AlgorithmAttributes.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AlgorithmAttributes&quot;</span><span class="p">:</span>
         <span class="n">algorithm_id</span> <span class="o">=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -584,9 +589,12 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported algorithm ID&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="AlgorithmAttributes.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.AlgorithmAttributes.__bytes__">[docs]</a>
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
 
     <span class="nd">@classmethod</span>
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
@@ -596,7 +604,7 @@
 
 
 <div class="viewcode-block" id="RSA_SIZE">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.RSA_SIZE">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RSA_SIZE">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RSA_SIZE</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">RSA2048</span> <span class="o">=</span> <span class="mi">2048</span>
@@ -606,7 +614,7 @@
 
 
 <div class="viewcode-block" id="RSA_IMPORT_FORMAT">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.RSA_IMPORT_FORMAT">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RSA_IMPORT_FORMAT">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RSA_IMPORT_FORMAT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">STANDARD</span> <span class="o">=</span> <span class="mi">0</span>
@@ -617,7 +625,7 @@
 
 
 <div class="viewcode-block" id="RsaAttributes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.RsaAttributes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RsaAttributes">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RsaAttributes</span><span class="p">(</span><span class="n">AlgorithmAttributes</span><span class="p">):</span>
     <span class="n">_supported_ids</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x01</span><span class="p">]</span>
@@ -627,7 +635,7 @@
     <span class="n">import_format</span><span class="p">:</span> <span class="n">RSA_IMPORT_FORMAT</span>
 
 <div class="viewcode-block" id="RsaAttributes.create">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.RsaAttributes.create">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RsaAttributes.create">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -642,15 +650,18 @@
         <span class="n">n</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&gt;HHB&quot;</span><span class="p">,</span> <span class="n">encoded</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">alg</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">RSA_IMPORT_FORMAT</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
 
+<div class="viewcode-block" id="RsaAttributes.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RsaAttributes.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span>
             <span class="s2">&quot;&gt;BHHB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">e_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">import_format</span>
         <span class="p">)</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="CurveOid">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.CurveOid">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.CurveOid">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CurveOid</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">oid</span> <span class="ow">in</span> <span class="n">OID</span><span class="p">:</span>
@@ -658,17 +669,23 @@
                 <span class="k">return</span> <span class="n">oid</span><span class="o">.</span><span class="n">name</span>
         <span class="k">return</span> <span class="s2">&quot;Unknown Curve&quot;</span>
 
+<div class="viewcode-block" id="CurveOid.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.CurveOid.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_name</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_name</span><span class="p">()</span></div>
 
+
+<div class="viewcode-block" id="CurveOid.__repr__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.CurveOid.__repr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_name</span><span class="p">()</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="OID">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OID">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OID">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OID</span><span class="p">(</span><span class="n">CurveOid</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
     <span class="n">SECP256R1</span> <span class="o">=</span> <span class="n">CurveOid</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x2a\x86\x48\xce\x3d\x03\x01\x07</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">SECP256K1</span> <span class="o">=</span> <span class="n">CurveOid</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x2b\x81\x04\x00\x0a</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -695,16 +712,22 @@
                 <span class="k">return</span> <span class="n">oid</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported private key&quot;</span><span class="p">)</span>
 
+<div class="viewcode-block" id="OID.__repr__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OID.__repr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="OID.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OID.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="EC_IMPORT_FORMAT">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.EC_IMPORT_FORMAT">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.EC_IMPORT_FORMAT">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EC_IMPORT_FORMAT</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">STANDARD</span> <span class="o">=</span> <span class="mi">0</span>
@@ -713,7 +736,7 @@
 
 
 <div class="viewcode-block" id="EcAttributes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.EcAttributes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.EcAttributes">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EcAttributes</span><span class="p">(</span><span class="n">AlgorithmAttributes</span><span class="p">):</span>
     <span class="n">_supported_ids</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0x12</span><span class="p">,</span> <span class="mh">0x13</span><span class="p">,</span> <span class="mh">0x16</span><span class="p">]</span>
@@ -722,7 +745,7 @@
     <span class="n">import_format</span><span class="p">:</span> <span class="n">EC_IMPORT_FORMAT</span>
 
 <div class="viewcode-block" id="EcAttributes.create">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.EcAttributes.create">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.EcAttributes.create">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">oid</span><span class="p">:</span> <span class="n">CurveOid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;EcAttributes&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">oid</span> <span class="o">==</span> <span class="n">OID</span><span class="o">.</span><span class="n">Ed25519</span><span class="p">:</span>
@@ -745,11 +768,14 @@
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">alg</span><span class="p">,</span> <span class="n">CurveOid</span><span class="p">(</span><span class="n">oid</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
 
+<div class="viewcode-block" id="EcAttributes.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.EcAttributes.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">buf</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm_id</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">oid</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">import_format</span> <span class="o">==</span> <span class="n">EC_IMPORT_FORMAT</span><span class="o">.</span><span class="n">STANDARD_W_PUBKEY</span><span class="p">:</span>
             <span class="n">buf</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">import_format</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">buf</span></div>
+</div>
 
 
 
@@ -776,7 +802,7 @@
 
 
 <div class="viewcode-block" id="DiscretionaryDataObjects">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.DiscretionaryDataObjects">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.DiscretionaryDataObjects">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DiscretionaryDataObjects</span><span class="p">:</span>
     <span class="n">extended_capabilities</span><span class="p">:</span> <span class="n">ExtendedCapabilities</span>
@@ -795,7 +821,7 @@
     <span class="n">uif_att</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UIF</span><span class="p">]</span>
 
 <div class="viewcode-block" id="DiscretionaryDataObjects.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.DiscretionaryDataObjects.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.DiscretionaryDataObjects.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DiscretionaryDataObjects&quot;</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span>
@@ -822,13 +848,13 @@
 
 
 <div class="viewcode-block" id="DiscretionaryDataObjects.get_algorithm_attributes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.DiscretionaryDataObjects.get_algorithm_attributes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.DiscretionaryDataObjects.get_algorithm_attributes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_algorithm_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AlgorithmAttributes</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;attributes_</span><span class="si">{</span><span class="n">key_ref</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DiscretionaryDataObjects.get_uif">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.DiscretionaryDataObjects.get_uif">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.DiscretionaryDataObjects.get_uif">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_uif</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">UIF</span><span class="p">]:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;uif_</span><span class="si">{</span><span class="n">key_ref</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
@@ -836,7 +862,7 @@
 
 
 <div class="viewcode-block" id="ApplicationRelatedData">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.ApplicationRelatedData">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.ApplicationRelatedData">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ApplicationRelatedData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;OpenPGP related data.&quot;&quot;&quot;</span>
@@ -848,7 +874,7 @@
     <span class="n">discretionary</span><span class="p">:</span> <span class="n">DiscretionaryDataObjects</span>
 
 <div class="viewcode-block" id="ApplicationRelatedData.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.ApplicationRelatedData.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.ApplicationRelatedData.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ApplicationRelatedData&quot;</span><span class="p">:</span>
         <span class="n">outer</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">APPLICATION_RELATED_DATA</span><span class="p">,</span> <span class="n">encoded</span><span class="p">)</span>
@@ -876,13 +902,13 @@
 
 
 <div class="viewcode-block" id="SecuritySupportTemplate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.SecuritySupportTemplate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.SecuritySupportTemplate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SecuritySupportTemplate</span><span class="p">:</span>
     <span class="n">signature_counter</span><span class="p">:</span> <span class="nb">int</span>
 
 <div class="viewcode-block" id="SecuritySupportTemplate.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.SecuritySupportTemplate.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.SecuritySupportTemplate.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SecuritySupportTemplate&quot;</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">SECURITY_SUPPORT_TEMPLATE</span><span class="p">,</span> <span class="n">encoded</span><span class="p">))</span>
@@ -893,13 +919,13 @@
 
 <span class="c1"># mypy doesn&#39;t handle abstract dataclasses well</span>
 <div class="viewcode-block" id="Kdf">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.Kdf">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.Kdf">[docs]</a>
 <span class="nd">@dataclass</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Kdf</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="n">algorithm</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Kdf.process">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.Kdf.process">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.Kdf.process">[docs]</a>
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">:</span> <span class="n">PW</span><span class="p">,</span> <span class="n">pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the KDF on the input PIN.&quot;&quot;&quot;</span></div>
@@ -911,7 +937,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Kdf.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.Kdf.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.Kdf.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Kdf&quot;</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span>
@@ -925,14 +951,17 @@
         <span class="k">return</span> <span class="n">KdfNone</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="Kdf.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.Kdf.__bytes__">[docs]</a>
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="KdfNone">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KdfNone">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfNone">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">KdfNone</span><span class="p">(</span><span class="n">Kdf</span><span class="p">):</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="mi">0</span>
@@ -942,25 +971,28 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span>
 
 <div class="viewcode-block" id="KdfNone.process">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KdfNone.process">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfNone.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">,</span> <span class="n">pin</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">pin</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="KdfNone.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfNone.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x81</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="p">))</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="HASH_ALGORITHM">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.HASH_ALGORITHM">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.HASH_ALGORITHM">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">HASH_ALGORITHM</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">SHA256</span> <span class="o">=</span> <span class="mh">0x08</span>
     <span class="n">SHA512</span> <span class="o">=</span> <span class="mh">0x0A</span>
 
 <div class="viewcode-block" id="HASH_ALGORITHM.create_digest">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.HASH_ALGORITHM.create_digest">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.HASH_ALGORITHM.create_digest">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_digest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">algorithm</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">hashes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">hashes</span><span class="o">.</span><span class="n">Hash</span><span class="p">(</span><span class="n">algorithm</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span></div>
@@ -969,7 +1001,7 @@
 
 
 <div class="viewcode-block" id="KdfIterSaltedS2k">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KdfIterSaltedS2k">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfIterSaltedS2k">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">KdfIterSaltedS2k</span><span class="p">(</span><span class="n">Kdf</span><span class="p">):</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="mi">3</span>
@@ -977,8 +1009,8 @@
     <span class="n">hash_algorithm</span><span class="p">:</span> <span class="n">HASH_ALGORITHM</span>
     <span class="n">iteration_count</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">salt_user</span><span class="p">:</span> <span class="nb">bytes</span>
-    <span class="n">salt_reset</span><span class="p">:</span> <span class="nb">bytes</span>
-    <span class="n">salt_admin</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">salt_reset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
+    <span class="n">salt_admin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
     <span class="n">initial_hash_user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
     <span class="n">initial_hash_admin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
 
@@ -995,7 +1027,7 @@
         <span class="k">return</span> <span class="n">digest</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 
 <div class="viewcode-block" id="KdfIterSaltedS2k.create">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KdfIterSaltedS2k.create">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfIterSaltedS2k.create">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -1032,19 +1064,21 @@
         <span class="p">)</span>
 
 <div class="viewcode-block" id="KdfIterSaltedS2k.get_salt">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KdfIterSaltedS2k.get_salt">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfIterSaltedS2k.get_salt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_salt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">:</span> <span class="n">PW</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;salt_</span><span class="si">{</span><span class="n">pw</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KdfIterSaltedS2k.process">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.KdfIterSaltedS2k.process">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfIterSaltedS2k.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">,</span> <span class="n">pin</span><span class="p">):</span>
         <span class="n">salt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_salt</span><span class="p">(</span><span class="n">pw</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">salt_user</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">salt</span> <span class="o">+</span> <span class="n">pin</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_process</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_algorithm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration_count</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="KdfIterSaltedS2k.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.KdfIterSaltedS2k.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x81</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&gt;B&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="p">))</span>
@@ -1056,19 +1090,22 @@
             <span class="o">+</span> <span class="p">(</span><span class="n">Tlv</span><span class="p">(</span><span class="mh">0x87</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_hash_user</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_hash_user</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="o">+</span> <span class="p">(</span><span class="n">Tlv</span><span class="p">(</span><span class="mh">0x88</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_hash_admin</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_hash_admin</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="p">)</span></div>
+</div>
 
 
 
 <span class="c1"># mypy doesn&#39;t handle abstract dataclasses well</span>
 <div class="viewcode-block" id="PrivateKeyTemplate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.PrivateKeyTemplate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PrivateKeyTemplate">[docs]</a>
 <span class="nd">@dataclass</span>  <span class="c1"># type: ignore[misc]</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PrivateKeyTemplate</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="n">crt</span><span class="p">:</span> <span class="n">CRT</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_template</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tlv</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_template</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tlv</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
+<div class="viewcode-block" id="PrivateKeyTemplate.__bytes__">
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.PrivateKeyTemplate.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">tlvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_template</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">Tlv</span><span class="p">(</span>
@@ -1077,11 +1114,12 @@
             <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x7F48</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tlv</span><span class="p">[:</span> <span class="o">-</span><span class="n">tlv</span><span class="o">.</span><span class="n">length</span><span class="p">]</span> <span class="k">for</span> <span class="n">tlv</span> <span class="ow">in</span> <span class="n">tlvs</span><span class="p">))</span>
             <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x5F48</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tlv</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">tlv</span> <span class="ow">in</span> <span class="n">tlvs</span><span class="p">)),</span>
         <span class="p">)</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="RsaKeyTemplate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.RsaKeyTemplate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RsaKeyTemplate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RsaKeyTemplate</span><span class="p">(</span><span class="n">PrivateKeyTemplate</span><span class="p">):</span>
     <span class="n">e</span><span class="p">:</span> <span class="nb">bytes</span>
@@ -1089,16 +1127,16 @@
     <span class="n">q</span><span class="p">:</span> <span class="nb">bytes</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
+        <span class="k">return</span> <span class="p">[</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x91</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span><span class="p">),</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x92</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">),</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x93</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">),</span>
-        <span class="p">)</span></div>
+        <span class="p">]</span></div>
 
 
 
 <div class="viewcode-block" id="RsaCrtKeyTemplate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.RsaCrtKeyTemplate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.RsaCrtKeyTemplate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RsaCrtKeyTemplate</span><span class="p">(</span><span class="n">RsaKeyTemplate</span><span class="p">):</span>
     <span class="n">iqmp</span><span class="p">:</span> <span class="nb">bytes</span>
@@ -1107,27 +1145,27 @@
     <span class="n">n</span><span class="p">:</span> <span class="nb">bytes</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
+        <span class="k">return</span> <span class="p">[</span>
             <span class="o">*</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_get_template</span><span class="p">(),</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x94</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iqmp</span><span class="p">),</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x95</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmp1</span><span class="p">),</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x96</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmq1</span><span class="p">),</span>
             <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x97</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">),</span>
-        <span class="p">)</span></div>
+        <span class="p">]</span></div>
 
 
 
 <div class="viewcode-block" id="EcKeyTemplate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.EcKeyTemplate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.EcKeyTemplate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EcKeyTemplate</span><span class="p">(</span><span class="n">PrivateKeyTemplate</span><span class="p">):</span>
     <span class="n">private_key</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="n">public_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_template</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">tlvs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tlv</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">Tlv</span><span class="p">(</span><span class="mh">0x92</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">private_key</span><span class="p">),)</span>
+        <span class="n">tlvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">Tlv</span><span class="p">(</span><span class="mh">0x92</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">private_key</span><span class="p">)]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">public_key</span><span class="p">:</span>
-            <span class="n">tlvs</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">tlvs</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x99</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">public_key</span><span class="p">))</span>
+            <span class="n">tlvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Tlv</span><span class="p">(</span><span class="mh">0x99</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">public_key</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">tlvs</span></div>
 
@@ -1228,15 +1266,17 @@
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">EcAttributes</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">hashed</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">RsaAttributes</span><span class="p">):</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">RsaAttributes</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">_pkcs1v15_headers</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">hash_algorithm</span><span class="p">)]</span> <span class="o">+</span> <span class="n">hashed</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported hash algorithm for RSA: </span><span class="si">{</span><span class="n">hash_algorithm</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported algorithm attributes: </span><span class="si">{</span><span class="n">attributes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="OpenPgpSession">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OpenPgpSession</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A session with the OpenPGP application.&quot;&quot;&quot;</span>
 
@@ -1273,7 +1313,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting version number&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">bcd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS</span><span class="o">.</span><span class="n">GET_VERSION</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">Version</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">_bcd</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bcd</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">_override_version</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">Version</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">_bcd</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bcd</span><span class="p">)))</span>
         <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="c1"># Pre 1.0.2 versions don&#39;t support reading the version</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">CONDITIONS_NOT_SATISFIED</span><span class="p">:</span>
@@ -1299,7 +1339,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app_data</span><span class="o">.</span><span class="n">discretionary</span><span class="o">.</span><span class="n">extended_capabilities</span>
 
 <div class="viewcode-block" id="OpenPgpSession.get_challenge">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_challenge">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_challenge">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_challenge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get random data from the YubiKey.</span>
 
@@ -1316,7 +1356,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_data">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_data">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">do</span><span class="p">:</span> <span class="n">DO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a Data Object from the YubiKey.</span>
 
@@ -1327,7 +1367,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.put_data">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.put_data">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.put_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">put_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">do</span><span class="p">:</span> <span class="n">DO</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">SupportsBytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a Data Object to the YubiKey.</span>
 
@@ -1339,14 +1379,14 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_pin_status">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_pin_status">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_pin_status">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_pin_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PwStatus</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current status of PINS.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">PwStatus</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">PW_STATUS_BYTES</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_signature_counter">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_signature_counter">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_signature_counter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_signature_counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the number of times the signature key has been used.&quot;&quot;&quot;</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">SecuritySupportTemplate</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">SECURITY_SUPPORT_TEMPLATE</span><span class="p">))</span>
@@ -1354,7 +1394,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_application_related_data">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_application_related_data">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_application_related_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_application_related_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ApplicationRelatedData</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the Application Related Data.&quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">ApplicationRelatedData</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">APPLICATION_RELATED_DATA</span><span class="p">))</span>
@@ -1367,7 +1407,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_signature_pin_policy">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_signature_pin_policy">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_signature_pin_policy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_signature_pin_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin_policy</span><span class="p">:</span> <span class="n">PIN_POLICY</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set signature PIN policy.</span>
 
@@ -1382,7 +1422,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.reset">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.reset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.reset">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a factory reset on the OpenPGP application.</span>
 
@@ -1410,7 +1450,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_pin_attempts">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_pin_attempts">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_pin_attempts">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_pin_attempts</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">user_attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">reset_attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">admin_attempts</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1443,7 +1483,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_kdf">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_kdf">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_kdf">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_kdf</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Kdf</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the Key Derivation Function data object.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">EXTENDED_CAPABILITY_FLAGS</span><span class="o">.</span><span class="n">KDF</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_capabilities</span><span class="o">.</span><span class="n">flags</span><span class="p">:</span>
@@ -1455,7 +1495,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_kdf">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_kdf">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_kdf">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_kdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kdf</span><span class="p">:</span> <span class="n">Kdf</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up a PIN Key Derivation Function.</span>
 
@@ -1501,7 +1541,7 @@
             <span class="k">raise</span> <span class="n">e</span>
 
 <div class="viewcode-block" id="OpenPgpSession.verify_pin">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.verify_pin">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.verify_pin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">verify_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="n">extended</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the User PIN.</span>
 
@@ -1518,7 +1558,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.verify_admin">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.verify_admin">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.verify_admin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">verify_admin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">admin_pin</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the Admin PIN.</span>
 
@@ -1531,7 +1571,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.unverify_pin">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.unverify_pin">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.unverify_pin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">unverify_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pw</span><span class="p">:</span> <span class="n">PW</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset verification for PIN.</span>
 
@@ -1564,7 +1604,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New </span><span class="si">{</span><span class="n">pw</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> PIN set&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OpenPgpSession.change_pin">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.change_pin">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.change_pin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">change_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the User PIN.</span>
 
@@ -1575,7 +1615,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.change_admin">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.change_admin">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.change_admin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">change_admin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">admin_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_admin_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the Admin PIN.</span>
 
@@ -1586,7 +1626,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_reset_code">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_reset_code">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_reset_code">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_reset_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reset_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the Reset Code for User PIN.</span>
 
@@ -1604,7 +1644,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.reset_pin">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.reset_pin">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.reset_pin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">reset_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reset_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the User PIN to a new value.</span>
 
@@ -1639,7 +1679,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_algorithm_attributes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_algorithm_attributes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_algorithm_attributes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_algorithm_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AlgorithmAttributes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the algorithm attributes for one of the key slots.</span>
 
@@ -1651,7 +1691,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_algorithm_information">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_algorithm_information">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_algorithm_information">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_algorithm_information</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">KEY_REF</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">AlgorithmAttributes</span><span class="p">]]:</span>
@@ -1688,7 +1728,7 @@
             <span class="n">buf</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">DO</span><span class="o">.</span><span class="n">ALGORITHM_INFORMATION</span><span class="p">,</span> <span class="n">buf</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0\0</span><span class="s2">&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
 
         <span class="n">slots</span> <span class="o">=</span> <span class="p">{</span><span class="n">slot</span><span class="o">.</span><span class="n">algorithm_attributes_do</span><span class="p">:</span> <span class="n">slot</span> <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">KEY_REF</span><span class="p">}</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">KEY_REF</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">AlgorithmAttributes</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">KEY_REF</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">AlgorithmAttributes</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">tlv</span> <span class="ow">in</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_list</span><span class="p">(</span><span class="n">buf</span><span class="p">):</span>
             <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">slots</span><span class="p">[</span><span class="n">DO</span><span class="p">(</span><span class="n">tlv</span><span class="o">.</span><span class="n">tag</span><span class="p">)],</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">AlgorithmAttributes</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">tlv</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
@@ -1713,7 +1753,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_algorithm_attributes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_algorithm_attributes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_algorithm_attributes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_algorithm_attributes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">attributes</span><span class="p">:</span> <span class="n">AlgorithmAttributes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1740,7 +1780,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_uif">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_uif">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_uif">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_uif</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UIF</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the User Interaction Flag (touch requirement) for a key.</span>
 
@@ -1754,7 +1794,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_uif">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_uif">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_uif">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_uif</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">uif</span><span class="p">:</span> <span class="n">UIF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the User Interaction Flag (touch requirement) for a key.</span>
 
@@ -1786,7 +1826,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_key_information">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_key_information">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_key_information">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_key_information</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeyInformation</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the status of the keys.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting Key Information&quot;</span><span class="p">)</span>
@@ -1794,7 +1834,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_generation_times">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_generation_times">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_generation_times">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_generation_times</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GenerationTimes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get timestamps for when keys were generated.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting key generation timestamps&quot;</span><span class="p">)</span>
@@ -1802,7 +1842,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_generation_time">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_generation_time">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_generation_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_generation_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the generation timestamp for a key.</span>
 
@@ -1817,7 +1857,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_fingerprints">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_fingerprints">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_fingerprints">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_fingerprints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Fingerprints</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get key fingerprints.&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting key fingerprints&quot;</span><span class="p">)</span>
@@ -1825,7 +1865,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.set_fingerprint">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.set_fingerprint">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.set_fingerprint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the fingerprint for a key.</span>
 
@@ -1840,7 +1880,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.get_public_key">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_public_key">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_public_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PublicKey</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the public key from a slot.</span>
 
@@ -1857,7 +1897,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.generate_rsa_key">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.generate_rsa_key">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.generate_rsa_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_rsa_key</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">key_size</span><span class="p">:</span> <span class="n">RSA_SIZE</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">:</span>
@@ -1893,7 +1933,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.generate_ec_key">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.generate_ec_key">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.generate_ec_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_ec_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">curve_oid</span><span class="p">:</span> <span class="n">CurveOid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EcPublicKey</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate an EC key in the given slot.</span>
 
@@ -1919,7 +1959,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.put_key">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.put_key">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.put_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">put_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">private_key</span><span class="p">:</span> <span class="n">PrivateKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import a private key into the given slot.</span>
 
@@ -1949,7 +1989,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.delete_key">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.delete_key">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.delete_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete the contents of a key slot.</span>
 
@@ -1993,7 +2033,7 @@
             <span class="k">raise</span>
 
 <div class="viewcode-block" id="OpenPgpSession.get_certificate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.get_certificate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.get_certificate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a certificate from a slot.</span>
 
@@ -2012,7 +2052,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.put_certificate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.put_certificate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.put_certificate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">put_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">,</span> <span class="n">certificate</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import a certificate into a slot.</span>
 
@@ -2033,7 +2073,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.delete_certificate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.delete_certificate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.delete_certificate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a certificate in a slot.</span>
 
@@ -2052,7 +2092,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.attest_key">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.attest_key">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.attest_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">attest_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_ref</span><span class="p">:</span> <span class="n">KEY_REF</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an attestation certificate for a key.</span>
 
@@ -2071,7 +2111,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.sign">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.sign">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.sign">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sign a message using the SIG key.</span>
 
@@ -2095,7 +2135,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.decrypt">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.decrypt">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.decrypt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">decrypt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">EcPublicKey</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt a value using the DEC key.</span>
 
@@ -2116,11 +2156,15 @@
             <span class="n">data</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">Raw</span><span class="p">,</span> <span class="n">PublicFormat</span><span class="o">.</span><span class="n">Raw</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Value must be a bytes or public key&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">RsaAttributes</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span> <span class="n">EcAttributes</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xA6</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x7F49</span><span class="p">,</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x86</span><span class="p">,</span> <span class="n">data</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported algorithm attributes&quot;</span><span class="p">)</span>
 
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS</span><span class="o">.</span><span class="n">PSO</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">,</span> <span class="mh">0x86</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Value decrypted&quot;</span><span class="p">)</span>
@@ -2128,7 +2172,7 @@
 
 
 <div class="viewcode-block" id="OpenPgpSession.authenticate">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.openpgp.OpenPgpSession.authenticate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/openpgp/index.html#yubikit.openpgp.OpenPgpSession.authenticate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">authenticate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">hash_algorithm</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
