@@ -1,0 +1,212 @@
+yubikit.core.otp
+================
+
+.. py:module:: yubikit.core.otp
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubikit.core.otp.MODHEX_ALPHABET
+   yubikit.core.otp.CRC_OK_RESIDUAL
+   yubikit.core.otp.FEATURE_RPT_SIZE
+   yubikit.core.otp.FEATURE_RPT_DATA_SIZE
+   yubikit.core.otp.SLOT_DATA_SIZE
+   yubikit.core.otp.FRAME_SIZE
+   yubikit.core.otp.RESP_PENDING_FLAG
+   yubikit.core.otp.SLOT_WRITE_FLAG
+   yubikit.core.otp.RESP_TIMEOUT_WAIT_FLAG
+   yubikit.core.otp.DUMMY_REPORT_WRITE
+   yubikit.core.otp.SEQUENCE_MASK
+   yubikit.core.otp.STATUS_OFFSET_PROG_SEQ
+   yubikit.core.otp.STATUS_OFFSET_TOUCH_LOW
+   yubikit.core.otp.CONFIG_STATUS_MASK
+   yubikit.core.otp.STATUS_PROCESSING
+   yubikit.core.otp.STATUS_UPNEEDED
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   yubikit.core.otp.CommandRejectedError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubikit.core.otp.OtpConnection
+   yubikit.core.otp.OtpProtocol
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   yubikit.core.otp.calculate_crc
+   yubikit.core.otp.check_crc
+   yubikit.core.otp.modhex_encode
+   yubikit.core.otp.modhex_decode
+
+
+Module Contents
+---------------
+
+.. py:data:: MODHEX_ALPHABET
+   :value: 'cbdefghijklnrtuv'
+
+
+.. py:exception:: CommandRejectedError
+
+   Bases: :py:obj:`yubikit.core.CommandError`
+
+
+   The issues command was rejected by the YubiKey
+
+
+.. py:class:: OtpConnection
+
+   Bases: :py:obj:`yubikit.core.Connection`
+
+
+   A connection to a YubiKey
+
+
+   .. py:attribute:: usb_interface
+
+
+   .. py:method:: receive()
+      :abstractmethod:
+
+
+      Reads an 8 byte feature report
+
+
+
+   .. py:method:: send(data)
+      :abstractmethod:
+
+
+      Writes an 8 byte feature report
+
+
+
+.. py:data:: CRC_OK_RESIDUAL
+   :value: 61624
+
+
+.. py:function:: calculate_crc(data)
+
+.. py:function:: check_crc(data)
+
+.. py:function:: modhex_encode(data)
+
+   Encode a bytes-like object using Modhex (modified hexadecimal) encoding.
+
+
+.. py:function:: modhex_decode(string)
+
+   Decode the Modhex (modified hexadecimal) string.
+
+
+.. py:data:: FEATURE_RPT_SIZE
+   :value: 8
+
+
+.. py:data:: FEATURE_RPT_DATA_SIZE
+   :value: 7
+
+
+.. py:data:: SLOT_DATA_SIZE
+   :value: 64
+
+
+.. py:data:: FRAME_SIZE
+   :value: 70
+
+
+.. py:data:: RESP_PENDING_FLAG
+   :value: 64
+
+
+.. py:data:: SLOT_WRITE_FLAG
+   :value: 128
+
+
+.. py:data:: RESP_TIMEOUT_WAIT_FLAG
+   :value: 32
+
+
+.. py:data:: DUMMY_REPORT_WRITE
+   :value: 143
+
+
+.. py:data:: SEQUENCE_MASK
+   :value: 31
+
+
+.. py:data:: STATUS_OFFSET_PROG_SEQ
+   :value: 4
+
+
+.. py:data:: STATUS_OFFSET_TOUCH_LOW
+   :value: 5
+
+
+.. py:data:: CONFIG_STATUS_MASK
+   :value: 31
+
+
+.. py:data:: STATUS_PROCESSING
+   :value: 1
+
+
+.. py:data:: STATUS_UPNEEDED
+   :value: 2
+
+
+.. py:class:: OtpProtocol(otp_connection)
+
+   An implementation of the OTP protocol.
+
+
+   .. py:attribute:: connection
+
+
+   .. py:attribute:: version
+
+
+   .. py:method:: close()
+
+
+   .. py:method:: send_and_receive(slot, data = None, event = None, on_keepalive = None)
+
+      Sends a command to the YubiKey, and reads the response.
+
+      If the command results in a configuration update, the programming sequence
+      number is verified and the updated status bytes are returned.
+
+      :param slot:  The slot to send to.
+      :param data:  The data payload to send.
+      :param state: Optional CommandState for listening for user presence requirement
+          and for cancelling a command.
+      :return: Response data (including CRC) in the case of data, or an updated status
+          struct.
+
+
+
+   .. py:method:: read_status()
+
+      Receive status bytes from YubiKey.
+
+      :return: Status bytes (first 3 bytes are the firmware version).
+      :raises IOException: in case of communication error.
+
+
+
