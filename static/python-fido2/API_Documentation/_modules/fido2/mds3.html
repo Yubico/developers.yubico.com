@@ -5,8 +5,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fido2.mds3 &mdash; python-fido2 1.2.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+  <title>fido2.mds3 &mdash; python-fido2 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=6efca38a"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -98,29 +98,29 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">.webauthn</span> <span class="kn">import</span> <span class="n">AttestationObject</span><span class="p">,</span> <span class="n">Aaguid</span>
-<span class="kn">from</span> <span class="nn">.attestation</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">base64</span><span class="w"> </span><span class="kn">import</span> <span class="n">b64decode</span><span class="p">,</span> <span class="n">b64encode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextvars</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContextVar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.attestation</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Attestation</span><span class="p">,</span>
+    <span class="n">AttestationVerifier</span><span class="p">,</span>
     <span class="n">UntrustedAttestation</span><span class="p">,</span>
     <span class="n">verify_x509_chain</span><span class="p">,</span>
-    <span class="n">AttestationVerifier</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">websafe_decode</span><span class="p">,</span> <span class="n">_JsonDataObject</span>
-<span class="kn">from</span> <span class="nn">.cose</span> <span class="kn">import</span> <span class="n">CoseKey</span>
-
-<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
-<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64decode</span><span class="p">,</span> <span class="n">b64encode</span>
-<span class="kn">from</span> <span class="nn">contextvars</span> <span class="kn">import</span> <span class="n">ContextVar</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
-
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.cose</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoseKey</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_JsonDataObject</span><span class="p">,</span> <span class="n">websafe_decode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.webauthn</span><span class="w"> </span><span class="kn">import</span> <span class="n">Aaguid</span><span class="p">,</span> <span class="n">AttestationObject</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -128,7 +128,7 @@
 <div class="viewcode-block" id="Version">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.Version">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">Version</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Version</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">major</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">minor</span><span class="p">:</span> <span class="nb">int</span></div>
 
@@ -137,7 +137,7 @@
 <div class="viewcode-block" id="RogueListEntry">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.RogueListEntry">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">RogueListEntry</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RogueListEntry</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">sk</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="n">date</span><span class="p">:</span> <span class="nb">int</span></div>
 
@@ -146,7 +146,7 @@
 <div class="viewcode-block" id="BiometricStatusReport">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.BiometricStatusReport">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">BiometricStatusReport</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BiometricStatusReport</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">cert_level</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">modality</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">effective_date</span><span class="p">:</span> <span class="nb">int</span>
@@ -160,55 +160,55 @@
 <div class="viewcode-block" id="CodeAccuracyDescriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.CodeAccuracyDescriptor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">CodeAccuracyDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CodeAccuracyDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">base</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">max_retries</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">block_slowdown</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">block_slowdown</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="BiometricAccuracyDescriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.BiometricAccuracyDescriptor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">BiometricAccuracyDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
-    <span class="n">self_attested_frr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BiometricAccuracyDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+    <span class="n">self_attested_frr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;selfAttestedFRR&quot;</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">self_attested_far</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">self_attested_far</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;selfAttestedFAR&quot;</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">max_templates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">max_retries</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">block_slowdown</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">max_templates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">block_slowdown</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="PatternAccuracyDescriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.PatternAccuracyDescriptor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">PatternAccuracyDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PatternAccuracyDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">min_complexity</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">max_retries</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">block_slowdown</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">block_slowdown</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="VerificationMethodDescriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.VerificationMethodDescriptor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">VerificationMethodDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
-    <span class="n">user_verification_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">ca_desc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CodeAccuracyDescriptor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">ba_desc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BiometricAccuracyDescriptor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">pa_desc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PatternAccuracyDescriptor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+<span class="k">class</span><span class="w"> </span><span class="nc">VerificationMethodDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+    <span class="n">user_verification_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ca_desc</span><span class="p">:</span> <span class="n">CodeAccuracyDescriptor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ba_desc</span><span class="p">:</span> <span class="n">BiometricAccuracyDescriptor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">pa_desc</span><span class="p">:</span> <span class="n">PatternAccuracyDescriptor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="RgbPaletteEntry">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.RgbPaletteEntry">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">RgbPaletteEntry</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RgbPaletteEntry</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">r</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">g</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">b</span><span class="p">:</span> <span class="nb">int</span></div>
@@ -218,7 +218,7 @@
 <div class="viewcode-block" id="DisplayPngCharacteristicsDescriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.DisplayPngCharacteristicsDescriptor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">DisplayPngCharacteristicsDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DisplayPngCharacteristicsDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">bit_depth</span><span class="p">:</span> <span class="nb">int</span>
@@ -226,14 +226,14 @@
     <span class="n">compression</span><span class="p">:</span> <span class="nb">int</span>
     <span class="nb">filter</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">interlace</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">plte</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">RgbPaletteEntry</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">plte</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">RgbPaletteEntry</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="EcdaaTrustAnchor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.EcdaaTrustAnchor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">EcdaaTrustAnchor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EcdaaTrustAnchor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
     <span class="n">y</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Y&quot;</span><span class="p">))</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
@@ -246,7 +246,7 @@
 <div class="viewcode-block" id="AuthenticatorStatus">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.AuthenticatorStatus">[docs]</a>
 <span class="nd">@unique</span>
-<span class="k">class</span> <span class="nc">AuthenticatorStatus</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AuthenticatorStatus</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Status of an Authenitcator.&quot;&quot;&quot;</span>
 
     <span class="n">NOT_FIDO_CERTIFIED</span> <span class="o">=</span> <span class="s2">&quot;NOT_FIDO_CERTIFIED&quot;</span>
@@ -270,43 +270,43 @@
 <div class="viewcode-block" id="StatusReport">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.StatusReport">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">StatusReport</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StatusReport</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">status</span><span class="p">:</span> <span class="n">AuthenticatorStatus</span>
-    <span class="n">effective_date</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">date</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">effective_date</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">deserialize</span><span class="o">=</span><span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">,</span>
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
         <span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">authenticator_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">certificate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">authenticator_version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">certificate</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">deserialize</span><span class="o">=</span><span class="n">b64decode</span><span class="p">,</span> <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">b64encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">certification_descriptor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">certificate_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">certification_policy_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">certification_requirements_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">certification_descriptor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">certificate_number</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">certification_policy_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">certification_requirements_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="ExtensionDescriptor">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.ExtensionDescriptor">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ExtensionDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExtensionDescriptor</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">fail_if_unknown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;fail_if_unknown&quot;</span><span class="p">))</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">tag</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="MetadataStatement">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MetadataStatement">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">MetadataStatement</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetadataStatement</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">authenticator_version</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">schema</span><span class="p">:</span> <span class="nb">int</span>
@@ -325,48 +325,48 @@
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">xs</span><span class="p">:</span> <span class="p">[</span><span class="n">b64encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">],</span>
         <span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">legal_header</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">aaid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">aaguid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Aaguid</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">legal_header</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">aaid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">aaguid</span><span class="p">:</span> <span class="n">Aaguid</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">deserialize</span><span class="o">=</span><span class="n">Aaguid</span><span class="o">.</span><span class="n">parse</span><span class="p">,</span>
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
         <span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">attestation_certificate_key_identifiers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">attestation_certificate_key_identifiers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">deserialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">xs</span><span class="p">:</span> <span class="p">[</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">],</span>
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">xs</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">],</span>
         <span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">alternative_descriptions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">protocol_family</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">authentication_algorithms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">public_key_alg_and_encodings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">is_key_restricted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">is_fresh_user_verification_required</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">crypto_strength</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">operating_env</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">tc_display_content_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">tc_display_png_characteristics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-        <span class="n">Sequence</span><span class="p">[</span><span class="n">DisplayPngCharacteristicsDescriptor</span><span class="p">]</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">alternative_descriptions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">protocol_family</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">authentication_algorithms</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">public_key_alg_and_encodings</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">is_key_restricted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">is_fresh_user_verification_required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">crypto_strength</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">operating_env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tc_display_content_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tc_display_png_characteristics</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n">Sequence</span><span class="p">[</span><span class="n">DisplayPngCharacteristicsDescriptor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;tcDisplayPNGCharacteristics&quot;</span><span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">ecdaa_trust_anchors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">EcdaaTrustAnchor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">icon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">supported_extensions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ExtensionDescriptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">authenticator_get_info</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">ecdaa_trust_anchors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">EcdaaTrustAnchor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">icon</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">supported_extensions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ExtensionDescriptor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">authenticator_get_info</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="MetadataBlobPayloadEntry">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MetadataBlobPayloadEntry">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">MetadataBlobPayloadEntry</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetadataBlobPayloadEntry</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">status_reports</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">StatusReport</span><span class="p">]</span>
     <span class="n">time_of_last_status_change</span><span class="p">:</span> <span class="n">date</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
@@ -374,27 +374,25 @@
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
         <span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">aaid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">aaguid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Aaguid</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">aaid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">aaguid</span><span class="p">:</span> <span class="n">Aaguid</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">deserialize</span><span class="o">=</span><span class="n">Aaguid</span><span class="o">.</span><span class="n">parse</span><span class="p">,</span>
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
         <span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">attestation_certificate_key_identifiers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">attestation_certificate_key_identifiers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">deserialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">xs</span><span class="p">:</span> <span class="p">[</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">],</span>
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">xs</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">],</span>
         <span class="p">),</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">metadata_statement</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataStatement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">biometric_status_reports</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">BiometricStatusReport</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">rogue_list_url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
-        <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;rogueListURL&quot;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">)</span>
-    <span class="n">rogue_list_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+    <span class="n">metadata_statement</span><span class="p">:</span> <span class="n">MetadataStatement</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">biometric_status_reports</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">BiometricStatusReport</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rogue_list_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;rogueListURL&quot;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">rogue_list_hash</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">deserialize</span><span class="o">=</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">,</span>
             <span class="n">serialize</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">hex</span><span class="p">(),</span>
@@ -407,7 +405,7 @@
 <div class="viewcode-block" id="MetadataBlobPayload">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MetadataBlobPayload">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">MetadataBlobPayload</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetadataBlobPayload</span><span class="p">(</span><span class="n">_JsonDataObject</span><span class="p">):</span>
     <span class="n">legal_header</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">no</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">next_update</span><span class="p">:</span> <span class="n">date</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
@@ -426,7 +424,7 @@
 
 <div class="viewcode-block" id="filter_revoked">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.filter_revoked">[docs]</a>
-<span class="k">def</span> <span class="nf">filter_revoked</span><span class="p">(</span><span class="n">entry</span><span class="p">:</span> <span class="n">MetadataBlobPayloadEntry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_revoked</span><span class="p">(</span><span class="n">entry</span><span class="p">:</span> <span class="n">MetadataBlobPayloadEntry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Filters out any revoked metadata entry.</span>
 
 <span class="sd">    This filter will remove any metadata entry which has a status_report with</span>
@@ -440,7 +438,7 @@
 
 <div class="viewcode-block" id="filter_attestation_key_compromised">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.filter_attestation_key_compromised">[docs]</a>
-<span class="k">def</span> <span class="nf">filter_attestation_key_compromised</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_attestation_key_compromised</span><span class="p">(</span>
     <span class="n">entry</span><span class="p">:</span> <span class="n">MetadataBlobPayloadEntry</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Denies any attestation that has a compromised attestation key.</span>
@@ -456,12 +454,12 @@
 
 
 
-<span class="n">_last_entry</span><span class="p">:</span> <span class="n">ContextVar</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">MetadataBlobPayloadEntry</span><span class="p">]]</span> <span class="o">=</span> <span class="n">ContextVar</span><span class="p">(</span><span class="s2">&quot;_last_entry&quot;</span><span class="p">)</span>
+<span class="n">_last_entry</span><span class="p">:</span> <span class="n">ContextVar</span><span class="p">[</span><span class="n">MetadataBlobPayloadEntry</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">ContextVar</span><span class="p">(</span><span class="s2">&quot;_last_entry&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="MdsAttestationVerifier">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MdsAttestationVerifier">[docs]</a>
-<span class="k">class</span> <span class="nc">MdsAttestationVerifier</span><span class="p">(</span><span class="n">AttestationVerifier</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MdsAttestationVerifier</span><span class="p">(</span><span class="n">AttestationVerifier</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;MDS3 implementation of an AttestationVerifier.</span>
 
 <span class="sd">    The entry_filter is an optional predicate used to filter which metadata entries to</span>
@@ -489,12 +487,12 @@
 <span class="sd">    :param attestation_types: A list of Attestation types to support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">blob</span><span class="p">:</span> <span class="n">MetadataBlobPayload</span><span class="p">,</span>
-        <span class="n">entry_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EntryFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">filter_revoked</span><span class="p">,</span>
-        <span class="n">attestation_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LookupFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">filter_attestation_key_compromised</span><span class="p">,</span>
-        <span class="n">attestation_types</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Attestation</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">entry_filter</span><span class="p">:</span> <span class="n">EntryFilter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">filter_revoked</span><span class="p">,</span>
+        <span class="n">attestation_filter</span><span class="p">:</span> <span class="n">LookupFilter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">filter_attestation_key_compromised</span><span class="p">,</span>
+        <span class="n">attestation_types</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Attestation</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">attestation_types</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attestation_filter</span> <span class="o">=</span> <span class="n">attestation_filter</span> <span class="ow">or</span> <span class="p">(</span>
@@ -515,9 +513,7 @@
 
 <div class="viewcode-block" id="MdsAttestationVerifier.find_entry_by_aaguid">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MdsAttestationVerifier.find_entry_by_aaguid">[docs]</a>
-    <span class="k">def</span> <span class="nf">find_entry_by_aaguid</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">aaguid</span><span class="p">:</span> <span class="n">Aaguid</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataBlobPayloadEntry</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_entry_by_aaguid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aaguid</span><span class="p">:</span> <span class="n">Aaguid</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadataBlobPayloadEntry</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find an entry by AAGUID.</span>
 
 <span class="sd">        Returns a MetadataBlobPayloadEntry with a matching aaguid field, if found.</span>
@@ -528,9 +524,9 @@
 
 <div class="viewcode-block" id="MdsAttestationVerifier.find_entry_by_chain">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MdsAttestationVerifier.find_entry_by_chain">[docs]</a>
-    <span class="k">def</span> <span class="nf">find_entry_by_chain</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_entry_by_chain</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataBlobPayloadEntry</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadataBlobPayloadEntry</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find an entry by trust chain.</span>
 
 <span class="sd">        Returns a MetadataBlobPayloadEntry containing an</span>
@@ -548,7 +544,7 @@
 
 <div class="viewcode-block" id="MdsAttestationVerifier.ca_lookup">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MdsAttestationVerifier.ca_lookup">[docs]</a>
-    <span class="k">def</span> <span class="nf">ca_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attestation_result</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ca_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attestation_result</span><span class="p">,</span> <span class="n">auth_data</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">auth_data</span><span class="o">.</span><span class="n">credential_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># nosec</span>
         <span class="n">aaguid</span> <span class="o">=</span> <span class="n">auth_data</span><span class="o">.</span><span class="n">credential_data</span><span class="o">.</span><span class="n">aaguid</span>
         <span class="k">if</span> <span class="n">aaguid</span><span class="p">:</span>
@@ -590,9 +586,9 @@
 
 <div class="viewcode-block" id="MdsAttestationVerifier.find_entry">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.MdsAttestationVerifier.find_entry">[docs]</a>
-    <span class="k">def</span> <span class="nf">find_entry</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_entry</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">attestation_object</span><span class="p">:</span> <span class="n">AttestationObject</span><span class="p">,</span> <span class="n">client_data_hash</span><span class="p">:</span> <span class="nb">bytes</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetadataBlobPayloadEntry</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadataBlobPayloadEntry</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Lookup a Metadata entry based on an Attestation.</span>
 
 <span class="sd">        Returns the first Metadata entry matching the given attestation and verifies it,</span>
@@ -612,7 +608,7 @@
 
 <div class="viewcode-block" id="parse_blob">
 <a class="viewcode-back" href="../../autoapi/fido2/mds3/index.html#fido2.mds3.parse_blob">[docs]</a>
-<span class="k">def</span> <span class="nf">parse_blob</span><span class="p">(</span><span class="n">blob</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">trust_root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">MetadataBlobPayload</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_blob</span><span class="p">(</span><span class="n">blob</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">trust_root</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MetadataBlobPayload</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a FIDO MDS3 blob and verifies its signature.</span>
 
 <span class="sd">    See https://fidoalliance.org/metadata/ for details on obtaining the blob, as well as</span>

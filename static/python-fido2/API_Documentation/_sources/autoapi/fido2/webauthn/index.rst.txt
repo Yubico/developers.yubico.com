@@ -20,6 +20,7 @@ Classes
    fido2.webauthn.AuthenticatorAttachment
    fido2.webauthn.AuthenticatorTransport
    fido2.webauthn.PublicKeyCredentialType
+   fido2.webauthn.PublicKeyCredentialHint
    fido2.webauthn.PublicKeyCredentialRpEntity
    fido2.webauthn.PublicKeyCredentialUserEntity
    fido2.webauthn.PublicKeyCredentialParameters
@@ -29,11 +30,11 @@ Classes
    fido2.webauthn.PublicKeyCredentialRequestOptions
    fido2.webauthn.AuthenticatorAttestationResponse
    fido2.webauthn.AuthenticatorAssertionResponse
+   fido2.webauthn.AuthenticationExtensionsClientOutputs
    fido2.webauthn.RegistrationResponse
    fido2.webauthn.AuthenticationResponse
    fido2.webauthn.CredentialCreationOptions
    fido2.webauthn.CredentialRequestOptions
-   fido2.webauthn.AuthenticationExtensionsClientOutputs
 
 
 Module Contents
@@ -55,21 +56,6 @@ Module Contents
      - a text string encoded using the specified encoding
      - any object implementing the buffer API.
      - an integer
-
-
-   .. py:method:: __bool__()
-
-
-   .. py:method:: __str__()
-
-      Return str(self).
-
-
-
-   .. py:method:: __repr__()
-
-      Return repr(self).
-
 
 
    .. py:method:: parse(value)
@@ -109,12 +95,6 @@ Module Contents
 
    .. py:attribute:: public_key
       :type:  fido2.cose.CoseKey
-
-
-   .. py:method:: __str__()
-
-      Return str(self).
-
 
 
    .. py:method:: create(aaguid, credential_id, public_key)
@@ -258,17 +238,11 @@ Module Contents
 
 
    .. py:attribute:: credential_data
-      :type:  Optional[AttestedCredentialData]
+      :type:  AttestedCredentialData | None
 
 
    .. py:attribute:: extensions
-      :type:  Optional[Mapping]
-
-
-   .. py:method:: __str__()
-
-      Return str(self).
-
+      :type:  Mapping | None
 
 
    .. py:method:: create(rp_id_hash, flags, counter, credential_data = b'', extensions = None)
@@ -348,12 +322,6 @@ Module Contents
       :type:  Mapping[str, Any]
 
 
-   .. py:method:: __str__()
-
-      Return str(self).
-
-
-
    .. py:method:: create(fmt, auth_data, att_stmt)
       :classmethod:
 
@@ -405,7 +373,7 @@ Module Contents
       that will be decoded using the given encoding and error handler.
       Otherwise, returns the result of object.__str__() (if defined)
       or repr(object).
-      encoding defaults to sys.getdefaultencoding().
+      encoding defaults to 'utf-8'.
       errors defaults to 'strict'.
 
 
@@ -440,12 +408,6 @@ Module Contents
 
    .. py:method:: create(type, challenge, origin, cross_origin = False, **kwargs)
       :classmethod:
-
-
-
-   .. py:method:: __str__()
-
-      Return str(self).
 
 
 
@@ -609,9 +571,34 @@ Module Contents
 
 
 
+.. py:class:: PublicKeyCredentialHint
+
+   Bases: :py:obj:`_StringEnum`
+
+
+   Enum of strings for WebAuthn types.
+
+   Unrecognized values are treated as missing.
+
+
+   .. py:attribute:: SECURITY_KEY
+      :value: 'security-key'
+
+
+
+   .. py:attribute:: CLIENT_DEVICE
+      :value: 'client-device'
+
+
+
+   .. py:attribute:: HYBRID
+      :value: 'hybrid'
+
+
+
 .. py:class:: PublicKeyCredentialRpEntity
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -622,13 +609,13 @@ Module Contents
 
 
    .. py:attribute:: id
-      :type:  Optional[str]
+      :type:  str | None
       :value: None
 
 
 
    .. py:property:: id_hash
-      :type: Optional[bytes]
+      :type: bytes | None
 
 
       Return SHA256 hash of the identifier.
@@ -637,7 +624,7 @@ Module Contents
 
 .. py:class:: PublicKeyCredentialUserEntity
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -652,14 +639,14 @@ Module Contents
 
 
    .. py:attribute:: display_name
-      :type:  Optional[str]
+      :type:  str | None
       :value: None
 
 
 
 .. py:class:: PublicKeyCredentialParameters
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -675,7 +662,7 @@ Module Contents
 
 .. py:class:: PublicKeyCredentialDescriptor
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -690,49 +677,46 @@ Module Contents
 
 
    .. py:attribute:: transports
-      :type:  Optional[Sequence[AuthenticatorTransport]]
+      :type:  Sequence[AuthenticatorTransport] | None
       :value: None
 
 
 
 .. py:class:: AuthenticatorSelectionCriteria
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
 
 
    .. py:attribute:: authenticator_attachment
-      :type:  Optional[AuthenticatorAttachment]
+      :type:  AuthenticatorAttachment | None
       :value: None
 
 
 
    .. py:attribute:: resident_key
-      :type:  Optional[ResidentKeyRequirement]
+      :type:  ResidentKeyRequirement | None
       :value: None
 
 
 
    .. py:attribute:: user_verification
-      :type:  Optional[UserVerificationRequirement]
+      :type:  UserVerificationRequirement | None
       :value: None
 
 
 
    .. py:attribute:: require_resident_key
-      :type:  Optional[bool]
+      :type:  bool | None
       :value: False
 
 
 
-   .. py:method:: __post_init__()
-
-
 .. py:class:: PublicKeyCredentialCreationOptions
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -755,38 +739,50 @@ Module Contents
 
 
    .. py:attribute:: timeout
-      :type:  Optional[int]
+      :type:  int | None
       :value: None
 
 
 
    .. py:attribute:: exclude_credentials
-      :type:  Optional[Sequence[PublicKeyCredentialDescriptor]]
+      :type:  Sequence[PublicKeyCredentialDescriptor] | None
       :value: None
 
 
 
    .. py:attribute:: authenticator_selection
-      :type:  Optional[AuthenticatorSelectionCriteria]
+      :type:  AuthenticatorSelectionCriteria | None
+      :value: None
+
+
+
+   .. py:attribute:: hints
+      :type:  Sequence[PublicKeyCredentialHint] | None
       :value: None
 
 
 
    .. py:attribute:: attestation
-      :type:  Optional[AttestationConveyancePreference]
+      :type:  AttestationConveyancePreference | None
+      :value: None
+
+
+
+   .. py:attribute:: attestation_formats
+      :type:  Sequence[str] | None
       :value: None
 
 
 
    .. py:attribute:: extensions
-      :type:  Optional[Mapping[str, Any]]
+      :type:  Mapping[str, Any] | None
       :value: None
 
 
 
 .. py:class:: PublicKeyCredentialRequestOptions
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -797,38 +793,44 @@ Module Contents
 
 
    .. py:attribute:: timeout
-      :type:  Optional[int]
+      :type:  int | None
       :value: None
 
 
 
    .. py:attribute:: rp_id
-      :type:  Optional[str]
+      :type:  str | None
       :value: None
 
 
 
    .. py:attribute:: allow_credentials
-      :type:  Optional[Sequence[PublicKeyCredentialDescriptor]]
+      :type:  Sequence[PublicKeyCredentialDescriptor] | None
       :value: None
 
 
 
    .. py:attribute:: user_verification
-      :type:  Optional[UserVerificationRequirement]
+      :type:  UserVerificationRequirement | None
+      :value: None
+
+
+
+   .. py:attribute:: hints
+      :type:  Sequence[PublicKeyCredentialHint] | None
       :value: None
 
 
 
    .. py:attribute:: extensions
-      :type:  Optional[Mapping[str, Any]]
+      :type:  Mapping[str, Any] | None
       :value: None
 
 
 
 .. py:class:: AuthenticatorAttestationResponse
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -842,23 +844,9 @@ Module Contents
       :type:  AttestationObject
 
 
-   .. py:attribute:: extension_results
-      :type:  Optional[Mapping[str, Any]]
-      :value: None
-
-
-
-   .. py:method:: __getitem__(key)
-
-
-   .. py:method:: from_dict(data)
-      :classmethod:
-
-
-
 .. py:class:: AuthenticatorAssertionResponse
 
-   Bases: :py:obj:`_WebAuthnDataObject`
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
    A data class with members also accessible as a JSON-serializable Mapping.
@@ -877,130 +865,12 @@ Module Contents
 
 
    .. py:attribute:: user_handle
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
 
 
-   .. py:attribute:: credential_id
-      :type:  Optional[bytes]
-      :value: None
-
-
-
-   .. py:attribute:: extension_results
-      :type:  Optional[Mapping[str, Any]]
-      :value: None
-
-
-
-   .. py:method:: __getitem__(key)
-
-
-   .. py:method:: from_dict(data)
-      :classmethod:
-
-
-
-.. py:class:: RegistrationResponse
-
-   Bases: :py:obj:`_WebAuthnDataObject`
-
-
-   A data class with members also accessible as a JSON-serializable Mapping.
-
-
-   .. py:attribute:: id
-      :type:  bytes
-
-
-   .. py:attribute:: response
-      :type:  AuthenticatorAttestationResponse
-
-
-   .. py:attribute:: authenticator_attachment
-      :type:  Optional[AuthenticatorAttachment]
-      :value: None
-
-
-
-   .. py:attribute:: client_extension_results
-      :type:  Optional[AuthenticationExtensionsClientOutputs]
-      :value: None
-
-
-
-   .. py:attribute:: type
-      :type:  Optional[PublicKeyCredentialType]
-      :value: None
-
-
-
-   .. py:method:: __post_init__()
-
-
-.. py:class:: AuthenticationResponse
-
-   Bases: :py:obj:`_WebAuthnDataObject`
-
-
-   A data class with members also accessible as a JSON-serializable Mapping.
-
-
-   .. py:attribute:: id
-      :type:  bytes
-
-
-   .. py:attribute:: response
-      :type:  AuthenticatorAssertionResponse
-
-
-   .. py:attribute:: authenticator_attachment
-      :type:  Optional[AuthenticatorAttachment]
-      :value: None
-
-
-
-   .. py:attribute:: client_extension_results
-      :type:  Optional[AuthenticationExtensionsClientOutputs]
-      :value: None
-
-
-
-   .. py:attribute:: type
-      :type:  Optional[PublicKeyCredentialType]
-      :value: None
-
-
-
-   .. py:method:: __post_init__()
-
-
-.. py:class:: CredentialCreationOptions
-
-   Bases: :py:obj:`_WebAuthnDataObject`
-
-
-   A data class with members also accessible as a JSON-serializable Mapping.
-
-
-   .. py:attribute:: public_key
-      :type:  PublicKeyCredentialCreationOptions
-
-
-.. py:class:: CredentialRequestOptions
-
-   Bases: :py:obj:`_WebAuthnDataObject`
-
-
-   A data class with members also accessible as a JSON-serializable Mapping.
-
-
-   .. py:attribute:: public_key
-      :type:  PublicKeyCredentialRequestOptions
-
-
-.. py:class:: AuthenticationExtensionsClientOutputs(outputs)
+.. py:class:: AuthenticationExtensionsClientOutputs(outputs = {})
 
    Bases: :py:obj:`Mapping`\ [\ :py:obj:`str`\ , :py:obj:`Any`\ ]
 
@@ -1013,18 +883,115 @@ Module Contents
    When accessed using attributes, richer types will instead be returned.
 
 
-   .. py:method:: __iter__()
+.. py:class:: RegistrationResponse
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
 
 
-   .. py:method:: __len__()
+   Represents the RegistrationResponse structure from the WebAuthn specification,
+   with fields modeled after the JSON serialization.
+
+   Serializing this object to JSON can be done by using json.dumps(dict(response)).
+
+   See: https://www.w3.org/TR/webauthn-3/#dictdef-registrationresponsejson
 
 
-   .. py:method:: __getitem__(key)
+   .. py:attribute:: id
+      :type:  str
 
 
-   .. py:method:: __getattr__(key)
+   .. py:attribute:: raw_id
+      :type:  bytes
 
 
-   .. py:method:: __repr__()
+   .. py:attribute:: response
+      :type:  AuthenticatorAttestationResponse
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  AuthenticatorAttachment | None
+      :value: None
+
+
+
+   .. py:attribute:: client_extension_results
+      :type:  AuthenticationExtensionsClientOutputs
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:method:: from_dict(data)
+      :classmethod:
+
+
+
+.. py:class:: AuthenticationResponse
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   Represents the AuthenticationResponse structure from the WebAuthn specification,
+   with fields modeled after the JSON serialization.
+
+   Serializing this object to JSON can be done by using json.dumps(dict(response)).
+
+   See: https://www.w3.org/TR/webauthn-3/#dictdef-authenticationresponsejson
+
+
+   .. py:attribute:: id
+      :type:  str
+
+
+   .. py:attribute:: raw_id
+      :type:  bytes
+
+
+   .. py:attribute:: response
+      :type:  AuthenticatorAssertionResponse
+
+
+   .. py:attribute:: authenticator_attachment
+      :type:  AuthenticatorAttachment | None
+      :value: None
+
+
+
+   .. py:attribute:: client_extension_results
+      :type:  AuthenticationExtensionsClientOutputs
+
+
+   .. py:attribute:: type
+      :type:  PublicKeyCredentialType
+
+
+   .. py:method:: from_dict(data)
+      :classmethod:
+
+
+
+.. py:class:: CredentialCreationOptions
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: public_key
+      :type:  PublicKeyCredentialCreationOptions
+
+
+.. py:class:: CredentialRequestOptions
+
+   Bases: :py:obj:`fido2.utils._JsonDataObject`
+
+
+   A data class with members also accessible as a JSON-serializable Mapping.
+
+
+   .. py:attribute:: public_key
+      :type:  PublicKeyCredentialRequestOptions
 
 
