@@ -1,21 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.core.smartcard.scp &mdash; yubikey-manager 5.6.0 documentation</title>
-      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>yubikit.core.smartcard.scp &mdash; yubikey-manager 5.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
+
   
-        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../../_static/documentation_options.js?v=31fa7d35"></script>
-        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
@@ -32,9 +33,6 @@
           <a href="../../../../index.html" class="icon icon-home">
             yubikey-manager
           </a>
-              <div class="version">
-                5.6
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -45,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../../rst/packages.html">yubikey-manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../autoapi/index.html">API Reference</a></li>
 </ul>
 
         </div>
@@ -102,21 +100,22 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tlv</span><span class="p">,</span> <span class="n">BadResponseError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">cmac</span><span class="p">,</span> <span class="n">hashes</span><span class="p">,</span> <span class="n">serialization</span><span class="p">,</span> <span class="n">constant_time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cipher</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">,</span> <span class="n">modes</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric</span><span class="w"> </span><span class="kn">import</span> <span class="n">ec</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.kdf.x963kdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">X963KDF</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">cmac</span><span class="p">,</span> <span class="n">constant_time</span><span class="p">,</span> <span class="n">hashes</span><span class="p">,</span> <span class="n">serialization</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric</span><span class="w"> </span><span class="kn">import</span> <span class="n">ec</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cipher</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">,</span> <span class="n">modes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.kdf.x963kdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">X963KDF</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">BadResponseError</span><span class="p">,</span> <span class="n">Tlv</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -147,7 +146,7 @@
     <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">finalize</span><span class="p">()[:</span> <span class="n">L</span> <span class="o">//</span> <span class="mi">8</span><span class="p">]</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_calculate_mac</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">chain</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_calculate_mac</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">chain</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
     <span class="n">c</span> <span class="o">=</span> <span class="n">cmac</span><span class="o">.</span><span class="n">CMAC</span><span class="p">(</span><span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">())</span>
     <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span>
     <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
@@ -157,7 +156,9 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_init_cipher</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cipher</span><span class="p">:</span>
     <span class="n">encryptor</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span>
-        <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">modes</span><span class="o">.</span><span class="n">ECB</span><span class="p">(),</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()</span>  <span class="c1"># nosec ECB</span>
+        <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>
+        <span class="n">modes</span><span class="o">.</span><span class="n">ECB</span><span class="p">(),</span>  <span class="c1"># nosec ECB</span>
+        <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">(),</span>
     <span class="p">)</span><span class="o">.</span><span class="n">encryptor</span><span class="p">()</span>
     <span class="n">iv_data</span> <span class="o">=</span> <span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x80</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">response</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
     <span class="n">iv</span> <span class="o">=</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">iv_data</span><span class="p">)</span> <span class="o">+</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
@@ -169,7 +170,7 @@
 
 
 <div class="viewcode-block" id="SessionKeys">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.SessionKeys">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.SessionKeys">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SessionKeys</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;SCP Session Keys.&quot;&quot;&quot;</span>
 
@@ -181,7 +182,7 @@
 
 
 <div class="viewcode-block" id="StaticKeys">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.StaticKeys">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.StaticKeys">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StaticKeys</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;SCP03 Static Keys.&quot;&quot;&quot;</span>
 
@@ -190,14 +191,14 @@
     <span class="n">key_dek</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="StaticKeys.default">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.StaticKeys.default">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.StaticKeys.default">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;StaticKeys&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">_DEFAULT_KEY</span><span class="p">,</span> <span class="n">_DEFAULT_KEY</span><span class="p">,</span> <span class="n">_DEFAULT_KEY</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StaticKeys.derive">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.StaticKeys.derive">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.StaticKeys.derive">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">derive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SessionKeys</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">SessionKeys</span><span class="p">(</span>
             <span class="n">_derive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_enc</span><span class="p">,</span> <span class="n">_KEY_ENC</span><span class="p">,</span> <span class="n">context</span><span class="p">),</span>
@@ -210,7 +211,7 @@
 
 
 <div class="viewcode-block" id="ScpKid">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpKid">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpKid">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ScpKid</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="n">SCP03</span> <span class="o">=</span> <span class="mh">0x1</span>
@@ -221,7 +222,7 @@
 
 
 <div class="viewcode-block" id="KeyRef">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.KeyRef">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.KeyRef">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KeyRef</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">kid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -249,16 +250,22 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect length&quot;</span><span class="p">)</span>
 
+<div class="viewcode-block" id="KeyRef.__repr__">
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.KeyRef.__repr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;KeyRef(kid=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kid</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">, kvn=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kvn</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;KeyRef(kid=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kid</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">, kvn=0x</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kvn</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
+
+<div class="viewcode-block" id="KeyRef.__str__">
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.KeyRef.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</div>
 
 
 
 <div class="viewcode-block" id="ScpKeyParams">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpKeyParams">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpKeyParams">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ScpKeyParams</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="n">ref</span><span class="p">:</span> <span class="n">KeyRef</span></div>
@@ -266,7 +273,7 @@
 
 
 <div class="viewcode-block" id="Scp03KeyParams">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.Scp03KeyParams">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.Scp03KeyParams">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Scp03KeyParams</span><span class="p">(</span><span class="n">ScpKeyParams</span><span class="p">):</span>
     <span class="n">ref</span><span class="p">:</span> <span class="n">KeyRef</span> <span class="o">=</span> <span class="n">KeyRef</span><span class="p">(</span><span class="n">ScpKid</span><span class="o">.</span><span class="n">SCP03</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -275,7 +282,7 @@
 
 
 <div class="viewcode-block" id="Scp11KeyParams">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.Scp11KeyParams">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.Scp11KeyParams">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Scp11KeyParams</span><span class="p">(</span><span class="n">ScpKeyParams</span><span class="p">):</span>
     <span class="n">pk_sd_ecka</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span>
@@ -291,7 +298,7 @@
 
 
 <div class="viewcode-block" id="ScpState">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ScpState</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -304,7 +311,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_enc_counter</span> <span class="o">=</span> <span class="n">enc_counter</span>
 
 <div class="viewcode-block" id="ScpState.encrypt">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState.encrypt">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState.encrypt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">encrypt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="c1"># Pad the data</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">data</span>
@@ -321,7 +328,7 @@
 
 
 <div class="viewcode-block" id="ScpState.mac">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState.mac">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState.mac">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">next_mac_chain</span><span class="p">,</span> <span class="n">mac</span> <span class="o">=</span> <span class="n">_calculate_mac</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="o">.</span><span class="n">key_smac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mac_chain</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mac_chain</span> <span class="o">=</span> <span class="n">next_mac_chain</span>
@@ -329,7 +336,7 @@
 
 
 <div class="viewcode-block" id="ScpState.unmac">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState.unmac">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState.unmac">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">unmac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">sw</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="n">msg</span><span class="p">,</span> <span class="n">mac</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">8</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">8</span><span class="p">:]</span>
         <span class="n">rmac</span> <span class="o">=</span> <span class="n">_calculate_mac</span><span class="p">(</span>
@@ -341,7 +348,7 @@
 
 
 <div class="viewcode-block" id="ScpState.decrypt">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState.decrypt">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState.decrypt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">decrypt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encrypted</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="c1"># Decrypt</span>
         <span class="n">cipher</span> <span class="o">=</span> <span class="n">_init_cipher</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keys</span><span class="o">.</span><span class="n">key_senc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enc_counter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
@@ -358,7 +365,7 @@
 
 
 <div class="viewcode-block" id="ScpState.scp03_init">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState.scp03_init">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState.scp03_init">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scp03_init</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -366,15 +373,15 @@
         <span class="n">key_params</span><span class="p">:</span> <span class="n">Scp03KeyParams</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">host_challenge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;ScpState&quot;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="s2">&quot;ScpState&quot;</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initializing SCP03 handshake&quot;</span><span class="p">)</span>
         <span class="n">host_challenge</span> <span class="o">=</span> <span class="n">host_challenge</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
         <span class="n">resp</span> <span class="o">=</span> <span class="n">send_apdu</span><span class="p">(</span>
             <span class="mh">0x80</span><span class="p">,</span> <span class="n">INS_INITIALIZE_UPDATE</span><span class="p">,</span> <span class="n">key_params</span><span class="o">.</span><span class="n">ref</span><span class="o">.</span><span class="n">kvn</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="n">host_challenge</span>
         <span class="p">)</span>
 
-        <span class="n">diversification_data</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>  <span class="c1"># noqa: unused</span>
-        <span class="n">key_info</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">13</span><span class="p">]</span>  <span class="c1"># noqa: unused</span>
+        <span class="n">diversification_data</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>  <span class="c1"># noqa: F841</span>
+        <span class="n">key_info</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">13</span><span class="p">]</span>  <span class="c1"># noqa: F841</span>
         <span class="n">card_challenge</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="mi">13</span><span class="p">:</span><span class="mi">21</span><span class="p">]</span>
         <span class="n">card_cryptogram</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="mi">21</span><span class="p">:</span><span class="mi">29</span><span class="p">]</span>
 
@@ -396,7 +403,7 @@
 
 
 <div class="viewcode-block" id="ScpState.scp11_init">
-<a class="viewcode-back" href="../../../../rst/yubikit.core.smartcard.html#yubikit.core.smartcard.scp.ScpState.scp11_init">[docs]</a>
+<a class="viewcode-back" href="../../../../autoapi/yubikit/core/smartcard/scp/index.html#yubikit.core.smartcard.ScpState.scp11_init">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scp11_init</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>

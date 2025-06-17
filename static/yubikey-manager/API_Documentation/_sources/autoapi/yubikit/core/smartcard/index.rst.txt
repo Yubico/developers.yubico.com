@@ -1,0 +1,767 @@
+yubikit.core.smartcard
+======================
+
+.. py:module:: yubikit.core.smartcard
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/yubikit/core/smartcard/scp/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubikit.core.smartcard.INS_EXTERNAL_AUTHENTICATE
+   yubikit.core.smartcard.INS_SELECT
+   yubikit.core.smartcard.P1_SELECT
+   yubikit.core.smartcard.P2_SELECT
+   yubikit.core.smartcard.INS_SEND_REMAINING
+   yubikit.core.smartcard.SHORT_APDU_MAX_CHUNK
+   yubikit.core.smartcard.SW1_HAS_MORE_DATA
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   yubikit.core.smartcard.ApplicationNotAvailableError
+   yubikit.core.smartcard.BadResponseError
+   yubikit.core.smartcard.CommandError
+   yubikit.core.smartcard.NotSupportedError
+   yubikit.core.smartcard.ApduError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubikit.core.smartcard.LOG_LEVEL
+   yubikit.core.smartcard.TRANSPORT
+   yubikit.core.smartcard.USB_INTERFACE
+   yubikit.core.smartcard.Connection
+   yubikit.core.smartcard.Version
+   yubikit.core.smartcard.Scp03KeyParams
+   yubikit.core.smartcard.Scp11KeyParams
+   yubikit.core.smartcard.ScpKeyParams
+   yubikit.core.smartcard.ScpState
+   yubikit.core.smartcard.SmartCardConnection
+   yubikit.core.smartcard.ApduFormat
+   yubikit.core.smartcard.AID
+   yubikit.core.smartcard.SW
+   yubikit.core.smartcard.ApduFormatter
+   yubikit.core.smartcard.ShortApduFormatter
+   yubikit.core.smartcard.ExtendedApduFormatter
+   yubikit.core.smartcard.ApduProcessor
+   yubikit.core.smartcard.ApduFormatProcessor
+   yubikit.core.smartcard.CommandChainingProcessor
+   yubikit.core.smartcard.ResponseChainingProcessor
+   yubikit.core.smartcard.TouchWorkaroundProcessor
+   yubikit.core.smartcard.ScpProcessor
+   yubikit.core.smartcard.SmartCardProtocol
+
+
+Package Contents
+----------------
+
+.. py:class:: LOG_LEVEL
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Enum where members are also (and must be) ints
+
+
+   .. py:attribute:: ERROR
+      :value: 40
+
+
+
+   .. py:attribute:: WARNING
+      :value: 30
+
+
+
+   .. py:attribute:: INFO
+      :value: 20
+
+
+
+   .. py:attribute:: DEBUG
+      :value: 10
+
+
+
+   .. py:attribute:: TRAFFIC
+      :value: 5
+
+
+
+   .. py:attribute:: NOTSET
+      :value: 0
+
+
+
+.. py:class:: TRANSPORT
+
+   Bases: :py:obj:`str`, :py:obj:`enum.Enum`
+
+
+   YubiKey physical connection transports.
+
+
+   .. py:attribute:: USB
+      :value: 'usb'
+
+
+
+   .. py:attribute:: NFC
+      :value: 'nfc'
+
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+.. py:class:: USB_INTERFACE
+
+   Bases: :py:obj:`enum.IntFlag`
+
+
+   YubiKey USB interface identifiers.
+
+
+   .. py:attribute:: OTP
+      :value: 1
+
+
+
+   .. py:attribute:: FIDO
+      :value: 2
+
+
+
+   .. py:attribute:: CCID
+      :value: 4
+
+
+
+.. py:exception:: ApplicationNotAvailableError
+
+   Bases: :py:obj:`CommandError`
+
+
+   The application is either disabled or not supported on this YubiKey
+
+
+.. py:exception:: BadResponseError
+
+   Bases: :py:obj:`CommandError`
+
+
+   Invalid response data from the YubiKey
+
+
+.. py:exception:: CommandError
+
+   Bases: :py:obj:`Exception`
+
+
+   An error response from a YubiKey
+
+
+.. py:class:: Connection
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   A connection to a YubiKey
+
+
+   .. py:attribute:: usb_interface
+      :type:  ClassVar[USB_INTERFACE]
+
+
+   .. py:method:: close()
+
+      Close the device, releasing any held resources.
+
+
+
+   .. py:method:: __enter__()
+
+
+   .. py:method:: __exit__(typ, value, traceback)
+
+
+.. py:exception:: NotSupportedError
+
+   Bases: :py:obj:`ValueError`
+
+
+   Attempting an action that is not supported on this YubiKey
+
+
+.. py:class:: Version
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   3-digit version tuple.
+
+
+   .. py:attribute:: major
+      :type:  int
+
+
+   .. py:attribute:: minor
+      :type:  int
+
+
+   .. py:attribute:: patch
+      :type:  int
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __bool__()
+
+
+   .. py:method:: from_bytes(data)
+      :classmethod:
+
+
+
+   .. py:method:: from_string(data)
+      :classmethod:
+
+
+
+.. py:data:: INS_EXTERNAL_AUTHENTICATE
+   :value: 130
+
+
+.. py:class:: Scp03KeyParams
+
+   Bases: :py:obj:`ScpKeyParams`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: ref
+      :type:  KeyRef
+
+
+   .. py:attribute:: keys
+      :type:  StaticKeys
+
+
+.. py:class:: Scp11KeyParams
+
+   Bases: :py:obj:`ScpKeyParams`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: pk_sd_ecka
+      :type:  cryptography.hazmat.primitives.asymmetric.ec.EllipticCurvePublicKey
+
+
+   .. py:attribute:: oce_ref
+      :type:  Optional[KeyRef]
+      :value: None
+
+
+
+   .. py:attribute:: sk_oce_ecka
+      :type:  Optional[cryptography.hazmat.primitives.asymmetric.ec.EllipticCurvePrivateKey]
+      :value: None
+
+
+
+   .. py:attribute:: certificates
+      :type:  Sequence[cryptography.x509.Certificate]
+      :value: []
+
+
+
+.. py:class:: ScpKeyParams
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: ref
+      :type:  KeyRef
+
+
+.. py:class:: ScpState(session_keys, mac_chain = b'\x00' * 16, enc_counter = 1)
+
+   .. py:method:: encrypt(data)
+
+
+   .. py:method:: mac(data)
+
+
+   .. py:method:: unmac(data, sw)
+
+
+   .. py:method:: decrypt(encrypted)
+
+
+   .. py:method:: scp03_init(send_apdu, key_params, *, host_challenge = None)
+      :classmethod:
+
+
+
+   .. py:method:: scp11_init(send_apdu, key_params)
+      :classmethod:
+
+
+
+.. py:class:: SmartCardConnection
+
+   Bases: :py:obj:`yubikit.core.Connection`
+
+
+   A connection to a YubiKey
+
+
+   .. py:attribute:: usb_interface
+
+
+   .. py:property:: transport
+      :type: yubikit.core.TRANSPORT
+
+      :abstractmethod:
+
+
+      Get the transport type of the connection (USB or NFC)
+
+
+
+   .. py:method:: send_and_receive(apdu)
+      :abstractmethod:
+
+
+      Sends a command APDU and returns the response
+
+
+
+.. py:exception:: ApduError(data, sw)
+
+   Bases: :py:obj:`yubikit.core.CommandError`
+
+
+   Thrown when an APDU response has the wrong SW code
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: sw
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+.. py:class:: ApduFormat
+
+   Bases: :py:obj:`str`, :py:obj:`enum.Enum`
+
+
+   APDU encoding format
+
+
+   .. py:attribute:: SHORT
+      :value: 'short'
+
+
+
+   .. py:attribute:: EXTENDED
+      :value: 'extended'
+
+
+
+.. py:class:: AID
+
+   Bases: :py:obj:`bytes`, :py:obj:`enum.Enum`
+
+
+   YubiKey Application smart card AID values.
+
+
+   .. py:attribute:: OTP
+
+
+   .. py:attribute:: MANAGEMENT
+
+
+   .. py:attribute:: OPENPGP
+
+
+   .. py:attribute:: OATH
+
+
+   .. py:attribute:: PIV
+
+
+   .. py:attribute:: FIDO
+
+
+   .. py:attribute:: HSMAUTH
+
+
+   .. py:attribute:: SECURE_DOMAIN
+
+
+.. py:class:: SW
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Enum where members are also (and must be) ints
+
+
+   .. py:attribute:: NO_INPUT_DATA
+      :value: 25221
+
+
+
+   .. py:attribute:: VERIFY_FAIL_NO_RETRY
+      :value: 25536
+
+
+
+   .. py:attribute:: MEMORY_FAILURE
+      :value: 25985
+
+
+
+   .. py:attribute:: WRONG_LENGTH
+      :value: 26368
+
+
+
+   .. py:attribute:: SECURITY_CONDITION_NOT_SATISFIED
+      :value: 27010
+
+
+
+   .. py:attribute:: AUTH_METHOD_BLOCKED
+      :value: 27011
+
+
+
+   .. py:attribute:: DATA_INVALID
+      :value: 27012
+
+
+
+   .. py:attribute:: CONDITIONS_NOT_SATISFIED
+      :value: 27013
+
+
+
+   .. py:attribute:: COMMAND_NOT_ALLOWED
+      :value: 27014
+
+
+
+   .. py:attribute:: INCORRECT_PARAMETERS
+      :value: 27264
+
+
+
+   .. py:attribute:: FUNCTION_NOT_SUPPORTED
+      :value: 27265
+
+
+
+   .. py:attribute:: FILE_NOT_FOUND
+      :value: 27266
+
+
+
+   .. py:attribute:: RECORD_NOT_FOUND
+      :value: 27267
+
+
+
+   .. py:attribute:: NO_SPACE
+      :value: 27268
+
+
+
+   .. py:attribute:: REFERENCE_DATA_NOT_FOUND
+      :value: 27272
+
+
+
+   .. py:attribute:: APPLET_SELECT_FAILED
+      :value: 27033
+
+
+
+   .. py:attribute:: WRONG_PARAMETERS_P1P2
+      :value: 27392
+
+
+
+   .. py:attribute:: INVALID_INSTRUCTION
+      :value: 27904
+
+
+
+   .. py:attribute:: CLASS_NOT_SUPPORTED
+      :value: 28160
+
+
+
+   .. py:attribute:: COMMAND_ABORTED
+      :value: 28416
+
+
+
+   .. py:attribute:: OK
+      :value: 36864
+
+
+
+.. py:data:: INS_SELECT
+   :value: 164
+
+
+.. py:data:: P1_SELECT
+   :value: 4
+
+
+.. py:data:: P2_SELECT
+   :value: 0
+
+
+.. py:data:: INS_SEND_REMAINING
+   :value: 192
+
+
+.. py:class:: ApduFormatter
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:method:: format_apdu(cla, ins, p1, p2, data, le)
+      :abstractmethod:
+
+
+
+.. py:data:: SHORT_APDU_MAX_CHUNK
+   :value: 255
+
+
+.. py:class:: ShortApduFormatter
+
+   Bases: :py:obj:`ApduFormatter`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:method:: format_apdu(cla, ins, p1, p2, data, le)
+
+
+.. py:class:: ExtendedApduFormatter(max_apdu_size)
+
+   Bases: :py:obj:`ApduFormatter`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:method:: format_apdu(cla, ins, p1, p2, data, le)
+
+
+.. py:class:: ApduProcessor
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data, le)
+      :abstractmethod:
+
+
+
+.. py:class:: ApduFormatProcessor(connection, formatter)
+
+   Bases: :py:obj:`ApduProcessor`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: connection
+
+
+   .. py:attribute:: formatter
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data, le)
+
+
+.. py:class:: CommandChainingProcessor(connection)
+
+   Bases: :py:obj:`ApduFormatProcessor`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data, le)
+
+
+.. py:data:: SW1_HAS_MORE_DATA
+   :value: 97
+
+
+.. py:class:: ResponseChainingProcessor(delegate, ins_send_remaining = INS_SEND_REMAINING)
+
+   Bases: :py:obj:`ApduProcessor`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: delegate
+
+
+   .. py:attribute:: ins_send_remaining
+      :value: 192
+
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data, le)
+
+
+.. py:class:: TouchWorkaroundProcessor(delegate)
+
+   Bases: :py:obj:`ApduProcessor`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: delegate
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data, le)
+
+
+.. py:class:: ScpProcessor(delegate, formatter, scp_state)
+
+   Bases: :py:obj:`ApduProcessor`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: extended_formatter
+
+
+   .. py:attribute:: delegate
+
+
+   .. py:attribute:: formatter
+
+
+   .. py:attribute:: state
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data, le, encrypt = True)
+
+
+.. py:class:: SmartCardProtocol(smartcard_connection, ins_send_remaining = INS_SEND_REMAINING)
+
+   An implementation of the Smart Card protocol.
+
+
+   .. py:attribute:: connection
+
+
+   .. py:property:: apdu_format
+      :type: ApduFormat
+
+
+
+   .. py:method:: close()
+
+
+   .. py:method:: enable_touch_workaround(version)
+
+
+   .. py:method:: configure(version, force_short = False)
+
+      Configure the connection optimally for the given YubiKey version.
+
+
+
+   .. py:method:: send_apdu(cla, ins, p1, p2, data = b'', le = 0)
+
+      Send APDU message.
+
+      :param cla: The instruction class.
+      :param ins: The instruction code.
+      :param p1: The instruction parameter.
+      :param p2: The instruction parameter.
+      :param data: The command data in bytes.
+      :param le: The maximum number of bytes in the data
+          field of the response.
+
+
+
+   .. py:method:: select(aid)
+
+      Perform a SELECT instruction.
+
+      :param aid: The YubiKey application AID value.
+
+
+
+   .. py:method:: init_scp(key_params)
+
+

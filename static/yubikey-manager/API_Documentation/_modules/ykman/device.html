@@ -1,21 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.device &mdash; yubikey-manager 5.6.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>ykman.device &mdash; yubikey-manager 5.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=31fa7d35"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -32,9 +33,6 @@
           <a href="../../index.html" class="icon icon-home">
             yubikey-manager
           </a>
-              <div class="version">
-                5.6
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -45,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
 </ul>
 
         </div>
@@ -100,45 +98,39 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">PID</span><span class="p">,</span> <span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">YUBIKEY</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="n">OtpConnection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.fido</span><span class="w"> </span><span class="kn">import</span> <span class="n">FidoConnection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCardConnection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.management</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">DeviceInfo</span><span class="p">,</span>
-    <span class="n">USB_INTERFACE</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.support</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_info</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">YkmanDevice</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.hid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">list_otp_devices</span> <span class="k">as</span> <span class="n">_list_otp_devices</span><span class="p">,</span>
-    <span class="n">list_ctap_devices</span> <span class="k">as</span> <span class="n">_list_ctap_devices</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.pcsc</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_devices</span> <span class="k">as</span> <span class="n">_list_ccid_devices</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">smartcard.pcsc.PCSCExceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EstablishContextException</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">smartcard.Exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoCardException</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">Mapping</span><span class="p">,</span>
-    <span class="n">List</span><span class="p">,</span>
-    <span class="n">Tuple</span><span class="p">,</span>
-    <span class="n">Iterable</span><span class="p">,</span>
-    <span class="n">Type</span><span class="p">,</span>
-    <span class="n">Hashable</span><span class="p">,</span>
-    <span class="n">Set</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">smartcard.pcsc.PCSCExceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EstablishContextException</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PID</span><span class="p">,</span> <span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">YUBIKEY</span><span class="p">,</span> <span class="n">Connection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.fido</span><span class="w"> </span><span class="kn">import</span> <span class="n">FidoConnection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="n">OtpConnection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="n">SmartCardConnection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.management</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">USB_INTERFACE</span><span class="p">,</span>
+    <span class="n">DeviceInfo</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.support</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_info</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">YkmanDevice</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.hid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">list_ctap_devices</span> <span class="k">as</span> <span class="n">_list_ctap_devices</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.hid</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">list_otp_devices</span> <span class="k">as</span> <span class="n">_list_otp_devices</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.pcsc</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_devices</span> <span class="k">as</span> <span class="n">_list_ccid_devices</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_once</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">e_type</span><span class="o">=</span><span class="ne">Exception</span><span class="p">):</span>
-    <span class="n">warned</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">warned</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">outer</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">inner</span><span class="p">():</span>
@@ -156,7 +148,7 @@
 
 
 <div class="viewcode-block" id="list_ccid_devices">
-<a class="viewcode-back" href="../../rst/ykman.html#ykman.device.list_ccid_devices">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/ykman/device/index.html#ykman.device.list_ccid_devices">[docs]</a>
 <span class="nd">@_warn_once</span><span class="p">(</span>
     <span class="s2">&quot;PC/SC not available. Smart card (CCID) protocols will not function.&quot;</span><span class="p">,</span>
     <span class="n">EstablishContextException</span><span class="p">,</span>
@@ -168,7 +160,7 @@
 
 
 <div class="viewcode-block" id="list_ctap_devices">
-<a class="viewcode-back" href="../../rst/ykman.html#ykman.device.list_ctap_devices">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/ykman/device/index.html#ykman.device.list_ctap_devices">[docs]</a>
 <span class="nd">@_warn_once</span><span class="p">(</span><span class="s2">&quot;No CTAP HID backend available. FIDO protocols will not function.&quot;</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">list_ctap_devices</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List CTAP devices.&quot;&quot;&quot;</span>
@@ -177,7 +169,7 @@
 
 
 <div class="viewcode-block" id="list_otp_devices">
-<a class="viewcode-back" href="../../rst/ykman.html#ykman.device.list_otp_devices">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/ykman/device/index.html#ykman.device.list_otp_devices">[docs]</a>
 <span class="nd">@_warn_once</span><span class="p">(</span><span class="s2">&quot;No OTP HID backend available. OTP protocols will not function.&quot;</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">list_otp_devices</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List OTP devices.&quot;&quot;&quot;</span>
@@ -193,15 +185,15 @@
 
 
 <div class="viewcode-block" id="scan_devices">
-<a class="viewcode-back" href="../../rst/ykman.html#ykman.device.scan_devices">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">scan_devices</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="n">PID</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]:</span>
+<a class="viewcode-back" href="../../autoapi/ykman/device/index.html#ykman.device.scan_devices">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scan_devices</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="n">PID</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan USB for attached YubiKeys, without opening any connections.</span>
 
 <span class="sd">    :return: A dict mapping PID to device count, and a state object which can be used to</span>
 <span class="sd">        detect changes in attached devices.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">fingerprints</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="n">merged</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">PID</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">merged</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">PID</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">list_devs</span> <span class="ow">in</span> <span class="n">_CONNECTION_LIST_MAPPING</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">devs</span> <span class="o">=</span> <span class="n">list_devs</span><span class="p">()</span>
@@ -229,11 +221,11 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">_PidGroup</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pid</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pid</span> <span class="o">=</span> <span class="n">pid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_infos</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">DeviceInfo</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resolved</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">,</span> <span class="n">YkmanDevice</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_unresolved</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">YkmanDevice</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_devcount</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprints</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_infos</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">DeviceInfo</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resolved</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">,</span> <span class="n">YkmanDevice</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unresolved</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">YkmanDevice</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_devcount</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">USB_INTERFACE</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprints</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ctime</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
@@ -342,32 +334,20 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">open_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_connection</span><span class="p">(</span><span class="n">connection_type</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported Connection type&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Allow for ~3s reclaim time on NEO for CCID</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span>  <span class="c1"># nosec</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span><span class="o">.</span><span class="n">yubikey_type</span> <span class="o">==</span> <span class="n">YUBIKEY</span><span class="o">.</span><span class="n">NEO</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span>
-            <span class="n">connection_type</span><span class="p">,</span> <span class="n">SmartCardConnection</span>
-        <span class="p">):</span>
-            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">)</span>
-                <span class="k">except</span> <span class="p">(</span><span class="n">NoCardException</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
-                    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
-
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="list_all_devices">
-<a class="viewcode-back" href="../../rst/ykman.html#ykman.device.list_all_devices">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/ykman/device/index.html#ykman.device.list_all_devices">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">list_all_devices</span><span class="p">(</span>
-    <span class="n">connection_types</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Connection</span><span class="p">]]</span> <span class="o">=</span> <span class="n">_CONNECTION_LIST_MAPPING</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">YkmanDevice</span><span class="p">,</span> <span class="n">DeviceInfo</span><span class="p">]]:</span>
+    <span class="n">connection_types</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Connection</span><span class="p">]]</span> <span class="o">=</span> <span class="n">_CONNECTION_LIST_MAPPING</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">YkmanDevice</span><span class="p">,</span> <span class="n">DeviceInfo</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Connect to all attached YubiKeys and read device info from them.</span>
 
 <span class="sd">    :param connection_types: An iterable of YubiKey connection types.</span>
 <span class="sd">    :return: A list of (device, info) tuples for each connected device.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">groups</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">PID</span><span class="p">,</span> <span class="n">_PidGroup</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">PID</span><span class="p">,</span> <span class="n">_PidGroup</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">connection_type</span> <span class="ow">in</span> <span class="n">connection_types</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">base_type</span> <span class="ow">in</span> <span class="n">_CONNECTION_LIST_MAPPING</span><span class="p">:</span>
