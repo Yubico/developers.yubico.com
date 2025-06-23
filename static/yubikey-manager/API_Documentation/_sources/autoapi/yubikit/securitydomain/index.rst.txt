@@ -1,0 +1,274 @@
+yubikit.securitydomain
+======================
+
+.. py:module:: yubikit.securitydomain
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubikit.securitydomain.INS_GET_DATA
+   yubikit.securitydomain.INS_PUT_KEY
+   yubikit.securitydomain.INS_STORE_DATA
+   yubikit.securitydomain.INS_DELETE
+   yubikit.securitydomain.INS_GENERATE_KEY
+   yubikit.securitydomain.TAG_KEY_INFORMATION
+   yubikit.securitydomain.TAG_CARD_RECOGNITION_DATA
+   yubikit.securitydomain.TAG_CA_KLOC_IDENTIFIERS
+   yubikit.securitydomain.TAG_CA_KLCC_IDENTIFIERS
+   yubikit.securitydomain.TAG_CERTIFICATE_STORE
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubikit.securitydomain.KeyType
+   yubikit.securitydomain.Curve
+   yubikit.securitydomain.SecurityDomainSession
+
+
+Module Contents
+---------------
+
+.. py:data:: INS_GET_DATA
+   :value: 202
+
+
+.. py:data:: INS_PUT_KEY
+   :value: 216
+
+
+.. py:data:: INS_STORE_DATA
+   :value: 226
+
+
+.. py:data:: INS_DELETE
+   :value: 228
+
+
+.. py:data:: INS_GENERATE_KEY
+   :value: 241
+
+
+.. py:data:: TAG_KEY_INFORMATION
+   :value: 224
+
+
+.. py:data:: TAG_CARD_RECOGNITION_DATA
+   :value: 102
+
+
+.. py:data:: TAG_CA_KLOC_IDENTIFIERS
+   :value: 65331
+
+
+.. py:data:: TAG_CA_KLCC_IDENTIFIERS
+   :value: 65332
+
+
+.. py:data:: TAG_CERTIFICATE_STORE
+   :value: 48929
+
+
+.. py:class:: KeyType
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Enum where members are also (and must be) ints
+
+
+   .. py:attribute:: AES
+      :value: 136
+
+
+
+   .. py:attribute:: ECC_PUBLIC_KEY
+      :value: 176
+
+
+
+   .. py:attribute:: ECC_PRIVATE_KEY
+      :value: 177
+
+
+
+   .. py:attribute:: ECC_KEY_PARAMS
+      :value: 240
+
+
+
+.. py:class:: Curve
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Enum where members are also (and must be) ints
+
+
+   .. py:attribute:: SECP256R1
+      :value: 0
+
+
+
+   .. py:attribute:: SECP384R1
+      :value: 1
+
+
+
+   .. py:attribute:: SECP521R1
+      :value: 2
+
+
+
+   .. py:attribute:: BrainpoolP256R1
+      :value: 3
+
+
+
+   .. py:attribute:: BrainpoolP384R1
+      :value: 5
+
+
+
+   .. py:attribute:: BrainpoolP512R1
+      :value: 7
+
+
+
+.. py:class:: SecurityDomainSession(connection)
+
+   A session for managing SCP keys
+
+
+   .. py:attribute:: protocol
+
+
+   .. py:method:: authenticate(key_params)
+
+      Initialize SCP and authenticate the session.
+
+      SCP11b does not authenticate the OCE, and will not allow the usage of commands
+      which require authentication of the OCE.
+
+
+
+   .. py:method:: get_data(tag, data = b'')
+
+      Read data from the security domain.
+
+
+
+   .. py:method:: get_key_information()
+
+      Get information about the currently loaded keys.
+
+
+
+   .. py:method:: get_card_recognition_data()
+
+      Get information about the card.
+
+
+
+   .. py:method:: get_supported_ca_identifiers(kloc = False, klcc = False)
+
+      Get a list of the CA issuer Subject Key Identifiers for keys.
+
+      Setting one of kloc or klcc to True will cause only those CAs to be returned.
+      By default, this will get both KLOC and KLCC CAs.
+
+      :param kloc: Get KLOC CAs.
+      :param klcc: Get KLCC CAs.
+
+
+
+   .. py:method:: get_certificate_bundle(key)
+
+      Get the certificates associated with the given SCP11 private key.
+
+      Certificates are returned leaf-last.
+
+
+
+   .. py:method:: reset()
+
+      Perform a factory reset of the Security Domain.
+
+      This will remove all keys and associated data, as well as restore the default
+      SCP03 static keys, and generate a new (attestable) SCP11b key.
+
+
+
+   .. py:method:: store_data(data)
+
+      Stores data in the security domain.
+
+      Requires OCE verification.
+
+
+
+   .. py:method:: store_certificate_bundle(key, certificates)
+
+      Store the certificate chain for the given key.
+
+      Requires OCE verification.
+
+      Certificates should be in order, with the leaf certificate last.
+
+
+
+   .. py:method:: store_allowlist(key, serials)
+
+      Store which certificate serial numbers that can be used for a given key.
+
+      Requires OCE verification.
+
+      If no allowlist is stored, any certificate signed by the CA can be used.
+
+
+
+   .. py:method:: store_ca_issuer(key, ski)
+
+      Store the SKI (Subject Key Identifier) for the CA of a given key.
+
+      Requires OCE verification.
+
+
+
+   .. py:method:: delete_key(kid = 0, kvn = 0, delete_last = False)
+
+      Delete one (or more) keys.
+
+      Requires OCE verification.
+
+      All keys matching the given KID and/or KVN will be deleted.
+      To delete the final key you must set delete_last = True.
+
+
+
+   .. py:method:: generate_ec_key(key, curve = Curve.SECP256R1, replace_kvn = 0)
+
+      Generate a new SCP11 key.
+
+      Requires OCE verification.
+
+      Use replace_kvn to replace an existing key.
+
+
+
+   .. py:method:: put_key(key, sk, replace_kvn = 0)
+
+      Import an SCP key.
+
+      Requires OCE verification.
+
+      The value of the sk argument should match the SCP type as defined by the KID.
+      Use replace_kvn to replace an existing key.
+
+
+

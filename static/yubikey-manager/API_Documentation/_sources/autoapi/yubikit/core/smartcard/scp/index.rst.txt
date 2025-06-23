@@ -1,0 +1,263 @@
+yubikit.core.smartcard.scp
+==========================
+
+.. py:module:: yubikit.core.smartcard.scp
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubikit.core.smartcard.scp.INS_INITIALIZE_UPDATE
+   yubikit.core.smartcard.scp.INS_EXTERNAL_AUTHENTICATE
+   yubikit.core.smartcard.scp.INS_INTERNAL_AUTHENTICATE
+   yubikit.core.smartcard.scp.INS_PERFORM_SECURITY_OPERATION
+   yubikit.core.smartcard.scp.SendApdu
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubikit.core.smartcard.scp.SessionKeys
+   yubikit.core.smartcard.scp.StaticKeys
+   yubikit.core.smartcard.scp.ScpKid
+   yubikit.core.smartcard.scp.KeyRef
+   yubikit.core.smartcard.scp.ScpKeyParams
+   yubikit.core.smartcard.scp.Scp03KeyParams
+   yubikit.core.smartcard.scp.Scp11KeyParams
+   yubikit.core.smartcard.scp.ScpState
+
+
+Module Contents
+---------------
+
+.. py:data:: INS_INITIALIZE_UPDATE
+   :value: 80
+
+
+.. py:data:: INS_EXTERNAL_AUTHENTICATE
+   :value: 130
+
+
+.. py:data:: INS_INTERNAL_AUTHENTICATE
+   :value: 136
+
+
+.. py:data:: INS_PERFORM_SECURITY_OPERATION
+   :value: 42
+
+
+.. py:class:: SessionKeys
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   SCP Session Keys.
+
+
+   .. py:attribute:: key_senc
+      :type:  bytes
+
+
+   .. py:attribute:: key_smac
+      :type:  bytes
+
+
+   .. py:attribute:: key_srmac
+      :type:  bytes
+
+
+   .. py:attribute:: key_dek
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+.. py:class:: StaticKeys
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   SCP03 Static Keys.
+
+
+   .. py:attribute:: key_enc
+      :type:  bytes
+
+
+   .. py:attribute:: key_mac
+      :type:  bytes
+
+
+   .. py:attribute:: key_dek
+      :type:  Optional[bytes]
+      :value: None
+
+
+
+   .. py:method:: default()
+      :classmethod:
+
+
+
+   .. py:method:: derive(context)
+
+
+.. py:class:: ScpKid
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   Enum where members are also (and must be) ints
+
+
+   .. py:attribute:: SCP03
+      :value: 1
+
+
+
+   .. py:attribute:: SCP11a
+      :value: 17
+
+
+
+   .. py:attribute:: SCP11b
+      :value: 19
+
+
+
+   .. py:attribute:: SCP11c
+      :value: 21
+
+
+
+.. py:class:: KeyRef(kid_or_data, kvn = None)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:property:: kid
+      :type: int
+
+
+
+   .. py:property:: kvn
+      :type: int
+
+
+
+   .. py:method:: __repr__()
+
+      Return repr(self).
+
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+.. py:class:: ScpKeyParams
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: ref
+      :type:  KeyRef
+
+
+.. py:class:: Scp03KeyParams
+
+   Bases: :py:obj:`ScpKeyParams`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: ref
+      :type:  KeyRef
+
+
+   .. py:attribute:: keys
+      :type:  StaticKeys
+
+
+.. py:class:: Scp11KeyParams
+
+   Bases: :py:obj:`ScpKeyParams`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: pk_sd_ecka
+      :type:  cryptography.hazmat.primitives.asymmetric.ec.EllipticCurvePublicKey
+
+
+   .. py:attribute:: oce_ref
+      :type:  Optional[KeyRef]
+      :value: None
+
+
+
+   .. py:attribute:: sk_oce_ecka
+      :type:  Optional[cryptography.hazmat.primitives.asymmetric.ec.EllipticCurvePrivateKey]
+      :value: None
+
+
+
+   .. py:attribute:: certificates
+      :type:  Sequence[cryptography.x509.Certificate]
+      :value: []
+
+
+
+.. py:data:: SendApdu
+
+.. py:class:: ScpState(session_keys, mac_chain = b'\x00' * 16, enc_counter = 1)
+
+   .. py:method:: encrypt(data)
+
+
+   .. py:method:: mac(data)
+
+
+   .. py:method:: unmac(data, sw)
+
+
+   .. py:method:: decrypt(encrypted)
+
+
+   .. py:method:: scp03_init(send_apdu, key_params, *, host_challenge = None)
+      :classmethod:
+
+
+
+   .. py:method:: scp11_init(send_apdu, key_params)
+      :classmethod:
+
+
+

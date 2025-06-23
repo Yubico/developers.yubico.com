@@ -1,21 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.management &mdash; yubikey-manager 5.6.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>yubikit.management &mdash; yubikey-manager 5.7.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+
   
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../_static/documentation_options.js?v=31fa7d35"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -32,9 +33,6 @@
           <a href="../../index.html" class="icon icon-home">
             yubikey-manager
           </a>
-              <div class="version">
-                5.6
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -45,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../rst/packages.html">yubikey-manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
 </ul>
 
         </div>
@@ -100,42 +98,43 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fido2.hid</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAPABILITY</span> <span class="k">as</span> <span class="n">CTAP_CAPABILITY</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TRANSPORT</span><span class="p">,</span>
+    <span class="n">USB_INTERFACE</span><span class="p">,</span>
+    <span class="n">ApplicationNotAvailableError</span><span class="p">,</span>
+    <span class="n">BadResponseError</span><span class="p">,</span>
+    <span class="n">NotSupportedError</span><span class="p">,</span>
+    <span class="n">Tlv</span><span class="p">,</span>
+    <span class="n">Version</span><span class="p">,</span>
     <span class="n">bytes2int</span><span class="p">,</span>
     <span class="n">int2bytes</span><span class="p">,</span>
     <span class="n">require_version</span><span class="p">,</span>
-    <span class="n">Version</span><span class="p">,</span>
-    <span class="n">Tlv</span><span class="p">,</span>
-    <span class="n">TRANSPORT</span><span class="p">,</span>
-    <span class="n">USB_INTERFACE</span><span class="p">,</span>
-    <span class="n">NotSupportedError</span><span class="p">,</span>
-    <span class="n">BadResponseError</span><span class="p">,</span>
-    <span class="n">ApplicationNotAvailableError</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">check_crc</span><span class="p">,</span>
-    <span class="n">OtpConnection</span><span class="p">,</span>
-    <span class="n">OtpProtocol</span><span class="p">,</span>
-    <span class="n">STATUS_OFFSET_PROG_SEQ</span><span class="p">,</span>
-    <span class="n">CommandRejectedError</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.core.fido</span><span class="w"> </span><span class="kn">import</span> <span class="n">FidoConnection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="n">AID</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">,</span> <span class="n">SmartCardProtocol</span><span class="p">,</span> <span class="n">ScpKeyParams</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">fido2.hid</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAPABILITY</span> <span class="k">as</span> <span class="n">CTAP_CAPABILITY</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Mapping</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.otp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">STATUS_OFFSET_PROG_SEQ</span><span class="p">,</span>
+    <span class="n">CommandRejectedError</span><span class="p">,</span>
+    <span class="n">OtpConnection</span><span class="p">,</span>
+    <span class="n">OtpProtocol</span><span class="p">,</span>
+    <span class="n">check_crc</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core.smartcard</span><span class="w"> </span><span class="kn">import</span> <span class="n">AID</span><span class="p">,</span> <span class="n">ScpKeyParams</span><span class="p">,</span> <span class="n">SmartCardConnection</span><span class="p">,</span> <span class="n">SmartCardProtocol</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="CAPABILITY">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.CAPABILITY">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.CAPABILITY">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CAPABILITY</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey Application identifiers.&quot;&quot;&quot;</span>
@@ -148,9 +147,12 @@
     <span class="n">OPENPGP</span> <span class="o">=</span> <span class="mh">0x08</span>
     <span class="n">HSMAUTH</span> <span class="o">=</span> <span class="mh">0x100</span>
 
+<div class="viewcode-block" id="CAPABILITY.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.CAPABILITY.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">CAPABILITY</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_from_fips</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fips</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CAPABILITY&quot;</span><span class="p">:</span>
@@ -222,7 +224,7 @@
 
 
 <div class="viewcode-block" id="FORM_FACTOR">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.FORM_FACTOR">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.FORM_FACTOR">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FORM_FACTOR</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey device form factors.&quot;&quot;&quot;</span>
@@ -236,6 +238,8 @@
     <span class="n">USB_A_BIO</span> <span class="o">=</span> <span class="mh">0x06</span>
     <span class="n">USB_C_BIO</span> <span class="o">=</span> <span class="mh">0x07</span>
 
+<div class="viewcode-block" id="FORM_FACTOR.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.FORM_FACTOR.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_KEYCHAIN</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;Keychain (USB-A)&quot;</span>
@@ -252,10 +256,11 @@
         <span class="k">elif</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_BIO</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;Bio (USB-C)&quot;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;Unknown&quot;</span>
+            <span class="k">return</span> <span class="s2">&quot;Unknown&quot;</span></div>
+
 
 <div class="viewcode-block" id="FORM_FACTOR.from_code">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.FORM_FACTOR.from_code">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.FORM_FACTOR.from_code">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_code</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FORM_FACTOR&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">code</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -267,13 +272,31 @@
 
 
 <div class="viewcode-block" id="DEVICE_FLAG">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DEVICE_FLAG">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DEVICE_FLAG">[docs]</a>
 <span class="nd">@unique</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DEVICE_FLAG</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration flags.&quot;&quot;&quot;</span>
 
     <span class="n">REMOTE_WAKEUP</span> <span class="o">=</span> <span class="mh">0x40</span>
     <span class="n">EJECT</span> <span class="o">=</span> <span class="mh">0x80</span></div>
+
+
+
+<div class="viewcode-block" id="RELEASE_TYPE">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.RELEASE_TYPE">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RELEASE_TYPE</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey release type.&quot;&quot;&quot;</span>
+
+    <span class="n">ALPHA</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BETA</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">FINAL</span> <span class="o">=</span> <span class="mi">2</span>
+
+<div class="viewcode-block" id="RELEASE_TYPE.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.RELEASE_TYPE.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span></div>
+</div>
 
 
 
@@ -301,24 +324,25 @@
 <span class="n">TAG_PIN_COMPLEXITY</span> <span class="o">=</span> <span class="mh">0x16</span>
 <span class="n">TAG_NFC_RESTRICTED</span> <span class="o">=</span> <span class="mh">0x17</span>
 <span class="n">TAG_RESET_BLOCKED</span> <span class="o">=</span> <span class="mh">0x18</span>
+<span class="n">TAG_VERSION_QUALIFIER</span> <span class="o">=</span> <span class="mh">0x19</span>
 <span class="n">TAG_FPS_VERSION</span> <span class="o">=</span> <span class="mh">0x20</span>
 <span class="n">TAG_STM_VERSION</span> <span class="o">=</span> <span class="mh">0x21</span>
 
 
 <div class="viewcode-block" id="DeviceConfig">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DeviceConfig">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DeviceConfig">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceConfig</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Management settings for YubiKey which can be configured by the user.&quot;&quot;&quot;</span>
 
-    <span class="n">enabled_capabilities</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">enabled_capabilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">auto_eject_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">challenge_response_timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">device_flags</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DEVICE_FLAG</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">nfc_restricted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="DeviceConfig.get_bytes">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DeviceConfig.get_bytes">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DeviceConfig.get_bytes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_bytes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">reboot</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
@@ -353,8 +377,29 @@
 
 
 
+<div class="viewcode-block" id="VersionQualifier">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.VersionQualifier">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VersionQualifier</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fully qualified YubiKey version&quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="n">Version</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">RELEASE_TYPE</span> <span class="o">=</span> <span class="n">RELEASE_TYPE</span><span class="o">.</span><span class="n">FINAL</span>
+    <span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="VersionQualifier.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.VersionQualifier.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span></div>
+</div>
+
+
+
+<span class="n">_DUMMY_VQ</span> <span class="o">=</span> <span class="n">VersionQualifier</span><span class="p">(</span><span class="n">Version</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="DeviceInfo">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DeviceInfo">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DeviceInfo">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Information about a YubiKey readable using the ManagementSession.&quot;&quot;&quot;</span>
@@ -374,19 +419,31 @@
     <span class="n">reset_blocked</span><span class="p">:</span> <span class="n">CAPABILITY</span> <span class="o">=</span> <span class="n">CAPABILITY</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">fps_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Version</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">stm_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Version</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">version_qualifier</span><span class="p">:</span> <span class="n">VersionQualifier</span> <span class="o">=</span> <span class="n">_DUMMY_VQ</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_is_bio</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">form_factor</span> <span class="ow">in</span> <span class="p">(</span><span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_A_BIO</span><span class="p">,</span> <span class="n">FORM_FACTOR</span><span class="o">.</span><span class="n">USB_C_BIO</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DeviceInfo.has_transport">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DeviceInfo.has_transport">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DeviceInfo.has_transport">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">has_transport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">TRANSPORT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">transport</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_capabilities</span></div>
 
 
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">version_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The version of the YubiKey as a string.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version_qualifier</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version_qualifier</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">RELEASE_TYPE</span><span class="o">.</span><span class="n">FINAL</span>
+            <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span>
+            <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span>
+        <span class="p">)</span>
+
 <div class="viewcode-block" id="DeviceInfo.parse">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DeviceInfo.parse">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DeviceInfo.parse">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoded</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">default_version</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DeviceInfo&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">!=</span> <span class="n">encoded</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
@@ -395,7 +452,7 @@
 
 
 <div class="viewcode-block" id="DeviceInfo.parse_tlvs">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.DeviceInfo.parse_tlvs">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.DeviceInfo.parse_tlvs">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse_tlvs</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span> <span class="n">default_version</span><span class="p">:</span> <span class="n">Version</span>
@@ -440,6 +497,21 @@
         <span class="p">)</span>
         <span class="n">pin_complexity</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_PIN_COMPLEXITY</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\1</span><span class="s2">&quot;</span>
         <span class="n">reset_blocked</span> <span class="o">=</span> <span class="n">CAPABILITY</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_RESET_BLOCKED</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">)))</span>
+        <span class="n">vq</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_VERSION_QUALIFIER</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vq</span><span class="p">:</span>
+            <span class="n">vq_data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">vq</span><span class="p">)</span>
+            <span class="n">version_qualifier</span> <span class="o">=</span> <span class="n">VersionQualifier</span><span class="p">(</span>
+                <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">vq_data</span><span class="p">[</span><span class="mh">0x01</span><span class="p">]),</span>
+                <span class="n">RELEASE_TYPE</span><span class="p">(</span><span class="n">bytes2int</span><span class="p">(</span><span class="n">vq_data</span><span class="p">[</span><span class="mh">0x02</span><span class="p">])),</span>
+                <span class="n">bytes2int</span><span class="p">(</span><span class="n">vq_data</span><span class="p">[</span><span class="mh">0x03</span><span class="p">]),</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">version_qualifier</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">RELEASE_TYPE</span><span class="o">.</span><span class="n">FINAL</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Overriding behavioral version with </span><span class="si">{</span><span class="n">version_qualifier</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="n">version_qualifier</span><span class="o">.</span><span class="n">version</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">version_qualifier</span> <span class="o">=</span> <span class="n">VersionQualifier</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">RELEASE_TYPE</span><span class="o">.</span><span class="n">FINAL</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">fps_version</span> <span class="o">=</span> <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_FPS_VERSION</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0\0\0</span><span class="s2">&quot;</span><span class="p">))</span>
         <span class="n">stm_version</span> <span class="o">=</span> <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_STM_VERSION</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0\0\0</span><span class="s2">&quot;</span><span class="p">))</span>
 
@@ -459,6 +531,7 @@
             <span class="n">reset_blocked</span><span class="p">,</span>
             <span class="n">fps_version</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">stm_version</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">version_qualifier</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 
@@ -476,7 +549,7 @@
 
 
 <div class="viewcode-block" id="Mode">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.Mode">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.Mode">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Mode</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey USB Mode configuration for use with YubiKey NEO and 4.&quot;&quot;&quot;</span>
@@ -491,11 +564,14 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid mode!&quot;</span><span class="p">)</span>
 
+<div class="viewcode-block" id="Mode.__repr__">
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.Mode.__repr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">USB_INTERFACE</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interfaces</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">USB_INTERFACE</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interfaces</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Mode.from_code">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.Mode.from_code">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.Mode.from_code">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_code</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Mode&quot;</span><span class="p">:</span>
         <span class="c1"># Mode is determined from the lowest 3 bits</span>
@@ -516,20 +592,16 @@
     <span class="n">version</span><span class="p">:</span> <span class="n">Version</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">read_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_ManagementOtpBackend</span><span class="p">(</span><span class="n">_Backend</span><span class="p">):</span>
@@ -576,10 +648,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">smartcard_connection</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">select_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">MANAGEMENT</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">scp_key_params</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">init_scp</span><span class="p">(</span><span class="n">scp_key_params</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">select_bytes</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x90\x00</span><span class="s2">&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">select_bytes</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x90\x00</span><span class="s2">&quot;</span><span class="p">:</span>
                 <span class="c1"># YubiKey Edge incorrectly appends SW twice.</span>
                 <span class="n">select_bytes</span> <span class="o">=</span> <span class="n">select_bytes</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
 
@@ -589,15 +658,20 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="c1"># Workaround to &quot;de-select&quot; on NEO, otherwise it gets stuck.</span>
                 <span class="n">smartcard_connection</span><span class="o">.</span><span class="n">send_and_receive</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xa4\x04\x00\x08</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">scp_key_params</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SCP is not supported&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">OTP</span><span class="p">)</span>
+
         <span class="k">except</span> <span class="n">ApplicationNotAvailableError</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">smartcard_connection</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">smartcard_connection</span><span class="o">.</span><span class="n">transport</span> <span class="o">==</span> <span class="n">TRANSPORT</span><span class="o">.</span><span class="n">NFC</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">scp_key_params</span><span class="p">:</span>
                 <span class="c1"># Probably NEO over NFC</span>
                 <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">OTP</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">Version</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">status</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">scp_key_params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">init_scp</span><span class="p">(</span><span class="n">scp_key_params</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -649,7 +723,7 @@
 
 
 <div class="viewcode-block" id="ManagementSession">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.ManagementSession">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.ManagementSession">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ManagementSession</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -668,13 +742,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">_ManagementCtapBackend</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported connection type&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Overriding development version...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_read_device_info</span><span class="p">()</span><span class="o">.</span><span class="n">version_qualifier</span><span class="o">.</span><span class="n">version</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="s2">&quot;Management session initialized for &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;connection=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, version=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="ManagementSession.close">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.ManagementSession.close">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.ManagementSession.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the underlying connection.</span>
 
@@ -693,10 +772,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">version</span>
 
 <div class="viewcode-block" id="ManagementSession.read_device_info">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.ManagementSession.read_device_info">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.ManagementSession.read_device_info">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">read_device_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceInfo</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed information about the YubiKey.&quot;&quot;&quot;</span>
         <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_read_device_info</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_do_read_device_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceInfo</span><span class="p">:</span>
         <span class="n">more_data</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">tlvs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">page</span> <span class="o">=</span> <span class="mi">0</span>
@@ -710,11 +793,10 @@
             <span class="n">tlvs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="k">return</span> <span class="n">DeviceInfo</span><span class="o">.</span><span class="n">parse_tlvs</span><span class="p">(</span><span class="n">tlvs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">)</span></div>
-
+        <span class="k">return</span> <span class="n">DeviceInfo</span><span class="o">.</span><span class="n">parse_tlvs</span><span class="p">(</span><span class="n">tlvs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ManagementSession.write_device_config">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.ManagementSession.write_device_config">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.ManagementSession.write_device_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_device_config</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeviceConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -747,7 +829,7 @@
 
 
 <div class="viewcode-block" id="ManagementSession.set_mode">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.ManagementSession.set_mode">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.ManagementSession.set_mode">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_mode</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">mode</span><span class="p">:</span> <span class="n">Mode</span><span class="p">,</span>
@@ -811,7 +893,7 @@
 
 
 <div class="viewcode-block" id="ManagementSession.device_reset">
-<a class="viewcode-back" href="../../rst/yubikit.html#yubikit.management.ManagementSession.device_reset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/yubikit/management/index.html#yubikit.management.ManagementSession.device_reset">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">device_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Global factory reset.</span>
 

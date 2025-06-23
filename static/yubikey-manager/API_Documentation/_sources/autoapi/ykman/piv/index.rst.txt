@@ -1,0 +1,258 @@
+ykman.piv
+=========
+
+.. py:module:: ykman.piv
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ykman.piv.OBJECT_ID_PIVMAN_DATA
+   ykman.piv.OBJECT_ID_PIVMAN_PROTECTED_DATA
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ykman.piv.PivmanData
+   ykman.piv.PivmanProtectedData
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ykman.piv.parse_rfc4514_string
+   ykman.piv.derive_management_key
+   ykman.piv.generate_random_management_key
+   ykman.piv.get_pivman_data
+   ykman.piv.get_pivman_protected_data
+   ykman.piv.pivman_set_mgm_key
+   ykman.piv.pivman_change_pin
+   ykman.piv.pivman_set_pin_attempts
+   ykman.piv.list_certificates
+   ykman.piv.check_key
+   ykman.piv.generate_chuid
+   ykman.piv.generate_ccc
+   ykman.piv.get_piv_info
+   ykman.piv.sign_certificate_builder
+   ykman.piv.sign_csr_builder
+   ykman.piv.generate_self_signed_certificate
+   ykman.piv.generate_csr
+
+
+Module Contents
+---------------
+
+.. py:data:: OBJECT_ID_PIVMAN_DATA
+   :value: 6291200
+
+
+.. py:data:: OBJECT_ID_PIVMAN_PROTECTED_DATA
+
+.. py:function:: parse_rfc4514_string(value)
+
+   Parse an RFC 4514 string into a x509.Name.
+
+   See: https://tools.ietf.org/html/rfc4514.html
+
+   :param value: An RFC 4514 string.
+
+
+.. py:function:: derive_management_key(pin, salt)
+
+   Derive a management key from the users PIN and a salt.
+
+   NOTE: This method of derivation is deprecated! Protect the management key using
+   PivmanProtectedData instead.
+
+   :param pin: The PIN.
+   :param salt: The salt.
+
+
+.. py:function:: generate_random_management_key(algorithm)
+
+   Generate a new random management key.
+
+   :param algorithm: The algorithm for the management key.
+
+
+.. py:class:: PivmanData(raw_data = Tlv(128))
+
+   .. py:attribute:: salt
+
+
+   .. py:attribute:: pin_timestamp
+
+
+   .. py:property:: puk_blocked
+      :type: bool
+
+
+
+   .. py:property:: mgm_key_protected
+      :type: bool
+
+
+
+   .. py:property:: has_protected_key
+      :type: bool
+
+
+
+   .. py:property:: has_derived_key
+      :type: bool
+
+
+
+   .. py:property:: has_stored_key
+      :type: bool
+
+
+
+   .. py:method:: get_bytes()
+
+
+.. py:class:: PivmanProtectedData(raw_data = Tlv(136))
+
+   .. py:attribute:: key
+
+
+   .. py:method:: get_bytes()
+
+
+.. py:function:: get_pivman_data(session)
+
+   Read out the Pivman data from a YubiKey.
+
+   :param session: The PIV session.
+
+
+.. py:function:: get_pivman_protected_data(session)
+
+   Read out the Pivman protected data from a YubiKey.
+
+   This function requires PIN verification prior to being called.
+
+   :param session: The PIV session.
+
+
+.. py:function:: pivman_set_mgm_key(session, new_key, algorithm, touch = False, store_on_device = False)
+
+   Set a new management key, while keeping PivmanData in sync.
+
+   :param session: The PIV session.
+   :param new_key: The new management key.
+   :param algorithm: The algorithm for the management key.
+   :param touch: If set, touch is required.
+   :param store_on_device: If set, the management key is stored on device.
+
+
+.. py:function:: pivman_change_pin(session, old_pin, new_pin)
+
+   Change the PIN, while keeping PivmanData in sync.
+
+   :param session: The PIV session.
+   :param old_pin: The old PIN.
+   :param new_pin: The new PIN.
+
+
+.. py:function:: pivman_set_pin_attempts(session, pin_attempts, puk_attempts)
+
+   Set the number of PIN and PUK retry attempts, while keeping PivmanData in sync.
+
+   :param session: The PIV session.
+   :param pin_attempts: The PIN attempts.
+   :param puk_attempts: The PUK attempts.
+
+
+.. py:function:: list_certificates(session)
+
+   Read out and parse stored certificates.
+
+   Only certificates which are successfully parsed are returned.
+
+   :param session: The PIV session.
+
+
+.. py:function:: check_key(session, slot, public_key)
+
+   Check that a given public key corresponds to the private key in a slot.
+
+   This will create a signature using the private key, so the PIN must be verified
+   prior to calling this function if the PIN policy requires it.
+
+   :param session: The PIV session.
+   :param slot: The slot.
+   :param public_key: The public key.
+
+
+.. py:function:: generate_chuid()
+
+   Generate a CHUID (Cardholder Unique Identifier).
+
+
+.. py:function:: generate_ccc()
+
+   Generate a CCC (Card Capability Container).
+
+
+.. py:function:: get_piv_info(session)
+
+   Get human readable information about the PIV configuration.
+
+   :param session: The PIV session.
+
+
+.. py:function:: sign_certificate_builder(session, slot, key_type, builder, hash_algorithm = hashes.SHA256)
+
+   Sign a Certificate.
+
+   :param session: The PIV session.
+   :param slot: The slot.
+   :param key_type: The key type.
+   :param builder: The x509 certificate builder object.
+   :param hash_algorithm: The hash algorithm, ignored for Curve 25519.
+
+
+.. py:function:: sign_csr_builder(session, slot, public_key, builder, hash_algorithm = hashes.SHA256)
+
+   Sign a CSR.
+
+   :param session: The PIV session.
+   :param slot: The slot.
+   :param public_key: The public key.
+   :param builder: The x509 certificate signing request builder
+       object.
+   :param hash_algorithm: The hash algorithm, ignored for Curve 25519.
+
+
+.. py:function:: generate_self_signed_certificate(session, slot, public_key, subject_str, valid_from, valid_to, hash_algorithm = hashes.SHA256)
+
+   Generate a self-signed certificate using a private key in a slot.
+
+   :param session: The PIV session.
+   :param slot: The slot.
+   :param public_key: The public key.
+   :param subject_str: The subject RFC 4514 string.
+   :param valid_from: The date from when the certificate is valid.
+   :param valid_to: The date when the certificate expires.
+   :param hash_algorithm: The hash algorithm.
+
+
+.. py:function:: generate_csr(session, slot, public_key, subject_str, hash_algorithm = hashes.SHA256)
+
+   Generate a CSR using a private key in a slot.
+
+   :param session: The PIV session.
+   :param slot: The slot.
+   :param public_key: The public key.
+   :param subject_str: The subject RFC 4514 string.
+   :param hash_algorithm: The hash algorithm.
+
+

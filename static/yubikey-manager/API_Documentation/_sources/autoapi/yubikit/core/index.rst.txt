@@ -1,0 +1,489 @@
+yubikit.core
+============
+
+.. py:module:: yubikit.core
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/yubikit/core/fido/index
+   /autoapi/yubikit/core/otp/index
+   /autoapi/yubikit/core/smartcard/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubikit.core.T_Connection
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   yubikit.core.CommandError
+   yubikit.core.BadResponseError
+   yubikit.core.TimeoutError
+   yubikit.core.ApplicationNotAvailableError
+   yubikit.core.NotSupportedError
+   yubikit.core.InvalidPinError
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubikit.core.Version
+   yubikit.core.TRANSPORT
+   yubikit.core.USB_INTERFACE
+   yubikit.core.YUBIKEY
+   yubikit.core.Connection
+   yubikit.core.PID
+   yubikit.core.YubiKeyDevice
+   yubikit.core.Tlv
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   yubikit.core.require_version
+   yubikit.core.int2bytes
+   yubikit.core.bytes2int
+
+
+Package Contents
+----------------
+
+.. py:class:: Version
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   3-digit version tuple.
+
+
+   .. py:attribute:: major
+      :type:  int
+
+
+   .. py:attribute:: minor
+      :type:  int
+
+
+   .. py:attribute:: patch
+      :type:  int
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __bool__()
+
+
+   .. py:method:: from_bytes(data)
+      :classmethod:
+
+
+
+   .. py:method:: from_string(data)
+      :classmethod:
+
+
+
+.. py:class:: TRANSPORT
+
+   Bases: :py:obj:`str`, :py:obj:`enum.Enum`
+
+
+   YubiKey physical connection transports.
+
+
+   .. py:attribute:: USB
+      :value: 'usb'
+
+
+
+   .. py:attribute:: NFC
+      :value: 'nfc'
+
+
+
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+.. py:class:: USB_INTERFACE
+
+   Bases: :py:obj:`enum.IntFlag`
+
+
+   YubiKey USB interface identifiers.
+
+
+   .. py:attribute:: OTP
+      :value: 1
+
+
+
+   .. py:attribute:: FIDO
+      :value: 2
+
+
+
+   .. py:attribute:: CCID
+      :value: 4
+
+
+
+.. py:class:: YUBIKEY(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   YubiKey hardware platforms.
+
+
+   .. py:attribute:: YKS
+      :value: 'YubiKey Standard'
+
+
+
+   .. py:attribute:: NEO
+      :value: 'YubiKey NEO'
+
+
+
+   .. py:attribute:: SKY
+      :value: 'Security Key by Yubico'
+
+
+
+   .. py:attribute:: YKP
+      :value: 'YubiKey Plus'
+
+
+
+   .. py:attribute:: YK4
+      :value: 'YubiKey'
+
+
+
+.. py:class:: Connection
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   A connection to a YubiKey
+
+
+   .. py:attribute:: usb_interface
+      :type:  ClassVar[USB_INTERFACE]
+
+
+   .. py:method:: close()
+
+      Close the device, releasing any held resources.
+
+
+
+   .. py:method:: __enter__()
+
+
+   .. py:method:: __exit__(typ, value, traceback)
+
+
+.. py:class:: PID
+
+   Bases: :py:obj:`enum.IntEnum`
+
+
+   USB Product ID values for YubiKey devices.
+
+
+   .. py:attribute:: YKS_OTP
+      :value: 16
+
+
+
+   .. py:attribute:: NEO_OTP
+      :value: 272
+
+
+
+   .. py:attribute:: NEO_OTP_CCID
+      :value: 273
+
+
+
+   .. py:attribute:: NEO_CCID
+      :value: 274
+
+
+
+   .. py:attribute:: NEO_FIDO
+      :value: 275
+
+
+
+   .. py:attribute:: NEO_OTP_FIDO
+      :value: 276
+
+
+
+   .. py:attribute:: NEO_FIDO_CCID
+      :value: 277
+
+
+
+   .. py:attribute:: NEO_OTP_FIDO_CCID
+      :value: 278
+
+
+
+   .. py:attribute:: SKY_FIDO
+      :value: 288
+
+
+
+   .. py:attribute:: YK4_OTP
+      :value: 1025
+
+
+
+   .. py:attribute:: YK4_FIDO
+      :value: 1026
+
+
+
+   .. py:attribute:: YK4_OTP_FIDO
+      :value: 1027
+
+
+
+   .. py:attribute:: YK4_CCID
+      :value: 1028
+
+
+
+   .. py:attribute:: YK4_OTP_CCID
+      :value: 1029
+
+
+
+   .. py:attribute:: YK4_FIDO_CCID
+      :value: 1030
+
+
+
+   .. py:attribute:: YK4_OTP_FIDO_CCID
+      :value: 1031
+
+
+
+   .. py:attribute:: YKP_OTP_FIDO
+      :value: 1040
+
+
+
+   .. py:property:: yubikey_type
+      :type: YUBIKEY
+
+
+
+   .. py:property:: usb_interfaces
+      :type: USB_INTERFACE
+
+
+
+   .. py:method:: of(key_type, interfaces)
+      :classmethod:
+
+
+
+   .. py:method:: supports_connection(connection_type)
+
+
+.. py:data:: T_Connection
+
+.. py:class:: YubiKeyDevice(transport, fingerprint)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   YubiKey device reference
+
+
+   .. py:property:: transport
+      :type: TRANSPORT
+
+
+      Get the transport used to communicate with this YubiKey
+
+
+
+   .. py:method:: supports_connection(connection_type)
+
+      Check if a YubiKeyDevice supports a specific Connection type
+
+
+
+   .. py:method:: open_connection(connection_type)
+
+      Opens a connection to the YubiKey
+
+
+
+   .. py:property:: fingerprint
+      :type: Hashable
+
+
+      Used to identify that device references from different enumerations represent
+      the same physical YubiKey. This fingerprint is not stable between sessions, or
+      after un-plugging, and re-plugging a device.
+
+
+
+   .. py:method:: __eq__(other)
+
+
+   .. py:method:: __hash__()
+
+
+   .. py:method:: __repr__()
+
+
+.. py:exception:: CommandError
+
+   Bases: :py:obj:`Exception`
+
+
+   An error response from a YubiKey
+
+
+.. py:exception:: BadResponseError
+
+   Bases: :py:obj:`CommandError`
+
+
+   Invalid response data from the YubiKey
+
+
+.. py:exception:: TimeoutError
+
+   Bases: :py:obj:`CommandError`
+
+
+   An operation timed out waiting for something
+
+
+.. py:exception:: ApplicationNotAvailableError
+
+   Bases: :py:obj:`CommandError`
+
+
+   The application is either disabled or not supported on this YubiKey
+
+
+.. py:exception:: NotSupportedError
+
+   Bases: :py:obj:`ValueError`
+
+
+   Attempting an action that is not supported on this YubiKey
+
+
+.. py:exception:: InvalidPinError(attempts_remaining, message = None)
+
+   Bases: :py:obj:`CommandError`, :py:obj:`ValueError`
+
+
+   An incorrect PIN/PUK was used, with the number of attempts now remaining.
+
+   WARNING: This exception currently inherits from ValueError for
+   backwards-compatibility reasons. This will no longer be the case with the next major
+   version of the library.
+
+
+   .. py:attribute:: attempts_remaining
+
+
+.. py:function:: require_version(my_version, min_version, message=None)
+
+   Ensure a version is at least min_version.
+
+
+.. py:function:: int2bytes(value, min_len = 0)
+
+.. py:function:: bytes2int(data)
+
+.. py:class:: Tlv(tag_or_data, value = None)
+
+   Bases: :py:obj:`bytes`
+
+
+   bytes(iterable_of_ints) -> bytes
+   bytes(string, encoding[, errors]) -> bytes
+   bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+   bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+   bytes() -> empty bytes object
+
+   Construct an immutable array of bytes from:
+     - an iterable yielding integers in range(256)
+     - a text string encoded using the specified encoding
+     - any object implementing the buffer API.
+     - an integer
+
+
+   .. py:property:: tag
+      :type: int
+
+
+
+   .. py:property:: length
+      :type: int
+
+
+
+   .. py:property:: value
+      :type: bytes
+
+
+
+   .. py:method:: __repr__()
+
+      Return repr(self).
+
+
+
+   .. py:method:: parse_from(data)
+      :classmethod:
+
+
+
+   .. py:method:: parse_list(data)
+      :classmethod:
+
+
+
+   .. py:method:: parse_dict(data)
+      :classmethod:
+
+
+
+   .. py:method:: unpack(tag, data)
+      :classmethod:
+
+
+
