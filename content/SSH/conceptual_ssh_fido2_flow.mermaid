@@ -1,0 +1,59 @@
+sequenceDiagram
+    autonumber
+    participant User as User
+    participant Client as SSH Client
+    participant YubiKey as YubiKey Device
+    participant Server as SSH Server
+
+    User->>Client: ssh user@server
+    Client->>Server: SSH Connection Request
+    activate Server
+    Server-->>Client: Server Challenge (nonce + session data)
+    deactivate Server
+
+    activate Client
+    Note over Client: Read SSH key handle<br/>(~/.ssh/id_ed25519_sk)
+    Client->>Client: Parse key handle metadata
+    Client->>YubiKey: FIDO2 Authentication Request
+    deactivate Client
+
+    activate YubiKey
+    alt Resident Key with PIN
+        YubiKey->>User: Prompt for PIN
+        User->>YubiKey: Enter PIN
+        YubiKey->>YubiKey: Verify PIN
+    end
+    
+    YubiKey->>User: Request Physical Touch
+    User->>YubiKey: Touch YubiKey
+    
+    rect rgb(255, 240, 240)
+        Note over YubiKey: SECURE ELEMENT<br/>Private key operation<br/>Key NEVER leaves device
+        YubiKey->>YubiKey: Generate signature using<br/>internal private key
+    end
+    
+    YubiKey-->>Client: Return signature + attestation
+    deactivate YubiKey
+
+    activate Client
+    Client->>Server: Send signature response
+    deactivate Client
+
+    activate Server
+    Note over Server: Lookup user's public key<br/>(authorized_keys file)
+    Server->>Server: Verify signature against<br/>stored public key
+    
+    alt Valid Signature
+        Server-->>Client: Authentication Success
+        rect rgb(240, 255, 240)
+            Note over Client,Server: Secure SSH session established
+        end
+    else Invalid Signature
+        Server-->>Client: Authentication Failed
+        Note over Client: Connection terminated
+    end
+    deactivate Server
+
+    opt Success Case
+        Client->>User: Shell prompt available
+    end
