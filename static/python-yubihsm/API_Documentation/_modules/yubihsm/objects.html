@@ -1,40 +1,38 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubihsm.objects &mdash; python-yubihsm 3.1.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>yubihsm.objects &mdash; python-yubihsm 3.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
 
-        <script src="../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=ff68d3e4"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=796a81b5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-
-
+          
+          
           <a href="../../index.html" class="icon icon-home">
             python-yubihsm
           </a>
-              <div class="version">
-                3.1
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -43,8 +41,11 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"></div>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/index.html">API Reference</a></li>
+</ul>
+
         </div>
       </div>
     </nav>
@@ -68,7 +69,7 @@
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-
+             
   <h1>Source code for yubihsm.objects</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright 2016-2018 Yubico AB</span>
 <span class="c1">#</span>
@@ -86,27 +87,28 @@
 
 <span class="sd">&quot;&quot;&quot;Classes for interacting with objects on a YubiHSM.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">.defs</span> <span class="kn">import</span> <span class="n">ALGORITHM</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="p">,</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">OBJECT</span><span class="p">,</span> <span class="n">ORIGIN</span>
-<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">YubiHsmInvalidResponseError</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">password_to_key</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">core</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
-<span class="kn">from</span> <span class="nn">cryptography</span> <span class="kn">import</span> <span class="n">x509</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives</span> <span class="kn">import</span> <span class="n">hashes</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">rsa</span><span class="p">,</span> <span class="n">ec</span><span class="p">,</span> <span class="n">ed25519</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.serialization</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives</span><span class="w"> </span><span class="kn">import</span> <span class="n">hashes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric</span><span class="w"> </span><span class="kn">import</span> <span class="n">ec</span><span class="p">,</span> <span class="n">ed25519</span><span class="p">,</span> <span class="n">rsa</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">Prehashed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Encoding</span><span class="p">,</span>
-    <span class="n">PublicFormat</span><span class="p">,</span>
-    <span class="n">PrivateFormat</span><span class="p">,</span>
     <span class="n">NoEncryption</span><span class="p">,</span>
+    <span class="n">PrivateFormat</span><span class="p">,</span>
+    <span class="n">PublicFormat</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric.utils</span> <span class="kn">import</span> <span class="n">Prehashed</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Type</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">struct</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">core</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.defs</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALGORITHM</span><span class="p">,</span> <span class="n">CAPABILITY</span><span class="p">,</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">OBJECT</span><span class="p">,</span> <span class="n">ORIGIN</span><span class="p">,</span> <span class="n">Version</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">YubiHsmInvalidResponseError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">password_to_key</span>
 
 <span class="n">LABEL_LENGTH</span> <span class="o">=</span> <span class="mi">40</span>
 
@@ -121,7 +123,7 @@
 <span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_label_pack</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_label_pack</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Pack a label into binary form.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">label</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
@@ -130,7 +132,7 @@
     <span class="k">return</span> <span class="n">label</span>
 
 
-<span class="k">def</span> <span class="nf">_label_unpack</span><span class="p">(</span><span class="n">packed</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_label_unpack</span><span class="p">(</span><span class="n">packed</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unpack a label from its binary form.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">packed</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
@@ -139,7 +141,7 @@
         <span class="k">return</span> <span class="n">packed</span>
 
 
-<span class="k">def</span> <span class="nf">_calc_hash</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">hash</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_calc_hash</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">hash</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">Prehashed</span><span class="p">):</span>
         <span class="n">digest</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">Hash</span><span class="p">(</span><span class="nb">hash</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">())</span>
         <span class="n">digest</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -148,8 +150,10 @@
     <span class="k">return</span> <span class="n">data</span>
 
 
-<div class="viewcode-block" id="ObjectInfo"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.ObjectInfo">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ObjectInfo</span><span class="p">:</span>
+<div class="viewcode-block" id="ObjectInfo">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.ObjectInfo">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ObjectInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Data structure holding various information about an object.</span>
 
 <span class="sd">    :ivar capabilities: The capabilities of the object.</span>
@@ -178,21 +182,151 @@
     <span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span>
     <span class="n">delegated_capabilities</span><span class="p">:</span> <span class="n">CAPABILITY</span>
 
-<div class="viewcode-block" id="ObjectInfo.parse"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.ObjectInfo.parse">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ObjectInfo&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="ObjectInfo.parse">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.ObjectInfo.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ObjectInfo&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse an ObjectInfo from its binary representation.&quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">ALGORITHM</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">ORIGIN</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">_label_unpack</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_bytes</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span> <span class="n">oid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">get_extension_for_oid</span><span class="p">(</span>
+        <span class="n">x509</span><span class="o">.</span><span class="n">ObjectIdentifier</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;1.3.6.1.4.1.41482.4.</span><span class="si">{</span><span class="n">oid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_int</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span> <span class="n">oid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">_get_bytes</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">oid</span><span class="p">)[</span><span class="mi">2</span><span class="p">:],</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
+
+
+<span class="n">T_AttestationExtensions</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span>
+    <span class="s2">&quot;T_AttestationExtensions&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;AttestationExtensions&quot;</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="AttestationExtensions">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AttestationExtensions">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AttestationExtensions</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base attestation extensions.</span>
+
+<span class="sd">    :ivar firmware_version: YubiHSM firmware version.</span>
+<span class="sd">    :ivar serial: YubiHSM serial number.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">firmware_version</span><span class="p">:</span> <span class="n">Version</span>
+    <span class="n">serial</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="AttestationExtensions.parse">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AttestationExtensions.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_AttestationExtensions</span><span class="p">],</span> <span class="n">certificate</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_AttestationExtensions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">cls</span> <span class="o">==</span> <span class="n">AttestationExtensions</span><span class="p">:</span>
+            <span class="c1"># When called on the base class, identify which subclass to use</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_get_bytes</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">KeyAttestationExtensions</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="k">except</span> <span class="n">x509</span><span class="o">.</span><span class="n">ExtensionNotFound</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">DeviceAttestationExtensions</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+        <span class="n">version</span><span class="p">:</span> <span class="n">Version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_get_bytes</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">3</span><span class="p">:])</span>  <span class="c1"># type: ignore</span>
+        <span class="n">serial</span> <span class="o">=</span> <span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="n">serial</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DeviceAttestationExtensions">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.DeviceAttestationExtensions">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeviceAttestationExtensions</span><span class="p">(</span><span class="n">AttestationExtensions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Device attestation extensions. Available on YubiHSM FIPS only.</span>
+
+<span class="sd">    :ivar fips_certificate: The FIPS certificate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fips_certificate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+<div class="viewcode-block" id="DeviceAttestationExtensions.parse">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.DeviceAttestationExtensions.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">certificate</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="c1"># Available on YubiHSM FIPS only</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fips_certificate</span> <span class="o">=</span> <span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">x509</span><span class="o">.</span><span class="n">ExtensionNotFound</span><span class="p">:</span>
+            <span class="n">fips_certificate</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DeviceAttestationExtensions</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+            <span class="n">certificate</span><span class="p">,</span> <span class="n">fips_certificate</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="KeyAttestationExtensions">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.KeyAttestationExtensions">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KeyAttestationExtensions</span><span class="p">(</span><span class="n">AttestationExtensions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Key attestation extensions.</span>
+
+<span class="sd">    :ivar origin: The origin of the key.</span>
+<span class="sd">    :ivar domains: The set of domains assigned to the key object.</span>
+<span class="sd">    :ivar capabilities: The set of capabilities assigned to the key object.</span>
+<span class="sd">    :ivar object_id: The ID of the key object.</span>
+<span class="sd">    :ivar label: The label of the key object.</span>
+<span class="sd">    :ivar fips_approved: (available on YubiHSM FIPS &gt;= 2.4.1 only) True if</span>
+<span class="sd">        the key attestation was generated in FIPS-approved mode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">origin</span><span class="p">:</span> <span class="n">ORIGIN</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">capabilities</span><span class="p">:</span> <span class="n">CAPABILITY</span>
+    <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span>
+    <span class="n">fips_approved</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+
+<div class="viewcode-block" id="KeyAttestationExtensions.parse">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.KeyAttestationExtensions.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">certificate</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extracts the attributes from an an attestation certificate.&quot;&quot;&quot;</span>
+
+        <span class="n">origin</span> <span class="o">=</span> <span class="n">ORIGIN</span><span class="p">(</span><span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">domains</span> <span class="o">=</span> <span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">capabilities</span> <span class="o">=</span> <span class="n">CAPABILITY</span><span class="p">(</span><span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="n">object_id</span> <span class="o">=</span> <span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">_label_unpack</span><span class="p">(</span><span class="n">_get_bytes</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">9</span><span class="p">)[</span><span class="mi">2</span><span class="p">:])</span>
+
+        <span class="c1"># Available on YubiHSM FIPS &gt;= 2.4.1 only</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fips_approved</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">_get_int</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">x509</span><span class="o">.</span><span class="n">ExtensionNotFound</span><span class="p">:</span>
+            <span class="n">fips_approved</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">KeyAttestationExtensions</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+            <span class="n">certificate</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">domains</span><span class="p">,</span> <span class="n">capabilities</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">fips_approved</span>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <span class="n">T_Object</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T_Object&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;YhsmObject&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="YhsmObject"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.YhsmObject">[docs]</a><span class="k">class</span> <span class="nc">YhsmObject</span><span class="p">:</span>
+<div class="viewcode-block" id="YhsmObject">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.YhsmObject">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">YhsmObject</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A reference to an object stored in a YubiHSM.</span>
 
 <span class="sd">    YubiHSM objects are uniquely identified by their type and ID combined.</span>
@@ -204,14 +338,16 @@
 
     <span class="n">object_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">OBJECT</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">object_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seq</span> <span class="o">=</span> <span class="n">seq</span>
 
-<div class="viewcode-block" id="YhsmObject.with_session"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.YhsmObject.with_session">[docs]</a>    <span class="k">def</span> <span class="nf">with_session</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">T_Object</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_Object</span><span class="p">:</span>
+<div class="viewcode-block" id="YhsmObject.with_session">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.YhsmObject.with_session">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">with_session</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">T_Object</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_Object</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a copy of the object reference, using the given session.</span>
 
 <span class="sd">        :param session: The session to use for the created reference.</span>
@@ -221,7 +357,10 @@
         <span class="n">other</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
         <span class="k">return</span> <span class="n">other</span></div>
 
-<div class="viewcode-block" id="YhsmObject.get_info"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.YhsmObject.get_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ObjectInfo</span><span class="p">:</span>
+
+<div class="viewcode-block" id="YhsmObject.get_info">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.YhsmObject.get_info">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ObjectInfo</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read extended information about the object from the YubiHSM.</span>
 
 <span class="sd">        :return: Information about the object.</span>
@@ -233,7 +372,10 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">YubiHsmInvalidResponseError</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="YhsmObject.delete"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.YhsmObject.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="YhsmObject.delete">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.YhsmObject.delete">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete the object from the YubiHSM.</span>
 
 <span class="sd">        .. warning:: This action in irreversible.</span>
@@ -242,8 +384,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DELETE_OBJECT</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">YubiHsmInvalidResponseError</span><span class="p">()</span></div>
 
+
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_create</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span>
         <span class="n">object_type</span><span class="p">:</span> <span class="n">OBJECT</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -261,28 +404,31 @@
         <span class="k">return</span> <span class="n">_UnknownYhsmObject</span><span class="p">(</span><span class="n">object_type</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_from_command</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_from_command</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">T_Object</span><span class="p">],</span> <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_Object</span><span class="p">:</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{0.__class__.__name__}</span><span class="s2">(id=</span><span class="si">{0.id}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">_UnknownYhsmObject</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_UnknownYhsmObject</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    _UnknownYhsmObject is a generic YhsmObject with `self.object_type`</span>
 <span class="sd">    set to the specified `object_type` parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="n">OBJECT</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="n">OBJECT</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">_UnknownYhsmObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">object_type</span> <span class="o">=</span> <span class="n">object_type</span>  <span class="c1"># type: ignore</span>
 
 
-<div class="viewcode-block" id="Opaque"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Opaque">[docs]</a><span class="k">class</span> <span class="nc">Opaque</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+<div class="viewcode-block" id="Opaque">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Opaque">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Opaque</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Object used to store arbitrary data on the YubiHSM.</span>
 
 <span class="sd">    Supported algorithms:</span>
@@ -292,8 +438,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">OPAQUE</span>
 
-<div class="viewcode-block" id="Opaque.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Opaque.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+<div class="viewcode-block" id="Opaque.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Opaque.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -328,7 +476,10 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_OPAQUE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Opaque.get"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Opaque.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Opaque.get">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Opaque.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the data of an Opaque object from the YubiHSM.</span>
 
 <span class="sd">        :return: The data stored for the object.</span>
@@ -336,8 +487,11 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">GET_OPAQUE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Opaque.put_certificate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Opaque.put_certificate">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put_certificate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Opaque.put_certificate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Opaque.put_certificate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_certificate</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -345,6 +499,7 @@
         <span class="n">domains</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">capabilities</span><span class="p">:</span> <span class="n">CAPABILITY</span><span class="p">,</span>
         <span class="n">certificate</span><span class="p">:</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">,</span>
+        <span class="n">compress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Opaque&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import an X509 certificate into the YubiHSM as an Opaque.</span>
 
@@ -355,9 +510,12 @@
 <span class="sd">        :param domains: The set of domains to assign the object to.</span>
 <span class="sd">        :param capabilities: The set of capabilities to give the object.</span>
 <span class="sd">        :param certificate: A certificate to import.</span>
+<span class="sd">        :param compress: (optional) Compress the certificate.</span>
 <span class="sd">        :return: A reference to the newly created object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">encoded_cert</span> <span class="o">=</span> <span class="n">certificate</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">DER</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">compress</span><span class="p">:</span>
+            <span class="n">encoded_cert</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">encoded_cert</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
             <span class="n">session</span><span class="p">,</span>
             <span class="n">object_id</span><span class="p">,</span>
@@ -368,15 +526,28 @@
             <span class="n">encoded_cert</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Opaque.get_certificate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Opaque.get_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">get_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Opaque.get_certificate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Opaque.get_certificate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read an Opaque object from the YubiHSM, parsed as a certificate.</span>
 
 <span class="sd">        :return: The certificate stored for the object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span></div></div>
+        <span class="n">cert_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Try to decompress cert</span>
+            <span class="n">cert_data</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">gzip</span><span class="o">.</span><span class="n">BadGzipFile</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">cert_data</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span></div>
+</div>
 
 
-<div class="viewcode-block" id="AuthenticationKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey">[docs]</a><span class="k">class</span> <span class="nc">AuthenticationKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AuthenticationKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AuthenticationKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to authenticate a session with the YubiHSM.</span>
 
 <span class="sd">    AuthenticationKeys use two separate keys to mutually authenticate and set up</span>
@@ -386,8 +557,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">AUTHENTICATION_KEY</span>
 
-<div class="viewcode-block" id="AuthenticationKey.put_derived"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey.put_derived">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put_derived</span><span class="p">(</span>
+<div class="viewcode-block" id="AuthenticationKey.put_derived">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey.put_derived">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_derived</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -423,8 +596,11 @@
             <span class="n">key_mac</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="AuthenticationKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AuthenticationKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -462,8 +638,11 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="n">key_enc</span> <span class="o">+</span> <span class="n">key_mac</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_AUTHENTICATION_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AuthenticationKey.put_public_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey.put_public_key">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put_public_key</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AuthenticationKey.put_public_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey.put_public_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_public_key</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -504,7 +683,10 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="nb">int</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">public_key</span><span class="o">.</span><span class="n">key_size</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_AUTHENTICATION_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AuthenticationKey.change_password"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey.change_password">[docs]</a>    <span class="k">def</span> <span class="nf">change_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AuthenticationKey.change_password">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey.change_password">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the password used to authenticate a session.</span>
 
 <span class="sd">        Changes the raw keys used for authentication, by deriving them from a</span>
@@ -515,7 +697,10 @@
         <span class="n">key_enc</span><span class="p">,</span> <span class="n">key_mac</span> <span class="o">=</span> <span class="n">password_to_key</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">change_key</span><span class="p">(</span><span class="n">key_enc</span><span class="p">,</span> <span class="n">key_mac</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AuthenticationKey.change_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey.change_key">[docs]</a>    <span class="k">def</span> <span class="nf">change_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_enc</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_mac</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AuthenticationKey.change_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey.change_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_enc</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">key_mac</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the raw keys used to authenticate a session.</span>
 
 <span class="sd">        :param key_enc: The raw encryption key.</span>
@@ -530,7 +715,10 @@
         <span class="k">if</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">YubiHsmInvalidResponseError</span><span class="p">(</span><span class="s2">&quot;Wrong ID returned&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AuthenticationKey.change_public_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AuthenticationKey.change_public_key">[docs]</a>    <span class="k">def</span> <span class="nf">change_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AuthenticationKey.change_public_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AuthenticationKey.change_public_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change an asymmetric AuthenticationKey&#39;s public key</span>
 
 <span class="sd">        :param public_key: The new public key.</span>
@@ -544,10 +732,14 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="nb">int</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">public_key</span><span class="o">.</span><span class="n">key_size</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
         <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">CHANGE_AUTHENTICATION_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">YubiHsmInvalidResponseError</span><span class="p">(</span><span class="s2">&quot;Wrong ID returned&quot;</span><span class="p">)</span></div></div>
+            <span class="k">raise</span> <span class="n">YubiHsmInvalidResponseError</span><span class="p">(</span><span class="s2">&quot;Wrong ID returned&quot;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="AsymmetricKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey">[docs]</a><span class="k">class</span> <span class="nc">AsymmetricKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AsymmetricKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AsymmetricKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to sign/decrypt data with the private key of an asymmetric key pair.</span>
 
 <span class="sd">    Supported algorithms:</span>
@@ -567,8 +759,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">ASYMMETRIC_KEY</span>
 
-<div class="viewcode-block" id="AsymmetricKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+<div class="viewcode-block" id="AsymmetricKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -634,8 +828,11 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_ASYMMETRIC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.generate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.generate">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.generate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.generate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -665,7 +862,10 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">GENERATE_ASYMMETRIC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.get_public_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.get_public_key">[docs]</a>    <span class="k">def</span> <span class="nf">get_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AsymmetricKey.get_public_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.get_public_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the public key of the key pair.</span>
 
 <span class="sd">        This will return either a</span>
@@ -712,7 +912,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid ALGORITHM&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.get_certificate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.get_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">get_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AsymmetricKey.get_certificate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.get_certificate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_certificate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the X509 certificate associated with the key.</span>
 
 <span class="sd">        An X509 certificate is associated with an asymmetric key if it is stored</span>
@@ -725,7 +928,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">Opaque</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">get_certificate</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.put_certificate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.put_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">put_certificate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.put_certificate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.put_certificate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_certificate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">domains</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -746,7 +952,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">domains</span><span class="p">,</span> <span class="n">capabilities</span><span class="p">,</span> <span class="n">certificate</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.sign_ecdsa"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.sign_ecdsa">[docs]</a>    <span class="k">def</span> <span class="nf">sign_ecdsa</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.sign_ecdsa">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.sign_ecdsa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign_ecdsa</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">hash</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">(),</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sign data using ECDSA.</span>
@@ -764,7 +973,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H</span><span class="si">%d</span><span class="s2">s&quot;</span> <span class="o">%</span> <span class="n">length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span><span class="p">))</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_ECDSA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.derive_ecdh"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.derive_ecdh">[docs]</a>    <span class="k">def</span> <span class="nf">derive_ecdh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AsymmetricKey.derive_ecdh">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.derive_ecdh">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">derive_ecdh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform an ECDH key exchange as specified in SP 800-56A.</span>
 
 <span class="sd">        :param public_key: The public key to use for the key exchange.</span>
@@ -774,7 +986,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">point</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DERIVE_ECDH</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.sign_pkcs1v1_5"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.sign_pkcs1v1_5">[docs]</a>    <span class="k">def</span> <span class="nf">sign_pkcs1v1_5</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.sign_pkcs1v1_5">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.sign_pkcs1v1_5">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign_pkcs1v1_5</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">hash</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">()</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sign data using RSASSA-PKCS1-v1_5.</span>
@@ -788,7 +1003,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_PKCS1</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.decrypt_pkcs1v1_5"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.decrypt_pkcs1v1_5">[docs]</a>    <span class="k">def</span> <span class="nf">decrypt_pkcs1v1_5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AsymmetricKey.decrypt_pkcs1v1_5">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.decrypt_pkcs1v1_5">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decrypt_pkcs1v1_5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt data encrypted with RSAES-PKCS1-v1_5.</span>
 
 <span class="sd">        :param data: The ciphertext to decrypt.</span>
@@ -797,7 +1015,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DECRYPT_PKCS1</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.sign_pss"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.sign_pss">[docs]</a>    <span class="k">def</span> <span class="nf">sign_pss</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.sign_pss">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.sign_pss">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign_pss</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
         <span class="n">salt_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -819,7 +1040,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HBH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">mgf</span><span class="p">,</span> <span class="n">salt_len</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_PSS</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.decrypt_oaep"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.decrypt_oaep">[docs]</a>    <span class="k">def</span> <span class="nf">decrypt_oaep</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.decrypt_oaep">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.decrypt_oaep">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decrypt_oaep</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
         <span class="n">label</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
@@ -842,7 +1066,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">mgf</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span> <span class="o">+</span> <span class="n">digest</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DECRYPT_OAEP</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.sign_eddsa"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.sign_eddsa">[docs]</a>    <span class="k">def</span> <span class="nf">sign_eddsa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AsymmetricKey.sign_eddsa">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.sign_eddsa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign_eddsa</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sign data using EdDSA.</span>
 
 <span class="sd">        :param data: The data to sign.</span>
@@ -851,7 +1078,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_EDDSA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.attest"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.attest">[docs]</a>    <span class="k">def</span> <span class="nf">attest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attesting_key_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AsymmetricKey.attest">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.attest">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attesting_key_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">x509</span><span class="o">.</span><span class="n">Certificate</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Attest this asymmetric key.</span>
 
 <span class="sd">        Creates an X509 certificate containing this key pair&#39;s public key,</span>
@@ -867,7 +1097,10 @@
         <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_ATTESTATION_CERTIFICATE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">x509</span><span class="o">.</span><span class="n">load_der_x509_certificate</span><span class="p">(</span><span class="n">resp</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="AsymmetricKey.sign_ssh_certificate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.AsymmetricKey.sign_ssh_certificate">[docs]</a>    <span class="k">def</span> <span class="nf">sign_ssh_certificate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AsymmetricKey.sign_ssh_certificate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.AsymmetricKey.sign_ssh_certificate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign_ssh_certificate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">template_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">request</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
@@ -880,10 +1113,14 @@
 <span class="sd">        :return: The SSH certificate signature.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HHB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">template_id</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">)</span> <span class="o">+</span> <span class="n">request</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_SSH_CERTIFICATE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_SSH_CERTIFICATE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="WrapKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey">[docs]</a><span class="k">class</span> <span class="nc">WrapKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="WrapKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WrapKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to import and export other objects under wrap.</span>
 
 <span class="sd">    Asymmetric wrapkeys are only used for importing wrapped objects.</span>
@@ -901,8 +1138,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">WRAP_KEY</span>
 
-<div class="viewcode-block" id="WrapKey.generate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.generate">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span>
+<div class="viewcode-block" id="WrapKey.generate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.generate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -944,8 +1183,11 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">GENERATE_WRAP_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+
+<div class="viewcode-block" id="WrapKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1017,7 +1259,10 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="n">key_data</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_WRAP_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.get_public_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.get_public_key">[docs]</a>    <span class="k">def</span> <span class="nf">get_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WrapKey.get_public_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.get_public_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the public key of the wrapkey pair.&quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="p">)</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">GET_PUBLIC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
@@ -1027,7 +1272,10 @@
             <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.wrap_data"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.wrap_data">[docs]</a>    <span class="k">def</span> <span class="nf">wrap_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WrapKey.wrap_data">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.wrap_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrap_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap (encrypt) arbitrary data.</span>
 
 <span class="sd">        :param data: The data to encrypt.</span>
@@ -1036,7 +1284,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">WRAP_DATA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.unwrap_data"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.unwrap_data">[docs]</a>    <span class="k">def</span> <span class="nf">unwrap_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WrapKey.unwrap_data">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.unwrap_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unwrap_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unwrap (decrypt) arbitrary data.</span>
 
 <span class="sd">        :param data: The encrypted data to decrypt.</span>
@@ -1045,7 +1296,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">UNWRAP_DATA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.export_wrapped"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.export_wrapped">[docs]</a>    <span class="k">def</span> <span class="nf">export_wrapped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">YhsmObject</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WrapKey.export_wrapped">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.export_wrapped">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_wrapped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">YhsmObject</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Export an object under wrap.</span>
 
 <span class="sd">        :param obj: The object to export.</span>
@@ -1059,7 +1313,10 @@
             <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HBH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">object_type</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">EXPORT_WRAPPED</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.import_wrapped"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.import_wrapped">[docs]</a>    <span class="k">def</span> <span class="nf">import_wrapped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped_obj</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">YhsmObject</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WrapKey.import_wrapped">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.import_wrapped">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_wrapped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped_obj</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">YhsmObject</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import an object previously exported under wrap.</span>
 
 <span class="sd">        :param wraped_obj: The encrypted object data.</span>
@@ -1070,7 +1327,10 @@
         <span class="n">object_type</span><span class="p">,</span> <span class="n">object_id</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!BH&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">YhsmObject</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">object_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">object_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.import_wrapped_rsa"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.import_wrapped_rsa">[docs]</a>    <span class="k">def</span> <span class="nf">import_wrapped_rsa</span><span class="p">(</span>
+
+<div class="viewcode-block" id="WrapKey.import_wrapped_rsa">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.import_wrapped_rsa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_wrapped_rsa</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">wrapped_obj</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
         <span class="n">oaep_hash</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span> <span class="o">=</span> <span class="n">hashes</span><span class="o">.</span><span class="n">SHA256</span><span class="p">(),</span>
@@ -1096,7 +1356,10 @@
         <span class="n">object_type</span><span class="p">,</span> <span class="n">object_id</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!BH&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">YhsmObject</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">object_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">object_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WrapKey.import_raw_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.WrapKey.import_raw_key">[docs]</a>    <span class="k">def</span> <span class="nf">import_raw_key</span><span class="p">(</span>
+
+<div class="viewcode-block" id="WrapKey.import_raw_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.WrapKey.import_raw_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_raw_key</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">object_type</span><span class="p">:</span> <span class="n">OBJECT</span><span class="p">,</span>
@@ -1152,10 +1415,14 @@
         <span class="p">)</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">UNWRAP_KEY_RSA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="n">object_type</span><span class="p">,</span> <span class="n">object_id</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!BH&quot;</span><span class="p">,</span> <span class="n">ret</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">YhsmObject</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">object_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">object_id</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">YhsmObject</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">object_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">object_id</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="PublicWrapKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.PublicWrapKey">[docs]</a><span class="k">class</span> <span class="nc">PublicWrapKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PublicWrapKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.PublicWrapKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PublicWrapKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to export other objects under wrap using the public key of an</span>
 <span class="sd">    asymmetric key pair.</span>
 
@@ -1170,8 +1437,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">PUBLIC_WRAP_KEY</span>
 
-<div class="viewcode-block" id="PublicWrapKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.PublicWrapKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+<div class="viewcode-block" id="PublicWrapKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.PublicWrapKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1227,7 +1496,21 @@
 
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_PUBLIC_WRAP_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_rsa_wrap_cmd_data</span><span class="p">(</span>
+
+<div class="viewcode-block" id="PublicWrapKey.get_public_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.PublicWrapKey.get_public_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_public_key</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the public wrapkey.&quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HB&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_type</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">GET_PUBLIC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="n">raw_key</span> <span class="o">=</span> <span class="n">ret</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">raw_key</span><span class="p">,</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicNumbers</span><span class="p">(</span><span class="n">e</span><span class="o">=</span><span class="n">RSA_PUBLIC_EXPONENT</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">num</span><span class="p">)</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span>
+            <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rsa_wrap_cmd_data</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">obj</span><span class="p">:</span> <span class="n">YhsmObject</span><span class="p">,</span>
         <span class="n">algorithm</span><span class="p">:</span> <span class="n">ALGORITHM</span><span class="p">,</span>
@@ -1256,7 +1539,9 @@
 
         <span class="k">return</span> <span class="n">msg</span>
 
-<div class="viewcode-block" id="PublicWrapKey.export_wrapped_rsa"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.PublicWrapKey.export_wrapped_rsa">[docs]</a>    <span class="k">def</span> <span class="nf">export_wrapped_rsa</span><span class="p">(</span>
+<div class="viewcode-block" id="PublicWrapKey.export_wrapped_rsa">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.PublicWrapKey.export_wrapped_rsa">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_wrapped_rsa</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">obj</span><span class="p">:</span> <span class="n">YhsmObject</span><span class="p">,</span>
         <span class="n">algorithm</span><span class="p">:</span> <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">AES256</span><span class="p">,</span>
@@ -1283,7 +1568,10 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">EXPORT_WRAPPED_RSA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="PublicWrapKey.export_raw_key"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.PublicWrapKey.export_raw_key">[docs]</a>    <span class="k">def</span> <span class="nf">export_raw_key</span><span class="p">(</span>
+
+<div class="viewcode-block" id="PublicWrapKey.export_raw_key">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.PublicWrapKey.export_raw_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_raw_key</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AsymmetricKey</span><span class="p">,</span> <span class="s2">&quot;SymmetricKey&quot;</span><span class="p">],</span>
         <span class="n">algorithm</span><span class="p">:</span> <span class="n">ALGORITHM</span> <span class="o">=</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">AES256</span><span class="p">,</span>
@@ -1311,10 +1599,14 @@
             <span class="n">oaep_label</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">WRAP_KEY_RSA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">WRAP_KEY_RSA</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HmacKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.HmacKey">[docs]</a><span class="k">class</span> <span class="nc">HmacKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HmacKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.HmacKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HmacKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to calculate and verify HMAC signatures.</span>
 
 <span class="sd">    Supported algorithms:</span>
@@ -1326,8 +1618,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">HMAC_KEY</span>
 
-<div class="viewcode-block" id="HmacKey.generate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.HmacKey.generate">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span>
+<div class="viewcode-block" id="HmacKey.generate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.HmacKey.generate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1365,8 +1659,11 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">GENERATE_HMAC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HmacKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.HmacKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+
+<div class="viewcode-block" id="HmacKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.HmacKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1414,7 +1711,10 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_HMAC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HmacKey.sign_hmac"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.HmacKey.sign_hmac">[docs]</a>    <span class="k">def</span> <span class="nf">sign_hmac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HmacKey.sign_hmac">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.HmacKey.sign_hmac">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sign_hmac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the HMAC signature of the given data.</span>
 
 <span class="sd">        :param data: The data to sign.</span>
@@ -1423,7 +1723,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">SIGN_HMAC</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HmacKey.verify_hmac"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.HmacKey.verify_hmac">[docs]</a>    <span class="k">def</span> <span class="nf">verify_hmac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HmacKey.verify_hmac">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.HmacKey.verify_hmac">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">verify_hmac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signature</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify an HMAC signature.</span>
 
 <span class="sd">        :param signature: The signature to verify.</span>
@@ -1431,10 +1734,14 @@
 <span class="sd">        :return: True if verification succeeded, False if not.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">signature</span> <span class="o">+</span> <span class="n">data</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">VERIFY_HMAC</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\1</span><span class="s2">&quot;</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">VERIFY_HMAC</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\1</span><span class="s2">&quot;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="Template"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Template">[docs]</a><span class="k">class</span> <span class="nc">Template</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Template">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Template">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Template</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary template used to validate SSH certificate requests.</span>
 
 <span class="sd">    Supported algorithms:</span>
@@ -1443,8 +1750,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">TEMPLATE</span>
 
-<div class="viewcode-block" id="Template.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Template.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+<div class="viewcode-block" id="Template.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Template.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1477,16 +1786,23 @@
         <span class="n">msg</span> <span class="o">+=</span> <span class="n">data</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_TEMPLATE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Template.get"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.Template.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Template.get">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.Template.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a Template from the YubiHSM.</span>
 
 <span class="sd">        :return: The template data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">GET_TEMPLATE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">GET_TEMPLATE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="OtpData"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpData">[docs]</a><span class="k">class</span> <span class="nc">OtpData</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+
+<div class="viewcode-block" id="OtpData">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpData">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OtpData</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decrypted OTP counter values.</span>
 
 <span class="sd">    :param use_counter: 16 bit counter incremented on each power cycle.</span>
@@ -1501,7 +1817,10 @@
     <span class="n">timestamp_low</span><span class="p">:</span> <span class="nb">int</span></div>
 
 
-<div class="viewcode-block" id="OtpAeadKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey">[docs]</a><span class="k">class</span> <span class="nc">OtpAeadKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="OtpAeadKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OtpAeadKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to decrypt and use a Yubico OTP AEAD for OTP decryption.</span>
 
 <span class="sd">    Supported algorithms:</span>
@@ -1512,8 +1831,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">OTP_AEAD_KEY</span>
 
-<div class="viewcode-block" id="OtpAeadKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+<div class="viewcode-block" id="OtpAeadKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1558,14 +1879,15 @@
             <span class="n">domains</span><span class="p">,</span>
             <span class="n">capabilities</span><span class="p">,</span>
             <span class="n">algorithm</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span>
-            <span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">nonce_id</span>
-        <span class="p">)</span>  <span class="c1"># nonce ID is stored in little-endian.</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">nonce_id</span><span class="p">)</span>  <span class="c1"># nonce ID is stored in little-endian.</span>
         <span class="n">msg</span> <span class="o">+=</span> <span class="n">key</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_OTP_AEAD_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OtpAeadKey.generate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey.generate">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="OtpAeadKey.generate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey.generate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1606,7 +1928,10 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">GENERATE_OTP_AEAD_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OtpAeadKey.create_otp_aead"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey.create_otp_aead">[docs]</a>    <span class="k">def</span> <span class="nf">create_otp_aead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">identity</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="OtpAeadKey.create_otp_aead">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey.create_otp_aead">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_otp_aead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">identity</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new Yubico OTP credential AEAD.</span>
 
 <span class="sd">        :param key: 16 byte AES key for the credential.</span>
@@ -1616,7 +1941,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="n">identity</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">CREATE_OTP_AEAD</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OtpAeadKey.randomize_otp_aead"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey.randomize_otp_aead">[docs]</a>    <span class="k">def</span> <span class="nf">randomize_otp_aead</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="OtpAeadKey.randomize_otp_aead">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey.randomize_otp_aead">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">randomize_otp_aead</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new Yubico OTP credential AEAD using random data.</span>
 
 <span class="sd">        :return: A new AEAD.</span>
@@ -1624,7 +1952,10 @@
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">RANDOMIZE_OTP_AEAD</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="OtpAeadKey.decrypt_otp"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey.decrypt_otp">[docs]</a>    <span class="k">def</span> <span class="nf">decrypt_otp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aead</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">otp</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OtpData</span><span class="p">:</span>
+
+<div class="viewcode-block" id="OtpAeadKey.decrypt_otp">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey.decrypt_otp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decrypt_otp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aead</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">otp</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OtpData</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt a Yubico OTP using an AEAD.</span>
 
 <span class="sd">        :param aead: The AEAD containing encrypted credential data.</span>
@@ -1635,7 +1966,10 @@
         <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DECRYPT_OTP</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">OtpData</span><span class="p">(</span><span class="o">*</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;HBBH&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="OtpAeadKey.rewrap_otp_aead"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.OtpAeadKey.rewrap_otp_aead">[docs]</a>    <span class="k">def</span> <span class="nf">rewrap_otp_aead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">aead</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="OtpAeadKey.rewrap_otp_aead">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.OtpAeadKey.rewrap_otp_aead">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rewrap_otp_aead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">aead</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt and re-encrypt an AEAD from one key to another.</span>
 
 <span class="sd">        :param new_key_id: The ID of the OtpAeadKey to wrap to.</span>
@@ -1643,10 +1977,14 @@
 <span class="sd">        :return: The new AEAD.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;!HH&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">new_key_id</span><span class="p">)</span> <span class="o">+</span> <span class="n">aead</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">REWRAP_OTP_AEAD</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">send_secure_cmd</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">REWRAP_OTP_AEAD</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="SymmetricKey"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey">[docs]</a><span class="k">class</span> <span class="nc">SymmetricKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymmetricKey">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SymmetricKey</span><span class="p">(</span><span class="n">YhsmObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to encrypt/decrypt data using a symmetric key.</span>
 
 <span class="sd">    Supported algorithms:</span>
@@ -1657,8 +1995,10 @@
 
     <span class="n">object_type</span> <span class="o">=</span> <span class="n">OBJECT</span><span class="o">.</span><span class="n">SYMMETRIC_KEY</span>
 
-<div class="viewcode-block" id="SymmetricKey.put"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey.put">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span>
+<div class="viewcode-block" id="SymmetricKey.put">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey.put">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1702,8 +2042,11 @@
 
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">PUT_SYMMETRIC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymmetricKey.generate"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey.generate">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span>
+
+<div class="viewcode-block" id="SymmetricKey.generate">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey.generate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">session</span><span class="p">:</span> <span class="s2">&quot;core.AuthSession&quot;</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1738,7 +2081,8 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_from_command</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">COMMAND</span><span class="o">.</span><span class="n">GENERATE_SYMMETRIC_KEY</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_chain_ecb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_chain_ecb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">%</span> <span class="n">AES_BLOCK_SIZE</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Data is not a multiple of </span><span class="si">%d</span><span class="s2"> bytes&quot;</span> <span class="o">%</span> <span class="n">AES_BLOCK_SIZE</span><span class="p">)</span>
 
@@ -1762,7 +2106,7 @@
 
         <span class="k">return</span> <span class="n">out</span>
 
-    <span class="k">def</span> <span class="nf">_chain_cbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_chain_cbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">COMMAND</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">iv</span><span class="p">)</span> <span class="o">!=</span> <span class="n">AES_BLOCK_SIZE</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;IV is not 16 bytes&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">%</span> <span class="n">AES_BLOCK_SIZE</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -1792,7 +2136,9 @@
 
         <span class="k">return</span> <span class="n">out</span>
 
-<div class="viewcode-block" id="SymmetricKey.encrypt_ecb"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey.encrypt_ecb">[docs]</a>    <span class="k">def</span> <span class="nf">encrypt_ecb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<div class="viewcode-block" id="SymmetricKey.encrypt_ecb">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey.encrypt_ecb">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encrypt_ecb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Encrypt data in ECB mode.</span>
 
 <span class="sd">        :param data: The data to encrypt.</span>
@@ -1801,7 +2147,10 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chain_ecb</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">ENCRYPT_ECB</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymmetricKey.decrypt_ecb"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey.decrypt_ecb">[docs]</a>    <span class="k">def</span> <span class="nf">decrypt_ecb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="SymmetricKey.decrypt_ecb">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey.decrypt_ecb">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decrypt_ecb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt data in ECB mode.</span>
 
 <span class="sd">        :param data: The data to decrypt.</span>
@@ -1810,7 +2159,10 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chain_ecb</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DECRYPT_ECB</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymmetricKey.encrypt_cbc"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey.encrypt_cbc">[docs]</a>    <span class="k">def</span> <span class="nf">encrypt_cbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="SymmetricKey.encrypt_cbc">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey.encrypt_cbc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encrypt_cbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Encrypt data in CBC mode.</span>
 
 <span class="sd">        :param iv: The initialization vector.</span>
@@ -1820,7 +2172,10 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chain_cbc</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">ENCRYPT_CBC</span><span class="p">,</span> <span class="n">iv</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymmetricKey.decrypt_cbc"><a class="viewcode-back" href="../../rst/yubihsm.html#yubihsm.objects.SymmetricKey.decrypt_cbc">[docs]</a>    <span class="k">def</span> <span class="nf">decrypt_cbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+
+<div class="viewcode-block" id="SymmetricKey.decrypt_cbc">
+<a class="viewcode-back" href="../../autoapi/yubihsm/objects/index.html#yubihsm.objects.SymmetricKey.decrypt_cbc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decrypt_cbc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iv</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt data in CBC mode.</span>
 
 <span class="sd">        :param iv: The initialization vector.</span>
@@ -1828,7 +2183,9 @@
 <span class="sd">        :return: The decrypted data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chain_cbc</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DECRYPT_CBC</span><span class="p">,</span> <span class="n">iv</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chain_cbc</span><span class="p">(</span><span class="n">COMMAND</span><span class="o">.</span><span class="n">DECRYPT_CBC</span><span class="p">,</span> <span class="n">iv</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -1844,7 +2201,7 @@
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     provided by <a href="https://readthedocs.org">Read the Docs</a>.
-
+   
 
 </footer>
         </div>
@@ -1855,7 +2212,7 @@
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
+  </script> 
 
 </body>
 </html>
