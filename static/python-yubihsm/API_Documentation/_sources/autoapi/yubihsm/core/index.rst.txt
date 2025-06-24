@@ -1,0 +1,720 @@
+yubihsm.core
+============
+
+.. py:module:: yubihsm.core
+
+.. autoapi-nested-parse::
+
+   Core classes for YubiHSM communication.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubihsm.core.KEY_ENC
+   yubihsm.core.KEY_MAC
+   yubihsm.core.KEY_RMAC
+   yubihsm.core.CARD_CRYPTOGRAM
+   yubihsm.core.HOST_CRYPTOGRAM
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubihsm.core.DeviceInfo
+   yubihsm.core.LogEntry
+   yubihsm.core.LogData
+   yubihsm.core.YubiHsm
+   yubihsm.core.SymmetricAuth
+   yubihsm.core.AsymmetricAuth
+   yubihsm.core.AuthSession
+
+
+Module Contents
+---------------
+
+.. py:data:: KEY_ENC
+   :value: 4
+
+
+.. py:data:: KEY_MAC
+   :value: 6
+
+
+.. py:data:: KEY_RMAC
+   :value: 7
+
+
+.. py:data:: CARD_CRYPTOGRAM
+   :value: 0
+
+
+.. py:data:: HOST_CRYPTOGRAM
+   :value: 1
+
+
+.. py:class:: DeviceInfo
+
+   Data class holding various information about the YubiHSM.
+
+   :ivar version: YubiHSM version tuple.
+   :ivar serial: YubiHSM serial number.
+   :ivar log_size: Log entry storage capacity.
+   :ivar log_used: Log entries currently stored.
+   :ivar supported_algorithms: List of supported algorithms.
+   :ivar part_number: Chip designator.
+
+
+   .. py:attribute:: FORMAT
+      :type:  ClassVar[str]
+      :value: '!BBBIBB'
+
+
+
+   .. py:attribute:: LENGTH
+      :type:  ClassVar[int]
+
+
+   .. py:attribute:: version
+      :type:  yubihsm.defs.Version
+
+
+   .. py:attribute:: serial
+      :type:  int
+
+
+   .. py:attribute:: log_size
+      :type:  int
+
+
+   .. py:attribute:: log_used
+      :type:  int
+
+
+   .. py:attribute:: supported_algorithms
+      :type:  Set[yubihsm.defs.ALGORITHM]
+
+
+   .. py:attribute:: part_number
+      :type:  Optional[str]
+
+
+   .. py:method:: parse(first_page, second_page = None)
+      :classmethod:
+
+
+      Parse a DeviceInfo from its binary representation.
+
+
+
+.. py:class:: LogEntry
+
+   YubiHSM log entry.
+
+   :param int number: The sequence number of the entry.
+   :param int command: The COMMAND executed.
+   :param int length: The length of the command.
+   :param int session_key: The ID of the Authentication Key for the session.
+   :param int target_key: The ID of the key used by the command.
+   :param int second_key: The ID of the secondary key used by the command, if
+       applicable.
+   :param int result: The result byte of the response.
+   :param int tick: The YubiHSM system tick value when the command was run.
+   :param bytes digest: A truncated hash of the entry and previous digest.
+
+
+   .. py:attribute:: FORMAT
+      :type:  ClassVar[str]
+      :value: '!HBHHHHBL16s'
+
+
+
+   .. py:attribute:: LENGTH
+      :type:  ClassVar[int]
+
+
+   .. py:attribute:: number
+      :type:  int
+
+
+   .. py:attribute:: command
+      :type:  yubihsm.defs.COMMAND
+
+
+   .. py:attribute:: length
+      :type:  int
+
+
+   .. py:attribute:: session_key
+      :type:  int
+
+
+   .. py:attribute:: target_key
+      :type:  int
+
+
+   .. py:attribute:: second_key
+      :type:  int
+
+
+   .. py:attribute:: result
+      :type:  int
+
+
+   .. py:attribute:: tick
+      :type:  int
+
+
+   .. py:attribute:: digest
+      :type:  bytes
+
+
+   .. py:property:: data
+      :type: bytes
+
+
+      Get log entry binary data.
+
+      :return: The binary LogEntry data, excluding the digest.
+
+
+
+   .. py:method:: parse(data)
+      :classmethod:
+
+
+      Parse a LogEntry from its binary representation.
+
+      :param data: Binary data to unpack from.
+      :return: The parsed object.
+
+
+
+   .. py:method:: validate(previous_entry)
+
+      Validate the hash of a single log entry.
+
+      Validates the hash of this entry with regard to the previous entry's
+      hash. The previous entry is the LogEntry with the previous number,
+      previous_entry.number == self.number - 1
+
+      :param previous_entry: The previous log entry to validate against.
+      :return: True if the digest is correct, False if not.
+
+
+
+.. py:class:: LogData
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   Data class holding response data from a GET_LOGS command.
+
+   :param n_boot: Number of unlogged boot events.
+   :param n_auth: Number of unlogged authentication events.
+   :param entries: List of LogEntry items.
+
+
+   .. py:attribute:: n_boot
+      :type:  int
+
+
+   .. py:attribute:: n_auth
+      :type:  int
+
+
+   .. py:attribute:: entries
+      :type:  Sequence[LogEntry]
+
+
+.. py:class:: YubiHsm(backend)
+
+   An unauthenticated connection to a YubiHSM.
+
+
+   .. py:method:: close()
+
+      Disconnect from the backend, freeing any resources in use by it.
+
+
+
+   .. py:method:: send_cmd(cmd, data = b'')
+
+      Encode and send a command byte and its associated data.
+
+      :param cmd: The command to send.
+      :param data: The command payload to send.
+      :return: The response data from the YubiHSM.
+
+
+
+   .. py:method:: get_device_info()
+
+      Get general device information from the YubiHSM.
+
+      :return: Device information.
+
+
+
+   .. py:method:: get_device_public_key()
+
+      Retrieve the device's public key.
+
+      :return: The device public key.
+
+
+
+   .. py:method:: init_session(auth_key_id)
+
+      Initiate the symmetric authentication process for establishing
+      an authenticated session with the YubiHSM.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :return: A negotiation of an authenticated Session with a YubiHSM.
+
+
+
+   .. py:method:: init_session_asymmetric(auth_key_id, epk_oce)
+
+      Initiate the asymmetric authentication process for establishing
+      an authenticated session with the YubiHSM.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param epk_oce: The ephemeral public key of the OCE used
+          for key agreement.
+
+
+
+   .. py:method:: create_session(auth_key_id, key_enc, key_mac)
+
+      Create an authenticated session with the YubiHSM.
+
+      See also create_session_derived, which derives K-ENC and K-MAC from a
+      password.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param key_enc: Static K-ENC used to establish session.
+      :param key_mac: Static K-MAC used to establish session.
+      :return: An authenticated session.
+
+
+
+   .. py:method:: create_session_derived(auth_key_id, password)
+
+      Create an authenticated session with the YubiHSM.
+
+      Uses a supplied password to derive the keys K-ENC and K-MAC.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param password: The password used to derive the keys from.
+      :return: An authenticated session.
+
+
+
+   .. py:method:: create_session_asymmetric(auth_key_id, private_key, public_key = None)
+
+      Create an authenticated session with the YubiHSM.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param private_key: Private key corresponding to the public
+          authentication key object.
+      :param public_key: The device's public key. If omitted, the public key
+          is fetched from the YubiHSM.
+      :return: An authenticated session.
+
+
+
+   .. py:method:: connect(url = None)
+      :classmethod:
+
+
+      Return a YubiHsm connected to the backend specified by the URL.
+
+      If no URL is given this will attempt to connect to a YubiHSM connector
+      running on localhost, using the default port.
+
+      :param url: A http(s):// or yhusb:// backend URL.
+      :return: A YubiHsm instance connected to the backend referenced by the url.
+
+
+
+.. py:class:: SymmetricAuth(hsm, sid, context, card_crypto)
+
+   A negotiation of an authenticated Session with a YubiHSM.
+
+   This class is used to begin the mutual authentication process
+   for establishing an authenticated session with the YubiHSM,
+   using symmetric authentication. Typically you get an instance
+   of this class by calling :func:`~YubiHsm.init_session`.
+
+
+   .. py:property:: context
+      :type: bytes
+
+
+      The authentication context (host challenge + card challenge).
+
+
+
+   .. py:property:: card_crypto
+      :type: bytes
+
+
+      The card cryptogram.
+
+
+
+   .. py:method:: init_session(hsm, auth_key_id)
+      :classmethod:
+
+
+      Initiate the mutual symmetric session authentication process.
+
+      :param hsm: The YubiHSM connection.
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+
+
+
+   .. py:method:: create_session(hsm, auth_key_id, key_enc, key_mac)
+      :classmethod:
+
+
+      Construct an authenticated session.
+
+      :param hsm: The YubiHSM connection.
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param key_enc: Static `K-ENC` used to establish the session.
+      :param key_mac: Static `K-MAC` used to establish the session.
+
+
+
+   .. py:method:: authenticate(key_senc, key_smac, key_srmac)
+
+      Construct an authenticated session.
+
+      :param key_senc: `S-ENC` used for data confidentiality.
+      :param key_smac: `S-MAC` used for data and protocol integrity.
+      :param key_srmac: `S-RMAC` used for data and protocol integrity.
+      :return: An authenticated session.
+
+
+
+.. py:class:: AsymmetricAuth(hsm, sid, context, receipt)
+
+   A negotiation of an authenticated Session with a YubiHSM.
+
+   This class is used to begin the mutual authentication process
+   for establishing an authenticated session with the YubiHSM,
+   using asymmetric authentication. Typically you get an instance
+   of this class by calling :func:`~YubiHsm.init_session_asymmetric`.
+
+
+   .. py:property:: context
+      :type: bytes
+
+
+      The authentication context (EPK.OCE + EPK.SD).
+
+
+
+   .. py:property:: receipt
+      :type: bytes
+
+
+      The receipt.
+
+
+
+   .. py:property:: epk_hsm
+      :type: bytes
+
+
+      The ephemeral public key of the YubiHSM.
+
+
+
+   .. py:method:: init_session(hsm, auth_key_id, epk_oce)
+      :classmethod:
+
+
+      Initiate the mutual asymmetric session authentication process.
+
+      :param hsm: The YubiHSM connection.
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param epk_oce: The ephemeral public key of the OCE used
+          for key agreement.
+
+
+
+   .. py:method:: create_session(hsm, auth_key_id, private_key, public_key)
+      :classmethod:
+
+
+      Construct an authenticated session.
+
+      :param hsm: The YubiHSM connection.
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param private_key: Private key corresponding to the public
+          authentication key object.
+      :param public_key: The device's public key.
+
+
+
+   .. py:method:: authenticate(key_senc, key_smac, key_srmac)
+
+      Construct an authenticated session.
+
+      :param key_senc: `S-ENC` used for data confidentiality.
+      :param key_smac: `S-MAC` used for data and protocol integrity.
+      :param key_srmac: `S-RMAC` used for data and protocol integrity.
+      :return: An authenticated session.
+
+
+
+.. py:class:: AuthSession(hsm, sid, key_enc, key_mac, key_rmac, mac_chain)
+
+   An authenticated secure session with a YubiHSM.
+
+   Typically you get an instance of this class by calling
+   :func:`~YubiHsm.create_session`, :func:`~YubiHsm.create_session_derived`,
+   or :func:`~YubiHsm.create_session_asymmetric`.
+
+
+   .. py:method:: close()
+
+      Close this session with the YubiHSM.
+
+      Once closed, this session object can no longer be used, unless re-connected.
+
+
+
+   .. py:property:: sid
+      :type: Optional[int]
+
+
+      Session ID
+
+      :return: The ID of the session.
+
+
+
+   .. py:method:: send_secure_cmd(cmd, data = b'')
+
+      Send a command over the encrypted session.
+
+      :param cmd: The command to send.
+      :param data: The command payload to send.
+      :return: The decrypted response data from the YubiHSM.
+
+
+
+   .. py:method:: list_objects(object_id = None, object_type = None, domains = None, capabilities = None, algorithm = None, label = None)
+
+      List objects from the YubiHSM.
+
+      This returns a list of all objects currently stored on the YubiHSM,
+      which are accessible by this session. The arguments to this method can
+      be used to filter the results returned.
+
+      :param object_id: Return only objects with this ID.
+      :param object_type: Return only objects of this type.
+      :param domains: Return only objects belonging to one or more of these domains.
+      :param capabilities: Return only objects with one or more of these capabilities.
+      :param algorithm: Return only objects with this algorithm.
+      :param label: Return only objects with this label.
+      :return: A list of matched objects.
+
+
+
+   .. py:method:: get_object(object_id, object_type)
+
+      Get a reference to a YhsmObject with the given id and type.
+
+      The object returned will be a subclass of YhsmObject corresponding to
+      the given object_type.
+
+      :param object_id: The ID of the object to retrieve.
+      :param object_type: The type of the object to retrieve.
+      :return: An object reference.
+
+
+
+   .. py:method:: get_pseudo_random(length)
+
+      Get bytes from YubiHSM PRNG.
+
+      :param length: The number of bytes to return.
+      :return: The requested number of random bytes.
+
+
+
+   .. py:method:: reset_device()
+
+      Perform a factory reset of the YubiHSM.
+
+      Resets and reboots the YubiHSM, deletes all Objects and restores the
+      default Authkey.
+
+
+
+   .. py:method:: get_log_entries(previous_entry = None)
+
+      Get logs from the YubiHSM.
+
+      This returns a tuple of the number of unlogged boot events, the number
+      of unlogged authentication events, and the log entries from the YubiHSM.
+      The chain of entry digests will be validated, starting from the first
+      entry returned, or the one supplied as previous_entry.
+
+      :param previous_entry: Entry to start verification against.
+      :return: A tuple consisting of the number of unlogged boot and authentication
+          events, and the list of log entries.
+
+
+
+   .. py:method:: set_log_index(index)
+
+      Clear logs to free up space for use with forced audit.
+
+      :param index: The log entry index to clear up to (inclusive).
+
+
+
+   .. py:method:: put_option(option, value)
+
+      Set the raw value of a YubiHSM device option.
+
+      :param option: The OPTION to set.
+      :param value: The value to set the OPTION to.
+
+
+
+   .. py:method:: get_option(option)
+
+      Get the raw value of a YubiHSM device option.
+
+      :param option: The OPTION to get.
+      :return: The currently set value for the given OPTION
+
+
+
+   .. py:method:: set_force_audit(audit)
+
+      Set the FORCE_AUDIT mode of the YubiHSM.
+
+      :param audit: The AUDIT mode to set.
+
+
+
+   .. py:method:: get_force_audit()
+
+      Get the current setting for forced audit mode.
+
+      :return: The AUDIT setting for FORCE_AUDIT.
+
+
+
+   .. py:method:: set_command_audit(commands)
+
+      Set audit mode of commands.
+
+      Takes a dict of COMMAND -> AUDIT pairs and updates the audit settings
+      for the commands given.
+
+      :param commands: Settings to update.
+
+      :Example:
+
+      >>> session.set_comment_audit({
+      ...     COMMAND.ECHO: AUDIT.OFF,
+      ...     COMMAND.LIST_OBJECTS: AUDIT.ON
+      ... })
+
+
+
+   .. py:method:: get_command_audit()
+
+      Get a mapping of all available commands and their audit settings.
+
+      :return: Dictionary of COMMAND -> AUDIT pairs.
+
+
+
+   .. py:method:: set_enabled_algorithms(algorithms)
+
+      Set audit mode of commands.
+
+      New in YubiHSM 2.2.0.
+
+      Algorithms can only be toggled on a "fresh" device (after reset, before adding
+      objects).
+
+      Takes a dict of ALGORITHM -> bool pairs and updates the enabled algorithm
+      settings for the algorithms given.
+
+      :param algorithms: The algorithms to update.
+
+      :Example:
+
+      >>> session.set_enabled_algorithms({
+      ...     ALGORITHM.RSA_2048: False,
+      ...     ALGORITHM.RSA_OAEP_SHA256_: True,
+      ... })
+
+
+
+   .. py:method:: get_enabled_algorithms()
+
+      Get the algorithms available, and whether or not they are enabled.
+
+      :return: A mapping of algorithms, to whether or not they are enabled.
+
+
+
+   .. py:method:: set_fips_mode(mode)
+
+      Set the FIPS mode of the YubiHSM.
+
+      YubiHSM2 FIPS only.
+
+      This can only be toggled on a "fresh" device (after reset, before adding
+      objects).
+
+      :param mode: Whether to be in FIPS compliant mode or not.
+
+
+
+   .. py:method:: get_fips_status()
+
+      Get the current FIPS status.
+
+      YubiHSM2 FIPS only.
+
+      :return: The FipsStatus value.
+
+
+
+   .. py:method:: get_fips_mode()
+
+      Get the current setting for FIPS mode.
+
+      YubiHSM2 FIPS only.
+
+      :return: True if in FIPS mode, False if not.
+
+
+
