@@ -1,10 +1,18 @@
-== WebAuthn Client Hints
+== WebAuthn client hints
 
-Client hints are optional values sent by the relying party (RP) to help the browser decide which authenticators to show first in the UI. They aim to improve the user experience in passkey flows.
+Client hints are optional values sent by the relying party (RP) to help the browser prioritize authenticators during passkey flows, improving the user experience.
 
-TIP: Use client hints to improve the user experience by guiding the browser to show the most relevant authenticator first. This is especially helpful when users have multiple authenticators available.
+=== Why use client hints?
 
-=== Supported Hint Values
+Use client hints to improve the user experience by guiding the browser to show the most relevant authenticator first. This is especially helpful when users have multiple authenticators available.
+
+Example use cases include:
+
+- Suggesting a security key in enterprise environments (for example, a YubiKey)
+- Prioritizing platform authenticators like Face ID or Windows Hello in consumer apps
+- Avoiding QR codes when only security keys are expected
+
+=== Supported hint values
 
 Client hints are passed in an ordered array in the `hints` field. They can be included in either registration or authentication requests.
 
@@ -19,35 +27,99 @@ Supported values include:
 | `"hybrid"` | Suggests a cross-device flow, such as using a smartphone for passkey login.
 |===
 
-NOTE: Clients that do not support the `hints` field will silently ignore it and proceed with default behavior.
+WARNING: Browsers that do not support the `hints` field will silently ignore it and proceed with default behavior. Passing an empty hints array or omitting the property entirely indicates no preference and shows standard WebAuthn options.
 
-=== Usage in Registration
+=== Using multiple hints
 
-Client hints can be passed during registration using `StartRegistrationOptions`:
+You can pass multiple hints in the array to offer fallback options. Browsers prioritize the first hint and may fall back to others if unavailable.
 
-[source,java]
+.Example
+[source,json]
 ----
-StartRegistrationOptions options = StartRegistrationOptions.builder()
-    .user(userIdentity)
-    .hints(List.of(PublicKeyCredentialHint.SECURITY_KEY))
-    .build();
+"hints": ["security-key", "client-device"]
 ----
 
-=== Usage in Authentication
+In this example, the browser will try to show a security key first. If unavailable, it may fall back to a platform authenticator.
 
-Client hints can also be passed during authentication using `StartAssertionOptions`:
+=== Video demo: client hints in action
 
-[source,java]
+Watch this short demo to see how different `hints` values impact the WebAuthn prompt.
+
+[role="videoConst"]
+--
+video::../videos/client-hints-video.mp4[]
+--
+
+=== How client hints differ from `authenticatorAttachment`
+
+Client hints and `authenticatorAttachment` both influence which authenticators are shown, but they behave differently and can be used together. Use both for optimal compatibility. `authenticatorAttachment` ensures support in older browsers, while `hints` help guide the user experience in newer browsers.
+
+[cols="1,1,1"]
+|===
+| Feature | `authenticatorAttachment` | `client hints` (`hints`)
+
+| Purpose
+| Filters allowed authenticator types
+| Suggests preferred authenticator types
+
+| Enforced by browser?
+| ✅ Yes: operation fails if no match
+| ❌ No: advisory only, ignored if unsupported
+
+| Fallback behavior
+| Blocks if no matching authenticator is available
+| Silently proceeds with default behavior
+
+| Browser support
+| Widely supported across all major browsers
+| Varies by browser and platform.
+link:https://passkeys.dev/device-support/[Check platform support]
+|===
+
+To ensure compatibility with older browsers that don’t support `hints`, always set `authenticatorAttachment` to align with your hint type. For example:
+
+* `"security-key"` → `cross-platform`
+* `"client-device"` → `platform`
+* `"hybrid"` → `cross-platform`
+
+Browsers that don’t recognize `hints` will still honor `authenticatorAttachment`, preserving expected behavior.
+
+=== Implementation guidance
+
+To implement client hints, add the `hints` property to PublicKeyCredentialCreationOptions for create() calls, and PublicKeyCredentialRequestOptions for get() calls. Examples of both are shown below.
+
+Example: registration options with hints
+
+[source,json]
 ----
-StartAssertionOptions options = StartAssertionOptions.builder()
-    .username(Optional.of("user@example.com"))
-    .hints(List.of(
-        PublicKeyCredentialHint.HYBRID,
-        PublicKeyCredentialHint.CLIENT_DEVICE
-    ))
-    .build();
+"publicKey": {
+  "rp": ...,
+  "user": ...,
+  "challenge": "uhUjPNlZfvn7onwuhNdsLPkkE5Fv-lUN",
+  "pubKeyCredParams": ...,
+  "authenticatorSelection": ...,
+  "attestation": "direct",
+  "hints": ["security-key", "client-device", "hybrid"]
+}
 ----
 
-=== Browser Behavior
+Example: authentication options with hints
 
-Support for client hints may vary across platforms and browsers. For details on browser behavior and platform compatibility, visit the link:../WebAuthn_Browser_Support/index.html#client-hints[Client Hints section]
+[source,json]
+----
+"publicKey": {
+  "challenge": "NGc3jpB4Q-VnOmbhFBnDAczlYPT4soKA7xviGeJmDhc",
+  "timeout": 180000,
+  "rpId": "localhost",
+  "userVerification": "preferred",
+  "hints": ["security-key", "client-device", "hybrid"]
+}
+----
+
+=== Platform support
+
+Before implementing client hints, verify that your target browser, operating system or device supports client hints.
+
+You can check platform compatibility using a device support matrix:
+
+link:https://passkeys.dev/device-support/[View platform support]
