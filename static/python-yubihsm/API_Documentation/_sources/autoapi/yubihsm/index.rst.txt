@@ -1,0 +1,160 @@
+yubihsm
+=======
+
+.. py:module:: yubihsm
+
+.. autoapi-nested-parse::
+
+   Contains the main YubiHsm class used to connect to a YubiHSM device.
+
+   See :class:`~yubihsm.core.YubiHsm`.
+
+   :Example:
+
+   >>> from yubihsm import YubiHsm
+   ... hsm = YubiHsm.connect('http://localhost:12345')
+   ... session = hsm.create_session_derived(1, 'password')
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/yubihsm/backends/index
+   /autoapi/yubihsm/core/index
+   /autoapi/yubihsm/defs/index
+   /autoapi/yubihsm/exceptions/index
+   /autoapi/yubihsm/objects/index
+   /autoapi/yubihsm/utils/index
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubihsm.YubiHsm
+
+
+Package Contents
+----------------
+
+.. py:class:: YubiHsm(backend)
+
+   An unauthenticated connection to a YubiHSM.
+
+
+   .. py:method:: close()
+
+      Disconnect from the backend, freeing any resources in use by it.
+
+
+
+   .. py:method:: send_cmd(cmd, data = b'')
+
+      Encode and send a command byte and its associated data.
+
+      :param cmd: The command to send.
+      :param data: The command payload to send.
+      :return: The response data from the YubiHSM.
+
+
+
+   .. py:method:: get_device_info()
+
+      Get general device information from the YubiHSM.
+
+      :return: Device information.
+
+
+
+   .. py:method:: get_device_public_key()
+
+      Retrieve the device's public key.
+
+      :return: The device public key.
+
+
+
+   .. py:method:: init_session(auth_key_id)
+
+      Initiate the symmetric authentication process for establishing
+      an authenticated session with the YubiHSM.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :return: A negotiation of an authenticated Session with a YubiHSM.
+
+
+
+   .. py:method:: init_session_asymmetric(auth_key_id, epk_oce)
+
+      Initiate the asymmetric authentication process for establishing
+      an authenticated session with the YubiHSM.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param epk_oce: The ephemeral public key of the OCE used
+          for key agreement.
+
+
+
+   .. py:method:: create_session(auth_key_id, key_enc, key_mac)
+
+      Create an authenticated session with the YubiHSM.
+
+      See also create_session_derived, which derives K-ENC and K-MAC from a
+      password.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param key_enc: Static K-ENC used to establish session.
+      :param key_mac: Static K-MAC used to establish session.
+      :return: An authenticated session.
+
+
+
+   .. py:method:: create_session_derived(auth_key_id, password)
+
+      Create an authenticated session with the YubiHSM.
+
+      Uses a supplied password to derive the keys K-ENC and K-MAC.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param password: The password used to derive the keys from.
+      :return: An authenticated session.
+
+
+
+   .. py:method:: create_session_asymmetric(auth_key_id, private_key, public_key = None)
+
+      Create an authenticated session with the YubiHSM.
+
+      :param auth_key_id: The ID of the Authentication key used to
+          authenticate the session.
+      :param private_key: Private key corresponding to the public
+          authentication key object.
+      :param public_key: The device's public key. If omitted, the public key
+          is fetched from the YubiHSM.
+      :return: An authenticated session.
+
+
+
+   .. py:method:: connect(url = None)
+      :classmethod:
+
+
+      Return a YubiHsm connected to the backend specified by the URL.
+
+      If no URL is given this will attempt to connect to a YubiHSM connector
+      running on localhost, using the default port.
+
+      :param url: A http(s):// or yhusb:// backend URL.
+      :return: A YubiHsm instance connected to the backend referenced by the url.
+
+
+
