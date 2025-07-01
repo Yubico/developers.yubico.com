@@ -90,13 +90,13 @@ fi
 if [ "$ENV" = "local" ]; then
     echo "Running tests against local development server..."
     echo "Make sure your local server is running on localhost:8080!"
-    TEST_DOMAIN=localhost:8080 TEST_PROTOCOL=http pytest test_redirects.py -v --html=report.html
+    TEST_DOMAIN=localhost:8080 TEST_PROTOCOL=http pytest test_redirects.py test_releases_redirects.py -v --html=report.html
 elif [ "$ENV" = "stage" ]; then
     echo "Running tests against staging server..."
-    TEST_DOMAIN=developers.stage.yubico.com TEST_PROTOCOL=https pytest test_redirects.py -v --html=report.html
+    TEST_DOMAIN=developers.stage.yubico.com TEST_PROTOCOL=https pytest test_redirects.py test_releases_redirects.py -v --html=report.html
 else
     echo "Running tests against production server..."
-    pytest test_redirects.py -v --html=report.html
+    pytest test_redirects.py test_releases_redirects.py -v --html=report.html
 fi
 
 # Save the exit code
