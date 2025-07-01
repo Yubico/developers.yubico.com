@@ -9,7 +9,9 @@ Welcome to python-yubihsm's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
+
+   autoapi/index
+
 
 Indices and tables
 ==================

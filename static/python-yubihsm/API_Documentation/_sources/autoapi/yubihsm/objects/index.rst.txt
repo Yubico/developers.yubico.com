@@ -1,0 +1,1212 @@
+yubihsm.objects
+===============
+
+.. py:module:: yubihsm.objects
+
+.. autoapi-nested-parse::
+
+   Classes for interacting with objects on a YubiHSM.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   yubihsm.objects.LABEL_LENGTH
+   yubihsm.objects.MAX_AES_PAYLOAD_SIZE
+   yubihsm.objects.AES_BLOCK_SIZE
+   yubihsm.objects.RSA_PUBLIC_EXPONENT
+   yubihsm.objects.RSA_SIZES
+   yubihsm.objects.T_AttestationExtensions
+   yubihsm.objects.T_Object
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   yubihsm.objects.ObjectInfo
+   yubihsm.objects.AttestationExtensions
+   yubihsm.objects.DeviceAttestationExtensions
+   yubihsm.objects.KeyAttestationExtensions
+   yubihsm.objects.YhsmObject
+   yubihsm.objects.Opaque
+   yubihsm.objects.AuthenticationKey
+   yubihsm.objects.AsymmetricKey
+   yubihsm.objects.WrapKey
+   yubihsm.objects.PublicWrapKey
+   yubihsm.objects.HmacKey
+   yubihsm.objects.Template
+   yubihsm.objects.OtpData
+   yubihsm.objects.OtpAeadKey
+   yubihsm.objects.SymmetricKey
+
+
+Module Contents
+---------------
+
+.. py:data:: LABEL_LENGTH
+   :value: 40
+
+
+.. py:data:: MAX_AES_PAYLOAD_SIZE
+   :value: 2026
+
+
+.. py:data:: AES_BLOCK_SIZE
+   :value: 16
+
+
+.. py:data:: RSA_PUBLIC_EXPONENT
+   :value: 65537
+
+
+.. py:data:: RSA_SIZES
+   :value: [2048, 3072, 4096]
+
+
+.. py:class:: ObjectInfo
+
+   Data structure holding various information about an object.
+
+   :ivar capabilities: The capabilities of the object.
+   :ivar id: The ID of the object.
+   :ivar size: The size of the object.
+   :ivar domains: The set of domains the object belongs to.
+   :ivar object_type: The type of the object.
+   :ivar algorithm: The algorithm of the object.
+   :ivar sequence: The sequence number of the object.
+   :ivar origin: How the object was created/imported.
+   :ivar label: The label of the object.
+   :ivar delegated_capabilities: The set of delegated capabilities for the object.
+
+
+   .. py:attribute:: FORMAT
+      :type:  ClassVar[str]
+      :value: '!QHHHBBBB40sQ'
+
+
+
+   .. py:attribute:: LENGTH
+      :type:  ClassVar[int]
+
+
+   .. py:attribute:: capabilities
+      :type:  yubihsm.defs.CAPABILITY
+
+
+   .. py:attribute:: id
+      :type:  int
+
+
+   .. py:attribute:: size
+      :type:  int
+
+
+   .. py:attribute:: domains
+      :type:  int
+
+
+   .. py:attribute:: object_type
+      :type:  yubihsm.defs.OBJECT
+
+
+   .. py:attribute:: algorithm
+      :type:  yubihsm.defs.ALGORITHM
+
+
+   .. py:attribute:: sequence
+      :type:  int
+
+
+   .. py:attribute:: origin
+      :type:  yubihsm.defs.ORIGIN
+
+
+   .. py:attribute:: label
+      :type:  Union[str, bytes]
+
+
+   .. py:attribute:: delegated_capabilities
+      :type:  yubihsm.defs.CAPABILITY
+
+
+   .. py:method:: parse(value)
+      :classmethod:
+
+
+      Parse an ObjectInfo from its binary representation.
+
+
+
+.. py:data:: T_AttestationExtensions
+
+.. py:class:: AttestationExtensions
+
+   Base attestation extensions.
+
+   :ivar firmware_version: YubiHSM firmware version.
+   :ivar serial: YubiHSM serial number.
+
+
+   .. py:attribute:: firmware_version
+      :type:  yubihsm.defs.Version
+
+
+   .. py:attribute:: serial
+      :type:  int
+
+
+   .. py:method:: parse(certificate, *args)
+      :classmethod:
+
+
+
+.. py:class:: DeviceAttestationExtensions
+
+   Bases: :py:obj:`AttestationExtensions`
+
+
+   Device attestation extensions. Available on YubiHSM FIPS only.
+
+   :ivar fips_certificate: The FIPS certificate.
+
+
+   .. py:attribute:: fips_certificate
+      :type:  Optional[int]
+
+
+   .. py:method:: parse(certificate, *args)
+      :classmethod:
+
+
+
+.. py:class:: KeyAttestationExtensions
+
+   Bases: :py:obj:`AttestationExtensions`
+
+
+   Key attestation extensions.
+
+   :ivar origin: The origin of the key.
+   :ivar domains: The set of domains assigned to the key object.
+   :ivar capabilities: The set of capabilities assigned to the key object.
+   :ivar object_id: The ID of the key object.
+   :ivar label: The label of the key object.
+   :ivar fips_approved: (available on YubiHSM FIPS >= 2.4.1 only) True if
+       the key attestation was generated in FIPS-approved mode.
+
+
+   .. py:attribute:: origin
+      :type:  yubihsm.defs.ORIGIN
+
+
+   .. py:attribute:: domains
+      :type:  int
+
+
+   .. py:attribute:: capabilities
+      :type:  yubihsm.defs.CAPABILITY
+
+
+   .. py:attribute:: object_id
+      :type:  int
+
+
+   .. py:attribute:: label
+      :type:  Union[str, bytes]
+
+
+   .. py:attribute:: fips_approved
+      :type:  Optional[bool]
+
+
+   .. py:method:: parse(certificate, *args)
+      :classmethod:
+
+
+      Extracts the attributes from an an attestation certificate.
+
+
+
+.. py:data:: T_Object
+
+.. py:class:: YhsmObject(session, object_id, seq = None)
+
+   A reference to an object stored in a YubiHSM.
+
+   YubiHSM objects are uniquely identified by their type and ID combined.
+
+   :ivar session: The session to use for YubiHSM communication.
+   :ivar id: The ID of the object.
+   :ivar object_type: The type of the object.
+
+
+   .. py:attribute:: object_type
+      :type:  ClassVar[yubihsm.defs.OBJECT]
+
+
+   .. py:attribute:: session
+
+
+   .. py:attribute:: id
+      :type:  int
+
+
+   .. py:method:: with_session(session)
+
+      Get a copy of the object reference, using the given session.
+
+      :param session: The session to use for the created reference.
+      :return: A new reference to the object, associated wth the given session.
+
+
+
+   .. py:method:: get_info()
+
+      Read extended information about the object from the YubiHSM.
+
+      :return: Information about the object.
+
+
+
+   .. py:method:: delete()
+
+      Delete the object from the YubiHSM.
+
+      .. warning:: This action in irreversible.
+
+
+
+.. py:class:: Opaque(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Object used to store arbitrary data on the YubiHSM.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.OPAQUE_DATA`
+       - :class:`~yubihsm.defs.ALGORITHM.OPAQUE_X509_CERTIFICATE`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, algorithm, data)
+      :classmethod:
+
+
+      Import an Opaque object into the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the object.
+      :param data: The binary data to store.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: get()
+
+      Read the data of an Opaque object from the YubiHSM.
+
+      :return: The data stored for the object.
+
+
+
+   .. py:method:: put_certificate(session, object_id, label, domains, capabilities, certificate, compress = False)
+      :classmethod:
+
+
+      Import an X509 certificate into the YubiHSM as an Opaque.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param certificate: A certificate to import.
+      :param compress: (optional) Compress the certificate.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: get_certificate()
+
+      Read an Opaque object from the YubiHSM, parsed as a certificate.
+
+      :return: The certificate stored for the object.
+
+
+
+.. py:class:: AuthenticationKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to authenticate a session with the YubiHSM.
+
+   AuthenticationKeys use two separate keys to mutually authenticate and set up
+   a secure session with a YubiHSM. These two keys can either be given
+   explicitly, or be derived from a password.
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put_derived(session, object_id, label, domains, capabilities, delegated_capabilities, password)
+      :classmethod:
+
+
+      Create an AuthenticationKey derived from a password.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param delegated_capabilities: The set of capabilities that the
+          AuthenticationKey can give to objects created when authenticated
+          using it.
+      :param password: The password to derive raw keys from.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, delegated_capabilities, key_enc, key_mac)
+      :classmethod:
+
+
+      Create an AuthenticationKey by providing raw keys.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param delegated_capabilities: The set of capabilities that the
+          AuthenticationKey can give to objects created when authenticated
+          using it.
+      :param key_enc: The raw encryption key.
+      :param key_mac: The raw MAC key.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: put_public_key(session, object_id, label, domains, capabilities, delegated_capabilities, public_key)
+      :classmethod:
+
+
+      Create an asymmetric AuthenticationKey by providing a public key
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param delegated_capabilities: The set of capabilities that the
+          AuthenticationKey can give to objects created when authenticated
+          using it.
+      :param public_key: The public key to import.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: change_password(password)
+
+      Change the password used to authenticate a session.
+
+      Changes the raw keys used for authentication, by deriving them from a
+      password.
+
+      :param password: The password to derive raw keys from.
+
+
+
+   .. py:method:: change_key(key_enc, key_mac)
+
+      Change the raw keys used to authenticate a session.
+
+      :param key_enc: The raw encryption key.
+      :param key_mac: The raw MAC key.
+
+
+
+   .. py:method:: change_public_key(public_key)
+
+      Change an asymmetric AuthenticationKey's public key
+
+      :param public_key: The new public key.
+
+
+
+.. py:class:: AsymmetricKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to sign/decrypt data with the private key of an asymmetric key pair.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.RSA_2048`
+       - :class:`~yubihsm.defs.ALGORITHM.RSA_3072`
+       - :class:`~yubihsm.defs.ALGORITHM.RSA_4096`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_P224`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_P256`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_P384`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_P521`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_K256`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_BP256`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_BP384`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_BP512`
+       - :class:`~yubihsm.defs.ALGORITHM.EC_ED25519`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, key)
+      :classmethod:
+
+
+      Import a private key into the YubiHSM.
+
+      RSA and EC keys can be created by using the cryptography APIs. You can
+      then pass either a
+      :class:`~cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey`
+      , a
+      :class:`~cryptography.hazmat.primitives.asymmetric.ec.EllipticCurvePrivateKey`
+      , or a
+      :class:`~cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PrivateKey`
+      as `key`.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param key: The private key to import.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: generate(session, object_id, label, domains, capabilities, algorithm)
+      :classmethod:
+
+
+      Generate a new private key in the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the private key.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: get_public_key()
+
+      Get the public key of the key pair.
+
+      This will return either a
+      :class:`~cryptography.hazmat.primitives.asymmetric.rsa.RSAPublicKey`
+      or a
+      :class:`~cryptography.hazmat.primitives.asymmetric.ec.EllipticCurvePublicKey`
+      depending on the algorithm of the key.
+
+      Ed25519 keys will be returned as a Cryptography
+      :class:`~cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey`
+      object if possible (requires Cryptography 2.6 or later), or an internal
+      representation if not, either which can be serialized using the
+      :func:`~yubihsm.eddsa.serialize_ed25519_public_key` function.
+
+      :return: The public key of the key pair.
+
+
+
+   .. py:method:: get_certificate()
+
+      Get the X509 certificate associated with the key.
+
+      An X509 certificate is associated with an asymmetric key if it is stored
+      as an Opaque object with the same object ID as the key, and it has the
+      :class:`~yubihsm.defs.ALGORITHM.OPAQUE_X509_CERTIFICATE` algorithm set.
+
+      Equivalent to calling `Opaque(session, key_id).get_certificate()`.
+
+      :return: The certificate stored for the object.
+
+
+
+   .. py:method:: put_certificate(label, domains, capabilities, certificate)
+
+      Store an X509 certificate associated with this key.
+
+      Equivalent to calling `Opaque.put_certificate(session, key_id, ...)`.
+
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param certificate: A certificate to import.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: sign_ecdsa(data, hash = hashes.SHA256(), length = 0)
+
+      Sign data using ECDSA.
+
+      :param data: The data to sign.
+      :param hash: (optional) The algorithm to use when hashing the data.
+      :param length: (optional) length to pad/truncate the hash to.
+      :return: The resulting signature.
+
+
+
+   .. py:method:: derive_ecdh(public_key)
+
+      Perform an ECDH key exchange as specified in SP 800-56A.
+
+      :param public_key: The public key to use for the key exchange.
+      :return: The resulting shared key.
+
+
+
+   .. py:method:: sign_pkcs1v1_5(data, hash = hashes.SHA256())
+
+      Sign data using RSASSA-PKCS1-v1_5.
+
+      :param data: The data to sign.
+      :param hash: (optional) The algorithm to use when hashing the data.
+      :return: The resulting signature.
+
+
+
+   .. py:method:: decrypt_pkcs1v1_5(data)
+
+      Decrypt data encrypted with RSAES-PKCS1-v1_5.
+
+      :param data: The ciphertext to decrypt.
+      :return: The decrypted plaintext.
+
+
+
+   .. py:method:: sign_pss(data, salt_len, hash = hashes.SHA256(), mgf_hash = hashes.SHA256())
+
+      Sign data using RSASSA-PSS with MGF1.
+
+      :param data: The data to sign.
+      :param salt_len: The length of the salt to use.
+      :param hash: (optional) The algorithm to use when hashing the data.
+      :param mgf_hash: (optional) The algorithm to use for MGF1.
+      :return: The resulting signature.
+
+
+
+   .. py:method:: decrypt_oaep(data, label = b'', hash = hashes.SHA256(), mgf_hash = hashes.SHA256())
+
+      Decrypt data encrypted with RSAES-OAEP.
+
+      :param data: The ciphertext to decrypt.
+      :param label: (optional) OAEP label.
+      :param hash: (optional) The algorithm to use when hashing the data.
+      :param mgf_hash: (optional) The algorithm to use for MGF1.
+      :return: The decrypted plaintext.
+
+
+
+   .. py:method:: sign_eddsa(data)
+
+      Sign data using EdDSA.
+
+      :param data: The data to sign.
+      :return: The resulting signature.
+
+
+
+   .. py:method:: attest(attesting_key_id = 0)
+
+      Attest this asymmetric key.
+
+      Creates an X509 certificate containing this key pair's public key,
+      signed by the asymmetric key identified by the given ID.
+      You also need a X509 certificate stored with the same ID as the
+      attesting key in the YubiHSM, to be used as a template.
+
+      :param attesting_key_id: (optional) The ID of the asymmetric key used to attest.
+          If omitted, the built-in Yubico attestation key is used.
+      :return: The attestation certificate.
+
+
+
+   .. py:method:: sign_ssh_certificate(template_id, request, algorithm = ALGORITHM.RSA_PKCS1_SHA1)
+
+      Sign an SSH certificate request.
+
+      :param template_id: The ID of the SSH TEMPLATE to use.
+      :param request: The SSH certificate request.
+      :return: The SSH certificate signature.
+
+
+
+.. py:class:: WrapKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to import and export other objects under wrap.
+
+   Asymmetric wrapkeys are only used for importing wrapped objects.
+   To export objects under asymmetric wrap, use
+   :class:`~yubihsm.objects.PublicWrapKey`.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.AES128_CCM_WRAP`
+       - :class:`~yubihsm.defs.ALGORITHM.AES192_CCM_WRAP`
+       - :class:`~yubihsm.defs.ALGORITHM.AES256_CCM_WRAP`
+       - :class:`~yubihsm.defs.ALGORITHM.RSA_2048`
+       - :class:`~yubihsm.defs.ALGORITHM.RSA_3072`
+       - :class:`~yubihsm.defs.ALGORITHM.RSA_4096`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: generate(session, object_id, label, domains, capabilities, algorithm, delegated_capabilities)
+      :classmethod:
+
+
+      Generate a new wrap key in the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the wrap key.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, algorithm, delegated_capabilities, key)
+      :classmethod:
+
+
+      Import a wrap key into the YubiHSM.
+
+      Asymmetric keys can be imported using the cryptography API. You can
+      then pass a
+      :class:`~cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey`
+      as `key`.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the wrap key.
+      :param delegated_capabilities: The set of capabilities that the WrapKey can give
+          to objects that it imports.
+      :param key: The encryption key corresponding to the algorithm.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: get_public_key()
+
+      Get the public key of the wrapkey pair.
+
+
+
+   .. py:method:: wrap_data(data)
+
+      Wrap (encrypt) arbitrary data.
+
+      :param data: The data to encrypt.
+      :return: The encrypted data.
+
+
+
+   .. py:method:: unwrap_data(data)
+
+      Unwrap (decrypt) arbitrary data.
+
+      :param data: The encrypted data to decrypt.
+      :return: The decrypted data.
+
+
+
+   .. py:method:: export_wrapped(obj, seed = False)
+
+      Export an object under wrap.
+
+      :param obj: The object to export.
+      :param seed: (optional) Export key with seed. Only applicable
+          for ed25519 key objects.
+      :return: The encrypted object data.
+
+
+
+   .. py:method:: import_wrapped(wrapped_obj)
+
+      Import an object previously exported under wrap.
+
+      :param wraped_obj: The encrypted object data.
+      :return: A reference to the imported object.
+
+
+
+   .. py:method:: import_wrapped_rsa(wrapped_obj, oaep_hash = hashes.SHA256(), mgf_hash = hashes.SHA256(), oaep_label = b'')
+
+      Import an object previously exported under asymmetric wrap.
+
+      :param wrapped_obj: The encrypted object data.
+      :param oaep_hash: (optional) The hash algorithm to use for OAEP label.
+      :param mgf_hash: (optional) The hash algorithm to use for MGF1.
+      :param oaep_label: (optional) OAEP label.
+      :return: A reference to the imported object.
+
+
+
+   .. py:method:: import_raw_key(object_id, object_type, label, domains, capabilities, algorithm, wrapped, oaep_hash = hashes.SHA256(), mgf_hash = hashes.SHA256(), oaep_label = b'')
+
+      Import an (a)symmetric key previously exported under asymmetric wrap.
+
+      Asymmetric keys are expected to have been serialized as
+      PKCS#8.
+
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param object_type: The key object type (`OBJECT.ASYMMETRIC_KEY`
+          or `OBJECT.SYMMETRIC_KEY`).
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm of the key.
+      :param wrapped: The wrapped key object.
+      :param oaep_hash: (optional) The hash algorithm to use for OAEP label.
+      :param mgf_hash: (optional) The hash algorithm to use for MGF1.
+      :param oaep_label: (optional) OAEP label.
+      :return: A reference to the imported key object.
+
+
+
+.. py:class:: PublicWrapKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to export other objects under wrap using the public key of an
+   asymmetric key pair.
+
+   The algorithm used for wrapping is CKM_RSA_AES_KEY_WRAP,
+   as specified in PKCS#11.
+
+   Supported algorithms:
+   - :class:`~yubihsm.defs.ALGORITHM.RSA_2048`
+   - :class:`~yubihsm.defs.ALGORITHM.RSA_3072`
+   - :class:`~yubihsm.defs.ALGORITHM.RSA_4096`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, delegated_capabilities, public_key)
+      :classmethod:
+
+
+      Import a public RSA wrapkey into the YubiHSM.
+
+      The RSA public key can be supplied using the cryptography API. You can
+      then pass a
+      :class:`~cryptography.hazmat.primitives.asymmetric.rsa.RSAPublicKey`
+      as `public_key`.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param delegated_capabilities: The set of capabilities that the WrapKey can give
+          to objects that it imports.
+      :param public_key: The public key to import.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: get_public_key()
+
+      Get the public wrapkey.
+
+
+
+   .. py:method:: export_wrapped_rsa(obj, algorithm = ALGORITHM.AES256, oaep_hash = hashes.SHA256(), mgf_hash = hashes.SHA256(), oaep_label = b'')
+
+      Export an object under asymmetric wrap.
+
+      :param obj: The object to export.
+      :param algorithm: (optional) The algorithm to use for the ephemeral key.
+      :param oaep_hash: (optional) The hash algorithm to use for OAEP label.
+      :param mgf_hash: (optional) The hash algorithm to use for MGF1.
+      :param oaep_label: (optional) OAEP label.
+      :return: The encrypted object data.
+
+
+
+   .. py:method:: export_raw_key(key, algorithm = ALGORITHM.AES256, oaep_hash = hashes.SHA256(), mgf_hash = hashes.SHA256(), oaep_label = b'')
+
+      Export an (a)symmetric key object under asymmetric wrap.
+
+      This command wraps only the raw key material of the key object.
+      Asymmetric keys are serialized as PKCS#8.
+
+      :param key: The (a)symmetric key object to wrap.
+      :param algorithm: (optional) The algorithm for the ephemeral key.
+      :param oaep_hash: (optional) The hash algorithm to use for OAEP label.
+      :param mgf_hash: (optional) The hash algorithm to use for MGF1.
+      :param oaep_label: (optional) OAEP label.
+      :return: The encrypted key.
+
+
+
+.. py:class:: HmacKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to calculate and verify HMAC signatures.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.HMAC_SHA1`
+       - :class:`~yubihsm.defs.ALGORITHM.HMAC_SHA256`
+       - :class:`~yubihsm.defs.ALGORITHM.HMAC_SHA384`
+       - :class:`~yubihsm.defs.ALGORITHM.HMAC_SHA512`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: generate(session, object_id, label, domains, capabilities, algorithm = ALGORITHM.HMAC_SHA256)
+      :classmethod:
+
+
+      Generate a new HMAC key in the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: (optional) The algorithm to use for the HMAC key.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, key, algorithm=ALGORITHM.HMAC_SHA256)
+      :classmethod:
+
+
+      Import an HMAC key into the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param key: The raw key corresponding to the algorithm.
+      :param algorithm: (optional) The algorithm to use for the HMAC key.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: sign_hmac(data)
+
+      Calculate the HMAC signature of the given data.
+
+      :param data: The data to sign.
+      :return: The signature.
+
+
+
+   .. py:method:: verify_hmac(signature, data)
+
+      Verify an HMAC signature.
+
+      :param signature: The signature to verify.
+      :param data: The data to verify the signature against.
+      :return: True if verification succeeded, False if not.
+
+
+
+.. py:class:: Template(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Binary template used to validate SSH certificate requests.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.TEMPLATE_SSH`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, algorithm, data)
+      :classmethod:
+
+
+      Import a Template into the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the template.
+      :param data: The template data.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: get()
+
+      Read a Template from the YubiHSM.
+
+      :return: The template data.
+
+
+
+.. py:class:: OtpData
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   Decrypted OTP counter values.
+
+   :param use_counter: 16 bit counter incremented on each power cycle.
+   :param session_counter: 8 bit counter incremented on each touch.
+   :param timestamp_high: 8 bit high part of the timestamp.
+   :param timestamp_low: 16 bit low part of the timestamp.
+
+
+   .. py:attribute:: use_counter
+      :type:  int
+
+
+   .. py:attribute:: session_counter
+      :type:  int
+
+
+   .. py:attribute:: timestamp_high
+      :type:  int
+
+
+   .. py:attribute:: timestamp_low
+      :type:  int
+
+
+.. py:class:: OtpAeadKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to decrypt and use a Yubico OTP AEAD for OTP decryption.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.AES128_YUBICO_OTP`
+       - :class:`~yubihsm.defs.ALGORITHM.AES192_YUBICO_OTP`
+       - :class:`~yubihsm.defs.ALGORITHM.AES256_YUBICO_OTP`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, algorithm, nonce_id, key)
+      :classmethod:
+
+
+      Import an OTP AEAD key into the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the key.
+      :param nonce_id: The nonce ID used for AEADs.
+      :param key: The key to import, corresponding to the algorithm.
+      :return: A reference to the newly created object.
+
+
+
+
+   .. py:method:: generate(session, object_id, label, domains, capabilities, algorithm, nonce_id)
+      :classmethod:
+
+
+      Generate a new OTP AEAD key in the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the key.
+      :param nonce_id: The nonce ID used for AEADs.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: create_otp_aead(key, identity)
+
+      Create a new Yubico OTP credential AEAD.
+
+      :param key: 16 byte AES key for the credential.
+      :param identity: 6 byte private ID for the credential.
+      :return: A new AEAD.
+
+
+
+   .. py:method:: randomize_otp_aead()
+
+      Create a new Yubico OTP credential AEAD using random data.
+
+      :return: A new AEAD.
+
+
+
+   .. py:method:: decrypt_otp(aead, otp)
+
+      Decrypt a Yubico OTP using an AEAD.
+
+      :param aead: The AEAD containing encrypted credential data.
+      :param otp: The 16 byte encrypted OTP payload to decrypt.
+      :return: The decrypted OTP data.
+
+
+
+   .. py:method:: rewrap_otp_aead(new_key_id, aead)
+
+      Decrypt and re-encrypt an AEAD from one key to another.
+
+      :param new_key_id: The ID of the OtpAeadKey to wrap to.
+      :param aead: The AEAD to re-wrap.
+      :return: The new AEAD.
+
+
+
+.. py:class:: SymmetricKey(session, object_id, seq = None)
+
+   Bases: :py:obj:`YhsmObject`
+
+
+   Used to encrypt/decrypt data using a symmetric key.
+
+   Supported algorithms:
+       - :class:`~yubihsm.defs.ALGORITHM.AES128`
+       - :class:`~yubihsm.defs.ALGORITHM.AES192`
+       - :class:`~yubihsm.defs.ALGORITHM.AES256`
+
+
+   .. py:attribute:: object_type
+
+
+   .. py:method:: put(session, object_id, label, domains, capabilities, algorithm, key)
+      :classmethod:
+
+
+      Import a symmetric key into the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the
+          YubiHSM designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the symmetric key.
+      :param key: The raw encryption key corresponding to the algorithm.
+      :return: A reference to the newly created object.
+
+
+
+   .. py:method:: generate(session, object_id, label, domains, capabilities, algorithm)
+      :classmethod:
+
+
+      Generate a new symmetric key in the YubiHSM.
+
+      :param session: The session to import via.
+      :param object_id: The ID to set for the object. Set to 0 to let the YubiHSM
+          designate an ID.
+      :param label: A text label to give the object.
+      :param domains: The set of domains to assign the object to.
+      :param capabilities: The set of capabilities to give the object.
+      :param algorithm: The algorithm to use for the symmetric key.
+      :return: A reference to the newly created object.
+
+
+
+
+   .. py:method:: encrypt_ecb(data)
+
+      Encrypt data in ECB mode.
+
+      :param data: The data to encrypt.
+      :return: The encrypted data.
+
+
+
+   .. py:method:: decrypt_ecb(data)
+
+      Decrypt data in ECB mode.
+
+      :param data: The data to decrypt.
+      :return: The decrypted data.
+
+
+
+   .. py:method:: encrypt_cbc(iv, data)
+
+      Encrypt data in CBC mode.
+
+      :param iv: The initialization vector.
+      :param data: The data to encrypt.
+      :return: The encrypted data.
+
+
+
+   .. py:method:: decrypt_cbc(iv, data)
+
+      Decrypt data in CBC mode.
+
+      :param iv: The initialization vector.
+      :param data: The data to decrypt.
+      :return: The decrypted data.
+
+
+
