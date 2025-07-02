@@ -1,4 +1,4 @@
-= Secure Your Code Integrity: Git Commit Signing with YubiKey and SSH/FIDO2
+== Secure Your Code Integrity: Git Commit Signing with YubiKey and SSH/FIDO2
 :doctype: article
 :toc: left
 :toclevels: 3
@@ -11,7 +11,7 @@
 :keywords: YubiKey, FIDO2, Git, SSH, Commit Signing, Tag Signing, ed25519-sk, ecdsa-sk, Secure Development, Code Integrity, Developer Security, OpenSSH, Allowed Signers, GitHub Verified, GitLab
 
 [[introduction]]
-== Introduction: Why Sign Your Git Commits with YubiKey?
+=== Introduction: Why Sign Your Git Commits with YubiKey?
 
 In modern software development, ensuring the integrity and authenticity of your codebase is paramount. Git's commit signing feature provides a robust way to verify that commits and tags originate from a trusted source and haven't been tampered with. By leveraging your YubiKey with its FIDO2 capabilities to manage SSH keys used for signing, you elevate this security significantly.
 
@@ -26,18 +26,18 @@ When you sign Git commits using an SSH key protected by your YubiKey:
 This guide will walk you through configuring Git to use your YubiKey-backed SSH keys for signing commits and tags, and how to ensure these signatures are recognized by popular Git hosting platforms.
 
 [[prerequisites]]
-== Prerequisites
+=== Prerequisites
 
 Before you begin, ensure you have the following:
 
 * **A YubiKey with FIDO2 Support:** Any YubiKey from the 5 Series, YubiKey Bio Series, or Security Key Series by Yubico.
 * **Git Version:** Git 2.34 or newer. Check with `git --version`.
 * **OpenSSH Client Version:**
-    * OpenSSH 8.2 or newer for basic FIDO2 SSH key support.
-    * OpenSSH 8.3 or newer is highly recommended for the `-O verify-required` option.
-    * OpenSSH 8.9 or newer is recommended if using non-resident keys with the `-O credProtect` option.
-    * Check with `ssh -V`. (See our guide on link:/SSH/Securing_SSH_with_FIDO2.html[Securing SSH with FIDO2] for platform-specific OpenSSH setup if needed).
-* **FIDO2 PIN Set (Recommended):** For resident keys, a FIDO2 PIN must be set on your YubiKey using link:{https://www.yubico.com/products/yubikey-manager/}[YubiKey Manager].
+** OpenSSH 8.2 or newer for basic FIDO2 SSH key support.
+** OpenSSH 8.3 or newer is highly recommended for the `-O verify-required` option.
+** OpenSSH 8.9 or newer is recommended if using non-resident keys with the `-O credProtect` option.
+** Check with `ssh -V`. (See our guide on link:/SSH/Securing_SSH_with_FIDO2.html[Securing SSH with FIDO2] for platform-specific OpenSSH setup if needed).
+* **FIDO2 PIN Set (Recommended):** For resident keys, a FIDO2 PIN must be set on your YubiKey using link:https://www.yubico.com/products/yubikey-manager/[YubiKey Manager].
 
 [[choosing-generating-signing-key]]
 == Step 1: Choose or Generate Your SSH Signing Key
@@ -71,30 +71,35 @@ If you have an existing `ed25519-sk` or `ecdsa-sk` key (e.g., `~/.ssh/id_ed25519
 Next, configure Git to use SSH keys for signing and specify which key to use. These commands are typically run with `--global` to apply to all your repositories.
 
 1.  **Set Git's GPG Format to SSH:**
-    [source,bash]
-    ----
-    git config --global gpg.format ssh
-    ----
-
++
+[source,bash]
+----
+git config --global gpg.format ssh
+----
++
 2.  **Specify Your Signing Key:**
-    Provide the path to the **public key file** of the SSH key you want to use for signing.
-    [source,bash]
-    ----
-    # Replace with the actual path to your public key file
-    git config --global user.signingkey ~/.ssh/id_ed25519_sk_git_signing.pub
-    ----
-
++
+Provide the path to the **public key file** of the SSH key you want to use for signing.
++
+[source,bash]
+----
+# Replace with the actual path to your public key file
+git config --global user.signingkey ~/.ssh/id_ed25519_sk_git_signing.pub
+----
++
 3.  **Enable Automatic Commit Signing (Recommended):**
-    [source,bash]
-    ----
-    git config --global commit.gpgSign true
-    ----
-
++
+[source,bash]
+----
+git config --global commit.gpgSign true
+----
++
 4.  **Enable Automatic Tag Signing (Recommended for Annotated Tags):**
-    [source,bash]
-    ----
-    git config --global tag.forceSignAnnotated true
-    ----
++
+[source,bash]
+----
+git config --global tag.forceSignAnnotated true
+----
 
 [[allowed-signers-file]]
 == Step 3: Create and Configure the Allowed Signers File
@@ -102,31 +107,38 @@ Next, configure Git to use SSH keys for signing and specify which key to use. Th
 For Git to verify SSH signatures locally, you need an "allowed signers" file. This file maps email addresses and optional namespaces to trusted SSH public keys.
 
 1.  **Create the Allowed Signers File:** (e.g., `~/.ssh/allowed_signers`)
-    [source,bash]
-    ----
-    mkdir -p ~/.ssh && touch ~/.ssh/allowed_signers
-    # Then open ~/.ssh/allowed_signers in a text editor
-    ----
-
++
+[source,bash]
+----
+mkdir -p ~/.ssh && touch ~/.ssh/allowed_signers
+# Then open ~/.ssh/allowed_signers in a text editor
+----
++
 2.  **Add Your Key to the Allowed Signers File:**
-    The format for each line is: `email [options] ssh_public_key_string`
-    Get your public key string: `cat ~/.ssh/id_ed25519_sk_git_signing.pub`
-    Add an entry like this:
-    [source,text]
-    ----
-    # ~/.ssh/allowed_signers
-    your.email@example.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYourPublicKeyData... Git signing key your.email@example.com
-    ----
-    *Ensure `your.email@example.com` exactly matches your `git config user.email`.*
-    *`namespaces="git"` is crucial for scoping the key's authority.*
-
++
+The format for each line is: `email [options] ssh_public_key_string`
++
+Get your public key string: `cat ~/.ssh/id_ed25519_sk_git_signing.pub`
++
+Add an entry like this:
++
+[source,text]
+----
+# ~/.ssh/allowed_signers
+your.email@example.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYourPublicKeyData... Git signing key your.email@example.com
+----
++
+*Ensure `your.email@example.com` exactly matches your `git config user.email`.*
+*`namespaces="git"` is crucial for scoping the key's authority.*
++
 3.  **Tell Git Where to Find the Allowed Signers File:**
-    [source,bash]
-    ----
-    git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
-    ----
-.A diagram here could illustrate the relationship between `user.email`, `user.signingkey` (pointing to `.pub` file), and the entry in the `allowed_signers` file.
-image::git_signing_config_relations.png[Git Signing Configuration Relationships - Placeholder for Diagram]
++
+[source,bash]
+----
+git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+----
+
+image::git_signing_config_relations.png[Git Signing Configuration Relationships]
 
 [[signing-commits-tags]]
 == Step 4: Signing Commits and Tags
@@ -138,6 +150,7 @@ With the configuration in place, commit or tag as usual (or use `-S` / `-s` if a
 
 * **For Commits:** `git log --show-signature`
 * **For Tags:** `git tag -v <tagname>`
++
 Look for "Good signature from your.email@example.com".
 
 [[achieving-verified-badge]]
@@ -175,9 +188,9 @@ ssh-add ~/.ssh/id_ed25519_sk_git_signing # (Use the private key handle file here
 * **PIN Caching:** If your key is PIN-protected, `ssh-agent` can cache the PIN after the first entry for a limited time or session, reducing repeated PIN prompts.
 * **Touch Still Required:** Crucially, even with `ssh-agent`, the `-O verify-required` option on your key (or the inherent nature of FIDO2) will still necessitate a physical touch on your YubiKey for each signing operation.
 * **Troubleshooting Agent Issues:**
-    * **"Agent refused operation" / "sign_and_send_pubkey: signing failed":** Ensure the correct key is added and the YubiKey is accessible. Sometimes `ssh-add -D` (to remove all identities) followed by re-adding the specific key helps.
-    * **Multiple Agents:** On systems like Linux with GNOME or macOS, be aware of multiple potential SSH agents. Ensure you're interacting with the correct one. `echo $SSH_AUTH_SOCK` can help identify the agent socket.
-    * **Windows:** If using Windows OpenSSH agent, ensure the service is running. For WSL, agent integration might require additional setup (like `npiperelay` or WSL's built-in SSH agent forwarding).
+** **"Agent refused operation" / "sign_and_send_pubkey: signing failed":** Ensure the correct key is added and the YubiKey is accessible. Sometimes `ssh-add -D` (to remove all identities) followed by re-adding the specific key helps.
+** **Multiple Agents:** On systems like Linux with GNOME or macOS, be aware of multiple potential SSH agents. Ensure you're interacting with the correct one. `echo $SSH_AUTH_SOCK` can help identify the agent socket.
+** **Windows:** If using Windows OpenSSH agent, ensure the service is running. For WSL, agent integration might require additional setup (like `npiperelay` or WSL's built-in SSH agent forwarding).
 
 [[key-management-lifecycle]]
 == Key Management Lifecycle Considerations
@@ -185,8 +198,8 @@ ssh-add ~/.ssh/id_ed25519_sk_git_signing # (Use the private key handle file here
 Proper key management is crucial for long-term security.
 
 * **Backup and Recovery:**
-    * **YubiKey Backup:** Consider having a backup YubiKey. If you used a *resident key*, you cannot simply "copy" it. You would need to generate a new resident key on the backup YubiKey and add its public key to your `allowed_signers` file and relevant services (like GitHub/GitLab).
-    * **Revocation List (Self-Managed):** Keep a personal record of which keys are active and where their public parts are deployed.
+** **YubiKey Backup:** Consider having a backup YubiKey. If you used a *resident key*, you cannot simply "copy" it. You would need to generate a new resident key on the backup YubiKey and add its public key to your `allowed_signers` file and relevant services (like GitHub/GitLab).
+** **Revocation List (Self-Managed):** Keep a personal record of which keys are active and where their public parts are deployed.
 * **Key Revocation (If YubiKey is Lost/Stolen or Key Compromised):**
     1.  **Remove the Public Key from Services:** Immediately remove the compromised public key from your GitHub/GitLab accounts (from the SSH keys section).
     2.  **Update `allowed_signers` Files:** Remove the compromised public key from your personal `allowed_signers` file and notify any collaborators or teams who might also have it in their verification lists.
@@ -200,8 +213,8 @@ Proper key management is crucial for long-term security.
 In a team environment, ensuring everyone can verify signatures is important.
 
 * **Centralized `allowed_signers` File:**
-    * Teams can maintain a canonical `allowed_signers` file (or a script to generate it) in a shared, trusted repository.
-    * Developers would periodically pull updates from this file to their local `~/.ssh/allowed_signers` or configure their Git to point to a shared location if feasible and secure.
+** Teams can maintain a canonical `allowed_signers` file (or a script to generate it) in a shared, trusted repository.
+** Developers would periodically pull updates from this file to their local `~/.ssh/allowed_signers` or configure their Git to point to a shared location if feasible and secure.
 * **Distribution of Public Keys:** Establish a secure method for team members to share their signing public keys to be included in the team's `allowed_signers` list. This could be via encrypted email, a trusted internal key server, or by committing them to a dedicated, access-controlled repository.
 * **Verification Policies:** Define team policies on whether all commits must be signed and verified.
 
@@ -209,16 +222,16 @@ In a team environment, ensuring everyone can verify signatures is important.
 == Troubleshooting Common Issues (Beyond Agent)
 
 * **No "Good signature" or "No GPG TTY":**
-    * Verify email in `allowed_signers` *exactly* matches `user.email` and committer email.
-    * Confirm public key in `allowed_signers` is correct and complete.
-    * For "No GPG TTY" on systems needing a PIN prompt: `export GPG_TTY=$(tty)` or ensure agent handles PIN.
+** Verify email in `allowed_signers` *exactly* matches `user.email` and committer email.
+** Confirm public key in `allowed_signers` is correct and complete.
+** For "No GPG TTY" on systems needing a PIN prompt: `export GPG_TTY=$(tty)` or ensure agent handles PIN.
 * **YubiKey Not Prompting for Touch/PIN:**
-    * Check `gpg.format`, `user.signingkey`, `commit.gpgSign` or `-S` usage.
-    * Ensure YubiKey is securely plugged in and recognized by the OS.
+** Check `gpg.format`, `user.signingkey`, `commit.gpgSign` or `-S` usage.
+** Ensure YubiKey is securely plugged in and recognized by the OS.
 * **"Error: ssh signing failed: no signing key configured":**
-    * Ensure `user.signingkey` is correctly set in Git config.
+** Ensure `user.signingkey` is correctly set in Git config.
 * **Platform Issues for "Verified" Badge:**
-    * **GitHub/GitLab:** If a commit is signed but not showing "Verified," double-check that the *exact* signing public key is added to your SSH keys on the platform and that the committer email is verified on your platform account.
+** **GitHub/GitLab:** If a commit is signed but not showing "Verified," double-check that the *exact* signing public key is added to your SSH keys on the platform and that the committer email is verified on your platform account.
 
 [[security-best-practices-recap]]
 == Security Best Practices Recap

@@ -15,6 +15,7 @@ YubiKeys function as hardware security tokens, offering phishing-resistant multi
 SCP11, defined by GlobalPlatform, is an asymmetric protocol employing Elliptic Curve Cryptography (ECC) and X.509 certificates to establish a secure communication channel between a host and a YubiKey (acting as a Secure Element).
 
 Key advantages of SCP11 over the symmetric SCP03 include:
+
 * **No Pre-shared Secret Requirements:** Eliminates the operational burden and risk of distributing and managing symmetric keys for each YubiKey-host pair.
 * **Dynamic Trust Relationships:** Leverages a Public Key Infrastructure (PKI) with certificate authorities (CAs) for trust management, allowing new systems and YubiKeys to establish secure connections without prior explicit pairing.
 * **Scalable Deployment:** Centralized trust management via CAs supports secure communication for thousands of YubiKeys with multiple systems.
@@ -22,6 +23,7 @@ Key advantages of SCP11 over the symmetric SCP03 include:
 
 === Cryptographic Algorithms in SCP11
 SCP11 utilizes several FIPS-approved cryptographic algorithms:
+
 * Elliptic Curve Cryptography (ECC) using NIST P-256 curves for key agreement and digital signatures.
 * AES-GCM (Advanced Encryption Standard - Galois/Counter Mode) for authenticated encryption of the secure channel.
 * SHA-256 (Secure Hash Algorithm 256-bit) for hashing functions.
@@ -31,6 +33,7 @@ SCP11 utilizes several FIPS-approved cryptographic algorithms:
 Yubico has implemented a subset of the GlobalPlatform SCP11 specification, focusing on its most secure variants, ensuring both command and response messages are MACed and encrypted. This implementation is available in YubiKey firmware 5.7.2 and later.
 
 YubiKeys support two primary SCP11 variants:
+
 * **SCP11a:** Provides mutual authentication, typically used for secure communication with Credential Management Systems (CMS) for provisioning or managing credentials on the YubiKey.
 * **SCP11b:** Provides unilateral authentication (card-to-host), typically used by client applications (e.g., mobile apps, physical access readers) to establish a secure channel with the YubiKey, especially over NFC.
 
@@ -151,12 +154,14 @@ With FIPS 140-3 in view, Yubico implemented CTAP2.1 (and by extension, 2.2) impr
 The CTAP2 PIN/UV authentication protocol (specifically `pinUvAuthProtocolOne` or `pinUvAuthProtocolTwo`) uses an Elliptic Curve Diffie-Hellman (ECDH) key agreement to establish a shared secret between the client platform and the YubiKey for the PIN operation. Encryption and authentication keys are then derived from this shared base key. The protocol employs AES-CBC for encrypting PIN data and HMAC with SHA-256 for authentication, ensuring the PIN itself is protected during transit to the authenticator where it is verified.
 
 For YubiKeys targeting FIPS 140-3:
+
 * PINs are encrypted during transmission via the CTAP2 `pinUvAuthProtocol`.
 * PIN complexity (minimum 6 characters for FIPS YubiKeys, up to 63 alphanumeric) is enforced.
 * Secure key derivation is used for PIN protection mechanisms.
 
 === Protected Use Cases
 CTAP2.2, in conjunction with FIDO2, enables:
+
 * Passwordless authentication flows.
 * Phishing-resistant multi-factor authentication.
 * Secure authorization for financial transactions.
@@ -166,6 +171,7 @@ CTAP2.2, in conjunction with FIDO2, enables:
 
 === Cryptographic Module Security Levels (FIPS 140-3 Section 4)
 SCP11 and CTAP2.2 contribute by:
+
 * Employing FIPS-approved cryptographic algorithms (ECC P-256, AES, SHA-256).
 * Implementing secure key establishment and management.
 * Providing strong, hardware-backed authentication mechanisms.
@@ -175,6 +181,7 @@ The YubiKey 5 FIPS Series can be used in an Overall Security Level 1 or 2 FIPS e
 
 === Secure Key Management and Derivation (NIST SP 800-133)
 Both protocols align with NIST SP 800-133:
+
 * **Secure Generation:** Ephemeral session keys in SCP11 and CTAP2 PIN protocol are generated securely.
 * **Key Diversification:** Session keys are unique per session.
 * **Protection:** Cryptographic keys are protected in transit (via secure channel or encrypted PIN protocol) and at rest (private keys never leave the YubiKey).
@@ -182,6 +189,7 @@ Both protocols align with NIST SP 800-133:
 
 === Authentication Mechanisms and Entropy Requirements (NIST SP 800-63B)
 YubiKey FIPS Series supports AAL3 of NIST SP800-63B. SCP11 and CTAP2.2 contribute via:
+
 * Hardware-based cryptographic operations.
 * Support for multi-factor authentication (possession of YubiKey + PIN/biometric).
 * High-entropy key generation for session keys.
@@ -190,6 +198,7 @@ YubiKey FIPS Series supports AAL3 of NIST SP800-63B. SCP11 and CTAP2.2 contribut
 
 === PIN Brute-Force Attack Protection
 The YubiKey implements robust anti-brute-forcing for PINs:
+
 * FIPS-compliant YubiKeys enforce a minimum PIN length of 6 characters.
 * The FIDO2 application on YubiKeys supports lockout after a specific number of failed attempts (e.g., 3 failed PIN attempts for FIDO2 might render the PIN unusable until reset, or 8 total might block the credential).
 * Increasing time delays can be implemented by the client platform based on authenticator feedback.
@@ -200,6 +209,7 @@ The YubiKey implements robust anti-brute-forcing for PINs:
 
 === Scenario 1: NFC Access Control with SCP11b
 *Employee approaches a secure door with an NFC-enabled YubiKey.*
+
 . Access control reader activates and initiates communication with the YubiKey.
 . Reader sends `INITIALIZE UPDATE` command to the YubiKey (includes Reader nonce).
 . YubiKey responds to `INITIALIZE UPDATE` with:
@@ -220,6 +230,7 @@ _This SCP11b flow protects the NFC link from eavesdropping and tampering._
 
 === Scenario 2: Secure Government Cloud Access with CTAP2.2
 *Government administrator accesses FedRAMP cloud environment requiring AAL3 via agency mobile device.*
+
 . Cloud provider (Relying Party) prompts for YubiKey authentication via NFC.
 . Administrator taps YubiKey to mobile device.
 . Cloud provider (via browser/client) sends `authenticatorGetAssertion` request with `userVerification`="required".
@@ -235,6 +246,7 @@ _CTAP2.2 ensures phishing-resistant MFA, and the PIN protocol protects user veri
 
 == Implementation Considerations for FIPS Compliance
 Organizations should:
+
 * Ensure YubiKey applications (PIV, FIDO2, OATH, SCP11-accessible applets) are placed in FIPS-approved mode of operation, typically during initialization by a Crypto Officer.
 * Adhere to PIN policies (length, complexity, retry limits) mandated by FIPS and NIST SP 800-63B.
 * Utilize FIPS-validated YubiKey firmware versions.
@@ -244,10 +256,8 @@ Organizations should:
 SCP11 and CTAP2.2 are foundational for the YubiKey 5 FIPS Series' compliance with FIPS 140-3. They provide secure channels, robust authentication mechanisms, and protection for cryptographic keys and operations, enabling organizations to meet stringent federal security requirements.
 
 == Further Technical Resources
-* YubiKey 5 FIPS Series Documentation (on Yubico website)
-* NIST Special Publication 800-63B: Digital Identity Guidelines
-* NIST Special Publication 800-133: Recommendation for Cryptographic Key Generation
-* FIDO Alliance Specifications (including CTAP)
-* GlobalPlatform Card Specifications (including Secure Channel Protocol '11' Amendment F)
-* Yubico Developer Documentation (developer.yubico.com)
-* Yubico Desktop SDK Security Domain Overview
+* link:https://docs.yubico.com/hardware/yubikey/yk-tech-manual/fips-specifics.html[YubiKey 5 FIPS Series Documentation]
+* link:https://pages.nist.gov/800-63-3/sp800-63b.html[NIST Special Publication 800-63B: Digital Identity Guidelines]
+* link:https://fidoalliance.org/specs/fido-v2.2-rd-20230321/fido-client-to-authenticator-protocol-v2.2-rd-20230321.html[FIDO Alliance Specifications (including CTAP)]
+* link:https://globalplatform.org/wp-content/uploads/2017/09/GPC_2.2_F_SCP11_v1.0.pdf[GlobalPlatform Card Specifications (including Secure Channel Protocol '11' Amendment F)]
+* link:https://docs.yubico.com/yesdk/users-manual/application-security-domain/security-domain-overview.html[Yubico Desktop SDK Security Domain Overview]
