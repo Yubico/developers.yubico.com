@@ -46,7 +46,9 @@ You'll need an `ed25519-sk` or `ecdsa-sk` type SSH key. If you already use such 
 
 === Generating a New Dedicated Signing Key (Recommended)
 
-We recommend an `ed25519-sk` resident key, which requires YubiKey firmware 5.2.3+.
+We recommend an `ed25519-sk` resident key, which requires YubiKey firmware 5.2.3+. The command differs slightly between Unix-like systems (Linux, macOS) and Windows.
+
+==== For Linux and macOS
 
 [source,bash]
 ----
@@ -60,6 +62,17 @@ ssh-keygen -t ed25519-sk -O resident -O verify-required -C "Git signing key $(gi
 * `-f ~/.ssh/id_ed25519_sk_git_signing`: Specifies the filename. Using a distinct name like `id_ed25519_sk_git_signing` helps differentiate it from SSH authentication keys.
 
 You will be prompted for your YubiKey FIDO2 PIN (if `-O resident` is used) and to touch your YubiKey.
+
+==== For Windows (PowerShell)
+
+**PowerShell Pro Tip:** PowerShell doesn't expand the tilde (`~`), so use the `$env:USERPROFILE` variable for the file path to avoid a `No such file or directory` error.
+
+[source,powershell]
+----
+ssh-keygen -t ed25519-sk -O resident -O verify-required -C "Git Signing Key" -f "$env:USERPROFILE\.ssh\id_ed25519_sk_git_signing"
+----
+
+The options (`-t`, `-O`, `-f`) serve the same purpose as described above. For the comment (`-C`), we use a static string here, but you can replace `"Git Signing Key"` with your email address or another descriptor.
 
 === Using an Existing FIDO2 SSH Key
 
@@ -79,12 +92,20 @@ git config --global gpg.format ssh
 +
 2.  **Specify Your Signing Key:**
 +
-Provide the path to the **public key file** of the SSH key you want to use for signing.
+Provide the path to the **public key file** of the SSH key you want to use for signing. Choose the command for your operating system.
 +
+.For Linux and macOS
 [source,bash]
 ----
 # Replace with the actual path to your public key file
 git config --global user.signingkey ~/.ssh/id_ed25519_sk_git_signing.pub
+----
++
+.For Windows (PowerShell)
+[source,powershell]
+----
+# Replace with the actual path to your public key file
+git config --global user.signingkey "$env:USERPROFILE\.ssh\id_ed25519_sk_git_signing.pub"
 ----
 +
 3.  **Enable Automatic Commit Signing (Recommended):**
@@ -106,6 +127,8 @@ git config --global tag.forceSignAnnotated true
 
 For Git to verify SSH signatures locally, you need an "allowed signers" file. This file maps email addresses and optional namespaces to trusted SSH public keys.
 
+==== For Linux and macOS
+
 1.  **Create the Allowed Signers File:** (e.g., `~/.ssh/allowed_signers`)
 +
 [source,bash]
@@ -120,11 +143,10 @@ The format for each line is: `email [options] ssh_public_key_string`
 +
 Get your public key string: `cat ~/.ssh/id_ed25519_sk_git_signing.pub`
 +
-Add an entry like this:
+Add an entry like this to `~/.ssh/allowed_signers`:
 +
 [source,text]
 ----
-# ~/.ssh/allowed_signers
 your.email@example.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYourPublicKeyData... Git signing key your.email@example.com
 ----
 +
@@ -136,6 +158,53 @@ your.email@example.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYo
 [source,bash]
 ----
 git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+----
+
+==== For Windows (PowerShell)
+
+On Windows, use PowerShell-idiomatic commands and the `$env:USERPROFILE` variable for paths.
+
+1.  **Create the Allowed Signers File:**
++
+[source,powershell]
+----
+# Define paths
+$sshDir = "$env:USERPROFILE\.ssh"
+$allowedSignersFile = Join-Path $sshDir "allowed_signers"
+
+# Ensure the .ssh directory and the allowed_signers file exist
+if (-not (Test-Path $sshDir)) { New-Item -Path $sshDir -ItemType Directory | Out-Null }
+if (-not (Test-Path $allowedSignersFile)) { New-Item -Path $allowedSignersFile -ItemType File | Out-Null }
+
+# Then open the file in a text editor
+notepad $allowedSignersFile
+----
++
+2.  **Add Your Key to the Allowed Signers File:**
++
+The format is identical to other platforms. First, get your public key string and copy it to the clipboard:
++
+[source,powershell]
+----
+Get-Content "$env:USERPROFILE\.ssh\id_ed25519_sk_git_signing.pub" | Set-Clipboard
+----
++
+Then, paste it into your `allowed_signers` file (opened with `notepad` in the previous step). Add your email and the `namespaces` option at the beginning of the line:
++
+[source,text]
+----
+# C:\Users\YourUser\.ssh\allowed_signers
+your.email@example.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBYourPublicKeyData... Git Signing Key
+----
++
+*Ensure `your.email@example.com` exactly matches your `git config user.email`.*
+*`namespaces="git"` is crucial for scoping the key's authority.*
++
+3.  **Tell Git Where to Find the Allowed Signers File:**
++
+[source,powershell]
+----
+git config --global gpg.ssh.allowedSignersFile "$env:USERPROFILE\.ssh\allowed_signers"
 ----
 
 image::git_signing_config_relations.png[Git Signing Configuration Relationships]
@@ -180,11 +249,20 @@ GitLab uses this list of known SSH keys to verify commit signatures. Ensure the 
 [[ssh-agent-considerations]]
 == SSH Agent Considerations
 
-You can add your FIDO2 SSH signing key's private key *handle* file to `ssh-agent`:
+You can add your FIDO2 SSH signing key's private key *handle* file to `ssh-agent`. This allows the agent to cache your FIDO2 PIN.
+
+.For Linux and macOS
 [source,bash]
 ----
 ssh-add ~/.ssh/id_ed25519_sk_git_signing # (Use the private key handle file here)
 ----
+
+.For Windows (PowerShell)
+[source,powershell]
+----
+ssh-add "$env:USERPROFILE\.ssh\id_ed25519_sk_git_signing"
+----
+
 * **PIN Caching:** If your key is PIN-protected, `ssh-agent` can cache the PIN after the first entry for a limited time or session, reducing repeated PIN prompts.
 * **Touch Still Required:** Crucially, even with `ssh-agent`, the `-O verify-required` option on your key (or the inherent nature of FIDO2) will still necessitate a physical touch on your YubiKey for each signing operation.
 * **Troubleshooting Agent Issues:**
