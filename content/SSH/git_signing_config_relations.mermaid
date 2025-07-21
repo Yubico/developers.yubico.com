@@ -1,0 +1,70 @@
+graph TD
+    %% Styling
+    classDef config fill:#e6f2ff,stroke:#005cb3,stroke-width:2px,color:#000
+    classDef file fill:#e6ffe6,stroke:#006400,stroke-width:2px,color:#000
+    classDef content fill:#fff5e6,stroke:#ff8c00,stroke-width:2px,color:#000
+    classDef process fill:#f2f2f2,stroke:#595959,stroke-width:2px,color:#000
+    classDef match fill:#ffe6e6,stroke:#d10000,stroke-width:3px,color:#000
+    classDef outcome fill:#e6f7ff,stroke:#0066cc,stroke-width:2px,color:#000
+
+    %% Configuration Section
+    subgraph GitConfig ["Git Configuration (.gitconfig)"]
+        UserEmail["user.email<br/>dev@example.com"]:::config
+        UserSigningKey["user.signingkey<br/>~/.ssh/signing_key.pub"]:::config
+        AllowedSignersPath["gpg.ssh.allowedSignersFile<br/>~/.ssh/allowed_signers"]:::config
+    end
+
+    %% File System Section
+    subgraph FileSystem ["Files on Disk"]
+        PublicKeyFile["SSH Public Key<br/>~/.ssh/signing_key.pub"]:::file
+        AllowedSignersFile["allowed_signers File<br/>~/.ssh/allowed_signers"]:::file
+    end
+
+    %% File Contents
+    subgraph FileContents ["File Contents"]
+        PubKeyContent["ssh-ed25519 AAAAC3...<br/>dev@example.com"]:::content
+        AllowedEntry["dev@example.com ssh-ed25519 AAAAC3..."]:::content
+    end
+
+    %% Process Flow
+    subgraph ProcessFlow ["Verification Process"]
+        GitCommit["Git Commit<br/>• Committer: dev@example.com<br/>• Signed with private key"]:::process
+        Verification["Git Signature Verification<br/>git log --show-signature"]:::process
+    end
+
+    %% Matching Logic
+    subgraph MatchingLogic ["Critical Matches Required"]
+        EmailMatch["Email Match<br/>user.email = allowed_signers email"]:::match
+        KeyMatch["Key Match<br/>Public key = allowed_signers key"]:::match
+    end
+
+    %% Outcome
+    VerifySuccess["✓ Signature Verified"]:::outcome
+    VerifyFail["✗ Verification Failed"]:::outcome
+
+    %% Configuration Relationships
+    UserSigningKey --> PublicKeyFile
+    AllowedSignersPath --> AllowedSignersFile
+    
+    %% File Content Relationships
+    PublicKeyFile --> PubKeyContent
+    AllowedSignersFile --> AllowedEntry
+    
+    %% Process Relationships
+    UserEmail --> GitCommit
+    UserSigningKey --> GitCommit
+    GitCommit --> Verification
+    
+    %% Matching Requirements
+    UserEmail -.->|Must match| EmailMatch
+    AllowedEntry -.->|Must match| EmailMatch
+    PubKeyContent -.->|Must match| KeyMatch
+    AllowedEntry -.->|Must match| KeyMatch
+    
+    %% Verification Flow
+    Verification --> EmailMatch
+    Verification --> KeyMatch
+    EmailMatch -->|Pass| VerifySuccess
+    KeyMatch -->|Pass| VerifySuccess
+    EmailMatch -->|Fail| VerifyFail
+    KeyMatch -->|Fail| VerifyFail
