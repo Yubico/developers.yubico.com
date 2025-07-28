@@ -1,0 +1,193 @@
+== A Developer's Guide to Deriving Keys with WebAuthn PRF and YubiKeys
+:author: Yubico Developer Program
+:revdate: 2025-07-24
+:description: A step-by-step tutorial on using the WebAuthn PRF JavaScript API and Yubico SDKs to derive encryption keys from a YubiKey. Includes expert cryptographic guidance and best practices.
+:keywords: WebAuthn, PRF, HKDF, KDF, JavaScript, Cryptography, YubiKit, Tutorial
+:page-nav_title: Developer's Guide to PRF
+
+In <<index.adoc#,Part 1>>, we introduced the power of the WebAuthn PRF extension. Now, let's get practical. This guide will walk you through the code required to derive a hardware-backed secret from a YubiKey and, most importantly, the cryptographic best practices for turning that secret into a secure encryption key.
+
+***
+## Prerequisites
+
+* A **YubiKey** that supports FIDO2 (any YubiKey 5 Series or YubiKey Bio Series).
+* A **browser** that supports the WebAuthn `prf` extension (e.g., Chrome, Edge, or the latest versions of Safari and Firefox).
+* A basic understanding of the WebAuthn registration (`create`) and authentication (`get`) ceremonies.
+
+***
+## Web Implementation: The JavaScript API
+
+Using PRF in a web app involves a three-step process: enabling the capability, deriving the raw secret, and then securely transforming that secret into a usable encryption key.
+
+### Step 1: Enabling PRF During Credential Creation
+
+To use PRF, you must first signal your intent during the registration ceremony (`navigator.credentials.create()`). The primary goal here is not to derive a secret, but to instruct the authenticator to generate and associate the necessary internal PRF key with the new credential.
+
+The most robust and minimal way to do this is to pass an empty `prf` object in the `extensions` input.
+
+[source,javascript]
+----
+// Enable the PRF capability for the new credential
+const createOptions = {
+  publicKey: {
+    // ... other required publicKey options (rp, user, challenge, pubKeyCredParams)
+    extensions: {
+      prf: {} // The presence of the empty object enables the extension.
+    }
+  }
+};
+
+const newCredential = await navigator.credentials.create(createOptions);
+
+// After creation, verify that the authenticator supports and enabled PRF.
+const prfExtensionOutput = newCredential.getClientExtensionResults()?.prf;
+if (prfExtensionOutput?.enabled) {
+  console.log('✅ PRF was successfully enabled for this new credential.');
+} else {
+  console.log('⚠️ The authenticator does not support PRF or did not enable it.');
+}
+----
+
+### Step 2: Deriving the Secret During Authentication
+
+During the `navigator.credentials.get()` call, you request the 32-byte secret by providing a `salt`.
+
+[source,javascript]
+----
+const encryptionSalt = new TextEncoder().encode('encryption-key-v1');
+
+const getOptions = {
+  publicKey: {
+    // ... other required publicKey options (challenge, rpId)
+    extensions: {
+      prf: {
+        eval: {
+          first: encryptionSalt // Request evaluation using the salt
+        }
+      }
+    }
+  }
+};
+
+const assertion = await navigator.credentials.get(getOptions);
+const prfResults = assertion.getClientExtensionResults()?.prf?.results?.first;
+----
+
+You now have a 32-byte, high-entropy secret in the `prfResults` variable. The next step is the most critical from a security engineering perspective.
+
+### Step 3: Deriving an Encryption Key with a KDF
+
+The raw 32-byte output from the PRF is excellent entropy, but it should be treated as **Input Keying Material (IKM)**, not as a final encryption key. The definitive best practice is to use a **Key Derivation Function (KDF)** to transform this IKM into a purpose-bound encryption key.
+
+The recommended KDF is **HKDF (HMAC-based Key Derivation Function)**, which is available natively in the browser through the Web Crypto API.
+
+[source,javascript]
+----
+// This is the recommended pattern for all production applications.
+if (prfResults) {
+    // 1. First, import the raw PRF result as a master key for HKDF.
+    //    This key's usage is restricted to only deriving other keys.
+    const masterKey = await crypto.subtle.importKey(
+        'raw',
+        prfResults,
+        'HKDF', // Specify that this key's algorithm is HKDF
+        false,  // This key is not extractable
+        ['deriveKey'] // It can ONLY be used to derive other keys
+    );
+
+    // 2. Now, derive a specific key for your purpose (e.g., AES-GCM).
+    const aesKey = await crypto.subtle.deriveKey(
+        {
+            name: 'HKDF',
+            salt: new Uint8Array(), // Salt can be empty if the masterKey is strong entropy, which PRF output is.
+            hash: 'SHA-256',
+            info: new TextEncoder().encode('AES-GCM Vault Encryption Key V1') // CRITICAL: Purpose-binding
+        },
+        masterKey, // The master key derived from the PRF secret
+        { name: 'AES-GCM', length: 256 }, // The properties of the key you want to create
+        false, // The final key should also be non-extractable
+        ['encrypt', 'decrypt'] // The final key's intended usages
+    );
+
+    // Now use the derived `aesKey` for all encryption/decryption.
+}
+----
+
+**Why is this the best practice?**
+
+* **Domain Separation:** The `info` parameter is crucial. It cryptographically binds the derived key to a specific purpose. If you later need an HMAC key for message signing, you can derive a new, unrelated key from the same `masterKey` by simply changing the info string (e.g., `"HMAC Authentication Key"`). This prevents a class of vulnerabilities related to key reuse.
+* **Flexibility:** This pattern allows you to derive multiple keys for different algorithms or purposes, all from a single PRF secret obtained in one user authentication event.
+* **Alignment with Standards:** This aligns with cryptographic standards like **NIST SP 800-108**, where labels and context are used to derive keys securely.
+
+***
+## Common Pitfalls & UI/UX Patterns
+
+Building a production-ready PRF implementation requires handling edge cases gracefully.
+
+### Salt Management and Key Rotation
+The PRF extension supports requesting two evaluations at once, enabling seamless key rotation. To migrate from a `v1` key to a `v2` key, request secrets for both salts, use the `v1` key to decrypt the user's data, and then immediately re-encrypt it with the `v2` key.
+
+### Handling Incompatible Authenticators
+Your application must gracefully handle logins from passkeys that don't support PRF. If `getClientExtensionResults()` is empty, the login was successful, but no secret was derived. Do not treat this as a hard error. Instead, inform the user that to access encrypted features, they must sign in with their PRF-capable authenticator (e.g., their YubiKey).
+
+***
+## Planning for Key Recovery: The Multi-Device Unlock Pattern
+
+A robust recovery strategy is non-negotiable. The gold standard for both security and user experience is a multi-device "encrypted lockbox" architecture, as documented by the `https://wwwallet.github.io/wallet-docs/docs/wallet-architecture/encryption-architecture[FUNKE/wwWallet]` project.
+
+==== The "Lockbox" Encryption Architecture
+
+Instead of encrypting all user data directly with a PRF-derived key, the architecture introduces an intermediary key for resilience.
+
+. **The Vault Encryption Key (VEK):** A single, strong, symmetric key is created on the client side to encrypt the main data vault.
+. **PRF-Derived Keys (KEKs):** Each registered YubiKey can produce its own unique **Key Encryption Key (KEK)** via the PRF extension (using the recommended KDF pattern).
+. **The Lockboxes:** The VEK itself is never stored in plaintext. Instead, for each YubiKey a user registers, its KEK is used to encrypt a copy of the VEK. The server stores the encrypted vault and a list of these encrypted VEK "lockboxes".
+
+This design allows any registered YubiKey to decrypt its corresponding "lockbox" to retrieve the VEK, which can then decrypt the main data vault. This provides immense resilience without ever needing to re-encrypt the entire vault when a key is added or removed.
+
+[plantuml, recovery-flow, svg]
+----
+@startuml
+actor User
+participant Browser
+participant Server
+
+User -> Browser: Login with YubiKey B
+Browser -> Server: WebAuthn Assertion (using Credential_B)
+Server --> Browser: Assertion Verified
+
+Browser -> Server: Request VEK for Credential_B
+Server -> Browser: Send Encrypted_VEK_B
+
+note over Browser
+  1. Derive KEK_B from YubiKey B via PRF + HKDF
+  2. Use KEK_B to decrypt Encrypted_VEK_B
+  3. Plaintext VEK is now in memory
+end note
+
+Browser -> Server: Request Encrypted Data Vault
+Server --> Browser: Send Encrypted Vault
+
+note over Browser
+  Use VEK to decrypt the vault.
+  User data is now accessible.
+end note
+
+@enduml
+----
+
+***
+## Reference Architectures
+
+The open-source `https://github.com/gunet/funke-s2-wallet-frontend[FUNKE Wallet]` project and the `https://github.com/YubicoLabs/android-prf-sample[Yubico Android PRF Sample]` are excellent references because they both correctly implement the recommended **KDF Derivation pattern**. The `https://github.com/gunet/funke-s2-wallet-frontend/blob/funke/src/services/keystore.ts[Keystore]` service in the FUNKE wallet, for example, is a model implementation of how to securely receive the PRF result and manage the derived key's lifecycle using HKDF.
+
+***
+## Beyond the Browser: `hmac-secret` in Native & Mobile Apps
+
+The underlying CTAP `hmac-secret` extension can be accessed directly in your desktop and mobile applications using Yubico's SDKs, such as **YubiKit for Android**, the **Yubico .NET SDK**, **libfido2**, and the **`python-fido2` library**. These tools provide the necessary building blocks to integrate hardware-backed key derivation into any platform.
+
+In the final part of our series, we'll go under the hood to explore the cryptography of the CTAP2 protocol itself.
+
+link:./ctap2-hmac-secret-deep-dive.adoc[Read Part 3: A Security Deep Dive into CTAP2 hmac-secret]
+
+
