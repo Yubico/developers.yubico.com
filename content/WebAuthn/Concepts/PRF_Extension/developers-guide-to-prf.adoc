@@ -8,18 +8,18 @@
 In <<index.adoc#,Part 1>>, we introduced the power of the WebAuthn PRF extension. Now, let's get practical. This guide will walk you through the code required to derive a hardware-backed secret from a YubiKey and, most importantly, the cryptographic best practices for turning that secret into a secure encryption key.
 
 ***
-## Prerequisites
+=== Prerequisites
 
 * A **YubiKey** that supports FIDO2 (any YubiKey 5 Series or YubiKey Bio Series).
 * A **browser and platform** that support the WebAuthn `prf` extension.
 * A basic understanding of the WebAuthn registration (`create`) and authentication (`get`) ceremonies.
 
 ***
-## Web Implementation: The JavaScript API
+=== Web Implementation: The JavaScript API
 
 Using PRF in a web app involves a three-step process: enabling the capability, deriving the raw secret, and then securely transforming that secret into a usable encryption key.
 
-### Checking for PRF Support
+==== Checking for PRF Support
 
 Before attempting a PRF operation, you can proactively check if the browser itself supports the extension. This allows you to progressively enhance your UI, for example, by only showing an "Encrypt with YubiKey" option if the feature is available.
 
@@ -34,7 +34,7 @@ if (window.PublicKeyCredential &&
 }
 ----
 
-### Step 1: Enabling PRF During Credential Creation
+==== Step 1: Enabling PRF During Credential Creation
 
 To use PRF, you must first signal your intent during the registration ceremony (`navigator.credentials.create()`). The primary goal here is not to derive a secret, but to instruct the authenticator to generate and associate the necessary internal PRF key with the new credential.
 
@@ -63,7 +63,7 @@ if (prfExtensionOutput?.enabled) {
 }
 ----
 
-### Step 2: Deriving the Secret During Authentication
+==== Step 2: Deriving the Secret During Authentication
 
 During the `navigator.credentials.get()` call, you request the 32-byte secret by providing a `salt`.
 
@@ -93,7 +93,7 @@ const prfResults = assertion.getClientExtensionResults()?.prf?.results?.first;
 
 You now have a 32-byte, high-entropy secret in the `prfResults` variable. The next step is the most critical from a security engineering perspective.
 
-### Step 3: Deriving an Encryption Key with a KDF
+==== Step 3: Deriving an Encryption Key with a KDF
 
 The raw 32-byte output from the PRF is excellent entropy, but it should be treated as **Input Keying Material (IKM)**, not as a final encryption key. The definitive best practice is to use a **Key Derivation Function (KDF)** to transform this IKM into a purpose-bound encryption key.
 
@@ -132,29 +132,29 @@ if (prfResults) {
 ----
 
 ***
-## Cryptographic Considerations & Caveats
+=== Cryptographic Considerations & Caveats
 
 Cryptography is subtle, and the choices of algorithms and parameters matter.
 
-. **Here Be Dragons:** The cryptographic patterns described here (HKDF to derive an AES-GCM key) are robust and follow modern best practices. However, they are provided as an example. You must perform your own threat modeling and due diligence to ensure the choices are appropriate for your specific use case.
+. **Due Diligence:** The cryptographic patterns described here (HKDF to derive an AES-GCM key) are robust and follow modern best practices. However, they are provided as an example. You must perform your own threat modeling and due diligence to ensure the choices are appropriate for your specific use case.
 . **Domain Separation:** The `info` parameter in HKDF is crucial. It cryptographically binds the derived key to a specific purpose. If you later need an HMAC key for message signing, you can derive a new, unrelated key from the same `masterKey` by simply changing the info string (e.g., `"HMAC Authentication Key"`). This prevents a class of vulnerabilities related to key reuse.
 . **Authoritative Sources:** We strongly recommend familiarizing yourself with the standards that define these cryptographic primitives:
-** link:https://tools.ietf.org/html/rfc5869[RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)]
-** link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38D.pdf[NIST SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM)]
+** link:https://tools.ietf.org/html/rfc5869[RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)] footnote:[RFC5869]
+** link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38D.pdf[NIST SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM)] footnote:[NIST-GCM]
 ** For details on the parameters for AES-GCM in the Web Crypto API, see the link:https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams[MDN Documentation].
 
 ***
-## Common Pitfalls & UI/UX Patterns
+=== Common Pitfalls & UI/UX Patterns
 
 Building a production-ready PRF implementation requires handling edge cases gracefully.
 
-### Salt Management and Key Rotation
+==== Salt Management and Key Rotation
 The choice of salt is an important design decision. For higher security, your server should generate a unique, random 32-byte salt for each new credential during registration. This salt must be stored alongside the credential ID and provided to the client during authentication. The PRF extension supports requesting two evaluations at once, enabling seamless key rotation regardless of your salt strategy.
 
-### Handling Incompatible Authenticators and User-Agents
-Support for the `prf` extension depends on the entire chain: the authenticator, the OS platform, and the client (browser). If a PRF result is not returned, do not treat it as a hard error. Instead, inform the user that to access encrypted features, they must sign in with a PRF-capable authenticator (e.g., their YubiKey) on a supported platform.
+==== Handling Incompatible Authenticators and User-Agents
+Support for the `prf` extension depends on the entire chain: the authenticator, the OS platform, and the client (browser). If a PRF result is not returned, do not treat it as a hard error. Instead, inform the user that to access encrypted features, they must sign in with their PRF-capable authenticator (e.g., their YubiKey) on a supported platform.
 
-==== PRF Compatibility (as of mid-2025)
+===== PRF Compatibility (as of mid-2025)
 
 The support landscape is evolving rapidly. The following table provides a general overview.
 
@@ -184,9 +184,9 @@ The support landscape is evolving rapidly. The following table provides a genera
 |===
 
 ***
-## Planning for Key Recovery: The Multi-Device Unlock Pattern
+=== Planning for Key Recovery: The Multi-Device Unlock Pattern
 
-A robust recovery strategy is non-negotiable. The gold standard is a multi-device "encrypted lockbox" architecture, which decouples data encryption from authentication and allows any of a user's registered YubiKeys to unlock the same data vault.
+A robust recovery strategy is non-negotiable. The recommended architecture is a multi-device "encrypted lockbox" model, which decouples data encryption from authentication and allows any of a user's registered YubiKeys to unlock the same data vault.
 
 For a deep dive into this architecture, we recommend reading the excellent documentation from the `https://wwwallet.github.io/wallet-docs/docs/wallet-architecture/encryption-architecture[FUNKE/wwWallet project]`.
 
@@ -210,7 +210,7 @@ async function createNewLockbox(newCredential, plaintextVEK) {
     const newKEK = await crypto.subtle.deriveKey(
         { name: 'HKDF', salt: new Uint8Array(), hash: 'SHA-256', info: new TextEncoder().encode('AES-GCM Vault Encryption Key V1') },
         masterKey,
-        { name: 'AES-256-GCM', length: 256 },
+        { name: 'AES-GCM', length: 256 },
         false,
         ['wrapKey'] // This key only needs to encrypt/wrap.
     );
