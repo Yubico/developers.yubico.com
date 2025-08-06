@@ -5,16 +5,14 @@
 :keywords: WebAuthn, PRF, HKDF, KDF, JavaScript, Cryptography, YubiKit, Tutorial
 :page-nav_title: Developer's Guide to PRF
 
-In <<index.adoc#,Part 1>>, we introduced the power of the WebAuthn PRF extension. Now, let's get practical. This guide will walk you through the code required to derive a hardware-backed secret from a YubiKey and, most importantly, the cryptographic best practices for turning that secret into a secure encryption key.
+In link:./index.adoc[Part 1], we introduced the power of the WebAuthn PRF extension. Now, let's get practical. This guide will walk you through the code required to derive a hardware-backed secret from a YubiKey and, most importantly, the cryptographic best practices for turning that secret into a secure encryption key.
 
-***
 === Prerequisites
 
 * A **YubiKey** that supports FIDO2 (any YubiKey 5 Series or YubiKey Bio Series).
 * A **browser and platform** that support the WebAuthn `prf` extension.
 * A basic understanding of the WebAuthn registration (`create`) and authentication (`get`) ceremonies.
 
-***
 === Web Implementation: The JavaScript API
 
 Using PRF in a web app involves a three-step process: enabling the capability, deriving the raw secret, and then securely transforming that secret into a usable encryption key.
@@ -101,7 +99,7 @@ The recommended KDF is **HKDF (HMAC-based Key Derivation Function)**, which is a
 
 [source,javascript]
 ----
-// This is the recommended pattern for all production applications.
+// This is the based on the FUNKE wwWallet keystore pattern.
 if (prfResults) {
     // 1. First, import the raw PRF result as a master key for HKDF.
     //    This key's usage is restricted to only deriving other keys.
@@ -131,7 +129,6 @@ if (prfResults) {
 }
 ----
 
-***
 === Cryptographic Considerations & Caveats
 
 Cryptography is subtle, and the choices of algorithms and parameters matter.
@@ -143,13 +140,125 @@ Cryptography is subtle, and the choices of algorithms and parameters matter.
 ** link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38D.pdf[NIST SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM)] footnote:[NIST-GCM]
 ** For details on the parameters for AES-GCM in the Web Crypto API, see the link:https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams[MDN Documentation].
 
-***
-=== Common Pitfalls & UI/UX Patterns
+=== Advanced Patterns: Key Management & Recovery
 
-Building a production-ready PRF implementation requires handling edge cases gracefully.
+Building a production-ready PRF implementation requires planning for the entire key lifecycle, including rotation and recovery.
 
-==== Salt Management and Key Rotation
-The choice of salt is an important design decision. For higher security, your server should generate a unique, random 32-byte salt for each new credential during registration. This salt must be stored alongside the credential ID and provided to the client during authentication. The PRF extension supports requesting two evaluations at once, enabling seamless key rotation regardless of your salt strategy.
+==== Key Rotation with WebAuthn PRF
+
+In any secure system, cryptographic keys should not live forever. **Key rotation** is the process of retiring an old key and replacing it with a new one. This critical practice limits the amount of data exposed if a single key is ever compromised (the "crypto-period"). The WebAuthn PRF extension was explicitly designed to make this process seamless by allowing an application to derive two different secrets from the same YubiKey in a **single user authentication event**. This mechanism is the foundation for a "decrypt with old key, re-encrypt with new key" atomic operation, a principle detailed in standards like **link:https://csrc.nist.gov/publications/detail/sp/800-57-part-1/rev-5/final[NIST SP 800-57]**.
+
+===== Code Example for Key Rotation
+
+Let's walk through rotating a Key Encryption Key (KEK) in the Envelope Encryption architecture.
+
+.Defined Variables
+* `oldSalt`: The salt associated with the key we want to retire.
+* `newSalt`: A fresh, randomly generated salt for the new key.
+* `oldEncryptedDEK`: The encrypted Data Encryption Key fetched from the server, which is protected by the old KEK.
+
+[source,javascript]
+----
+/**
+ * Performs a key rotation for a user's wrapped Data Encryption Key.
+ * @param {BufferSource} oldSalt - The salt for the key to be retired.
+ * @param {BufferSource} newSalt - The salt for the new key.
+ * @param {ArrayBuffer} oldEncryptedDEK - The encrypted DEK protected by the old key.
+ * @returns {Promise<{newEncryptedDEK: ArrayBuffer}>} - The new encrypted DEK to be stored on the server.
+ */
+async function rotateKeyEncryptionKey(oldSalt, newSalt, oldEncryptedDEK) {
+    // 1. Request PRF secrets for BOTH the old and new salts in one transaction.
+    const getOptions = {
+      publicKey: { /* ... challenge, rpId, etc. ... */,
+        extensions: { prf: { eval: { first: oldSalt, second: newSalt } } }
+      }
+    };
+    const assertion = await navigator.credentials.get(getOptions);
+    const prfResults = assertion.getClientExtensionResults().prf.results;
+
+    const oldPrfSecret = prfResults.first;
+    const newPrfSecret = prfResults.second;
+
+    // 2. Derive both the old and new Key Encryption Keys (KEKs) using HKDF.
+    const oldMasterKey = await crypto.subtle.importKey('raw', oldPrfSecret, 'HKDF', false, ['deriveKey']);
+    const oldKEK = await crypto.subtle.deriveKey(
+        { name: 'HKDF', salt: new Uint8Array(), hash: 'SHA-256', info: new TextEncoder().encode('DEK Wrapping Key V1') },
+        oldMasterKey, { name: 'AES-GCM', length: 256 }, false, ['unwrapKey']
+    );
+
+    const newMasterKey = await crypto.subtle.importKey('raw', newPrfSecret, 'HKDF', false, ['deriveKey']);
+    const newKEK = await crypto.subtle.deriveKey(
+        { name: 'HKDF', salt: new Uint8Array(), hash: 'SHA-256', info: new TextEncoder().encode('DEK Wrapping Key V2') },
+        newMasterKey, { name: 'AES-GCM', length: 256 }, false, ['wrapKey']
+    );
+
+    // 3. Use the old KEK to decrypt (unwrap) the DEK.
+    const plaintextDEK = await crypto.subtle.unwrapKey(
+        'raw', oldEncryptedDEK, oldKEK, { name: 'AES-GCM', iv: /* IV from oldEncryptedDEK */ }
+    );
+
+    // 4. Immediately use the new KEK to re-encrypt (wrap) the DEK.
+    const newEncryptedDEK = await crypto.subtle.wrapKey(
+        'raw', plaintextDEK, newKEK, { name: 'AES-GCM', iv: crypto.getRandomValues(new Uint8Array(12)) }
+    );
+
+    // 5. Return the new wrapped DEK to the server.
+    return { newEncryptedDEK };
+}
+----
+
+==== Planning for Key Recovery: Multi-Device Unlock with Envelope Encryption
+
+A robust recovery strategy is non-negotiable. The recommended architecture is **Envelope Encryption** (also known as **Key Wrapping**), which decouples data encryption from authentication and allows any of a user's registered YubiKeys to unlock the same data vault. This pattern is a standard cryptographic practice, detailed in publications like link:https://csrc.nist.gov/publications/detail/sp/800-57-part-1/rev-5/final[**NIST SP 800-57**].
+
+. **Data Encryption Key (DEK):** A single, strong, symmetric key is created on the client side to encrypt the main data vault.
+. **Key Encryption Keys (KEKs):** Each registered YubiKey can produce its own unique KEK via the PRF extension (using the recommended KDF pattern).
+. **The Envelope:** The server stores the encrypted vault and multiple encrypted copies of the DEK, each one "wrapped" by a different KEK.
+
+To implement this, your application must allow a logged-in user to add a new authenticator. After the new YubiKey is registered, the client must perform one final step: create a new wrapped DEK for it.
+
+.Defined Variables
+* `newCredential`: The `PublicKeyCredential` object from a successful `create()` call for the new YubiKey.
+* `plaintextDEK`: A `CryptoKey` object, held in the current session's memory, representing the plaintext Data Encryption Key.
+
+[source,javascript]
+----
+/**
+ * Creates a new wrapped DEK for a newly registered authenticator.
+ * @param {PublicKeyCredential} newCredential - The credential object from a successful create() call.
+ * @param {CryptoKey} plaintextDEK - The plaintext Data Encryption Key held in the current session.
+ * @returns {Promise<{credentialId: string, encryptedDEK: ArrayBuffer}>} - The data to send to the server.
+ */
+async function createWrappedDEK(newCredential, plaintextDEK) {
+    // 1. Get the PRF results from the new credential.
+    //    This requires a get() call immediately after the create() call.
+    const prfResults = await getPrfFromNewCredential(newCredential);
+
+    // 2. Derive the new Key Encryption Key (KEK) using the recommended KDF pattern.
+    const masterKey = await crypto.subtle.importKey('raw', prfResults, 'HKDF', false, ['deriveKey']);
+    const newKEK = await crypto.subtle.deriveKey(
+        { name: 'HKDF', salt: new Uint8Array(), hash: 'SHA-256', info: new TextEncoder().encode('DEK Wrapping Key V1') },
+        masterKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['wrapKey'] // This key only needs to encrypt/wrap.
+    );
+
+    // 3. Encrypt (wrap) the plaintext DEK with the new KEK.
+    const encryptedDEK = await crypto.subtle.wrapKey(
+        'raw',
+        plaintextDEK,
+        newKEK,
+        { name: 'AES-GCM', iv: crypto.getRandomValues(new Uint8Array(12)) }
+    );
+
+    // 4. Return the new wrapped DEK to be stored on the server.
+    return {
+        credentialId: newCredential.id,
+        encryptedDEK: encryptedDEK,
+    };
+}
+----
 
 ==== Handling Incompatible Authenticators and User-Agents
 Support for the `prf` extension depends on the entire chain: the authenticator, the OS platform, and the client (browser). If a PRF result is not returned, do not treat it as a hard error. Instead, inform the user that to access encrypted features, they must sign in with their PRF-capable authenticator (e.g., their YubiKey) on a supported platform.
@@ -183,56 +292,7 @@ The support landscape is evolving rapidly. The following table provides a genera
 | ✅
 |===
 
-***
-=== Planning for Key Recovery: The Multi-Device Unlock Pattern
-
-A robust recovery strategy is non-negotiable. The recommended architecture is a multi-device "encrypted lockbox" model, which decouples data encryption from authentication and allows any of a user's registered YubiKeys to unlock the same data vault.
-
-For a deep dive into this architecture, we recommend reading the excellent documentation from the `https://wwwallet.github.io/wallet-docs/docs/wallet-architecture/encryption-architecture[FUNKE/wwWallet project]`.
-
-To implement this, your application must allow a logged-in user to add a new authenticator. After the new YubiKey is registered, the client must perform one final step: create a new "lockbox" for it.
-
-[source,javascript]
-----
-/**
- * Creates a new "lockbox" for a newly registered authenticator.
- * @param {PublicKeyCredential} newCredential - The credential object from a successful create() call.
- * @param {CryptoKey} plaintextVEK - The plaintext Vault Encryption Key held in the current session.
- * @returns {Promise<{credentialId: string, encryptedVEK: ArrayBuffer}>} - The data to send to the server.
- */
-async function createNewLockbox(newCredential, plaintextVEK) {
-    // 1. Get the PRF results from the new credential.
-    //    This requires a get() call immediately after the create() call.
-    const prfResults = await getPrfFromNewCredential(newCredential);
-
-    // 2. Derive the new Key Encryption Key (KEK) using the recommended KDF pattern.
-    const masterKey = await crypto.subtle.importKey('raw', prfResults, 'HKDF', false, ['deriveKey']);
-    const newKEK = await crypto.subtle.deriveKey(
-        { name: 'HKDF', salt: new Uint8Array(), hash: 'SHA-256', info: new TextEncoder().encode('AES-GCM Vault Encryption Key V1') },
-        masterKey,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['wrapKey'] // This key only needs to encrypt/wrap.
-    );
-
-    // 3. Encrypt (wrap) the plaintext VEK with the new KEK.
-    const encryptedVEK = await crypto.subtle.wrapKey(
-        'raw',
-        plaintextVEK,
-        newKEK,
-        { name: 'AES-GCM', iv: crypto.getRandomValues(new Uint8Array(12)) }
-    );
-
-    // 4. Return the new lockbox to be stored on the server.
-    return {
-        credentialId: newCredential.id,
-        encryptedVEK: encryptedVEK,
-    };
-}
-----
-
-***
-## Beyond the Browser: `hmac-secret` in Native & Mobile Apps
+==== Beyond the Browser: `hmac-secret` in Native & Mobile Apps
 
 The underlying CTAP `hmac-secret` extension can be accessed directly in your desktop and mobile applications using Yubico's SDKs.
 
@@ -241,10 +301,12 @@ The underlying CTAP `hmac-secret` extension can be accessed directly in your des
 When using `hmac-secret` directly via a native SDK like `libfido2`, the client is responsible for its own domain separation. Unlike a browser, the SDK sends the salt you provide directly to the authenticator. It does not automatically hash it with a context string like `"WebAuthn PRF"`.
 ====
 
-### Platform-Specific Considerations
+===== Platform-Specific Considerations
+
 * **iOS:** As noted in the compatibility table, the WebAuthn `prf` extension is not currently supported for external authenticators like USB-C YubiKeys on iOS. Furthermore, the `https://developers.yubico.com/yubikit-ios/[YubiKit for iOS]` SDK does not currently provide an interface for the `hmac-secret` extension.
 
-### Yubico SDKs
+==== Yubico SDKs
+
 **YubiKit for Android**, the **Yubico .NET SDK**, **libfido2**, and the **`python-fido2` library** all provide the necessary building blocks to set the `hmac-secret` extension parameter on CTAP2 commands, giving you full control in your native app.
 
 In the final part of our series, we'll go under the hood to explore the cryptography of the CTAP2 protocol itself.
