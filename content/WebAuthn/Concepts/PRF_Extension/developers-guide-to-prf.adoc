@@ -137,7 +137,7 @@ Cryptography is subtle, and the choices of algorithms and parameters matter.
 . **Domain Separation:** The `info` parameter in HKDF is crucial. It cryptographically binds the derived key to a specific purpose. If you later need an HMAC key for message signing, you can derive a new, unrelated key from the same `masterKey` by simply changing the info string (e.g., `"HMAC Authentication Key"`). This prevents a class of vulnerabilities related to key reuse.
 . **Authoritative Sources:** We strongly recommend familiarizing yourself with the standards that define these cryptographic primitives:
 ** link:https://tools.ietf.org/html/rfc5869[RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)] footnote:[RFC5869]
-** link:https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38D.pdf[NIST SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM)] footnote:[NIST-GCM]
+** link:https://csrc.nist.gov/pubs/sp/800/38/d/final[NIST SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM)] footnote:[NIST-GCM]
 ** For details on the parameters for AES-GCM in the Web Crypto API, see the link:https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams[MDN Documentation].
 
 === Advanced Patterns: Key Management & Recovery
@@ -146,7 +146,7 @@ Building a production-ready PRF implementation requires planning for the entire 
 
 ==== Key Rotation with WebAuthn PRF
 
-In any secure system, cryptographic keys should not live forever. **Key rotation** is the process of retiring an old key and replacing it with a new one. This critical practice limits the amount of data exposed if a single key is ever compromised (the "crypto-period"). The WebAuthn PRF extension was explicitly designed to make this process seamless by allowing an application to derive two different secrets from the same YubiKey in a **single user authentication event**. This mechanism is the foundation for a "decrypt with old key, re-encrypt with new key" atomic operation, a principle detailed in standards like **link:https://csrc.nist.gov/publications/detail/sp/800-57-part-1/rev-5/final[NIST SP 800-57]**.
+In any secure system, cryptographic keys should not live forever. **Key rotation** is the process of retiring an old key and replacing it with a new one. This critical practice limits the amount of data exposed if a single key is ever compromised (the "cryptoperiod"). The WebAuthn PRF extension was explicitly designed to make this process seamless by allowing an application to derive two different secrets from the same YubiKey in a **single user authentication event**. This mechanism is the foundation for a "decrypt with old key, re-encrypt with new key" atomic operation, a principle detailed in standards like **link:https://csrc.nist.gov/publications/detail/sp/800-57-part-1/rev-5/final[NIST SP 800-57]**.
 
 ===== Code Example for Key Rotation
 
@@ -163,8 +163,9 @@ Let's walk through rotating a Key Encryption Key (KEK) in the Envelope Encryptio
  * Performs a key rotation for a user's wrapped Data Encryption Key.
  * @param {BufferSource} oldSalt - The salt for the key to be retired.
  * @param {BufferSource} newSalt - The salt for the new key.
- * @param {ArrayBuffer} oldEncryptedDEK - The encrypted DEK protected by the old key.
- * @returns {Promise<{newEncryptedDEK: ArrayBuffer}>} - The new encrypted DEK to be stored on the server.
+ * @param {ArrayBuffer} oldWrappedDEKBlob - The encrypted DEK blob from the server,
+ * which contains both the IV and the ciphertext.
+ * @returns {Promise<{newWrappedDEKBlob: ArrayBuffer}>} - The new encrypted DEK blob.
  */
 async function rotateKeyEncryptionKey(oldSalt, newSalt, oldEncryptedDEK) {
     // 1. Request PRF secrets for BOTH the old and new salts in one transaction.
@@ -193,17 +194,33 @@ async function rotateKeyEncryptionKey(oldSalt, newSalt, oldEncryptedDEK) {
     );
 
     // 3. Use the old KEK to decrypt (unwrap) the DEK.
+    // Assumes a structure of [12-byte IV][Ciphertext]
+    const oldIv = oldWrappedDEKBlob.slice(0, 12);
+    const oldCiphertext = oldWrappedDEKBlob.slice(12);
+
     const plaintextDEK = await crypto.subtle.unwrapKey(
-        'raw', oldEncryptedDEK, oldKEK, { name: 'AES-GCM', iv: /* IV from oldEncryptedDEK */ }
+        'raw',
+        oldCiphertext, // Use the parsed ciphertext
+        oldKEK,
+        { name: 'AES-GCM', iv: oldIv } // Use the parsed IV
     );
 
     // 4. Immediately use the new KEK to re-encrypt (wrap) the DEK.
-    const newEncryptedDEK = await crypto.subtle.wrapKey(
-        'raw', plaintextDEK, newKEK, { name: 'AES-GCM', iv: crypto.getRandomValues(new Uint8Array(12)) }
+    const newIv = crypto.getRandomValues(new Uint8Array(12));
+    const newWrappedDEK = await crypto.subtle.wrapKey(
+        'raw',
+        plaintextDEK,
+        newKEK,
+        { name: 'AES-GCM', iv: newIv }
     );
 
-    // 5. Return the new wrapped DEK to the server.
-    return { newEncryptedDEK };
+    // --- Step 5: Combine the new IV and new ciphertext into a single blob ---
+    const newWrappedDEKBlob = new Uint8Array(newIv.byteLength + newWrappedDEK.byteLength);
+    newWrappedDEKBlob.set(new Uint8Array(newIv), 0);
+    newWrappedDEKBlob.set(new Uint8Array(newWrappedDEK), newIv.byteLength);
+
+    // 6. Return the new wrapped DEK blob to the server.
+    return { newWrappedDEKBlob: newWrappedDEKBlob.buffer };
 }
 ----
 
@@ -227,7 +244,7 @@ To implement this, your application must allow a logged-in user to add a new aut
  * Creates a new wrapped DEK for a newly registered authenticator.
  * @param {PublicKeyCredential} newCredential - The credential object from a successful create() call.
  * @param {CryptoKey} plaintextDEK - The plaintext Data Encryption Key held in the current session.
- * @returns {Promise<{credentialId: string, encryptedDEK: ArrayBuffer}>} - The data to send to the server.
+ * @returns {Promise<{credentialId: string, encryptedDEKBlob: ArrayBuffer}>} - The data to send to the server.
  */
 async function createWrappedDEK(newCredential, plaintextDEK) {
     // 1. Get the PRF results from the new credential.
@@ -244,18 +261,27 @@ async function createWrappedDEK(newCredential, plaintextDEK) {
         ['wrapKey'] // This key only needs to encrypt/wrap.
     );
 
-    // 3. Encrypt (wrap) the plaintext DEK with the new KEK.
-    const encryptedDEK = await crypto.subtle.wrapKey(
+    // 3. Generate a fresh, random 12-byte IV for this encryption operation.
+    const newIv = crypto.getRandomValues(new Uint8Array(12));
+
+    // 4. Encrypt (wrap) the plaintext DEK with the new KEK and the generated IV.
+    const wrappedDEK = await crypto.subtle.wrapKey(
         'raw',
         plaintextDEK,
         newKEK,
-        { name: 'AES-GCM', iv: crypto.getRandomValues(new Uint8Array(12)) }
+        { name: 'AES-GCM', iv: newIv }
     );
 
-    // 4. Return the new wrapped DEK to be stored on the server.
+    // 5. Construct the final blob by prepending the IV to the ciphertext.
+    //    This is the "envelope" that will be stored on the server.
+    const encryptedDEKBlob = new Uint8Array(newIv.byteLength + wrappedDEK.byteLength);
+    encryptedDEKBlob.set(new Uint8Array(newIv), 0);
+    encryptedDEKBlob.set(new Uint8Array(wrappedDEK), newIv.byteLength);
+
+    // 6. Return the new wrapped DEK blob to be stored on the server.
     return {
         credentialId: newCredential.id,
-        encryptedDEK: encryptedDEK,
+        encryptedDEKBlob: encryptedDEKBlob.buffer,
     };
 }
 ----
