@@ -95,7 +95,7 @@ You now have a 32-byte, high-entropy secret in the `prfResults` variable. The ne
 
 The raw 32-byte output from the PRF is excellent entropy, but it should be treated as **Input Keying Material (IKM)**, not as a final encryption key. The definitive best practice is to use a **Key Derivation Function (KDF)** to transform this IKM into a purpose-bound encryption key.
 
-The recommended KDF is **HKDF (HMAC-based Key Derivation Function)**, which is available natively in the browser through the Web Crypto API.
+The recommended KDF is **HKDF (HMAC-based Key Derivation Function)** footnote:[RFC5869: link:https://tools.ietf.org/html/rfc5869[HMAC-based Extract-and-Expand Key Derivation Function (HKDF)]], which is available natively in the browser through the Web Crypto API.
 
 [source,javascript]
 ----
@@ -120,7 +120,7 @@ if (prfResults) {
             info: new TextEncoder().encode('AES-GCM Vault Encryption Key V1') // CRITICAL: Purpose-binding
         },
         masterKey, // The master key derived from the PRF secret
-        { name: 'AES-GCM', length: 256 }, // The properties of the key you want to create
+        { name: 'AES-GCM', length: 256 }, // The properties of the key you want to create footnote:[NIST-GCM: link:https://csrc.nist.gov/pubs/sp/800/38/d/final[NIST SP 800-38D Recommendation for AES-GCM]]
         false, // The final key should also be non-extractable
         ['encrypt', 'decrypt'] // The final key's intended usages
     );
@@ -135,10 +135,6 @@ Cryptography is subtle, and the choices of algorithms and parameters matter.
 
 . **Due Diligence:** The cryptographic patterns described here (HKDF to derive an AES-GCM key) are robust and follow modern best practices. However, they are provided as an example. You must perform your own threat modeling and due diligence to ensure the choices are appropriate for your specific use case.
 . **Domain Separation:** The `info` parameter in HKDF is crucial. It cryptographically binds the derived key to a specific purpose. If you later need an HMAC key for message signing, you can derive a new, unrelated key from the same `masterKey` by simply changing the info string (e.g., `"HMAC Authentication Key"`). This prevents a class of vulnerabilities related to key reuse.
-. **Authoritative Sources:** We strongly recommend familiarizing yourself with the standards that define these cryptographic primitives:
-** link:https://tools.ietf.org/html/rfc5869[RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)] footnote:[RFC5869]
-** link:https://csrc.nist.gov/pubs/sp/800/38/d/final[NIST SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM)] footnote:[NIST-GCM]
-** For details on the parameters for AES-GCM in the Web Crypto API, see the link:https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams[MDN Documentation].
 
 === Advanced Patterns: Key Management & Recovery
 
@@ -151,11 +147,6 @@ In any secure system, cryptographic keys should not live forever. **Key rotation
 ===== Code Example for Key Rotation
 
 Let's walk through rotating a Key Encryption Key (KEK) in the Envelope Encryption architecture.
-
-.Defined Variables
-* `oldSalt`: The salt associated with the key we want to retire.
-* `newSalt`: A fresh, randomly generated salt for the new key.
-* `oldEncryptedDEK`: The encrypted Data Encryption Key fetched from the server, which is protected by the old KEK.
 
 [source,javascript]
 ----
@@ -234,10 +225,6 @@ A robust recovery strategy is non-negotiable. The recommended architecture is **
 
 To implement this, your application must allow a logged-in user to add a new authenticator. After the new YubiKey is registered, the client must perform one final step: create a new wrapped DEK for it.
 
-.Defined Variables
-* `newCredential`: The `PublicKeyCredential` object from a successful `create()` call for the new YubiKey.
-* `plaintextDEK`: A `CryptoKey` object, held in the current session's memory, representing the plaintext Data Encryption Key.
-
 [source,javascript]
 ----
 /**
@@ -265,6 +252,7 @@ async function createWrappedDEK(newCredential, plaintextDEK) {
     const newIv = crypto.getRandomValues(new Uint8Array(12));
 
     // 4. Encrypt (wrap) the plaintext DEK with the new KEK and the generated IV.
+    //    For details on the parameters for AES-GCM, see the link:https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams[MDN Documentation].
     const wrappedDEK = await crypto.subtle.wrapKey(
         'raw',
         plaintextDEK,
