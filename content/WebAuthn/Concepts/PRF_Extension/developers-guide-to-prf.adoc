@@ -274,37 +274,79 @@ async function createWrappedDEK(newCredential, plaintextDEK) {
 }
 ----
 
-==== Handling Incompatible Authenticators and User-Agents
-Support for the `prf` extension depends on the entire chain: the authenticator, the OS platform, and the client (browser). If a PRF result is not returned, do not treat it as a hard error. Instead, inform the user that to access encrypted features, they must sign in with their PRF-capable authenticator (e.g., their YubiKey) on a supported platform.
+==== Navigating Platform Support and Incompatibilities
+
+The support landscape for the prf extension is evolving rapidly. A successful implementation depends on the entire chain: the authenticator (e.g., YubiKey), the OS platform, and the client (browser). When a PRF operation fails, it should be handled gracefully. Do not treat it as a hard error. Instead, inform the user that to access encrypted features, they must sign in with a compatible authenticator on a supported platform.
 
 ===== PRF Compatibility (as of mid-2025)
 
-The support landscape is evolving rapidly. The following table provides a general overview.
+The following table provides a general overview. Always test on your target platforms.
 
 [cols="1,1,1,1a"]
 |===
 | Platform | Browser(s) | Platform Authenticator (Passkey) Support | Roaming Authenticator (YubiKey) Support
 
-| **Windows 11**
+| Windows 11
 | link:https://chromestatus.com/feature/5138422207348736[Chrome, Edge], link:https://bugzilla.mozilla.org/show_bug.cgi?id=1807856[Firefox]
-| ❌ (Windows Hello lacks `hmac-secret`)
-| ✅ footnote:[Windows supports using security keys for domain-joined offline login, a non-web scenario which also leverages the underlying `hmac-secret` capability.]
+| ❌ (Windows Hello lacks hmac-secret)
+| ✅ (Also used for https://learn.microsoft.com/en-us/windows/security/identity-protection/hello-for-business/webauthn-apis[offline domain login])
 
-| **macOS 15+**
+| macOS 15+
 | link:https://webkit.org/blog/15443/news-from-wwdc24-webkit-in-safari-18-beta/[Safari 18+], Chrome
 | ✅ (iCloud Keychain)
-| ✅
+| Chrome: ✅, Safari: ❌
 
-| **iOS / iPadOS 18+**
+| iOS / iPadOS 18+
 | link:https://webkit.org/blog/15443/news-from-wwdc24-webkit-in-safari-18-beta/[Safari 18+]
 | ✅ (iCloud Keychain)
-| ❌ (External authenticators not supported for PRF)
+| ❌ (Critical Limitation) Platform does not pass extension data to/from external keys.
 
-| **Android**
+| Android
 | Chrome
 | ✅ (Google Password Manager)
 | ✅
 |===
+
+===== The Nuances of the Apple Ecosystem
+
+As of mid-2025 (iOS 18, iPadOS 18, macOS 15), Apple has implemented support for `PRF`, but with critical limitations for developers who rely on roaming authenticators like YubiKeys.
+
+**What Works: Platform Authenticators.** When a user authenticates with a passkey stored in their iCloud Keychain (using Face ID or Touch ID), a web application in Safari 18+ can successfully derive a secret using the PRF extension. This enables non-custodial encryption for users fully within the Apple passkey ecosystem.
+
+**What Doesn't Work: Roaming Authenticators (YubiKeys) on iOS/iPadOS.** Apple's current WebAuthn implementation on iOS and iPadOS does not support passing extension data, including `prf``, to or from an external, roaming authenticator. This means that even though a YubiKey fully supports the `hmac-secret` extension, an application running in Safari on an iPhone or iPad cannot use it. This is a platform-level limitation that blocks high-security use cases on Apple's mobile devices.
+
+===== A Call to Action: Help Bring Full PRF Support to Apple Platforms
+
+The WebAuthn PRF extension provides a powerful, standardized way to build end-to-end encrypted services anchored in hardware security. While Apple's initial support for platform passkeys is a welcome first step, enabling this feature for roaming authenticators like the YubiKey is critical for high-security use cases.
+
+If this feature is important for your applications, we encourage you to **let Apple know**. By filing a detailed report through their official Feedback Assistant and contributing to public discussions, you provide a direct signal to their engineering teams about the developer community's needs.
+
+**File an Official Report:**
+
+**Tool:** link:https://feedbackassistant.apple.com[Apple Feedback Assistant]
+
+**What to Request:** "Full support for WebAuthn extensions, specifically the prf extension, for roaming authenticators (security keys) connected via USB/NFC on iOS, iPadOS, and macOS."
+
+**Your Business Case:** Explain that your application relies on hardware-backed keys like the YubiKey for the highest assurance and that the lack of this feature is a blocker for your most secure features on iOS.
+
+**Track Public Progress & Add Your Voice:**
+
+**WebKit Bugzilla:** Follow the primary engineering ticket at link:https://bugs.webkit.org/show_bug.cgi?id=260343[Bug 260343 - Tracking bug for WebAuthn PRF extension].
+
+**Apple Developer Forums:** Participate in the community discussions where Apple engineers have acknowledged the feedback.
+
+link:https://forums.developer.apple.com/forums/thread/733413["Passkeys and PRF extension"]
+
+link:https://forums.developer.apple.com/forums/thread/729105["WebAuthn extension support for external authenticators on iOS"]
+
+The more developers who voice their need for this feature, the more likely it is to be prioritized.
+
+=== Reference Architectures
+
+The open-source `https://github.com/wwWallet[wwWallet]` project (a participant in the FUNKE innovation challenge) and the `https://github.com/YubicoLabs/android-prf-sample[Yubico Labs Android PRF Sample]` are excellent references because they both correctly implement the recommended **KDF Derivation pattern**.
+
+* The `https://github.com/gunet/funke-s2-wallet-frontend/blob/funke/src/services/keystore.ts[Keystore]` service in the wwWallet frontend is a model implementation of how to securely receive the PRF result and manage the derived key's lifecycle using HKDF.
+* The Android PRF sample is a valuable resource for native mobile developers, demonstrating the end-to-end flow using YubiKit for Android.
 
 ==== Beyond the Browser: `hmac-secret` in Native & Mobile Apps
 
