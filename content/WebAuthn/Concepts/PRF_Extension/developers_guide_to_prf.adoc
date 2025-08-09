@@ -95,7 +95,7 @@ You now have a 32-byte, high-entropy secret in the `prfResults` variable. The ne
 
 The raw 32-byte output from the PRF is excellent entropy, but it should be treated as **Input Keying Material (IKM)**, not as a final encryption key. The definitive best practice is to use a **Key Derivation Function (KDF)** to transform this IKM into a purpose-bound encryption key.
 
-The recommended KDF is **HKDF (HMAC-based Key Derivation Function)** footnote:[RFC5869: link:https://tools.ietf.org/html/rfc5869[HMAC-based Extract-and-Expand Key Derivation Function (HKDF)]], which is available natively in the browser through the Web Crypto API.
+The recommended KDF is **HKDF (HMAC-based Key Derivation Function)** RFC5869: link:https://tools.ietf.org/html/rfc5869[HMAC-based Extract-and-Expand Key Derivation Function (HKDF)], which is available natively in the browser through the Web Crypto API.
 
 [source,javascript]
 ----
@@ -289,7 +289,7 @@ The following table provides a general overview. Always test on your target plat
 | Windows 11
 | link:https://chromestatus.com/feature/5138422207348736[Chrome, Edge], link:https://bugzilla.mozilla.org/show_bug.cgi?id=1807856[Firefox]
 | ❌ (Windows Hello lacks hmac-secret)
-| ✅ (Also used for https://learn.microsoft.com/en-us/windows/security/identity-protection/hello-for-business/webauthn-apis[offline domain login])
+| ✅ (Also used for link:https://learn.microsoft.com/en-us/windows/security/identity-protection/hello-for-business/webauthn-apis[offline domain login])
 
 | macOS 15+
 | link:https://webkit.org/blog/15443/news-from-wwdc24-webkit-in-safari-18-beta/[Safari 18+], Chrome
@@ -323,21 +323,16 @@ If this feature is important for your applications, we encourage you to **let Ap
 
 **File an Official Report:**
 
-**Tool:** link:https://feedbackassistant.apple.com[Apple Feedback Assistant]
-
-**What to Request:** "Full support for WebAuthn extensions, specifically the prf extension, for roaming authenticators (security keys) connected via USB/NFC on iOS, iPadOS, and macOS."
-
-**Your Business Case:** Explain that your application relies on hardware-backed keys like the YubiKey for the highest assurance and that the lack of this feature is a blocker for your most secure features on iOS.
+* **Tool:** link:https://feedbackassistant.apple.com[Apple Feedback Assistant]
+* **What to Request:** "Full support for WebAuthn extensions, specifically the prf extension, for roaming authenticators (security keys) connected via USB/NFC on iOS, iPadOS, and macOS."
+* **Your Business Case:** Explain that your application relies on hardware-backed keys like the YubiKey for the highest assurance and that the lack of this feature is a blocker for your most secure features on iOS.
 
 **Track Public Progress & Add Your Voice:**
 
-**WebKit Bugzilla:** Follow the primary engineering ticket at link:https://bugs.webkit.org/show_bug.cgi?id=260343[Bug 260343 - Tracking bug for WebAuthn PRF extension].
-
-**Apple Developer Forums:** Participate in the community discussions where Apple engineers have acknowledged the feedback.
-
-link:https://forums.developer.apple.com/forums/thread/733413["Passkeys and PRF extension"]
-
-link:https://forums.developer.apple.com/forums/thread/729105["WebAuthn extension support for external authenticators on iOS"]
+* **WebKit Bugzilla:** Follow the primary engineering ticket at link:https://bugs.webkit.org/show_bug.cgi?id=260343[Bug 260343 - Tracking bug for WebAuthn PRF extension].
+* **Apple Developer Forums:** Participate in the community discussions where Apple engineers have acknowledged the feedback.
+** link:https://forums.developer.apple.com/forums/thread/733413["Passkeys and PRF extension"]
+** link:https://forums.developer.apple.com/forums/thread/729105["WebAuthn extension support for external authenticators on iOS"]
 
 The more developers who voice their need for this feature, the more likely it is to be prioritized.
 
@@ -359,7 +354,7 @@ When using `hmac-secret` directly via a native SDK like `libfido2`, the client i
 
 ===== Platform-Specific Considerations
 
-* **iOS:** As noted in the compatibility table, the WebAuthn `prf` extension is not currently supported for external authenticators like USB-C YubiKeys on iOS. Furthermore, the `https://developers.yubico.com/yubikit-ios/[YubiKit for iOS]` SDK does not currently provide an interface for the `hmac-secret` extension.
+* **iOS/iPadOS:** PRF support is currently limited. The WebAuthn prf extension doesn't work with YubiKeys in Safari, and the underlying `hmac-secret` function is not yet exposed in our modern https://github.com/Yubico/yubikit-swift[YubiKit-Swift] SDK. If you need hardware-backed key derivation in your native Swift app, please open a feature request on GitHub to help us prioritize it.
 
 ==== Yubico SDKs
 
