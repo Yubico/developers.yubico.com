@@ -1,0 +1,63 @@
+== Unlocking Application Secrets: Introducing Hardware-Backed Key Derivation with WebAuthn PRF and the YubiKey
+:author: Yubico Developer Program
+:revdate: 2025-08-07
+:description: Discover how the WebAuthn PRF extension allows you to derive strong, hardware-backed symmetric keys from a YubiKey, enabling a new generation of phishing-resistant, end-to-end encrypted applications.
+:keywords: WebAuthn, PRF, CTAP, hmac-secret, FIDO2, YubiKey, Encryption, Passkeys, Security
+:page-nav_title: Unlocking Application Secrets with PRF
+
+Developers face a fundamental challenge: how do you secure user data that needs to be encrypted on the client? Storing encryption keys on a server creates a massive target for attackers. Deriving keys from user passwords makes them vulnerable to phishing and offline cracking.
+
+This is where the FIDO2 and WebAuthn standards evolve beyond simple authentication. Today, we're exploring one of their most transformative extensions: the **Pseudo-Random Function (PRF)**. This extension allows your application to ask a YubiKey to derive a unique secret that can be used for symmetric key cryptography, all without the root keying material ever leaving the hardware.
+
+This is the new paradigm PRF enables: stateless, phishing-resistant, and anchored in hardware security.
+
+== A Real-World Reference: The wwWallet Project
+
+Instead of imagining what's possible, we can look at a real-world implementation. The open-source link:https://github.com/wwWallet[wwWallet] project, a participant in Germany's link:https://www.sprind.org/en/actions/challenges/eudi-wallet-prototypes[FUNKE] innovation challenge, is building a digital identity wallet aligned with the emerging European Digital Identity (EUDI) framework.
+
+A core component of its non-custodial security model is built on the WebAuthn PRF extension. The video below demonstrates how a user can log in and access their secure wallet using only a passkey. You can find more information and documentation at the link:https://wwwallet.github.io/wallet-docs/[wwWallet project page].
+
+
+.FUNKE Project: EUDI Wallet Demonstration
+++++
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/qLzCPlZOb2g?si=E6R_p6oieTC9jXCL" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+++++
+
+=== How YubiKeys Enable High-Assurance Security
+
+The term "non-custodial" is key to understanding the wallet's security. It means the service provider (the server) has zero knowledge of the user's secrets and cannot decrypt their data. This is enabled by deriving the wallet's encryption key on-demand from the user's authenticator via PRF.
+
+Using a YubiKey as the authenticator provides the highest level of assurance for this architecture. The root secret used in the PRF calculation is protected by the YubiKey's **tamper-resistant secure element**. This hardware-level protection guarantees that the key cannot be extracted, cloned, or compromised by malware on the client machine. The security of the user's entire digital wallet is therefore anchored to the physical possession of their YubiKey, providing robust protection against both phishing attacks and server-side data breaches.
+
+=== What is WebAuthn PRF?
+
+At a high level, the WebAuthn PRF extension (`prf`) is a mechanism that allows a Relying Party (your web application) to request a 32-byte secret from a user's FIDO2 authenticator during an authentication ceremony.
+
+Think of it as a secure, one-way calculator built into every modern YubiKey. Your application provides an input (**salt**), and the YubiKey uses its own unique, credential-specific internal key to compute a pseudo-random output (**secret**).
+
+[source,text]
+----
+[YubiKey's Internal Credential Key + Your Salt] -> HMAC-SHA-256 -> [32-byte Derived Secret]
+----
+
+The critical security guarantee is that the YubiKey's internal key—the root of this entire operation—**never leaves the secure element**. The derived secret is computed on-demand and passed to the browser, but the foundation of that secret remains securely stored in hardware.
+
+=== Why PRF is a Game-Changer for Developers
+
+This capability unlocks architectural patterns that were previously complex or insecure.
+
+* **Truly End-to-End Encrypted Applications:** Build web apps where user data (documents, messages, notes) is encrypted in the browser before being sent to your cloud storage. Your server only ever holds encrypted blobs of data. The key to decrypt that data is derived from the user's YubiKey each time they log in.
+* **Phishing-Resistant Vaults & Password Managers:** Create applications where the master key to unlock a user's vault of secrets is derived directly from their YubiKey. This completely eliminates the threat of a phishing attack stealing a master password.
+* **Secure Offline Access to Encrypted Data:** Unlock access to local data or credentials without needing a network connection. This pattern, used by both https://learn.microsoft.com/en-us/windows/security/identity-protection/hello-for-business/webauthn-apis[Microsoft for Windows login] and the https://github.com/wwWallet[wwWallet] project, involves storing sensitive data in an encrypted "envelope" on the device. When the user presents their YubiKey, the PRF-derived secret is used to decrypt this envelope locally, granting secure offline access while ensuring the master secret never leaves the hardware.
+
+While the most visible application of PRF is through the WebAuthn browser API, its power is not limited to the web. The underlying `hmac-secret` technology can be accessed directly in your native mobile and desktop applications using Yubico's comprehensive suite of SDKs, allowing you to build secure, hardware-backed key derivation into any platform.
+
+=== The Yubico Advantage: Security at the Root
+
+While the WebAuthn standard defines the `prf` extension, the strength of the derived secret depends entirely on the security of the authenticator. With a YubiKey, you are leveraging decades of hardware security engineering. The derived secret is rooted in a credential protected by the YubiKey's tamper-resistant secure element, providing the highest level of assurance that the key cannot be cloned, extracted, or tampered with.
+
+This is the future of application security: stateless, phishing-resistant, and anchored in hardware.
+
+Ready to see how it's done? In the next part of this series, we'll dive into the code for both web and native applications.
+
+link:./Developers_Guide_to_PRF.adoc[Read Part 2: A Developer's Guide to Deriving Keys with WebAuthn PRF and YubiKeys]
