@@ -153,6 +153,8 @@ class TestStandardRedirects:
             redirects = {
                 'fido2': f"{base_url}/WebAuthn/",
                 'fido2/': f"{base_url}/WebAuthn/",
+                'FIDO2': f"{base_url}/WebAuthn/",
+                'FIDO2/': f"{base_url}/WebAuthn/",
             }
             
             for path, target in redirects.items():
