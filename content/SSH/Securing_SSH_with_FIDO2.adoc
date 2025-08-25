@@ -171,7 +171,13 @@ Your public key (`~/.ssh/id_ed25519_sk.pub` or `~/.ssh/id_ecdsa_sk.pub`) is what
 [[adding-key-to-ssh-agent]]
 === Adding Your FIDO2 SSH Key to the ssh-agent (Optional)
 
-The `ssh-agent` can cache your key's details after the first use (including PIN if applicable for resident keys), so you don't have to re-enter the PIN for subsequent connections in the same session. A physical touch on the YubiKey will still typically be required by the `-O verify-required` option or `credProtect`.
+Unlike traditional software keys, FIDO2/U2F YubiKeys never export their private key material. The file you add with `ssh-add` (`id_ed25519_sk` or similar) is just a *reference handle* that tells `ssh-agent` how to talk to your security key.  
+
+This means:
+
+- `ssh-agent` can remember the reference so you don’t have to re-specify the key file each time.  
+- `ssh-agent` does **not** cache your FIDO2 PIN. If your key requires a PIN, you will be prompted for it whenever the key is used.  
+- If the key was created with `-O verify-required` or has `credProtect` set, you will still need to physically touch the YubiKey on every authentication attempt.  
 
 1.  Ensure `ssh-agent` is running:
 +
