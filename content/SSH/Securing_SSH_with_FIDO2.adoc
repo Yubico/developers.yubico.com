@@ -173,11 +173,14 @@ Your public key (`~/.ssh/id_ed25519_sk.pub` or `~/.ssh/id_ecdsa_sk.pub`) is what
 
 Unlike traditional software keys, FIDO2/U2F YubiKeys never export their private key material. The file you add with `ssh-add` (`id_ed25519_sk` or similar) is just a *reference handle* that tells `ssh-agent` how to talk to your security key.  
 
-This means:
+Important points:
 
-- `ssh-agent` can remember the reference so you don’t have to re-specify the key file each time.  
-- `ssh-agent` does **not** cache your FIDO2 PIN. If your key requires a PIN, you will be prompted for it whenever the key is used.  
-- If the key was created with `-O verify-required` or has `credProtect` set, you will still need to physically touch the YubiKey on every authentication attempt.  
+- `ssh-agent` can remember the reference so you don’t have to re-specify the key file.  
+- `ssh-agent` does **not** cache your FIDO2 PIN — if your key enforces PIN-based user verification, you’ll be prompted for it every time the key is used.  
+- Whether a **touch** is required depends on how the key was generated:  
+  - `-O verify-required` → PIN prompt required.  
+  - `-O no-touch-required` → disables the physical touch requirement.  
+  - Without `no-touch-required`, most YubiKeys will blink and require touch confirmation.  
 
 1.  Ensure `ssh-agent` is running:
 +
