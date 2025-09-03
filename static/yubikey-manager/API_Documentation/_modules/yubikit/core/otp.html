@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.core.otp &mdash; yubikey-manager 5.7.0 documentation</title>
+  <title>yubikit.core.otp &mdash; yubikey-manager 5.8.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../../_static/documentation_options.js?v=f63c98e8"></script>
       <script src="../../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -104,7 +104,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">LOG_LEVEL</span>
 
@@ -206,7 +206,8 @@
 
 <span class="n">STATUS_OFFSET_PROG_SEQ</span> <span class="o">=</span> <span class="mh">0x4</span>
 <span class="n">STATUS_OFFSET_TOUCH_LOW</span> <span class="o">=</span> <span class="mh">0x5</span>
-<span class="n">CONFIG_STATUS_MASK</span> <span class="o">=</span> <span class="mh">0x1F</span>
+
+<span class="n">CONFIG_SLOTS_PROGRAMMED_MASK</span> <span class="o">=</span> <span class="mb">0b00000011</span>  <span class="c1"># Slot 1 or 2 programmed</span>
 
 <span class="n">STATUS_PROCESSING</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="n">STATUS_UPNEEDED</span> <span class="o">=</span> <span class="mi">2</span>
@@ -219,6 +220,18 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_format_frame</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">payload</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;BH&quot;</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">calculate_crc</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0\0\0</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_sequence_updated</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">prev_seq</span><span class="p">):</span>
+    <span class="c1"># Either the sequence number is incremented by 1, or it has been reset to 0 after</span>
+    <span class="c1"># deleting the last configuration (the previous sequence was non-zero and both slots</span>
+    <span class="c1"># are now empty).</span>
+    <span class="n">next_seq</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="n">STATUS_OFFSET_PROG_SEQ</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">next_seq</span> <span class="o">==</span> <span class="n">prev_seq</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">next_seq</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="n">prev_seq</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="n">report</span><span class="p">[</span><span class="n">STATUS_OFFSET_TOUCH_LOW</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">CONFIG_SLOTS_PROGRAMMED_MASK</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="OtpProtocol">
@@ -248,9 +261,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">send_and_receive</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">slot</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_keepalive</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends a command to the YubiKey, and reads the response.</span>
 
@@ -341,15 +354,10 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_reset_state</span><span class="p">()</span>
                         <span class="k">return</span> <span class="n">response</span>
                 <span class="k">elif</span> <span class="n">status_byte</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Status response</span>
-                    <span class="n">next_prog_seq</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="n">STATUS_OFFSET_PROG_SEQ</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Incomplete transfer&quot;</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">next_prog_seq</span> <span class="o">==</span> <span class="n">prog_seq</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span>
-                        <span class="n">prog_seq</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                        <span class="ow">and</span> <span class="n">next_prog_seq</span> <span class="o">==</span> <span class="mi">0</span>
-                        <span class="ow">and</span> <span class="n">report</span><span class="p">[</span><span class="n">STATUS_OFFSET_TOUCH_LOW</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">CONFIG_STATUS_MASK</span> <span class="o">==</span> <span class="mi">0</span>
-                    <span class="p">):</span>  <span class="c1"># Note: If no valid configurations exist, prog_seq resets to 0.</span>
-                        <span class="c1"># Sequence updated, return status.</span>
+                    <span class="k">elif</span> <span class="n">_is_sequence_updated</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">prog_seq</span><span class="p">):</span>
+                        <span class="c1"># Return the updated status bytes</span>
                         <span class="k">return</span> <span class="n">report</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                     <span class="k">elif</span> <span class="n">needs_touch</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Timed out waiting for touch&quot;</span><span class="p">)</span>
@@ -363,7 +371,6 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">on_keepalive</span><span class="p">(</span><span class="n">STATUS_PROCESSING</span><span class="p">)</span>
                         <span class="n">timeout</span> <span class="o">=</span> <span class="mf">0.02</span>
-                    <span class="n">sleep</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="p">):</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_reset_state</span><span class="p">()</span>
                         <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Command cancelled by Event&quot;</span><span class="p">)</span>

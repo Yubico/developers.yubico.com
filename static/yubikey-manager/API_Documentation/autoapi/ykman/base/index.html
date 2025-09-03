@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.base &mdash; yubikey-manager 5.7.0 documentation</title>
+  <title>ykman.base &mdash; yubikey-manager 5.8.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../../_static/documentation_options.js?v=f63c98e8"></script>
       <script src="../../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -104,11 +104,24 @@
              
   <section id="module-ykman.base">
 <span id="ykman-base"></span><h1>ykman.base<a class="headerlink" href="#module-ykman.base" title="Link to this heading"></a></h1>
+<section id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ykman.base.CancelledException" title="ykman.base.CancelledException"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CancelledException</span></code></a></p></td>
+<td><p>Raised when the caller cancels an operation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ykman.base.YkmanDevice" title="ykman.base.YkmanDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">YkmanDevice</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ykman.base.REINSERT_STATUS" title="ykman.base.REINSERT_STATUS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REINSERT_STATUS</span></code></a></p></td>
+<td><p>Create a collection of name/value pairs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ykman.base.YkmanDevice" title="ykman.base.YkmanDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">YkmanDevice</span></code></a></p></td>
 <td><p>YubiKey device reference, with optional PID</p></td>
 </tr>
 </tbody>
@@ -116,6 +129,69 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ykman.base.REINSERT_STATUS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ykman.base.</span></span><span class="sig-name descname"><span class="pre">REINSERT_STATUS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ykman/base.html#REINSERT_STATUS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ykman.base.REINSERT_STATUS" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.13)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
+<p>Create a collection of name/value pairs.</p>
+<p>Example enumeration:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span><span class="w"> </span><span class="nc">Color</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">RED</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="n">BLUE</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">... </span>    <span class="n">GREEN</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>Access them by:</p>
+<ul>
+<li><p>attribute access:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Color</span><span class="o">.</span><span class="n">RED</span>
+<span class="go">&lt;Color.RED: 1&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><p>value lookup:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Color</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">&lt;Color.RED: 1&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><p>name lookup:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Color</span><span class="p">[</span><span class="s1">&#39;RED&#39;</span><span class="p">]</span>
+<span class="go">&lt;Color.RED: 1&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Enumerations can be iterated over, and know how many members they have:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">Color</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">Color</span><span class="p">)</span>
+<span class="go">[&lt;Color.RED: 1&gt;, &lt;Color.BLUE: 2&gt;, &lt;Color.GREEN: 3&gt;]</span>
+</pre></div>
+</div>
+<p>Methods can be added to enumerations, and members can have their own
+attributes – see the documentation for details.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ykman.base.REINSERT_STATUS.REMOVE">
+<span class="sig-name descname"><span class="pre">REMOVE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#ykman.base.REINSERT_STATUS.REMOVE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ykman.base.REINSERT_STATUS.REINSERT">
+<span class="sig-name descname"><span class="pre">REINSERT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#ykman.base.REINSERT_STATUS.REINSERT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ykman.base.CancelledException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ykman.base.</span></span><span class="sig-name descname"><span class="pre">CancelledException</span></span><a class="reference internal" href="../../../_modules/ykman/base.html#CancelledException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ykman.base.CancelledException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.13)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Raised when the caller cancels an operation.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="ykman.base.YkmanDevice">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ykman.base.</span></span><span class="sig-name descname"><span class="pre">YkmanDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transport</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fingerprint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ykman/base.html#YkmanDevice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ykman.base.YkmanDevice" title="Link to this definition"></a></dt>
@@ -126,7 +202,7 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>transport</strong> (<a class="reference internal" href="../../yubikit/core/index.html#yubikit.core.TRANSPORT" title="yubikit.core.TRANSPORT"><em>yubikit.core.TRANSPORT</em></a>)</p></li>
 <li><p><strong>fingerprint</strong> (<em>Hashable</em>)</p></li>
-<li><p><strong>pid</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="../../yubikit/core/index.html#yubikit.core.PID" title="yubikit.core.PID"><em>yubikit.core.PID</em></a><em>]</em>)</p></li>
+<li><p><strong>pid</strong> (<a class="reference internal" href="../../yubikit/core/index.html#yubikit.core.PID" title="yubikit.core.PID"><em>yubikit.core.PID</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -136,9 +212,32 @@
 <dd><p>Return the PID of the YubiKey, if available.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Optional[<a class="reference internal" href="../../yubikit/core/index.html#yubikit.core.PID" title="yubikit.core.PID">yubikit.core.PID</a>]</p>
+<dd class="field-odd"><p><a class="reference internal" href="../../yubikit/core/index.html#yubikit.core.PID" title="yubikit.core.PID">yubikit.core.PID</a> | None</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ykman.base.YkmanDevice.reinsert">
+<span class="sig-name descname"><span class="pre">reinsert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reinsert_cb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ykman/base.html#YkmanDevice.reinsert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ykman.base.YkmanDevice.reinsert" title="Link to this definition"></a></dt>
+<dd><p>Wait for the user to remove and reinsert the YubiKey.</p>
+<p>This may be required to perform certain operations, such as FIDO reset.</p>
+<p>This method will attempt to verify that the same YubiKey is reinserted,
+but it will only fail when this is definitely not the case (eg. if the serial
+number does not match).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reinsert_cb</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#ykman.base.REINSERT_STATUS" title="ykman.base.REINSERT_STATUS"><em>REINSERT_STATUS</em></a><em>]</em><em>, </em><em>None</em><em>] </em><em>| </em><em>None</em>) – Callback to indicate the the YubiKey has been removed,</p></li>
+<li><p><strong>event</strong> (<a class="reference external" href="https://docs.python.org/3/library/threading.html#threading.Event" title="(in Python v3.13)"><em>threading.Event</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p>and should be reinserted.
+:param event: Optional event to cancel (throws CancelledException).</p>
 </dd></dl>
 
 <dl class="py method">
