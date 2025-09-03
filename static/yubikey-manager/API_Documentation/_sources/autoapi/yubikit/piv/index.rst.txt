@@ -25,6 +25,7 @@ Attributes
    yubikit.piv.INS_PUT_DATA
    yubikit.piv.INS_MOVE_KEY
    yubikit.piv.INS_GET_METADATA
+   yubikit.piv.INS_GET_SERIAL
    yubikit.piv.INS_ATTEST
    yubikit.piv.INS_SET_PIN_RETRIES
    yubikit.piv.INS_RESET
@@ -98,9 +99,13 @@ Functions
 Module Contents
 ---------------
 
-.. py:data:: PublicKey
+.. py:type:: PublicKey
+   :canonical: rsa.RSAPublicKey | ec.EllipticCurvePublicKey | ed25519.Ed25519PublicKey | x25519.X25519PublicKey
 
-.. py:data:: PrivateKey
+
+.. py:type:: PrivateKey
+   :canonical: rsa.RSAPrivateKeyWithSerialization | ec.EllipticCurvePrivateKeyWithSerialization | ed25519.Ed25519PrivateKey | x25519.X25519PrivateKey
+
 
 .. py:class:: ALGORITHM
 
@@ -680,6 +685,10 @@ Module Contents
    :value: 247
 
 
+.. py:data:: INS_GET_SERIAL
+   :value: 248
+
+
 .. py:data:: INS_ATTEST
    :value: 249
 
@@ -960,7 +969,7 @@ Module Contents
 .. py:class:: Chuid
 
    .. py:attribute:: buffer_length
-      :type:  Optional[int]
+      :type:  int | None
       :value: None
 
 
@@ -970,19 +979,19 @@ Module Contents
 
 
    .. py:attribute:: agency_code
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
 
 
    .. py:attribute:: organizational_identifier
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
 
 
    .. py:attribute:: duns
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
 
@@ -996,7 +1005,7 @@ Module Contents
 
 
    .. py:attribute:: authentication_key_map
-      :type:  Optional[bytes]
+      :type:  bytes | None
       :value: None
 
 
@@ -1006,12 +1015,14 @@ Module Contents
 
 
    .. py:attribute:: lrc
-      :type:  Optional[int]
+      :type:  int | None
       :value: None
 
 
 
-   .. py:method:: __post_init__()
+   .. py:property:: tbs_bytes
+      :type: bytes
+
 
 
    .. py:method:: __bytes__()
@@ -1063,6 +1074,12 @@ Module Contents
 
       This deletes all user-data from the PIV application, and resets the default
       values for PIN, PUK, and management key.
+
+
+
+   .. py:method:: get_serial()
+
+      Get the serial number of the YubiKey.
 
 
 
