@@ -15,285 +15,233 @@
 
 Secure Shell (SSH) is a cornerstone of secure remote access and operations for developers. Traditionally, SSH relies on public-key cryptography, where private keys are stored as files on your computer. While secure, these files can be targets for theft or unauthorized access.
 
-FIDO2 security keys, such as the YubiKey, revolutionize SSH security by ensuring your **private SSH keys never leave the hardware security key**. This provides robust protection against malware, phishing, and remote attacks targeting your SSH credentials. Furthermore, FIDO2 mandates **physical presence (a touch to your YubiKey) for cryptographic operations**, adding a critical layer of security that prevents unauthorized use even if your workstation is compromised.
+FIDO2 security keys, such as the YubiKey, strengthen SSH security by ensuring your **private SSH keys never leave the hardware security key**. This provides strong protection against malware, phishing, and remote attacks targeting your SSH credentials.  
 
-This guide details how to generate and use SSH keys directly on your FIDO2 security key, leveraging the capabilities built into OpenSSH. We'll cover key generation, platform-specific setup, integration with services like GitHub, and important security best practices.
+FIDO2 also requires **user presence (a touch on your YubiKey) for cryptographic operations**, and can optionally enforce **user verification (PIN entry)**. These safeguards ensure that even if your workstation is compromised, attackers cannot use your SSH keys without your explicit physical approval.
+
+This guide shows how to generate and use SSH keys directly on your FIDO2 security key with OpenSSH. It covers key generation, platform setup, GitHub integration, and security best practices.
 
 [[prerequisites]]
 === Prerequisites
 
-Before you begin, ensure you have the following:
+You will need:
 
 * **A FIDO2 Security Key:** Any YubiKey with FIDO2 support (YubiKey 5 Series, YubiKey Bio Series, Security Key Series by Yubico).
 * **OpenSSH Client:**
-** OpenSSH version **8.2 or newer** is required for basic FIDO2 hardware-backed key support.
-** OpenSSH version **8.3 or newer** is recommended for the `verify-required` option, which mandates user verification for each use.
-* **YubiKey Manager:** While not strictly required for all SSH operations once keys are generated, YubiKey Manager is essential for setting or changing your FIDO2 PIN on the YubiKey, which is highly recommended for resident keys. Download it from the link:https://www.yubico.com/support/download/yubikey-manager/[Yubico website].
+** OpenSSH **8.2 or newer** is required for FIDO2 hardware-backed keys.
+** OpenSSH **8.3 or newer** is recommended for the `verify-required` option, which enforces user verification (PIN) for each operation.
+* **YubiKey Manager:** Required for setting or changing your FIDO2 PIN. Download it from the link:https://www.yubico.com/support/download/yubikey-manager/[Yubico website].
 
 [[platform-specific-openssh]]
 ==== Platform-Specific OpenSSH Setup
 
-Ensure your OpenSSH client meets the version requirements. Here's how to check and update on common platforms:
+Check your OpenSSH version:
 
-* **Check your version:**
-+
-Open your **Command Prompt**, **Powershell**, or **Terminal** and run:
-+
 [source,bash]
 ----
 ssh -V
 ----
-+
+
+Update if necessary:
+
 * **Linux:**
-+
-Most modern Linux distributions include a sufficiently recent OpenSSH client. If not, update via your package manager:
 +
 [source,bash]
 ----
-# For Debian/Ubuntu
+# Debian/Ubuntu
 sudo apt update && sudo apt install openssh-client
 
-# For Fedora/RHEL/CentOS
-sudo dnf check-update && sudo dnf install openssh-clients
+# Fedora/RHEL/CentOS
+sudo dnf install openssh-clients
 ----
-+
+
 * **macOS:**
 +
-The OpenSSH version bundled with macOS may be outdated. It's **strongly recommended** to install the latest version using Homebrew:
+The bundled OpenSSH may be outdated. Install the latest with Homebrew:
 +
 [source,bash]
 ----
 brew install openssh
 ----
 +
-After installation, ensure your `PATH` prioritizes the Homebrew version (e.g., by adding `/usr/local/bin` or `/opt/homebrew/bin` for Apple Silicon to the beginning of your `PATH`). You may need to restart your terminal or source your shell profile.
+Update your `PATH` to prioritize the Homebrew version (`/usr/local/bin` or `/opt/homebrew/bin`).
 
 * **Windows:**
 +
-Windows 10 (version 1809 and later) and Windows 11 include an OpenSSH client. Ensure it's installed and up-to-date:
-** **Via Optional Features:** Settings > System > Optional features > Search for "OpenSSH Client" and install if not present.
-** **Via PowerShell (as Administrator):**
+Windows 10 (1809+) and Windows 11 include an OpenSSH client. Confirm with:
 +
 [source,powershell]
 ----
-# To check if installed
 Get-WindowsCapability -Online | ? Name -like 'OpenSSH.Client*'
-
-# To install
+----
++
+If missing, install via Settings > System > Optional features or with:
++
+[source,powershell]
+----
 Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
 ----
 +
-For FIDO2 features, especially on Windows, using Windows Subsystem for Linux (WSL) 2 with a modern Linux distribution can often provide a more seamless experience if the native Windows OpenSSH client has limitations.
+For FIDO2 features, Windows Subsystem for Linux (WSL 2) often provides the best compatibility.
 
 [[setting-fido2-pin]]
-=== Setting or Changing Your FIDO2 PIN (Recommended)
+=== Setting or Changing Your FIDO2 PIN
 
-For enhanced security, especially with resident keys, set a FIDO2 PIN on your YubiKey using YubiKey Manager:
+For stronger security, set a FIDO2 PIN on your YubiKey:
 
-.  Insert your YubiKey.
-.  Open YubiKey Manager.
-.  Navigate to Applications > FIDO2.
-.  Click "Set PIN" (or "Change PIN" if one is already set).
-.  Follow the prompts. Choose a secure, memorable PIN.
+. Insert your YubiKey.
+. Open YubiKey Manager.
+. Navigate to Applications > FIDO2.
+. Select "Set PIN" (or "Change PIN").
+. Follow the prompts to create a secure PIN.
 
-This PIN will be required when generating resident keys and potentially when using them, depending on key generation options.
+The PIN will be required when generating resident keys and when user verification is enforced.
 
 [[ssh-key-generation]]
 === Generating Your FIDO2 SSH Key
 
-You can generate two main types of FIDO2-backed SSH keys: `ecdsa-sk` or `ed25519-sk`.
+You can generate two types of FIDO2-backed SSH keys:
 
-* `ecdsa-sk`: Elliptic Curve DSA with FIDO2. Supported on YubiKeys with FIDO2.
-* `ed25519-sk`: EdDSA with FIDO2. More modern, generally preferred for performance and security. Requires YubiKey firmware **5.2.3 or higher**.
+* `ecdsa-sk`: Supported on all FIDO2 YubiKeys.
+* `ed25519-sk`: Modern and preferred, requires YubiKey firmware **5.2.3+**.
 
 [[generating-ed25519sk]]
 ==== Generating an `ed25519-sk` Key (Recommended)
 
-This is the recommended key type if your YubiKey firmware supports it.
-
 [source,bash]
 ----
-ssh-keygen -t ed25519-sk -O resident -O verify-required -C "your_email@example.com or a comment"
+ssh-keygen -t ed25519-sk -O resident -O verify-required -C "your_email@example.com"
 ----
 
 [[generating-ecdsask]]
 ==== Generating an `ecdsa-sk` Key
 
-If your YubiKey firmware is older than 5.2.3, or for specific compatibility reasons:
+Use if your YubiKey firmware is older than 5.2.3:
 
 [source,bash]
 ----
-ssh-keygen -t ecdsa-sk -O resident -O verify-required -C "your_email@example.com or a comment"
+ssh-keygen -t ecdsa-sk -O resident -O verify-required -C "your_email@example.com"
 ----
 
 [[keygen-options-explained]]
-==== Key Generation Options Explained:
+==== Key Generation Options Explained
 
-* `-t ed25519-sk` or `-t ecdsa-sk`: Specifies the key type.
-* `-O resident` (Highly Recommended):
-** This option creates a **discoverable credential** (resident key), meaning the private key handle is stored *on the YubiKey itself*.
-** **Benefit:** True portability. You can use your YubiKey on different computers without needing to copy any private key files. You'll typically regenerate the public key file from the YubiKey on a new machine (see <<using-resident-keys-new-machine>>).
-** Requires a FIDO2 PIN to be set on the YubiKey beforehand. You will be prompted for your FIDO2 PIN during generation.
-* `-O verify-required` (Highly Recommended, requires OpenSSH 8.3+):
-** Ensures that every time the SSH key is used, you must physically touch your YubiKey to approve the operation.
-** If a PIN was set during generation of a resident key, it might also be required by the authenticator.
-* `-O application=ssh:<name>` (Optional, for multiple resident keys):
-** Allows you to specify an application string, useful if you plan to store multiple resident SSH keys on the same YubiKey for different services (e.g., `ssh:github_personal`, `ssh:work_gitlab`).
-** Example: `ssh-keygen -t ed25519-sk -O resident -O verify-required -O application=ssh:my_github -C "GitHub Key"`
-* `-C "comment"`: A comment to help you identify the key, often an email address or description.
+* `-t ed25519-sk` or `-t ecdsa-sk`: Key type.
+* `-O resident`: Creates a **resident key**, stored on the YubiKey itself. Enables portability across machines. Requires a PIN.
+* `-O verify-required`: Requires both PIN entry and a physical touch for every use. (OpenSSH 8.3+).
+* `-O application=ssh:<name>`: Optional label if storing multiple SSH credentials.
+* `-C "comment"`: Helps identify the key.
 
-If you choose *not* to use `-O resident`, a non-resident key is created. The private key handle is stored as a file on your computer (e.g., `~/.ssh/id_ed25519_sk`). To ensure user verification is still required for each use, you should use the `-O verify-required` option:
-
-[source,bash]
-----
-ssh-keygen -t ed25519-sk -O verify-required -C "Non-resident key comment"
-----
-This maintains a high level of security even for non-resident keys.
+If you omit `-O resident`, a non-resident key is created. Its private key handle is stored on disk, but still requires user presence (touch). Use `-O verify-required` to enforce PIN verification.
 
 [[key-generation-process]]
 ==== The Key Generation Process
 
-When you run `ssh-keygen` with these options:
+1. Prompt to touch your YubiKey (user presence).
+2. If creating a resident key, prompt for your FIDO2 PIN (user verification).
+3. Choose a save location for the key handle file.
+   * This file does not contain the private key—only a reference handle.
+4. Optionally set a local passphrase for the handle file.
 
-1.  You'll be prompted to touch your YubiKey to confirm presence.
-2.  If generating a resident key (`-O resident`), you'll be prompted for your FIDO2 PIN.
-3.  You'll be asked where to save the key. Press Enter for the default (`~/.ssh/id_ed25519_sk` or `~/.ssh/id_ecdsa_sk`).
-    * The private key file (`id_ed25519_sk`) generated for a FIDO2 key is small; it's a handle or pointer to the key material on the YubiKey, not the actual private key.
-    * The public key is saved in `id_ed25519_sk.pub`.
-4.  You'll be asked for a passphrase for the key file.
-    * For FIDO2 keys, especially resident ones requiring PIN and touch, this local file passphrase offers an additional layer of local protection for the *key handle file* but doesn't encrypt the key material on the YubiKey itself. You can choose to set one or leave it empty.
-
-Your public key (`~/.ssh/id_ed25519_sk.pub` or `~/.ssh/id_ecdsa_sk.pub`) is what you'll provide to servers or services like GitHub.
+The `.pub` file is your public key for servers or GitHub.
 
 [[adding-key-to-ssh-agent]]
 === Adding Your FIDO2 SSH Key to the ssh-agent (Optional)
 
-The `ssh-agent` can cache your key's details after the first use. A physical touch on the YubiKey will still typically be required by the `-O verify-required` option.
+Unlike software keys, FIDO2 keys never export private key material. The file added with `ssh-add` is just a reference handle.
 
-1.  Ensure `ssh-agent` is running:
-+
+Key points:
+
+* `ssh-agent` remembers the reference, so you don’t need to re-specify the file.
+* The agent never caches your PIN—you’ll be prompted if verification is required.
+* A touch (presence) is always required unless `-O no-touch-required` was explicitly set.
+
+To add your key:
+
 [source,bash]
 ----
 eval "$(ssh-agent -s)"
-----
-+
-2.  Add your SSH key file to the agent:
-+
-[source,bash]
-----
 ssh-add ~/.ssh/id_ed25519_sk
 ----
-+
-(Replace with your key file name if different). You'll be prompted for your FIDO2 PIN (if set and key is resident) and to touch your YubiKey.
+
+You will be prompted for your PIN (if required) and to touch your YubiKey.
 
 [[integrating-with-github]]
 === Integrating with GitHub (and other services)
 
-To use your new FIDO2 SSH key with GitHub or other services that support SSH authentication:
-
-1.  **Copy Your Public Key:**
-+
-Get the content of your *public* key file.
+1. Copy your public key:
 +
 [source,bash]
 ----
-# On Linux (requires xclip)
+# Linux
 cat ~/.ssh/id_ed25519_sk.pub | xclip -selection clipboard
-
-# On macOS
+# macOS
 pbcopy < ~/.ssh/id_ed25519_sk.pub
-
-# On Windows (PowerShell)
+# Windows
 Get-Content $env:USERPROFILE\.ssh\id_ed25519_sk.pub | Set-Clipboard
 ----
 +
-Alternatively, open the `.pub` file in a text editor and copy its content.
-+
-2.  **Add the Public Key to GitHub:**
-    * Log in to your GitHub account.
-    * Go to Settings (click your profile picture in the top-right corner).
-    * In the user settings sidebar, click "SSH and GPG keys."
-    * Click "New SSH key" or "Add SSH key."
-    * In the "Title" field, add a descriptive label (e.g., "My YubiKey 5C - ed25519-sk").
-    * Paste your copied public key into the "Key" field.
-    * Click "Add SSH key."
-3.  **Test the Connection:**
+2. Add it in GitHub:
+   * Go to **Settings > SSH and GPG keys**.
+   * Select **New SSH key**.
+   * Paste the key, label it, and save.
+3. Test:
 +
 [source,bash]
 ----
 ssh -T git@github.com
 ----
 +
-You should see a message like:
-+
-`Hi YourUsername! You've successfully authenticated, but GitHub does not provide shell access.`
-You will be prompted to touch your YubiKey (and enter your FIDO2 PIN if required by the key/agent state).
-
+You should be prompted to touch your YubiKey (and enter your PIN if required).
 
 image::conceptual_ssh_fido2_flow.png[Conceptual SSH FIDO2 Flow]
 
 [[using-resident-keys-new-machine]]
 === Using Resident Keys on a New Machine
 
-If you generated a resident key (`-O resident`), its main advantage is portability. To use it on a new computer where you haven't generated the key:
+Resident keys allow portability. On a new machine:
 
-1.  **Ensure Prerequisites:** The new machine must have a compatible OpenSSH client and your YubiKey drivers (usually handled by the OS).
-2.  **Retrieve Public Key Handles from YubiKey:**
-+
-Insert your YubiKey. Run:
+1. Ensure OpenSSH 8.2+ is installed.
+2. Insert your YubiKey and run:
 +
 [source,bash]
 ----
 ssh-keygen -K
 ----
 +
-This command will prompt for your FIDO2 PIN. It will then list any resident SSH key handles on the YubiKey and write their corresponding public key files (and empty private key handle files) to your `~/.ssh/` directory (e.g., `~/.ssh/id_ed25519_sk_rk.pub` and `~/.ssh/id_ed25519_sk_rk`).
-+
-3.  **Use as Normal:** You can now use this key with `ssh` or add it to your `ssh-agent` on the new machine. The private key handle file generated by `ssh-keygen -K` points to the key on your YubiKey.
+This retrieves resident keys and creates handle and public key files.
+3. Use normally or add to `ssh-agent`.
 
 [[troubleshooting]]
 === Troubleshooting
 
-* **"Permission denied (publickey)" or No prompt for YubiKey:**
-** **Verify Key on Server/Service:** Ensure the correct public key (`.pub` file) has been added to the server's `~/.ssh/authorized_keys` file or to your GitHub (or other service) account.
-** **SSH Verbose Mode:** Use `ssh -vvv user@host` to get detailed debugging output. Look for lines related to key offerings and authentication methods.
-** **SSH Agent:** If using `ssh-agent`, ensure the correct key has been added (`ssh-add -l`). Sometimes, other keys might be tried first. You can specify the key explicitly: `ssh -i ~/.ssh/your_fido_key user@host`.
-** **File Permissions:** Ensure your `~/.ssh` directory has `700` permissions and your SSH key files (like `id_ed25519_sk`) have `600` permissions.
-** **YubiKey Not Detected:** Ensure your YubiKey is properly inserted and recognized by the OS. Try re-inserting it. Check `lsusb` (Linux) or Device Manager (Windows).
-** **Correct Key Handle:** If using `ssh-keygen -K`, ensure you are using the correct generated key handle file with your SSH commands or `ssh-add`.
-
-* **Problems with macOS Bundled OpenSSH:**
-+    
-If you experience issues on macOS, it's very likely due to the bundled OpenSSH version. Install the latest via Homebrew as described in <<platform-specific-openssh>>.
-+
-* **"Unsupported key type" or "Key enrollment failed: invalid format":**
-+
-Your OpenSSH client version might be too old. Verify it meets the prerequisites.
-+
-* **PIN Prompts or Issues:**
-** If you set a FIDO2 PIN, it will be required for resident key operations.
-** If you forget your FIDO2 PIN, you'll need to reset the FIDO2 application on your YubiKey using YubiKey Manager. *This will delete all FIDO2 credentials (including any resident SSH keys and passkeys for websites) stored on the YubiKey.*
-
-* **Identifying Keys on the YubiKey:**
-+
-If you have multiple resident keys, `ssh-keygen -K` will list them. The comment (`-C` value) you used during generation can help identify them if the filenames aren't descriptive enough. The `-O application=ssh:<name>` option is also key here.
-+
-* **GitHub-Specific Issues:**
-If you're sure your SSH setup with the YubiKey is correct locally but GitHub connections fail, consult link:https://docs.github.com/en/authentication/troubleshooting-ssh[GitHub's SSH troubleshooting documentation].
+* **Permission denied / no prompt:**  
+Verify the correct public key is installed. Use `ssh -vvv` for debugging.  
+* **macOS issues:**  
+Install latest OpenSSH via Homebrew.  
+* **Unsupported key type / invalid format:**  
+Ensure OpenSSH 8.2+ (8.3+ for verify-required).  
+* **PIN issues:**  
+If forgotten, reset the FIDO2 application in YubiKey Manager. *This deletes all FIDO2 credentials.*  
+* **Multiple keys:**  
+Use `ssh-keygen -K` to list resident keys. Use `-O application=ssh:<name>` for clarity.  
+* **GitHub issues:**  
+See link:https://docs.github.com/en/authentication/troubleshooting-ssh[GitHub’s SSH troubleshooting guide].
 
 [[security-considerations]]
 === Important Security Considerations
 
-* **Physical Security of Your YubiKey:** Your YubiKey *is* your key. Protect it physically. Consider a backup YubiKey configured with the same capabilities if access is critical.
-* **FIDO2 PIN Complexity:** Choose a strong, unique PIN for your YubiKey's FIDO2 application.
-* **SSH Agent Forwarding (`ssh -A`):**
-** *Avoid SSH agent forwarding unless absolutely necessary and you fully understand the risks.** When agent forwarding is enabled, the ability to use your SSH keys (via the agent) is extended to the remote server. If that server is compromised, an attacker could potentially use your forwarded agent connection to authenticate to other systems as you. This can undermine some of the security benefits of a hardware-bound key, even though the private key itself doesn't leave the YubiKey.
-* **Workstation Security:** While FIDO2 keys provide excellent protection, maintain good overall security hygiene on your workstations (updates, endpoint protection, etc.).
-* **Non-Resident Key Files:** If you generate non-resident keys, the private key *handle file* (e.g., `~/.ssh/id_ed25519_sk`) on your disk is sensitive. Protect it with a strong file passphrase and appropriate file permissions, even though the actual private key material remains on the YubiKey.
+* **Protect your YubiKey physically.** Consider a backup key.  
+* **Use a strong, unique PIN** for FIDO2.  
+* **Avoid SSH agent forwarding (`ssh -A`)** unless necessary. Forwarding exposes your keys’ usability to remote systems.  
+* **Secure your workstation.** Keep it patched and monitored.  
+* **Protect non-resident key handle files.** Use a passphrase and restrict file permissions.
 
 [[conclusion]]
 === Conclusion
 
-Using your FIDO2 security key for SSH authentication significantly enhances your security posture by binding your SSH private keys to hardware and requiring user presence for operations. By following this guide, you can effectively set up and use YubiKeys for SSH with OpenSSH and integrate them into your development workflows with services like GitHub, providing a robust defense against common threats.
+Using a FIDO2 security key like the YubiKey for SSH authentication ensures your private keys remain hardware-bound and safe. By enforcing both user presence (touch) and user verification (PIN), you gain strong protection against credential theft and misuse.  
 
-Always refer to the latest Yubico and OpenSSH documentation for the most up-to-date information and features.
+Following this guide, you can confidently integrate YubiKeys with OpenSSH and GitHub, improving your security posture and reducing risks from common attacks.  
+
+Always consult the latest Yubico and OpenSSH documentation for updates and new capabilities.
