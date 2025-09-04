@@ -26,7 +26,7 @@ fi
 echo "Setting up Python virtual environment..."
 # Create virtual environment if it doesn't exist
 if [ ! -d "env" ]; then
-    python -m venv env
+    python3 -m venv env
 fi
 
 # Activate virtual environment
@@ -78,7 +78,7 @@ if [ "$ENV" = "stage" ]; then
         # Check if token is valid if token_utils.py exists
         if [ -f "token_utils.py" ]; then
             echo "Checking token validity..."
-            python -c "from token_utils import check_id_token; is_valid, msg = check_id_token(); print(f'Token valid: {is_valid}'); print(msg); exit(0 if is_valid else 1)" || {
+            python3 -c "from token_utils import check_id_token; is_valid, msg = check_id_token(); print(f'Token valid: {is_valid}'); print(msg); exit(0 if is_valid else 1)" || {
                 echo "ERROR: Token is invalid or expired. Please generate a new token."
                 exit 1
             }
