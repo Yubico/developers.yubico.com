@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.core &mdash; yubikey-manager 5.7.0 documentation</title>
+  <title>yubikit.core &mdash; yubikey-manager 5.8.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/documentation_options.js?v=f63c98e8"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -103,15 +103,15 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span><span class="p">,</span> <span class="n">unique</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">ClassVar</span><span class="p">,</span>
     <span class="n">Hashable</span><span class="p">,</span>
     <span class="n">NamedTuple</span><span class="p">,</span>
-    <span class="n">Optional</span><span class="p">,</span>
     <span class="n">TypeVar</span><span class="p">,</span>
-    <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -267,7 +267,7 @@
 <div class="viewcode-block" id="PID.of">
 <a class="viewcode-back" href="../../autoapi/yubikit/core/index.html#yubikit.core.PID.of">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">of</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key_type</span><span class="p">:</span> <span class="n">YUBIKEY</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">:</span> <span class="n">USB_INTERFACE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PID&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">of</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key_type</span><span class="p">:</span> <span class="n">YUBIKEY</span><span class="p">,</span> <span class="n">interfaces</span><span class="p">:</span> <span class="n">USB_INTERFACE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PID</span><span class="p">:</span>
         <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">USB_INTERFACE</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">interfaces</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">[</span><span class="n">key_type</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">]</span></div>
 
@@ -308,7 +308,7 @@
 <div class="viewcode-block" id="YubiKeyDevice.open_connection">
 <a class="viewcode-back" href="../../autoapi/yubikit/core/index.html#yubikit.core.YubiKeyDevice.open_connection">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">open_connection</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">T_Connection</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">T_Connection</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">connection_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">T_Connection</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">T_Connection</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T_Connection</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens a connection to the YubiKey&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported Connection type&quot;</span><span class="p">)</span></div>
@@ -386,7 +386,7 @@
 <span class="sd">    version of the library.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attempts_remaining</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attempts_remaining</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Invalid PIN/PUK, </span><span class="si">{</span><span class="n">attempts_remaining</span><span class="si">}</span><span class="s2"> remaining&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attempts_remaining</span> <span class="o">=</span> <span class="n">attempts_remaining</span></div>
 
@@ -394,7 +394,7 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_OverrideVersion</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Version</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_version</span><span class="p">:</span> <span class="n">Version</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Overriding version check for development devices with </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -486,7 +486,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_value_offset</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ln</span><span class="p">]</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tag_or_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tag_or_data</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This allows creation by passing either binary data, or tag and value.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tag_or_data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># Tag and (optional) value</span>
             <span class="n">tag</span> <span class="o">=</span> <span class="n">tag_or_data</span>
@@ -511,7 +511,7 @@
 
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">Tlv</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_or_data</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_ln</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">_tlv_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="n">end</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect TLV length&quot;</span><span class="p">)</span>
@@ -558,6 +558,69 @@
         <span class="k">return</span> <span class="n">tlv</span><span class="o">.</span><span class="n">value</span></div>
 </div>
 
+
+
+<div class="viewcode-block" id="Oid">
+<a class="viewcode-back" href="../../autoapi/yubikit/core/index.html#yubikit.core.Oid">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Oid</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dotted_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">40</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">%</span> <span class="mi">40</span><span class="p">]</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="p">(</span><span class="n">num</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span> <span class="mh">0x7F</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="mh">0x80</span> <span class="o">&amp;</span> <span class="n">x</span><span class="p">:</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Oid.from_string">
+<a class="viewcode-back" href="../../autoapi/yubikit/core/index.html#yubikit.core.Oid.from_string">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Oid</span><span class="p">:</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;OID must have at least two arcs&quot;</span><span class="p">)</span>
+
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">([(</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span> <span class="o">+</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="n">part</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;OID parts must be non-negative&quot;</span><span class="p">)</span>
+            <span class="n">partbuf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+            <span class="k">while</span> <span class="n">part</span> <span class="o">&gt;</span> <span class="mh">0x7F</span><span class="p">:</span>
+                <span class="n">partbuf</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">part</span> <span class="o">&amp;</span> <span class="mh">0x7F</span><span class="p">)</span>
+                <span class="n">part</span> <span class="o">&gt;&gt;=</span> <span class="mi">7</span>
+            <span class="n">partbuf</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">part</span><span class="p">)</span>
+            <span class="n">buf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="mh">0x80</span> <span class="o">|</span> <span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">partbuf</span><span class="p">)</span>
+            <span class="n">buf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0x80</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Oid.__repr__">
+<a class="viewcode-back" href="../../autoapi/yubikit/core/index.html#yubikit.core.Oid.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Oid(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dotted_string</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="Oid.__str__">
+<a class="viewcode-back" href="../../autoapi/yubikit/core/index.html#yubikit.core.Oid.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dotted_string</span></div>
+</div>
+
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_timeout</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">yield</span> <span class="kc">None</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">timer</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
 </pre></div>
 
            </div>

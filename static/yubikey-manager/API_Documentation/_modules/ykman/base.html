@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ykman.base &mdash; yubikey-manager 5.7.0 documentation</title>
+  <title>ykman.base &mdash; yubikey-manager 5.8.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/documentation_options.js?v=f63c98e8"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -98,9 +98,27 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Hashable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">yubikit.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PID</span><span class="p">,</span> <span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">YubiKeyDevice</span>
+
+
+<div class="viewcode-block" id="REINSERT_STATUS">
+<a class="viewcode-back" href="../../autoapi/ykman/pcsc/index.html#ykman.base.REINSERT_STATUS">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">REINSERT_STATUS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">REMOVE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">REINSERT</span> <span class="o">=</span> <span class="mi">2</span></div>
+
+
+
+<div class="viewcode-block" id="CancelledException">
+<a class="viewcode-back" href="../../autoapi/ykman/pcsc/index.html#ykman.base.CancelledException">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CancelledException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when the caller cancels an operation.&quot;&quot;&quot;</span></div>
+
 
 
 <div class="viewcode-block" id="YkmanDevice">
@@ -108,14 +126,42 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">YkmanDevice</span><span class="p">(</span><span class="n">YubiKeyDevice</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;YubiKey device reference, with optional PID&quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">pid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PID</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">TRANSPORT</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">pid</span><span class="p">:</span> <span class="n">PID</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">YkmanDevice</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">transport</span><span class="p">,</span> <span class="n">fingerprint</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pid</span> <span class="o">=</span> <span class="n">pid</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">pid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PID</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PID</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the PID of the YubiKey, if available.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pid</span>
+
+<div class="viewcode-block" id="YkmanDevice.reinsert">
+<a class="viewcode-back" href="../../autoapi/ykman/pcsc/index.html#ykman.base.YkmanDevice.reinsert">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reinsert</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">reinsert_cb</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">REINSERT_STATUS</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">event</span><span class="p">:</span> <span class="n">Event</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait for the user to remove and reinsert the YubiKey.</span>
+
+<span class="sd">        This may be required to perform certain operations, such as FIDO reset.</span>
+
+<span class="sd">        This method will attempt to verify that the same YubiKey is reinserted,</span>
+<span class="sd">        but it will only fail when this is definitely not the case (eg. if the serial</span>
+<span class="sd">        number does not match).</span>
+
+<span class="sd">        :param reinsert_cb: Callback to indicate the the YubiKey has been removed,</span>
+<span class="sd">        and should be reinserted.</span>
+<span class="sd">        :param event: Optional event to cancel (throws CancelledException).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_reinsert</span><span class="p">(</span><span class="n">reinsert_cb</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="kc">None</span><span class="p">),</span> <span class="n">event</span> <span class="ow">or</span> <span class="n">Event</span><span class="p">())</span></div>
+
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_do_reinsert</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">reinsert_cb</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">REINSERT_STATUS</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
 
 <div class="viewcode-block" id="YkmanDevice.__repr__">
 <a class="viewcode-back" href="../../autoapi/ykman/pcsc/index.html#ykman.base.YkmanDevice.__repr__">[docs]</a>

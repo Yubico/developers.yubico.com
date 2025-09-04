@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.piv &mdash; yubikey-manager 5.7.0 documentation</title>
+  <title>yubikit.piv &mdash; yubikey-manager 5.8.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=402f376c"></script>
+      <script src="../../_static/documentation_options.js?v=f63c98e8"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -98,6 +98,8 @@
 <span class="c1"># ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
 <span class="c1"># POSSIBILITY OF SUCH DAMAGE.</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -106,7 +108,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">astuple</span><span class="p">,</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">overload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
@@ -143,21 +145,26 @@
     <span class="n">SmartCardProtocol</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="c1"># This type isn&#39;t available on cryptography &lt;40.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">PublicKeyTypes</span>
+
+
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<span class="n">PublicKey</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
-    <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">,</span>
-    <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="p">,</span>
-    <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PublicKey</span><span class="p">,</span>
-    <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PublicKey</span><span class="p">,</span>
-<span class="p">]</span>
-<span class="n">PrivateKey</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
-    <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateKeyWithSerialization</span><span class="p">,</span>
-    <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKeyWithSerialization</span><span class="p">,</span>
-    <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PrivateKey</span><span class="p">,</span>
-    <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PrivateKey</span><span class="p">,</span>
-<span class="p">]</span>
+<span class="n">PublicKey</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span>
+    <span class="o">|</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span>
+    <span class="o">|</span> <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PublicKey</span>
+    <span class="o">|</span> <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PublicKey</span>
+<span class="p">)</span>
+<span class="n">PrivateKey</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateKeyWithSerialization</span>
+    <span class="o">|</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKeyWithSerialization</span>
+    <span class="o">|</span> <span class="n">ed25519</span><span class="o">.</span><span class="n">Ed25519PrivateKey</span>
+    <span class="o">|</span> <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PrivateKey</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="ALGORITHM">
@@ -204,7 +211,7 @@
 <div class="viewcode-block" id="KEY_TYPE.from_public_key">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.KEY_TYPE.from_public_key">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_public_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">PublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;KEY_TYPE&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_public_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">PublicKeyTypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KEY_TYPE</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPublicKey</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;RSA</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="o">.</span><span class="n">key_size</span><span class="p">)</span>
@@ -351,7 +358,7 @@
 <div class="viewcode-block" id="OBJECT_ID.from_slot">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.OBJECT_ID.from_slot">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_slot</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;OBJECT_ID&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_slot</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OBJECT_ID</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">SLOT</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
 </div>
 
@@ -401,6 +408,7 @@
 <span class="n">INS_PUT_DATA</span> <span class="o">=</span> <span class="mh">0xDB</span>
 <span class="n">INS_MOVE_KEY</span> <span class="o">=</span> <span class="mh">0xF6</span>
 <span class="n">INS_GET_METADATA</span> <span class="o">=</span> <span class="mh">0xF7</span>
+<span class="n">INS_GET_SERIAL</span> <span class="o">=</span> <span class="mh">0xF8</span>
 <span class="n">INS_ATTEST</span> <span class="o">=</span> <span class="mh">0xF9</span>
 <span class="n">INS_SET_PIN_RETRIES</span> <span class="o">=</span> <span class="mh">0xFA</span>
 <span class="n">INS_RESET</span> <span class="o">=</span> <span class="mh">0xFB</span>
@@ -515,6 +523,12 @@
     <span class="k">return</span> <span class="n">bits</span> <span class="k">if</span> <span class="n">ln</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">_bcd</span><span class="p">(</span><span class="n">val</span> <span class="o">//</span> <span class="mi">10</span><span class="p">,</span> <span class="n">ln</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">bits</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_dump_tlv_dict</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">Tlv</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">)</span>
+
+
 <span class="n">BCD_SS</span> <span class="o">=</span> <span class="s2">&quot;11010&quot;</span>
 <span class="n">BCD_FS</span> <span class="o">=</span> <span class="s2">&quot;10110&quot;</span>
 <span class="n">BCD_ES</span> <span class="o">=</span> <span class="s2">&quot;11111&quot;</span>
@@ -578,7 +592,7 @@
 <div class="viewcode-block" id="FascN.from_bytes">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.FascN.from_bytes">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_bytes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FascN&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_bytes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FascN</span><span class="p">:</span>
         <span class="n">bs</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">bytes2int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">0200b</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bs</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">4</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">5</span><span class="p">)]</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">(</span>
@@ -597,63 +611,53 @@
 
 
 
-<span class="c1"># From Python 3.10 we can use kw_only instead</span>
-<span class="n">_chuid_no_value</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
-
-
 <div class="viewcode-block" id="Chuid">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.Chuid">[docs]</a>
-<span class="nd">@dataclass</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Chuid</span><span class="p">:</span>
-    <span class="n">buffer_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">fasc_n</span><span class="p">:</span> <span class="n">FascN</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">FascN</span><span class="p">,</span> <span class="n">_chuid_no_value</span><span class="p">)</span>
-    <span class="n">agency_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">organizational_identifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">duns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">guid</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">_chuid_no_value</span><span class="p">)</span>
-    <span class="n">expiration_date</span><span class="p">:</span> <span class="n">date</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">_chuid_no_value</span><span class="p">)</span>
-    <span class="n">authentication_key_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">asymmetric_signature</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">_chuid_no_value</span><span class="p">)</span>
-    <span class="n">lrc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">buffer_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fasc_n</span><span class="p">:</span> <span class="n">FascN</span>
+    <span class="n">agency_code</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">organizational_identifier</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">duns</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">guid</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">expiration_date</span><span class="p">:</span> <span class="n">date</span>
+    <span class="n">authentication_key_map</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">asymmetric_signature</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">lrc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="Chuid.__post_init__">
-<a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.Chuid.__post_init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">_chuid_no_value</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fasc_n</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">guid</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">expiration_date</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">asymmetric_signature</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing required field(s)&quot;</span><span class="p">)</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_signature</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_dump_tlv_dict</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="mh">0xEE</span><span class="p">:</span> <span class="n">int2bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer_length</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="mh">0x30</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fasc_n</span><span class="p">),</span>
+                <span class="mh">0x31</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agency_code</span><span class="p">,</span>
+                <span class="mh">0x32</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">organizational_identifier</span><span class="p">,</span>
+                <span class="mh">0x33</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">duns</span><span class="p">,</span>
+                <span class="mh">0x34</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">guid</span><span class="p">,</span>
+                <span class="mh">0x35</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">expiration_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                <span class="mh">0x3D</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">authentication_key_map</span><span class="p">,</span>
+                <span class="mh">0x3E</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">asymmetric_signature</span> <span class="k">if</span> <span class="n">include_signature</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">TAG_LRC</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">lrc</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lrc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tbs_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_bytes</span><span class="p">(</span><span class="n">include_signature</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Chuid.__bytes__">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.Chuid.__bytes__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__bytes__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">bs</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0xEE</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer_length</span><span class="p">))</span>
-        <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x30</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fasc_n</span><span class="p">))</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">agency_code</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x31</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">agency_code</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">organizational_identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x32</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">organizational_identifier</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">duns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x33</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duns</span><span class="p">)</span>
-        <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x34</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
-        <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x35</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expiration_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">authentication_key_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x3D</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">authentication_key_map</span><span class="p">)</span>
-        <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x3E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">asymmetric_signature</span><span class="p">)</span>
-        <span class="n">bs</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_LRC</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">lrc</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lrc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">bs</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_bytes</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Chuid.from_bytes">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.Chuid.from_bytes">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_bytes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Chuid&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_bytes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Chuid</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="o">.</span><span class="n">parse_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="n">buffer_length</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mh">0xEE</span><span class="p">)</span>
         <span class="n">lrc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TAG_LRC</span><span class="p">)</span>
@@ -801,7 +805,7 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">connection</span><span class="p">:</span> <span class="n">SmartCardConnection</span><span class="p">,</span>
-        <span class="n">scp_key_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ScpKeyParams</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scp_key_params</span><span class="p">:</span> <span class="n">ScpKeyParams</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">SmartCardProtocol</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">AID</span><span class="o">.</span><span class="n">PIV</span><span class="p">)</span>
@@ -890,10 +894,21 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PIV application data reset performed&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="PivSession.get_serial">
+<a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.PivSession.get_serial">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the serial number of the YubiKey.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Getting serial number&quot;</span><span class="p">)</span>
+        <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS_GET_SERIAL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bytes2int</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+
     <span class="nd">@overload</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">management_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
     <span class="nd">@overload</span>
+    <span class="c1"># TODO: remove in 6.0</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">authenticate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">key_type</span><span class="p">:</span> <span class="n">MANAGEMENT_KEY_TYPE</span><span class="p">,</span> <span class="n">management_key</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
@@ -938,7 +953,7 @@
 
         <span class="n">backend</span> <span class="o">=</span> <span class="n">default_backend</span><span class="p">()</span>
         <span class="n">cipher_key</span> <span class="o">=</span> <span class="n">_parse_management_key</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">management_key</span><span class="p">)</span>
-        <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span><span class="n">cipher_key</span><span class="p">,</span> <span class="n">modes</span><span class="o">.</span><span class="n">ECB</span><span class="p">(),</span> <span class="n">backend</span><span class="p">)</span>  <span class="c1"># nosec</span>
+        <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span><span class="n">cipher_key</span><span class="p">,</span> <span class="n">modes</span><span class="o">.</span><span class="n">ECB</span><span class="p">(),</span> <span class="n">backend</span><span class="p">)</span>  <span class="c1"># noqa: S305</span>
         <span class="n">decryptor</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="n">decryptor</span><span class="p">()</span>
         <span class="n">decrypted</span> <span class="o">=</span> <span class="n">decryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">witness</span><span class="p">)</span> <span class="o">+</span> <span class="n">decryptor</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 
@@ -1015,7 +1030,7 @@
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.PivSession.verify_uv">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">verify_uv</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">temporary_pin</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">check_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the user by fingerprint (YubiKey Bio only).</span>
 
 <span class="sd">        Fingerprint verification will allow usage of private keys which have a PIN</span>
@@ -1268,8 +1283,8 @@
         <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
         <span class="n">key_type</span><span class="p">:</span> <span class="n">KEY_TYPE</span><span class="p">,</span>
         <span class="n">message</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">hash_algorithm</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span><span class="p">,</span>
-        <span class="n">padding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsymmetricPadding</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">hash_algorithm</span><span class="p">:</span> <span class="n">hashes</span><span class="o">.</span><span class="n">HashAlgorithm</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">padding</span><span class="p">:</span> <span class="n">AsymmetricPadding</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sign message with key.</span>
 
@@ -1310,8 +1325,8 @@
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid length of ciphertext&quot;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Decrypting data with key in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2"> using &quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;padding=</span><span class="si">{</span><span class="n">padding</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Decrypting data with key in slot </span><span class="si">{</span><span class="n">slot</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2"> using &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;padding=</span><span class="si">{</span><span class="n">padding</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="n">padded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_private_key</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">key_type</span><span class="p">,</span> <span class="n">cipher_text</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_unpad_message</span><span class="p">(</span><span class="n">padded</span><span class="p">,</span> <span class="n">padding</span><span class="p">)</span></div>
@@ -1322,9 +1337,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_secret</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">slot</span><span class="p">:</span> <span class="n">SLOT</span><span class="p">,</span>
-        <span class="n">peer_public_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
-            <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKeyWithSerialization</span><span class="p">,</span> <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PublicKey</span>
-        <span class="p">],</span>
+        <span class="n">peer_public_key</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKeyWithSerialization</span> <span class="o">|</span> <span class="n">x25519</span><span class="o">.</span><span class="n">X25519PublicKey</span>
+        <span class="p">),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate shared secret using ECDH.</span>
 
@@ -1381,7 +1396,7 @@
 
 <div class="viewcode-block" id="PivSession.put_object">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.PivSession.put_object">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">put_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write data to PIV object.</span>
 
 <span class="sd">        Requires authentication with management key.</span>
@@ -1500,7 +1515,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">check_key_support</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="n">pin_policy</span><span class="p">,</span> <span class="n">touch_policy</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">ln</span> <span class="o">=</span> <span class="n">key_type</span><span class="o">.</span><span class="n">bit_len</span> <span class="o">//</span> <span class="mi">8</span>
         <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateKey</span><span class="p">)</span>  <span class="c1"># noqa: S101</span>
             <span class="n">numbers</span> <span class="o">=</span> <span class="n">private_key</span><span class="o">.</span><span class="n">private_numbers</span><span class="p">()</span>
             <span class="n">numbers</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateNumbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">numbers</span><span class="o">.</span><span class="n">public_numbers</span><span class="o">.</span><span class="n">e</span> <span class="o">!=</span> <span class="mi">65537</span><span class="p">:</span>
@@ -1521,7 +1536,7 @@
                 <span class="p">),</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">)</span>  <span class="c1"># nosec</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">)</span>  <span class="c1"># noqa: S101</span>
             <span class="n">numbers</span> <span class="o">=</span> <span class="n">private_key</span><span class="o">.</span><span class="n">private_numbers</span><span class="p">()</span>
             <span class="n">numbers</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateNumbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x06</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">private_value</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
