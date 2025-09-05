@@ -107,7 +107,7 @@ link:Securing_SSH_with_FIDO2.adoc[Securing SSH with FIDO2],
 but for completeness we will repeat instructions here:
 
 ....
-$ ssh-keygen -t ecdsa-sk -f ./id_ecdsa -N '' -O resident -O application=ssh:demo -O user=johndoe -C johndoe@example.org
+$ ssh-keygen -t ecdsa-sk -f ./id_ecdsa -N '' -O resident -O verify-required -O application=ssh:demo -O user=johndoe -C johndoe@example.org
 Generating public/private ecdsa-sk key pair.
 You may need to touch your authenticator to authorize key generation.
 Enter PIN for authenticator: ********
@@ -143,7 +143,7 @@ and determined the user's eligibility for obtaining a certificate
 the user's public key can be signed using the CA signing key:
 
 ....
-$ ssh-keygen -s ./id_userca -I johndoe@example.org -V +52w -n johndoe id_ecdsa.pub
+$ ssh-keygen -s ./id_userca -I johndoe@example.org -V +52w -n johndoe  -O verify-required ./id_ecdsa.pub
 Signed user key id_ecdsa-cert.pub: id "johndoe@example.org" serial 0 for johndoe valid from 2024-04-03T18:39:00 to 2025-04-02T18:40:47
 ....
 
@@ -168,7 +168,8 @@ $ ssh-keygen -L -f ./id_ecdsa-cert.pub
         Valid: from 2024-04-03T18:39:00 to 2025-04-02T18:40:47
         Principals: 
                 johndoe
-        Critical Options: (none)
+        Critical Options: 
+                verify-required
         Extensions: 
                 permit-X11-forwarding
                 permit-agent-forwarding
@@ -250,8 +251,9 @@ Assuming the user account `johndoe` exists,
 test signing in using ssh certificate
 
 ....
-$ ssh -i ././id_ecdsa_sk_rk_demo_johndoe -l johndoe demo.example.org
+$ ssh -i ./id_ecdsa_sk_rk_demo_johndoe -l johndoe demo.example.org
 Confirm user presence for key ECDSA-SK SHA256:sAohY3k592oMYCwGfBJJEIIoxiZIzIPuWJHCZBapti4
+Enter PIN for ECDSA-SK key ./id_ecdsa: ********
 User presence confirmed
 [demo.example.org:~]$ whoami
 johndoe
