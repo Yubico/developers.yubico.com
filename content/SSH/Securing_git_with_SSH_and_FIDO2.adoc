@@ -248,7 +248,13 @@ GitLab uses this list of known SSH keys to verify commit signatures. Ensure the 
 [[ssh-agent-considerations]]
 == SSH Agent Considerations
 
-You can add your FIDO2 SSH signing key's private key *handle* file to `ssh-agent`. This allows the agent to cache your FIDO2 PIN.
+You can add your FIDO2 SSH signing key's private key *handle* file to `ssh-agent`. This helps the agent remember which keys are available, so you don’t need to repeatedly specify the file path.  
+
+However, it is important to clarify how this works:
+
+* **No PIN Caching:** Unlike with traditional software-based keys, `ssh-agent` does **not** cache your FIDO2 PIN. If your key is configured to require user verification (PIN), you will be prompted for it as needed.
+* **Touch Still Required:** Even with `ssh-agent`, the `-O verify-required` option (or the inherent properties of FIDO2 keys) will always require a physical touch of your YubiKey for each signing operation.
+* **Reference Handle Only:** The file added with `ssh-add` is just a handle (reference) to the key stored on your YubiKey, not the actual private key material.
 
 .For Linux and macOS
 [source,bash]
@@ -262,12 +268,11 @@ ssh-add ~/.ssh/id_ed25519_sk_git_signing # (Use the private key handle file here
 ssh-add "$env:USERPROFILE\.ssh\id_ed25519_sk_git_signing"
 ----
 
-* **PIN Caching:** If your key is PIN-protected, `ssh-agent` can cache the PIN after the first entry for a limited time or session, reducing repeated PIN prompts.
-* **Touch Still Required:** Crucially, even with `ssh-agent`, the `-O verify-required` option on your key (or the inherent nature of FIDO2) will still necessitate a physical touch on your YubiKey for each signing operation.
 * **Troubleshooting Agent Issues:**
-** **"Agent refused operation" / "sign_and_send_pubkey: signing failed":** Ensure the correct key is added and the YubiKey is accessible. Sometimes `ssh-add -D` (to remove all identities) followed by re-adding the specific key helps.
-** **Multiple Agents:** On systems like Linux with GNOME or macOS, be aware of multiple potential SSH agents. Ensure you're interacting with the correct one. `echo $SSH_AUTH_SOCK` can help identify the agent socket.
-** **Windows:** If using Windows OpenSSH agent, ensure the service is running. For WSL, agent integration might require additional setup (like `npiperelay` or WSL's built-in SSH agent forwarding).
+** **"Agent refused operation" / "sign_and_send_pubkey: signing failed":** Ensure the correct key is added and that your YubiKey is accessible. Sometimes `ssh-add -D` (to remove all identities) followed by re-adding the specific key helps.
+** **Multiple Agents:** On systems like Linux with GNOME or macOS, there may be multiple agents running. Use `echo $SSH_AUTH_SOCK` to confirm which one you’re interacting with.
+** **Windows:** If using the Windows OpenSSH agent, confirm the service is running. For WSL, agent integration might require additional setup (e.g., `npiperelay` or WSL’s built-in SSH agent forwarding).
+
 
 [[key-management-lifecycle]]
 == Key Management Lifecycle Considerations
