@@ -1,12 +1,28 @@
-== CTAP 2.1 Feature Reference
+== CTAP 2.1 Feature Reference: Enterprise Authentication and Credential Management
+:description: Technical reference for CTAP 2.1 features including enterprise attestation, credential management, alwaysUv, and extensions. Complete with command-line examples using fido2-token.
+:keywords: CTAP 2.1, enterprise attestation, credential management, alwaysUv, FIDO2 extensions, libfido2, fido2-token, minimum PIN length, credProtect
+:author: Yubico Developer Relations
+:page-layout: technical-reference
+:page-category: Authentication Protocols
+:page-tags: CTAP 2.1, Enterprise Features, Credential Management, FIDO2 Extensions
+:toc: left
+:toclevels: 4
+:sectanchors:
+:source-highlighter: highlight.js
+:page-last-updated: 2024-12-01
 
-This document provides a technical reference for the key features and extensions introduced in the Client to Authenticator Protocol (CTAP) version 2.1.[6, 7] For the latest features, please see our link:/CTAP/2.2/.
+[.lead]
+Comprehensive technical reference for CTAP 2.1 features and extensions. Learn about enterprise attestation, credential management, user verification policies, and security extensions with practical fido2-token examples.
+
+=== CTAP 2.1 Feature Reference
+
+This document provides a technical reference for the key features and extensions introduced in the Client to Authenticator Protocol (CTAP) version 2.1. For the latest features, please see our link:CTAP2.2.adoc[CTAP 2.2 guide].
 
 The `fido2-token` command-line tool, part of the Yubico-led link:https://developers.yubico.com/libfido2/[libfido2] project, is used here to illustrate CTAP 2.1 features.
 
-=== CTAP 2.1 Features
+==== CTAP 2.1 Features
 
-CTAP 2.1 defined several optional features that can be implemented on Authenticators. Clients can use the `authenticatorGetInfo` command to discover which features an authenticator supports.[8]
+CTAP 2.1 defined several optional features that can be implemented on Authenticators. Clients can use the `authenticatorGetInfo` command to discover which features an authenticator supports.
 
 ....
 $ fido2-token -I /dev/hidraw0
@@ -23,13 +39,14 @@ options: rk, up, noplat, alwaysUv, credMgmt, authnrCfg, clientPin, largeBlobs, p
 ...
 ....
 
-==== Credential Management
+===== Credential Management
 
-Credential management is used to manage discoverable credentials on the authenticator.[1, 8] This feature is important, as without it there is no way to delete specific credentials that are stored on an authenticator, other than resetting the entire device. Hardware security keys typically have limited storage for discoverable credentials, so it is useful to delete credentials that are no longer in use.[1]
+Credential management is used to manage discoverable credentials on the authenticator. This feature is important, as without it there is no way to delete specific credentials that are stored on an authenticator, other than resetting the entire device. Hardware security keys typically have limited storage for discoverable credentials, so it is useful to delete credentials that are no longer in use.
 
 The `fido2-token` tool can be used for performing credential management from the command-line.
 
 To list discoverable credentials stored on a device:
+
 ....
 $ fido2-token -L -r $DEV
 Enter PIN: ******
@@ -38,64 +55,70 @@ Enter PIN: ******
 ....
 
 To delete a discoverable credential, use the `-D` option and specify its base64-encoded credential ID with `-i`:
+
 ....
 $ fido2-token -D -i VGhpcyBpcyBqdXN0IGFuIGV4YW1wbGUsIG5vdCBhbiBhY3R1YWwgY3JlZCBJRDop /dev/hidraw0
 Enter PIN: ******
 ....
 
-==== Enterprise Attestation
+===== Enterprise Attestation
 
-Enterprise Attestation (EA) was added in CTAP version 2.1 and WebAuthn L2.[1] It is intended for use within enterprises to uniquely identify an authenticator, something that is explicitly made infeasible with normal attestation to preserve user privacy. In an enterprise scenario, EA can be used for asset tracking or to aid in account recovery flows.[1, 9]
+Enterprise Attestation (EA) was added in CTAP version 2.1 and WebAuthn L2. It is intended for use within enterprises to uniquely identify an authenticator, something that is explicitly made infeasible with normal attestation to preserve user privacy. In an enterprise scenario, EA can be used for asset tracking or to aid in account recovery flows.
 
 See also our guidance on link:https://developers.yubico.com/WebAuthn/Concepts/Enterprise_Attestation/[using Enterprise Attestation in web applications].
 
 Enterprise attestation can be enabled on a device using:
+
 ....
 $ fido2-token -S -a /dev/hidraw0
 Enter PIN: ******
 ....
 
-==== Always Require User Verification
+===== Always Require User Verification
 
-This feature, called `alwaysUv`, causes every FIDO2 registration or authentication event to require a PIN or biometric, regardless of the options set by the relying party or platform.[1, 8] When using the `fido2-token` tool with the `-I` switch, the current status is listed under `options`.
+This feature, called `alwaysUv`, causes every FIDO2 registration or authentication event to require a PIN or biometric, regardless of the options set by the relying party or platform. When using the `fido2-token` tool with the `-I` switch, the current status is listed under `options`.
 
 The `alwaysUv` feature can be enabled on a device using `fido2-token -S -u` or disabled using `fido2-token -D -u`.
 
-==== Set Minimum PIN Length
+===== Set Minimum PIN Length
 
-This feature is intended for use in an enterprise or government environment to enforce a minimum PIN length policy for authenticators.[8] It allows Identity Providers to enforce the configured minimum PIN length during FIDO2 registration.
+This feature is intended for use in an enterprise or government environment to enforce a minimum PIN length policy for authenticators. It allows Identity Providers to enforce the configured minimum PIN length during FIDO2 registration.
 
 To set a minimum PIN length for a device to 6:
+
 ....
 $ fido2-token -S -l 6 /dev/hidraw0
 Enter PIN: ******
 ....
 
 To force a PIN change:
+
 ....
 $ fido2-token -S -f /dev/hidraw0
 Enter PIN: ******
 ....
 
 To set a list of RP IDs allowed to retrieve the minimum PIN length, use the `-S -m` option:
+
 ....
 $ fido2-token -S -m example.org,example.com /dev/hidraw0
 Enter PIN: ******
 ....
 
-=== CTAP 2.1 Extensions
+==== CTAP 2.1 Extensions
 
-FIDO authenticators may support optional extensions. For a full list of defined extensions, see the link:https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#sctn-defined-extensions.
+FIDO authenticators may support optional extensions. For a full list of defined extensions, see the link:https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#sctn-defined-extensions[CTAP 2.1 specification].
 
-==== Credential Protection (credProtect)
+===== Credential Protection (credProtect)
 
-The Credential Protection extension can be used to improve privacy if an unauthorized user has access to an authenticator. It allows a Relying Party to set a credential protection policy at registration, flagging the credential to require user verification before it can be read or used for authentication.[1, 8]
+The Credential Protection extension can be used to improve privacy if an unauthorized user has access to an authenticator. It allows a Relying Party to set a credential protection policy at registration, flagging the credential to require user verification before it can be read or used for authentication.
 
-==== Credential Blob (credBlob) and Large Blob Key (largeBlobKey)
+===== Credential Blob (credBlob) and Large Blob Key (largeBlobKey)
 
-The Large Blob Storage extension (`largeBlobs`) allows a Relying Party to store opaque data associated with a credential on the authenticator.[8, 9] This is also available from the WebAuthn API.
+The Large Blob Storage extension (`largeBlobs`) allows a Relying Party to store opaque data associated with a credential on the authenticator. This is also available from the WebAuthn API.
 
 To list all large blobs stored on an authenticator:
+
 ....
 $ fido2-token -L -b /dev/hidraw0
 Enter PIN for /dev/hidraw0: ********
@@ -104,14 +127,14 @@ total map size: 1219 bytes
 01:  581  889 dhx715WNlF36vMvo5hV0SBOPfWqS1ncj2P2BgW2513a/rLvg64Tl4f0/uDrs1LsE example.org
 ....
 
-An example use-case for `largeBlobs` is SSH, where an SSH certificate can be stored on an authenticator, together with its corresponding private key. See link:https://developers.yubico.com/SSH/Storing_SSH_Certificates.html.
+An example use-case for `largeBlobs` is SSH, where an SSH certificate can be stored on an authenticator, together with its corresponding private key. See link:/SSH/Storing_SSH_Certificates.html[Storing SSH Certificates].
 
-==== Minimum PIN Length Extension (minPinLength)
+===== Minimum PIN Length Extension (minPinLength)
 
-The Minimum PIN Length extension allows clients to retrieve the minimum PIN length for a specific RP ID, provided that RP ID is on a pre-configured allow list on the authenticator.[8, 10]
+The Minimum PIN Length extension allows clients to retrieve the minimum PIN length for a specific RP ID, provided that RP ID is on a pre-configured allow list on the authenticator.
 
-==== HMAC Secret Extension (hmac-secret)
+===== HMAC Secret Extension (hmac-secret)
 
-The HMAC Secret extension can be used by a client to retrieve a symmetric secret from the authenticator when it needs to encrypt or decrypt data. The secret is scoped to the generated credential and is derived from a combination of a key on the authenticator and a salt provided by the client.[8, 10]
+The HMAC Secret extension can be used by a client to retrieve a symmetric secret from the authenticator when it needs to encrypt or decrypt data. The secret is scoped to the generated credential and is derived from a combination of a key on the authenticator and a salt provided by the client.
 
-This extension is also available from the WebAuthn API, where it is known as the link:https://w3c.github.io/webauthn/#prf-extension.
+This extension is also available from the WebAuthn API, where it is known as the link:https://w3c.github.io/webauthn/#prf-extension[Pseudo-Random Function (PRF) extension].

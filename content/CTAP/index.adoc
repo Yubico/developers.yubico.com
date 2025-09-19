@@ -1,66 +1,80 @@
-= Client To Authenticator Protocol (CTAP)
+== Client To Authenticator Protocol (CTAP) - FIDO2 Developer Guide
+:description: Complete guide to CTAP (Client To Authenticator Protocol) for FIDO2 authentication. Learn about CTAP 2.2 features, security key integration, and passwordless authentication development.
+:keywords: CTAP, FIDO2, WebAuthn, security keys, passwordless authentication, YubiKey, authenticator protocol, two-factor authentication, multi-factor authentication
+:author: Yubico Developer Relations
+:page-layout: developer-guide
+:page-category: Authentication Protocols
+:page-tags: CTAP, FIDO2, WebAuthn, Security Keys, Authentication
+:toc: left
+:toclevels: 3
+:sectanchors:
+:source-highlighter: highlight.js
 
-FIDO2 consists of two standardized components: a web API (WebAuthn) and a protocol for clients to communicate with authenticators, the Client To Authenticator Protocol (CTAP). The client can be a platform (an Operating System such as Microsoft Windows), a browser (such as Google Chrome), or an application (such as an SSH client).[1]
+[.lead]
+Learn how to integrate FIDO2 security keys using the Client To Authenticator Protocol (CTAP). This comprehensive guide covers CTAP versions, implementation strategies, and practical examples for building secure, passwordless authentication systems.
+
+=== Client To Authenticator Protocol (CTAP)
+
+FIDO2 consists of two standardized components: a web API (WebAuthn) and a protocol for clients to communicate with authenticators, the Client To Authenticator Protocol (CTAP). The client can be a platform (an Operating System such as Microsoft Windows), a browser (such as Google Chrome), or an application (such as an SSH client).
 
 CTAP clients can use different transports to communicate with an authenticator. When the authenticator is a FIDO security key, USB, NFC, or Bluetooth is typically used.
 
 The difference between WebAuthn and CTAP is illustrated in the figure below.
 
-image::fido2_building_blocks.png
+image::fido2_building_blocks.png[FIDO2 Architecture showing WebAuthn API and CTAP protocol layers, 600, 400]
 
-NOTE: Web developers will typically never need to use CTAP directly. Instead, they will use the WebAuthn API that is supported by all major browsers. See our link:https://developers.yubico.com/WebAuthn/ for guidance on implementing FIDO authentication for web applications.
+NOTE: Web developers will typically never need to use CTAP directly. Instead, they will use the WebAuthn API that is supported by all major browsers. See our link:/WebAuthn/[WebAuthn] and link:/Passkeys/[Passkeys] for guidance on implementing FIDO authentication for web applications.
 
-== What's New: CTAP 2.2
+==== What's New: CTAP 2.2
 
-The latest version of the protocol, CTAP 2.2, introduces significant enhancements for usability, enterprise security, and interoperability. These features address key developer and user challenges in the evolving passwordless ecosystem.[2]
+The latest version of the protocol, CTAP 2.2, introduces significant enhancements for usability, enterprise security, and interoperability. These features address key developer and user challenges in the evolving passwordless ecosystem.
 
 [cols="1,1,1", options="header"]
-
 |===
 | Challenge | CTAP 2.2 Solution | Why It Matters
-| Users tired of repeated PIN prompts | Persistent PIN/UV Auth Tokens (PPUATs) | Allows applications to reuse PIN/UV authentication for credential discovery without re-prompting, creating a smoother user experience.[3]
-| Enterprises need stronger PIN rules | PIN Complexity Policies | Enforce longer or more complex PINs at the hardware level to meet compliance requirements like NIST SP 800-63B.[3]
-| Expanding passwordless to regulated payments | `thirdPartyPayment` Extension | Enables Secure Payment Confirmation (SPC) across domains, critical for standards like PSD2 and card network compliance.[3]
-| Richer, safer credential lifecycle management | Persistent Credential Management – Read-only (`pcmr`) permission | Lets applications query stored credentials with more detail for auditing or UI improvements, without granting destructive permissions.[3]
-| Applications needing per-service secrets | `hmac-secret-mc` / PRF | Provides scoped secrets tied to credentials during creation, useful for secure local storage or encrypted app data.[3, 2]
-| Mitigating risk of unlocked, unattended authenticators | Always-Require-User-Verification (`alwaysUv`) | A configurable state that forces user verification (PIN/biometric) on all sensitive operations, critical for high-assurance environments.[3]
+| Users tired of repeated PIN prompts | Persistent PIN/UV Auth Tokens (PPUATs) | Allows applications to reuse PIN/UV authentication for credential discovery without re-prompting, creating a smoother user experience.
+| Enterprises need stronger PIN rules | PIN Complexity Policies | Enforce longer or more complex PINs at the hardware level to meet compliance requirements like NIST SP 800-63B.
+| Expanding passwordless to regulated payments | `thirdPartyPayment` Extension | Enables Secure Payment Confirmation (SPC) across domains, critical for standards like PSD2 and card network compliance.
+| Richer, safer credential lifecycle management | Persistent Credential Management – Read-only (`pcmr`) permission | Lets applications query stored credentials with more detail for auditing or UI improvements, without granting destructive permissions.
+| Applications needing per-service secrets | `hmac-secret-mc` / PRF | Provides scoped secrets tied to credentials during creation, useful for secure local storage or encrypted app data.
+| Mitigating risk of unlocked, unattended authenticators | Always-Require-User-Verification (`alwaysUv`) | A configurable state that forces user verification (PIN/biometric) on all sensitive operations, critical for high-assurance environments.
 | Enabling advanced cryptographic use cases | ARKG/Raw Signing extensions | Allows signing of arbitrary data, turning the key into a hardware root of trust for new applications like digital wallets.
 | Enterprises managing multiple IdPs or test/prod environments | Increased RPID storage for Enterprise Attestation (from 2 to 16) | Simplifies deployment and management across complex corporate environments by allowing a single key to be attested for multiple services.
-| Richer authenticator metadata | New `getInfo` properties | Applications can query authenticator capabilities like UV counters, attestation formats, and max PIN length to adapt their UX dynamically.[3]
+| Richer authenticator metadata | New `getInfo` properties | Applications can query authenticator capabilities like UV counters, attestation formats, and max PIN length to adapt their UX dynamically.
 |===
 
-== Learn More About CTAP Versions
+==== Learn More About CTAP Versions
 
 To help you build your application, we have created detailed guides for each major version of the CTAP specification.
 
-* *link:/CTAP2.2/*
+* *link:CTAP2.2.adoc[CTAP 2.2]*
 +
-Our comprehensive guide to the latest standard. Explains new features in plain language, compares them to previous versions, and shows where Yubico’s SDKs and tools support them today.
+Our comprehensive guide to the latest standard. Explains new features in plain language, compares them to previous versions, and shows where Yubico's SDKs and tools support them today.
 
-* *link:/CTAP2.1/*
+* *link:CTAP2.1.adoc[CTAP 2.1]*
 +
 A technical reference for the features and extensions introduced in CTAP 2.1, including enterprise attestation, credential management, and more.
 
-== CTAP Versions Explained
+==== CTAP Versions Explained
 
-The CTAP specification refers to two protocol versions: CTAP1 and CTAP2.[1, 4]
+The CTAP specification refers to two protocol versions: CTAP1 and CTAP2.
 
-* *CTAP1* is a new name for the FIDO U2F protocol. CTAP1 can only be used as a second factor, i.e., it does not support user verification using a PIN or a biometric.[1, 4]
-* *CTAP2* supports user verification and is a much more versatile protocol. An authenticator that implements CTAP2 is called a FIDO2 authenticator. If that authenticator also implements CTAP1/U2F, it is backward compatible with U2F.[1, 5]
+* *CTAP1* refers to the FIDO U2F protocol. CTAP1 can only be used as a second factor, i.e., it does not support user verification using a PIN or a biometric.
+* *CTAP2* supports user verification and is a much more versatile protocol. An authenticator that implements CTAP2 is called a FIDO2 authenticator. If that authenticator also implements CTAP1/U2F, it is backward compatible with U2F.
 
-CTAP2 also has different sub-versions, similar to WebAuthn levels. Authenticators can report the CTAP2 version they support using version identifiers, like `FIDO_2_0`, `FIDO_2_1_PRE`, or `FIDO_2_1`.[1]
+CTAP2 also has different sub-versions, similar to WebAuthn levels. Authenticators can report the CTAP2 version they support using version identifiers, like `FIDO_2_0`, `FIDO_2_1_PRE`, or `FIDO_2_1`.
 
-== Developing FIDO-Aware Applications
+==== Developing FIDO-Aware Applications
 
-With CTAP, there are different options for developers to leverage FIDO authenticators to secure their applications [1]:
+With CTAP, there are different options for developers to leverage FIDO authenticators to secure their applications:
 
 . *Use the WebAuthn API*, if the application is a web application where the client is a web browser.
 . *Use a platform API*, if the application is a Desktop or Mobile application running on a platform that offers such an API. An example is the WebAuthn API on Microsoft Windows (`webauthn.dll`).
 . *Use a library that implements the CTAP protocol*, if the application is a Desktop or Mobile application and a platform API is not available or not suitable.
 
-Yubico offers several libraries and SDKs for developers. For a complete list, please see our link:https://developers.yubico.com/Software_Projects/.
+Yubico offers several libraries and SDKs for developers. For a complete list, please see our link:https://developers.yubico.com/Software_Projects/[Software Projects].
 
-* For building a web application using WebAuthn, there is link:https://developers.yubico.com/java-webauthn-server/[java-webauthn-server], and link:https://github.com/Yubico/python-fido2[python-fido2] (for Python).
-* For building Desktop applications, there are link:https://github.com/Yubico/libfido2[libfido2] (for C), and link:https://github.com/Yubico/python-fido2[python-fido2] (for Python).
-* For mobile development, see our link:https://developers.yubico.com/yubikit-ios/, link:https://developers.yubico.com/yubikit-android/.
-* For .NET development, see our link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-overview.html.
+* For building a web application using WebAuthn, there is link:https://developers.yubico.com/java-webauthn-server/[java-webauthn-server], and link:https://github.com/Yubico/python-fido2[python-fido2].
+* For building Desktop applications, there are link:https://github.com/Yubico/libfido2[libfido2] (for C), and link:https://github.com/Yubico/python-fido2[python-fido2].
+* For mobile development, see our link:https://developers.yubico.com/yubikit-ios/[yubikit-ios], link:https://developers.yubico.com/yubikit-android/[yubikit-android].
+* For .NET development, see our link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-overview.html[Yubico .NET SDK].
