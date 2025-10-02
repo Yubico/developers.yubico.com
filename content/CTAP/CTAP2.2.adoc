@@ -1,0 +1,231 @@
+== CTAP 2.2: Enhanced FIDO2 Features and Enterprise Security
+:description: Comprehensive guide to CTAP 2.2 features including Persistent PIN/UV Auth Tokens, PIN complexity policies, and enterprise attestation. Learn implementation with Yubico SDKs.
+:keywords: CTAP 2.2, FIDO2, persistent PIN tokens, PIN complexity, enterprise attestation, thirdPartyPayment, credential management, alwaysUv, YubiKey SDK
+:author: Yubico Developer Relations
+:page-layout: technical-guide
+:page-category: Authentication Protocols
+:page-tags: CTAP 2.2, FIDO2, Enterprise Security, PIN Policies, Payment Authentication
+:toc: left
+:toclevels: 4
+:sectanchors:
+:source-highlighter: highlight.js
+:page-last-updated: 2025-01-15
+
+[.lead]
+CTAP 2.2 delivers powerful new capabilities for enterprise deployments and improved user experiences. This technical guide walks you through persistent PIN tokens, advanced credential management, payment authentication, and other protocol enhancements—with concrete examples showing how to implement them using Yubico's developer tools.
+
+=== CTAP 2.2 Enhancing and Expanding FIDO2 Capabilities
+
+==== Introduction
+
+The Client to Authenticator Protocol (CTAP) defines how security keys like YubiKeys communicate with platforms, browsers, and applications. CTAP 2.2 introduces substantial improvements that address real-world deployment challenges: reducing authentication friction, strengthening enterprise security policies, and enabling new use cases like cross-domain payment authentication.
+
+This guide provides a practical reference for developers integrating CTAP 2.2 features. You'll learn what each feature does, when to use it, and which Yubico SDKs currently support it. Whether you're building native applications or working at the protocol level, this document will help you understand how CTAP 2.2 translates into working solutions.
+
+[NOTE]
+====
+**WebAuthn and Browser Support**: While CTAP 2.2 features are available at the protocol level, WebAuthn applications depend on browser support for these capabilities. Not all CTAP 2.2 features are exposed through the WebAuthn JavaScript API, and browser implementations vary. For web developers, consult our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support] page to verify which features your target browsers support before implementation.
+====
+
+==== Challenges CTAP 2.2 Addresses
+
+[cols="1,1,1,1", options="header"]
+|===
+| Challenge | CTAP 2.1 Approach | CTAP 2.2 Solution | Why It Matters
+| Users tired of repeated PIN prompts | Tokens were temporary and session-based. Discovering credentials often required a new PIN entry for each attempt. | Persistent PIN/UV Auth Tokens (PPUATs) | Allows applications to reuse PIN/UV authentication for credential discovery without re-prompting, creating a smoother user experience.
+| Enterprises need stronger PIN rules | Set Minimum PIN Length | PIN Complexity Policies | Enforce longer or more complex PINs at the hardware level to meet compliance requirements like NIST SP 800-63B.
+| Expanding passwordless to regulated payments | Experimental SPC support | thirdPartyPayment Extension | Enables Secure Payment Confirmation (SPC) across domains, critical for standards like PSD2 and card network compliance.
+| Richer, safer credential lifecycle management | Basic credential management existed, but platforms had limited ability to query metadata without user verification. | Persistent Credential Management – Read-only (pcmr) permission | Lets applications query stored credentials with more detail for auditing or UI improvements, without granting destructive permissions.
+| Applications needing per-service secrets | A secret could be derived from a single credential, but this was a distinct step. | hmac-secret-mc / PRF | Provides scoped secrets tied to credentials during creation, useful for secure local storage or encrypted app data.
+| Mitigating risk of unlocked, unattended authenticators | N/A | Always-Require-User-Verification (alwaysUv) | A configurable state that forces user verification (PIN/biometric) on all sensitive operations, critical for high-assurance environments.
+| Enabling advanced key agreement protocols | N/A | ARKG extension | Enables asynchronous remote key generation, allowing authenticators to generate key pairs where the private key remains on the device while the public key can be computed remotely, supporting advanced cryptographic protocols.
+| Enterprises managing multiple IdPs or test/prod environments | 2 RPIDs | Increased RPID storage for Enterprise Attestation to 16 | Simplifies deployment and management across complex corporate environments by allowing a single key to be attested for multiple services.
+| Richer authenticator metadata | Provided basic information like supported versions and algorithms. | New getInfo properties | Applications can query authenticator capabilities like UV counters, attestation formats, and max PIN length to adapt their UX dynamically.
+|===
+
+==== CTAP 2.2 Features Explained
+
+===== Persistent PIN/UV Auth Tokens (PPUAT)
+
+Spec:: Allows persistent tokens for credential discovery without repeated PIN entry.
+Use Case:: Enterprise SSO portals where users browse multiple apps in one session.
+Yubico Support:: Available in Yubico.NET SDK, yubikit-android, and python-fido2.
+
+Persistent PIN/UV auth tokens solve a common UX problem: when an application needs to enumerate credentials across multiple relying parties, users would previously need to re-enter their PIN for each discovery operation. PPUATs allow the authenticator to issue a longer-lived token specifically for read-only credential management operations, dramatically improving the experience in enterprise portals and password managers.
+
+[source,csharp]
+----
+// This C# example demonstrates retrieving a persistent token
+// to enumerate credentials without re-prompting the user for a PIN.
+using Yubico.YubiKey.Fido2;
+
+var fido2Session = new Fido2Session(yubiKeyDevice);
+var token = fido2Session.GetPersistentPinUvAuthToken();
+var credentials = fido2Session.GetCredentials(token);
+----
+
+[CAUTION]
+====
+**Browser Limitation**: PPUATs are a protocol-level feature not currently exposed through WebAuthn APIs. This feature is primarily useful for native applications that communicate directly with authenticators via CTAP.
+====
+
+===== PIN Complexity Policies
+
+Spec:: Authenticators can enforce stronger PIN rules (length, charset).
+Use Case:: Enterprises subject to NIST SP 800-63B or similar requirements.
+Yubico Support:: Available in Yubico.NET SDK, libfido2, and python-fido2.
+
+Organizations with strict security policies can now enforce PIN complexity at the hardware level. Security keys can be configured to require minimum PIN lengths beyond the default, helping meet compliance requirements without relying solely on policy enforcement at the application layer.
+
+[source,python]
+----
+# This Python example uses python-fido2 to query an authenticator's
+# capabilities and print its PIN complexity policy, if available.
+from fido2.hid import CtapHidDevice
+from fido2.client import Fido2Client
+
+dev = next(CtapHidDevice.list_devices())
+client = Fido2Client(dev, "https://example.com")
+info = client.info
+print(f"PIN complexity: {info.options.get('pinComplexity')}")
+print(f"Max PIN length: {info.max_pin_length}")
+----
+
+===== thirdPartyPayment Extension
+
+Spec:: Enables Secure Payment Confirmation (SPC) with cross-domain credential use.
+Use Case:: Payment providers integrating PSD2 SCA.
+Yubico Support:: Available in Yubico.NET SDK, yubikit-android, and python-fido2.
+
+The thirdPartyPayment extension enables a critical capability for the payment industry: allowing credentials created on one domain (e.g., a bank's website) to be used for authentication on another domain (e.g., a merchant's checkout page). This is essential for Secure Payment Confirmation workflows required by regulations like PSD2.
+
+[source,kotlin]
+----
+// This Kotlin snippet for Android shows how to request an assertion
+// with the thirdPartyPayment extension enabled.
+val fido2Session = Fido2Session(yubiKey)
+// The PaymentExtension is a helper class representing the CTAP2 extension data.
+val paymentOptions = PaymentExtension("thirdPartyPayment", true)
+val result = fido2Session.getAssertion(rpId, paymentOptions)
+----
+
+[NOTE]
+====
+**Browser Support Required**: Secure Payment Confirmation requires coordinated browser support. Check our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser support matrix] before implementing SPC workflows, as browser adoption is still evolving.
+====
+
+===== Persistent Credential Management – Read-only (pcmr)
+
+Spec:: Allows applications to query stored credentials with structured details, without granting delete permissions.
+Use Case:: Enterprise credential audits, lifecycle reporting, and enabling browsers to safely list passkeys for an improved UX.
+Yubico Support:: Defined in CTAP 2.2 specification but not yet exposed in Yubico SDKs.
+
+The pcmr permission enables credential enumeration without the destructive capabilities of full credential management. This is particularly valuable for audit tools and browser implementations that want to display available passkeys without risking accidental deletion.
+
+===== hmac-secret-mc / PRF
+
+Spec:: Provides a multi-credential variant of hmac-secret that can be invoked during credential creation.
+Use Case:: Applications needing per-credential secrets for encrypting local data—for example, password managers encrypting vaults or sync systems deriving encryption keys.
+Yubico Support:: Available in Yubico.NET SDK, yubikit-android, and python-fido2.
+
+The hmac-secret-mc extension (exposed in WebAuthn as the PRF extension) allows applications to derive credential-specific secrets during registration rather than only during authentication. This unlocks powerful patterns: apps can immediately encrypt data with a hardware-backed secret, without requiring the user to authenticate first.
+
+[TIP]
+====
+**Learn More About PRF**: For comprehensive implementation guidance, see our PRF extension documentation:
+
+* link:https://developers.yubico.com/WebAuthn/Concepts/PRF_Extension/[PRF Extension Overview]
+* link:https://developers.yubico.com/WebAuthn/Concepts/PRF_Extension/Developers_Guide_to_PRF.html[Developer's Guide to PRF]
+* link:https://developers.yubico.com/WebAuthn/Concepts/PRF_Extension/CTAP2_HMAC_Secret_Deep_Dive.html[CTAP2 HMAC-Secret Deep Dive]
+
+These guides walk you through practical use cases like building end-to-end encrypted applications and implementing secure offline workstation access.
+====
+
+[NOTE]
+====
+**WebAuthn Integration**: The PRF extension is exposed through WebAuthn and has growing browser support. However, implementation details vary—consult our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser compatibility guide] for current support status across platforms.
+====
+
+===== Always-Require-User-Verification (AlwaysUV)
+
+Spec:: A configurable authenticator state that forces user verification (PIN/biometric) for every FIDO2 operation.
+Use Case:: High-assurance environments (government/finance) where the risk of using an unlocked, unattended authenticator must be mitigated.
+Yubico Support:: Available in Yubico.NET SDK, libfido2, and python-fido2.
+
+AlwaysUV provides an enterprise safety control: when enabled, every FIDO2 operation requires user verification regardless of what the relying party requests. This prevents attacks where an adversary with physical access to an unlocked authenticator could use it without entering the PIN.
+
+This setting is particularly valuable in shared workstation environments or high-security facilities where leaving an authenticated session unattended poses significant risk. YubiKey Bio Series devices enable this by default.
+
+[CAUTION]
+====
+**Configuration Tool Required**: AlwaysUV cannot be toggled via WebAuthn—it requires direct authenticator configuration using command-line tools (fido2-token) or SDKs. This is an administrative setting, not something end-user web applications can control.
+====
+
+===== ARKG Extension
+
+Spec:: Asynchronous Remote Key Generation enables authenticators to participate in advanced key agreement protocols where the private key remains on the device while the public key can be computed remotely.
+Use Case:: Advanced cryptographic protocols requiring distributed key generation, such as decentralized identity systems, threshold signatures, and privacy-preserving authentication schemes.
+Yubico Support:: Defined in CTAP 2.2 specification but not currently exposed in Yubico SDKs.
+
+ARKG enables a cryptographic technique where an authenticator generates a key pair in such a way that while the private key remains securely on the device, a remote party can independently derive the corresponding public key without ever seeing the private key. This is accomplished through elliptic curve cryptography and key blinding techniques.
+
+This capability opens doors for sophisticated protocols: threshold authentication systems where multiple parties must cooperate, privacy-preserving credential systems, and decentralized identity frameworks where identity providers need to compute public keys for credentials without the authenticator revealing sensitive key material.
+
+For technical details on the cryptographic construction and security properties, see the link:https://datatracker.ietf.org/doc/draft-bradleylundberg-cfrg-arkg/[ARKG IETF draft specification].
+
+===== Increased RPID Storage for Enterprises
+
+Spec:: Security keys supporting CTAP 2.2 can store up to 16 Relying Party IDs for Enterprise Attestation, up from 2 in CTAP 2.1.
+Use Case:: Organizations with multiple identity providers or separate development, staging, and production environments (e.g., dev.example.com, staging.example.com, prod.example.com).
+Yubico Support:: Check security key firmware documentation for specific implementation details.
+
+Enterprise Attestation allows organizations to configure security keys that return uniquely identifying attestation only for pre-approved relying party IDs. The increased storage from 2 to 16 RPIDs simplifies management for enterprises with complex infrastructure, eliminating the need for separate keys across environments.
+
+===== getInfo Metadata Extensions
+
+Spec:: Richer authenticator self-description including PIN complexity policies, attestation formats, UV counters, and more.
+Use Case:: Applications that adapt their behavior based on authenticator capabilities—for example, adjusting PIN requirements or choosing attestation verification strategies.
+Yubico Support:: Available in Yubico.NET SDK, yubikit-android, python-fido2, and exposed via libfido2/fido2-token.
+
+CTAP 2.2 expands the authenticatorGetInfo response with fields like:
+
+* `uvCountSinceLastPinEntry` - helps detect if user verification has been performed recently
+* `attestationFormats` - lists supported attestation statement formats
+* `pinComplexityPolicy` - describes enforced PIN requirements
+* `maxPinLength` - useful for UI validation
+
+These metadata fields enable smarter application behavior without trial-and-error probing of authenticator capabilities.
+
+==== Yubico SDKs and CTAP 2.2 Support
+
+[cols="1,1,1", options="header"]
+|===
+| SDK | CTAP 2.2 Support | Notes
+| python-fido2 | ✅ Full Support | Maintained by Yubico. Comprehensive CTAP 2.2 implementation including PPUAT, hmac-secret-mc, thirdPartyPayment, new getInfo fields.
+| Yubico.NET SDK | ✅ Extensive Support | Supports PPUAT, thirdPartyPayment, hmac-secret-mc, PIN complexity policies, extended getInfo properties, and AlwaysUV configuration.
+| yubikit-android | ✅ Good Support | Supports PPUAT, getInfo metadata, and RPID-related functionality. Actively maintained with ongoing CTAP 2.2 feature additions.
+| libfido2 / fido2-token | ✅ Command-line Support | Lower-level C library with tools supporting AlwaysUV configuration, getInfo querying, and PIN management. Foundation for python-fido2.
+| yubikit-swift | ⚠️ Limited | Modern Swift SDK for iOS/macOS. CTAP 2.2 feature support under development.
+| yubikit-ios (Objective-C) | ⚠️ Limited | Legacy Objective-C SDK. Partial getInfo support but missing most CTAP 2.2 features. Consider yubikit-swift for new projects.
+|===
+
+===== References
+
+* link:https://github.com/Yubico/Yubico.NET.SDK/[Yubico.NET SDK on GitHub]
+* link:https://github.com/Yubico/yubikit-android[yubikit-android on GitHub]
+* link:https://github.com/Yubico/python-fido2[python-fido2 on GitHub]
+* link:https://github.com/Yubico/libfido2[libfido2 on GitHub]
+* link:https://github.com/Yubico/yubikit-ios[yubikit-ios on GitHub]
+* link:https://github.com/Yubico/yubikit-swift[yubikit-swift on GitHub]
+* link:https://fidoalliance.org/specs/fido-v2.2-ps-20250714/fido-client-to-authenticator-protocol-v2.2-ps-20250714.html[CTAP 2.2 Specification (FIDO Alliance)]
+* link:https://datatracker.ietf.org/doc/draft-bradleylundberg-cfrg-arkg/[ARKG IETF Draft Specification]
+* link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support Matrix]
+
+==== Where to Learn More
+
+* link:https://fidoalliance.org/specifications/[FIDO Alliance Specifications]
+* link:https://github.com/Yubico[Yubico on GitHub]
+* link:https://support.yubico.com[Yubico Support]
+
+[.text-center]
+_Have questions about implementing CTAP 2.2 features? Visit our link:https://support.yubico.com[Support Portal] or join the conversation in our link:https://github.com/Yubico[GitHub repositories]._
