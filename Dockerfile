@@ -3,9 +3,12 @@ FROM ubuntu:18.04 AS requirements
 WORKDIR /build
 
 # drop multiverse, restricted, backports
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ bionic main universe" >/etc/apt/sources.list \
-  && echo "deb http://archive.ubuntu.com/ubuntu/ bionic-updates main universe" >>/etc/apt/sources.list \
-  && echo "deb http://archive.ubuntu.com/ubuntu/ bionic-security main universe" >>/etc/apt/sources.list
+RUN echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ bionic main universe" > /etc/apt/sources.list \
+    && echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ bionic main universe" >> /etc/apt/sources.list \
+    && echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ bionic-updates main universe" >> /etc/apt/sources.list \
+    && echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ bionic-updates main universe" >> /etc/apt/sources.list \
+    && echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ bionic-security main universe" >> /etc/apt/sources.list \
+    && echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ bionic-security main universe" >> /etc/apt/sources.list
 
 RUN apt-get -y update && apt-get -y dist-upgrade
 
