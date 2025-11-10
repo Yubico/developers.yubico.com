@@ -1,16 +1,27 @@
 FROM ubuntu:18.04
 
-# drop multiverse, restricted, backports
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ bionic main universe" >/etc/apt/sources.list \
-	&& echo "deb http://archive.ubuntu.com/ubuntu/ bionic-updates main universe" >>/etc/apt/sources.list \
-	&& echo "deb http://archive.ubuntu.com/ubuntu/ bionic-security main universe" >>/etc/apt/sources.list
-
-RUN apt-get -y update && apt-get -y dist-upgrade
-
-RUN apt-get install --no-install-recommends -y \
+# UNIVERSAL APT-GET (FOR X86 AND ARM)
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        # This is the x86 active repository
+        echo "deb http://archive.ubuntu.com/ubuntu/ bionic main universe" > /etc/apt/sources.list && \
+        echo "deb http://archive.ubuntu.com/ubuntu/ bionic-updates main universe" >> /etc/apt/sources.list && \
+        echo "deb http://archive.ubuntu.com/ubuntu/ bionic-security main universe" >> /etc/apt/sources.list; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        # This is the ARM active repository
+        echo "deb http://ports.ubuntu.com/ubuntu-ports/ bionic main universe" > /etc/apt/sources.list && \
+        echo "deb http://ports.ubuntu.com/ubuntu-ports/ bionic-updates main universe" >> /etc/apt/sources.list && \
+        echo "deb http://ports.ubuntu.com/ubuntu-ports/ bionic-security main universe" >> /etc/apt/sources.list; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi \
+    # Clean up, update, and install in one go
+    && rm -f /etc/apt/sources.list.d/* \
+    && apt-get -y update \
+    && apt-get -y dist-upgrade \
+    && apt-get install --no-install-recommends -y \
 	git \
 	git-lfs \
-	# for yubico-binaries repo
 	openssh-client \
 	python-pip \
 	python-setuptools \
@@ -18,36 +29,21 @@ RUN apt-get install --no-install-recommends -y \
 	mscgen \
 	libffi-dev \
 	libssl-dev \
-	source-highlight
+	source-highlight \
+    && rm -rf /var/lib/apt/lists/*
 
+# PYTHON SETUP
+# Added setuptools/wheel for robustness
 COPY requirements.txt /
 COPY pipcache/*.gz  /
 COPY generate_sitemap.py /generate_sitemap.py
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install -r /requirements.txt
 
+# USER SETUP
 ARG uid
 ARG gid
 
-# MacOS default user's primary group has GID=20.
-#
-# Ubuntu container 'dialout' group also has GID=20;
-#
-#   jean@thinkpad:~$ docker run --rm -it ubuntu:16.04
-#   root@3bb92dbf5716:/# getent group 20
-#   dialout:x:20:
-#
-# Change container's 'dialout' GID to avoid conflict;
-#
-#   root@3bb92dbf5716:/# groupmod -g 9000 dialout
-#   root@3bb92dbf5716:/# getent group dialout
-#   dialout:x:9000:
-#
-# NOTE: files owned by dialout group won't automatically be updated to GID=9000,
-#   meaning a new group with GID=20 will gain group ownership on such pre-existing files.
-#
-# This shouldn't be a problem as typically 'dialout' is the group owner of /dev/tty*,
-#   and TTY devices shouldn't be available within this container.
 RUN groupmod -g 9000 dialout
 
 RUN addgroup --gid $gid build
