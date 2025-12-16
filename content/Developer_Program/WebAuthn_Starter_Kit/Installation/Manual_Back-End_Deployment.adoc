@@ -44,12 +44,14 @@ link:https://awscli.amazonaws.com/v2/documentation/api/latest/reference/s3api/cr
 
 Syntax of the AWS command for creating an S3 bucket in AWS:
 
+[source, command-line]
+----
     aws s3api create-bucket
     --bucket <bucket-name>
     --region <region-value>
     --create-bucket-configuration
     LocationConstraint=<region-value>
-
+----
 === Build the SAM package
 
 *Step 1.1:* At your workstation, use a Terminal or Command Prompt to run the WebAuthnKit SAM build and package script from the same directory where the SAM template `template.yaml` is located. By default, the path is `~/WebAuthnKit/backend`. This build is automated with the SAM template.
@@ -58,18 +60,21 @@ The SAM build and package command will process the SAM template, application cod
 
 *Step 1.2:* Change the `--profile` to match what you have in `~<user-home>/.aws/credentials` for running the AWS CLI and SAM commands. Then execute the command in a MacOS or Linux Terminal or Windows Command Prompt:
 
+[source, command-line]
+----
     sam build --use-container
     --skip-pull-image && sam package
     --s3-bucket <s3BucketName>
     --profile <wsCliProfile>
-
+----
 *Step 1.3:* When using Windows PowerShell, the separator `&&` must be changed to `;`.
-
+[source, command-line]
+----
     sam build --use-container
     --skip-pull-image ; sam package
     --s3-bucket <s3BucketName>
     --profile <awsCliProfile>
-
+----
 *Step 1.4:* As part of this SAM command, the built artifacts will be uploaded to the S3 bucket. The upload to the S3 bucket takes a few minutes. It is worthwhile to check in the AWS S3 bucket that the packages have been properly uploaded.
 
 image::Images/mback3-check-s3-bucket-v1.jpg[]
@@ -82,35 +87,36 @@ Next, the WebAuthnKit package will be deployed in the AWS environment using the 
 The SAM deploy script below will take the SAM package and artifacts (already uploaded to S3 in the previous section) and deploy them to the AWS environment via CloudFormation. This deployment is automated with the SAM template.
 
 *Note:* All variables marked with `$` should be replaced with the values to match your deployment.
-
+[source, command-line]
+----
     sam deploy --s3-bucket <s3BucketName>
-      --stack-name <cfStackName>
-      --profile <awsCliProfile>
-      --region <awsRegion>
-      --capabilities <capabilityIam>
-      --parameter-overrides
-      UserPoolName=<userPoolName>
-      DatabaseName=<databaseName>
-      MasterUserName=<databaseMasterUsername>
-      MasterUserPassword=<databaseMasterPassword>
-      DefineAuthChallengeFuncName=
-      <defineAuthChallengeFuncName>
-      CreateAuthChallengeFuncName=
-      <createAuthChallengeFuncName>
-      VerifyAuthChallengeFuncName=
-      <verifyAuthChallengeFuncName>
-      WebAuthnKitAPIFuncName=
-      <webAuthnKitApiFuncName>
-      PreSignUpFuncName=<preSignUpFuncName>
-      JavaWebAuthnFuncName=
-      <javaWebAuthnLibFuncName>
-      WebAuthnKitAPIName=<webAuthnKitApiName>
-      CreateDBSchemaFuncName=
-      <createDatabaseSchemaFuncName>
-      CreateDBSchemaCallerFuncName=
-      <createDatabaseSchemaCallerFuncName>
-      AmplifyHostingAppName=<amplifyHostingAppName>
-
+        --stack-name <cfStackName>
+        --profile <awsCliProfile>
+        --region <awsRegion>
+        --capabilities <capabilityIam>
+        --parameter-overrides
+        UserPoolName=<userPoolName>
+        DatabaseName=<databaseName>
+        MasterUserName=<databaseMasterUsername>
+        MasterUserPassword=<databaseMasterPassword>
+        DefineAuthChallengeFuncName=
+        <defineAuthChallengeFuncName>
+        CreateAuthChallengeFuncName=
+        <createAuthChallengeFuncName>
+        VerifyAuthChallengeFuncName=
+        <verifyAuthChallengeFuncName>
+        WebAuthnKitAPIFuncName=
+        <webAuthnKitApiFuncName>
+        PreSignUpFuncName=<preSignUpFuncName>
+        JavaWebAuthnFuncName=
+        <javaWebAuthnLibFuncName>
+        WebAuthnKitAPIName=<webAuthnKitApiName>
+        CreateDBSchemaFuncName=
+        <createDatabaseSchemaFuncName>
+        CreateDBSchemaCallerFuncName=
+        <createDatabaseSchemaCallerFuncName>
+        AmplifyHostingAppName=<amplifyHostingAppName>
+----
 The events of the deployment should be displayed through the command line interface.
 
 The SAM deployment at AWS takes approximately 5 minutes to create all resources and 5 minutes to delete all resources.
@@ -167,9 +173,10 @@ image::Images/mback8-connect-rds-database-v1.jpg[]
 *Step 3.3:* When you are logged in to the RDS database, select *Query Editor* in the left-hand pane.
 
 *Step 3.4:* In the Query Editor window, enter the SQL statement:
-
+[source, sql]
+----
     show tables;
-
+----
 *Step 3.5:* Check the returned rows in the output:
 
 image::Images/mback9-check-database-tables-v1.jpg[]
@@ -228,9 +235,10 @@ image::Images/mback12-win-env-variables-apache-maven-java-v1.png[]
 ===== Re-build the JavaWebAuthnLib.jar
 
 At the workstation, start a Terminal, Command Prompt, or PowerShell. Then navigate to the folder `~/WebAuthnKit/backend/lambda-functions /JavaWebAuthnLib/`. Then execute the command:
-
+[source, command-line]
+----
     mvn clean install
-
+----
 image::Images/mback13-rebuild-webauthnlib-jar-v1.png[]
 *Figure 13 - Re-building the webauthnlib.jar*
 
@@ -269,7 +277,8 @@ It is also possible to use the AWS CLI for scripting the upload of the `JavaWebA
 link:https://docs.aws.amazon.com/lambda/latest/dg/java-package.html#java-package-cli[AWS documentation] for details on how to perform the upload and deployment using AWS CLI.
 
 Below are examples of the AWS CLI commands needed for uploading and deploying `JavaWebAuthnLib.jar` to AWS S3 and AWS Lambda.
-
+[source, command-line]
+----
     aws s3 cp ~\WebAuthnKit-master
     \WebAuthnKit-master
     \backend
@@ -282,7 +291,7 @@ Below are examples of the AWS CLI commands needed for uploading and deploying `J
     --function-name JavaWebAuthLib$suffix
     --s3-bucket $s3BucketName
     --s3-key webauthn.jar
-
+----
 ===== Attach the AWSLambdaRole policy
 
 If the AWS Lambda Role policy is not properly attached, take the following actions to attach the
@@ -345,13 +354,14 @@ image::Images/mback24-enable-cors-policy-api-gateway-new-model-v1.jpg[]
  * Model description: Can be left blank.
 
  * In the Model schema, insert the following schema:
-
+[source, json]
+----
     {
       "$schema": "http://json-schema.org/draft-04/schema#",
       "title" : "Empty Schema",
       "type" : "object"
     }
-
+----
 *Step 7.5:* Then press the *Create* button to create the model.
 
 *Step 7.6:* In the AWS console, go back to *Services* called `API Gateway`, and select *Resources* in the left-hand pane.

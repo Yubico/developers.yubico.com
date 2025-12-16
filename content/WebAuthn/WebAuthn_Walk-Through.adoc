@@ -31,11 +31,12 @@ In addition to setting up a local development environment, you also need a YubiK
 
 2. Verify that you can run the webauthn demo server:
 +
-....
+[source, commandline]
+----
 git clone https://github.com/Yubico/java-webauthn-server
 cd java-webauthn-server
 ./gradlew run
-....
+----
 +
 3. Open https://localhost:8443 to access the WebAuthn demo website.
 
@@ -78,10 +79,12 @@ The first task of the server is to register and store the user's WebAuthn creden
 
 As the web app starts up, it instantiates a `RelyingParty` object from the `webauthn-server-core` library. Your credential repository is passed in as the argument to the `.credentialRepository()` method. For reference, see the link:https://github.com/Yubico/java-webauthn-server/blob/master/webauthn-server-demo/src/main/java/demo/webauthn/WebAuthnServer.java#L141-L153[`WebAuthnServer` class constructor].
 
-....
+[source, java]
+----
 public class WebAuthnServer {
 
-    private final RegistrationStorage userStorage;  // The InMemoryRegistrationStorage implements the RegistrationStorage and CredentialRepository interfaces
+    // The InMemoryRegistrationStorage implements RegistrationStorage and CredentialRepository interfaces
+    private final RegistrationStorage userStorage;  
 
     private final RelyingParty rp;
 
@@ -102,7 +105,7 @@ public class WebAuthnServer {
 
     ...
 }
-....
+----
 
 
 ==== *Step 3* (Client) Send registration request to server:
@@ -118,7 +121,8 @@ The JavaScript makes a call to the `/register` endpoint of the REST API to initi
 
 The server calls the `rp.startRegistration()` operation, which creates a `PublicKeyCredentialCreationOptions` JSON object and sets the values based on the service's policy and preferences. In the following example you can see that the JavaScript app passed in the username "test". The server set the RP ID (`rpID`) to "localhost". The rpID is important because the client - the browser in this case - protects against spoofing attacks by validating it against the link:https://www.w3.org/TR/webauthn/#relying-party-identifier[origin's effective domain]. To also protect against replay attacks, the server generates a pseudo-random challenge.
 
-....
+[source, json]
+----
 {
     "rp": {
         "name": "Yubico WebAuthn demo",
@@ -151,7 +155,7 @@ The server calls the `rp.startRegistration()` operation, which creates a `Public
     "attestation": "direct",
     "extensions": {}
 }
-....
+----
 
 This registration response is returned to the client. To learn more about this data structure, see link:https://www.w3.org/TR/webauthn/#iface-pkcredential[`PublicKeyCredential Interface`] and link:https://www.w3.org/TR/webauthn/#credentialrequestoptions-extension[`CredentialRequestOptions`].
 
@@ -193,7 +197,8 @@ Go to https://localhost:8443 and click the `Authenticate` button. The JavaScript
 
 The server calls the `rp.startAuthentication()` operation, which creates a link:https://www.w3.org/TR/webauthn/#assertion-options[`PublicKeyCredentialRequestOptions`] JSON object and sets the values based on the service's policy and preferences. Just as in the registration step, the server sets the `rpID` and challenge. The `allowCredentials` list is populated with those previously registered credentials that the user is allowed to authenticate with.
 
-....
+[source, json]
+----
 {
     "challenge": "kVDORSw87Z4PwuiCKOmQ7lduC-SReKF_TLayhPLBW5c",
     "rpId": "localhost",
@@ -208,7 +213,7 @@ The server calls the `rp.startAuthentication()` operation, which creates a link:
       "appid": "https://localhost:8443"
     }
 }
-....
+----
 
 This authentication response is returned to the JavaScript app.
 

@@ -37,7 +37,8 @@ Aurora Serverless database supports encryption at rest which is required by defa
 Database creation scripts available via GitHub (Source).
 
 *[user Table]*
-
+[source, sql]
+----
     CREATE TABLE user (
      id INT NOT NULL AUTO_INCREMENT,
      cognito_id NVARCHAR(50) NOT NULL UNIQUE,
@@ -51,9 +52,11 @@ Database creation scripts available via GitHub (Source).
      challenge TEXT,
      PRIMARY KEY (id)
      );
+----
 
 *[credential Table]*
-
+[source, sql]
+----
     CREATE TABLE credential (
       id INT NOT NULL AUTO_INCREMENT,
       user_id INT NOT NULL,
@@ -78,6 +81,7 @@ Database creation scripts available via GitHub (Source).
       REFERENCES user(id)
       ON DELETE CASCADE
     );
+----
 
 ==== Lambda Functions
 
@@ -119,7 +123,8 @@ image::Images/back3-define-auth-challenge-v1.png[]
 
 Cognito, after receiving the registration request from the client, triggers the DefineChallenge Lambda function to determine which flow to use - as the user is prompted to register a new WebAuthn Authenticator, it selects the Registration flow.
 
-
+[source, json]
+----
     { 
       "version": "1", 
       "region": "us-west-2", 
@@ -148,7 +153,7 @@ Cognito, after receiving the registration request from the client, triggers the 
          "failAuthentication": null
       }
     }
-
+----
 ===== DefineChallenge: ***Returned*** from DefineChallenge
 
 image:Images/back3-define-auth-challenge-v1.png[]
@@ -156,7 +161,8 @@ image:Images/back3-define-auth-challenge-v1.png[]
 *Figure 6 - Define Auth Challenge Returned*
 
 The DefineChallenge Lambda function sends the details to the CreateChallenge function, prompting the creation of a WebAuthn Registration event.
-
+[source, json]
+----
     ...
         "session": []
       },
@@ -166,6 +172,7 @@ The DefineChallenge Lambda function sends the details to the CreateChallenge fun
        "failAuthentication": false
       }
     }
+----
 
 ===== CreateChallenge: ***Received*** from DefineChallenge
 
@@ -173,17 +180,19 @@ image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 7 - Create Auth Challenge Received*
 
 The CreateChallenge Lambda function receives the details from the DefineChallenge function and proceeds to creating the WebAuthn Registration event.
-
-    ... 
-       "challengeName": "CUSTOM_CHALLENGE", 
-       "session": [] 
-      }, 
+[source, json]
+----
+    ...
+       "challengeName": "CUSTOM_CHALLENGE",
+       "session": []
+      },
       "response": {
-        "publicChallengeParameters": null, 
-        "privateChallengeParameters": null, 
+        "publicChallengeParameters": null,
+        "privateChallengeParameters": null,
         "challengeMetadata": null
-      }
+     }
     }
+----
 
 ===== CreateChallenge: ***Response*** from CreateChallenge to Client
 
@@ -191,31 +200,32 @@ image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 8 - Create Auth Challenge Response from Client*
 
 CreateChallenge returns to Cognito the challenge with the WebAuthn Registration credential, as well as a default PIN code should User Verification not be supported by the client authenticator.
-
-    ... 
-        "challengeName": "CUSTOM_CHALLENGE", 
-        "session": [] 
-        }, 
+[source, json]
+----
+    ...
+    "challengeName": "CUSTOM_CHALLENGE",
+    "session": []
+    },
         "response": {
-          "publicChallengeParameters": { 
-             "type": "webauthn.create", 
+            "publicChallengeParameters": {
+             "type": "webauthn.create",
              "publicKeyCredentialCreationOptions": "{\"challenge\":\"
-qmVpdqI5GsDu0XDiywboePGZPh7BGt0V\",\"rp\":{\"id\":\"fido2kit.com\",\"
-name\":\"WebAuthn Starter Kit\"},\"user\":{\"id\":\"
-MTY1MGM4NDgtMDlhOS00NTE1LWEzODgtZWMyMTY4MjMxZDJm\"},\"attestation\":\"
-direct\",\"pubKeyCredParams\":[{\"type\":\"public-key\",\"alg\":7},{\"
-type\":\"public-key\",\"alg\":-257}],\"authenticatorSelection\":{\"
-authenticatorAttachment\":\"cross-platform\",\"requireResidentKey\":
-false,\"userVerification\":\"preferred\"}}",
-             "pinCode": 4011 
-        }, 
-        "privateChallengeParameters": {
-             "type": "webauthn.create" 
-        }, 
-        "challengeMetadata": null
-      }
+                qmVpdqI5GsDu0XDiywboePGZPh7BGt0V\",\"rp\":{\"id\":\"fido2kit.com\",\"
+                name\":\"WebAuthn Starter Kit\"},\"user\":{\"id\":\"
+                MTY1MGM4NDgtMDlhOS00NTE1LWEzODgtZWMyMTY4MjMxZDJm\"},\"attestation\":\"
+                direct\",\"pubKeyCredParams\":[{\"type\":\"public-key\",\"alg\":7},{\"
+                type\":\"public-key\",\"alg\":-257}],\"authenticatorSelection\":{\"
+                authenticatorAttachment\":\"cross-platform\",\"requireResidentKey\":
+                false,\"userVerification\":\"preferred\"}}",
+            "pinCode": 4011
+            },
+            "privateChallengeParameters": {
+                "type": "webauthn.create"
+            },
+            "challengeMetadata": null
+        }
     }
-
+----
 
 
 This challenge is then sent by Cognito to the client’s WebAuthn supporting browser or application. Refer to the WebAuthn Browser Support Matrix for a list of supported platforms. The WebAuthn Client browser or application will interface with the Authenticator (either the host system, called a platform authenticator, or a connected device such as a YubiKey, called a roaming authenticator), perform the registration event, and return the response to Cognito.
@@ -226,119 +236,122 @@ image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 9 - Verify Auth Challenge Received from Client*
 
 Once Cognito receives the Registration response from the Client as a challenge response, which is then passed to the VerifyChallange Lambda function. Note that the “challengeAnswer” is ALL provided from the client.
-
-    { 
-        "version": "1", 
-        "region": "us-west-2", 
-        "userPoolId": "us-west-2_GqV3Smaw8", 
-        "userName": "fred", 
+[source, json]
+----
+    {
+        "version": "1",
+        "region": "us-west-2",
+        "userPoolId": "us-west-2_GqV3Smaw8",
+        "userName": "fred",
         "callerContext": {
-          "awsSdkVersion": "aws-sdk-ios-2.13.0",
-          "clientId": "6ftfcihr71p8mhg9jehge2pvu7" 
-        }, 
-        "triggerSource": "VerifyAuthChallengeResponse_Authentication", 
+         "awsSdkVersion": "aws-sdk-ios-2.13.0",
+         "clientId": "6ftfcihr71p8mhg9jehge2pvu7"
+        },
+        "triggerSource": "VerifyAuthChallengeResponse_Authentication",
         "request": {
-          "userAttributes": { 
+         "userAttributes": {
              "sub": "1650c848-09a9-4515-a388-ec2168231d2f",
              "cognito:user_status": "CONFIRMED"
-          },
-          "privateChallengeParameters": { 
+         },
+         "privateChallengeParameters": {
              "type": "webauthn.create"
-          },
-          "challengeAnswer": "{\n  \"rawId\" : \"
-XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n  \"id\" : \"
-XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n  \"
-clientDataJSON\" : \"
-eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoicW1WcGRxSTVHc0R1MFhE
-aXl3Ym9lUEdaUGg3Qkd0MFYiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n \"
-attestationObject\" : \"
-o2NmbXRmcGFja2VkZ2F0dFN0bXSjY2FsZyZjc2lnWEYwRAIgV5Sf7rTv+CjCtE\\/pt0\\
-/1mlK9LsCOpE7Za5CObyrfOQkCIDgs+N7b814JmXgXM1hAg0nIhY5+jayJNLN3IFwb\\/\\
-/AtY3g1Y4FZAsEwggK9MIIBpaADAgECAgQr8Xx4MA0GCSqGSIb3DQEBCwUAMC4xLDAqBgNVB
-AMTI1l1YmljbyBVMkYgUm9vdCBDQSBTZXJpYWwgNDU3MjAwNjMxMCAXDTE0MDgwMTAwMDAwM
-FoYDzIwNTAwOTA0MDAwMDAwWjBuMQswCQYDVQQGEwJTRTESMBAGA1UECgwJWXViaWNvIEFCM
-SIwIAYDVQQLDBlBdXRoZW50aWNhdG9yIEF0dGVzdGF0aW9uMScwJQYDVQQDDB5ZdWJpY28gV
-TJGIEVFIFNlcmlhbCA3MzcyNDYzMjgwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR0wseEI
-8hxLptI8llYZvxwQK5M3wfXd9WFrwSTme36kjy+tJ+XFvn1WnhsNCUfyPNePehbVnBQOMcLo
-ScZYHmLo2wwajAiBgkrBgEEAYLECgIEFTEuMy42LjEuNC4xLjQxNDgyLjEuNzATBgsrBgEEA
-YLlHAIBAQQEAwICJDAhBgsrBgEEAYLlHAEBBAQSBBDF71X\\
-/rZpLn7WAreuv4CbQMAwGA1UdEwEB\\
-/wQCMAAwDQYJKoZIhvcNAQELBQADggEBAItuk3adeE1u6dkA0nECf8J35Lgm5mw5udSIucst
-LQU9ZrTVNjwXugnxsT5oVriRN7o1BB+Lz7KJmtDw34kvh\\
-/uA11A9Ksf6veIV3hK+ugN7WNok7gn0t6IWOZF1xVr7lyo0XgbV88Kh+\\
-/D1biUqc5u49qSvTH+Jx1WrUxeFh1S1CTpmvmYGdzgWE32qLsNeoscPkbtkVSYbB8hwPb7Sb V\\
-/WbBBLzJEPn79oMJ\\/e+63B12iLdyu2K\\ /PKuibBsqSVHioe6cnvksZktkDykn+ZedRDpNOyBGo+89eBA9tLIYx\\
-/bP8Mg9tCoIP8GZzh2P2joujOF4F0O1xkICNI9MB3+6JoYXV0aERhdGFYxFkRe\\
-/mjiILe6+KL8A6yqwHU3CExq8pwIy8MkGuqfJDFQQAAAATF71X\\
-/rZpLn7WAreuv4CbQAEBdUsKxlnNs6yOotyWk4VBwgJ3o0SNgS3FsNML+bVWbGAv2rIUotQh
-yEVDvbC6Ek0xN2GN25wNQHLcTRR4u2lhGpQECAyYgASFYIFwcNYZoJJp5BbhXO1DgFFDkHwC
-wCVK\\/M184r+9gW2HPIlggl9V1rsYi6KXenVDxLvejpxb7tR+1PCdzISGhPqgWfD8=\",
-\n  \"type\" : \"public-key\"\n}"
-       },
+         },
+         "challengeAnswer": "{\n \"rawId\" : \"
+            XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"id\" : \"
+            XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"
+            clientDataJSON\" : \"
+            eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoicW1WcGRxSTVHc0R1MFhE
+            aXl3Ym9lUEdaUGg3Qkd0MFYiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n\"
+            attestationObject\" : \"
+            o2NmbXRmcGFja2VkZ2F0dFN0bXSjY2FsZyZjc2lnWEYwRAIgV5Sf7rTv+CjCtE\\/pt0\\
+            /1mlK9LsCOpE7Za5CObyrfOQkCIDgs+N7b814JmXgXM1hAg0nIhY5+jayJNLN3IFwb\\/\\
+            /AtY3g1Y4FZAsEwggK9MIIBpaADAgECAgQr8Xx4MA0GCSqGSIb3DQEBCwUAMC4xLDAqBgNVB
+            AMTI1l1YmljbyBVMkYgUm9vdCBDQSBTZXJpYWwgNDU3MjAwNjMxMCAXDTE0MDgwMTAwMDAwM
+            FoYDzIwNTAwOTA0MDAwMDAwWjBuMQswCQYDVQQGEwJTRTESMBAGA1UECgwJWXViaWNvIEFCM
+            SIwIAYDVQQLDBlBdXRoZW50aWNhdG9yIEF0dGVzdGF0aW9uMScwJQYDVQQDDB5ZdWJpY28gV
+            TJGIEVFIFNlcmlhbCA3MzcyNDYzMjgwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR0wseEI
+            8hxLptI8llYZvxwQK5M3wfXd9WFrwSTme36kjy+tJ+XFvn1WnhsNCUfyPNePehbVnBQOMcLo
+            ScZYHmLo2wwajAiBgkrBgEEAYLECgIEFTEuMy42LjEuNC4xLjQxNDgyLjEuNzATBgsrBgEEA
+            YLlHAIBAQQEAwICJDAhBgsrBgEEAYLlHAEBBAQSBBDF71X\\
+            /rZpLn7WAreuv4CbQMAwGA1UdEwEB\\
+            /wQCMAAwDQYJKoZIhvcNAQELBQADggEBAItuk3adeE1u6dkA0nECf8J35Lgm5mw5udSIucst
+            LQU9ZrTVNjwXugnxsT5oVriRN7o1BB+Lz7KJmtDw34kvh\\
+            /uA11A9Ksf6veIV3hK+ugN7WNok7gn0t6IWOZF1xVr7lyo0XgbV88Kh+\\
+            /D1biUqc5u49qSvTH+Jx1WrUxeFh1S1CTpmvmYGdzgWE32qLsNeoscPkbtkVSYbB8hwPb7Sb V\\
+            /WbBBLzJEPn79oMJ\\/e+63B12iLdyu2K\\ /PKuibBsqSVHioe6cnvksZktkDykn+ZedRDpNOyBGo+89eBA9tLIYx\\
+            /bP8Mg9tCoIP8GZzh2P2joujOF4F0O1xkICNI9MB3+6JoYXV0aERhdGFYxFkRe\\
+            /mjiILe6+KL8A6yqwHU3CExq8pwIy8MkGuqfJDFQQAAAATF71X\\
+            /rZpLn7WAreuv4CbQAEBdUsKxlnNs6yOotyWk4VBwgJ3o0SNgS3FsNML+bVWbGAv2rIUotQh
+            yEVDvbC6Ek0xN2GN25wNQHLcTRR4u2lhGpQECAyYgASFYIFwcNYZoJJp5BbhXO1DgFFDkHwC
+            wCVK\\/M184r+9gW2HPIlggl9V1rsYi6KXenVDxLvejpxb7tR+1PCdzISGhPqgWfD8=\",
+            \n \"type\" : \"public-key\"\n}"
+      },
        "response": {
           "answerCorrect": null
        }
      }
-
+----
 ===== VerifyChallenge: ***Returned*** to DefineAuthChallenge
 
 image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 10 - Verify Auth Challenge Returned*
 
 The VerifyChallenge will proceed to verify the WebAuthn Registration. If User Verification is not supported by the client or authenticator, it will also define the U2F Password as required, enforcing the user to provide a network password for each authentication event with the authenticator. This response is then passed to the DefineCredential function.
-
+[source, json]
+----
     ...
         "privateChallengeParameters": {
-          "type": "webauthn.create"
-         },
-         "challengeAnswer": "{\n  \"rawId\" : \"
-XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n  \"id\" : \"
-XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n  \"
-clientDataJSON\" : \"
-eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoicW1WcGRxSTVHc0R1MFhE
-aXl3Ym9lUEdaUGg3Qkd0MFYiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n \" attestationObject\" : \"
-o2NmbXRmcGFja2VkZ2F0dFN0bXSjY2FsZyZjc2lnWEYwRAIgV5Sf7rTv+CjCtE\\/pt0\\
-/1mlK9LsCOpE7Za5CObyrfOQkCIDgs+N7b814JmXgXM1hAg0nIhY5+jayJNLN3IFwb\\/\\
-/AtY3g1Y4FZAsEwggK9MIIBpaADAgECAgQr8Xx4MA0GCSqGSIb3DQEBCwUAMC4xLDAqBgNVB
-AMTI1l1YmljbyBVMkYgUm9vdCBDQSBTZXJpYWwgNDU3MjAwNjMxMCAXDTE0MDgwMTAwMDAwM
-FoYDzIwNTAwOTA0MDAwMDAwWjBuMQswCQYDVQQGEwJTRTESMBAGA1UECgwJWXViaWNvIEFCM
-SIwIAYDVQQLDBlBdXRoZW50aWNhdG9yIEF0dGVzdGF0aW9uMScwJQYDVQQDDB5ZdWJpY28gV
-TJGIEVFIFNlcmlhbCA3MzcyNDYzMjgwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR0wseEI
-8hxLptI8llYZvxwQK5M3wfXd9WFrwSTme36kjy+tJ+XFvn1WnhsNCUfyPNePehbVnBQOMcLo
-ScZYHmLo2wwajAiBgkrBgEEAYLECgIEFTEuMy42LjEuNC4xLjQxNDgyLjEuNzATBgsrBgEEA
-YLlHAIBAQQEAwICJDAhBgsrBgEEAYLlHAEBBAQSBBDF71X\\
-/rZpLn7WAreuv4CbQMAwGA1UdEwEB\\
-/wQCMAAwDQYJKoZIhvcNAQELBQADggEBAItuk3adeE1u6dkA0nECf8J35Lgm5mw5udSIucst LQU9ZrTVNjwXugnxsT5oVriRN7o1BB+Lz7KJmtDw34kvh\\
-/uA11A9Ksf6veIV3hK+ugN7WNok7gn0t6IWOZF1xVr7lyo0XgbV88Kh+\\
-/D1biUqc5u49qSvTH+Jx1WrUxeFh1S1CTpmvmYGdzgWE32qLsNeoscPkbtkVSYbB8hwPb7Sb V\\
-/WbBBLzJEPn79oMJ\\
-/e+63B12iLdyu2K\\ /PKuibBsqSVHioe6cnvksZktkDykn+ZedRDpNOyBGo+89eBA9tLIYx\\
-/bP8Mg9tCoIP8GZzh2P2joujOF4F0O1xkICNI9MB3+6JoYXV0aERhdGFYxFkRe\\
-/mjiILe6+KL8A6yqwHU3CExq8pwIy8MkGuqfJDFQQAAAATF71X\\
-/rZpLn7WAreuv4CbQAEBdUsKxlnNs6yOotyWk4VBwgJ3o0SNgS3FsNML+bVWbGAv2rIUotQh
-yEVDvbC6Ek0xN2GN25wNQHLcTRR4u2lhGpQECAyYgASFYIFwcNYZoJJp5BbhXO1DgFFDkHwC
-wCVK\\/M184r+9gW2HPIlggl9V1rsYi6KXenVDxLvejpxb7tR+1PCdzISGhPqgWfD8=\",
-\n \"type\" : \"public-key\"\n, \"pinCode\" : 3632}"
-         }, 
-        "response": { 
+         "type": "webauthn.create"
+        },
+        "challengeAnswer": "{\n \"rawId\" : \"
+            XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"id\" : \"
+            XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"
+            clientDataJSON\" : \"
+            eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoicW1WcGRxSTVHc0R1MFhE
+            aXl3Ym9lUEdaUGg3Qkd0MFYiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n\" attestationObject\" : \"
+            o2NmbXRmcGFja2VkZ2F0dFN0bXSjY2FsZyZjc2lnWEYwRAIgV5Sf7rTv+CjCtE\\/pt0\\
+            /1mlK9LsCOpE7Za5CObyrfOQkCIDgs+N7b814JmXgXM1hAg0nIhY5+jayJNLN3IFwb\\/\\
+            /AtY3g1Y4FZAsEwggK9MIIBpaADAgECAgQr8Xx4MA0GCSqGSIb3DQEBCwUAMC4xLDAqBgNVB
+            AMTI1l1YmljbyBVMkYgUm9vdCBDQSBTZXJpYWwgNDU3MjAwNjMxMCAXDTE0MDgwMTAwMDAwM
+            FoYDzIwNTAwOTA0MDAwMDAwWjBuMQswCQYDVQQGEwJTRTESMBAGA1UECgwJWXViaWNvIEFCM
+            SIwIAYDVQQLDBlBdXRoZW50aWNhdG9yIEF0dGVzdGF0aW9uMScwJQYDVQQDDB5ZdWJpY28gV
+            TJGIEVFIFNlcmlhbCA3MzcyNDYzMjgwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR0wseEI
+            8hxLptI8llYZvxwQK5M3wfXd9WFrwSTme36kjy+tJ+XFvn1WnhsNCUfyPNePehbVnBQOMcLo
+            ScZYHmLo2wwajAiBgkrBgEEAYLECgIEFTEuMy42LjEuNC4xLjQxNDgyLjEuNzATBgsrBgEEA
+            YLlHAIBAQQEAwICJDAhBgsrBgEEAYLlHAEBBAQSBBDF71X\\
+            /rZpLn7WAreuv4CbQMAwGA1UdEwEB\\
+            /wQCMAAwDQYJKoZIhvcNAQELBQADggEBAItuk3adeE1u6dkA0nECf8J35Lgm5mw5udSIucst LQU9ZrTVNjwXugnxsT5oVriRN7o1BB+Lz7KJmtDw34kvh\\
+            /uA11A9Ksf6veIV3hK+ugN7WNok7gn0t6IWOZF1xVr7lyo0XgbV88Kh+\\
+            /D1biUqc5u49qSvTH+Jx1WrUxeFh1S1CTpmvmYGdzgWE32qLsNeoscPkbtkVSYbB8hwPb7Sb V\\
+            /WbBBLzJEPn79oMJ\\
+            /e+63B12iLdyu2K\\ /PKuibBsqSVHioe6cnvksZktkDykn+ZedRDpNOyBGo+89eBA9tLIYx\\
+            /bP8Mg9tCoIP8GZzh2P2joujOF4F0O1xkICNI9MB3+6JoYXV0aERhdGFYxFkRe\\
+            /mjiILe6+KL8A6yqwHU3CExq8pwIy8MkGuqfJDFQQAAAATF71X\\
+            /rZpLn7WAreuv4CbQAEBdUsKxlnNs6yOotyWk4VBwgJ3o0SNgS3FsNML+bVWbGAv2rIUotQh
+            yEVDvbC6Ek0xN2GN25wNQHLcTRR4u2lhGpQECAyYgASFYIFwcNYZoJJp5BbhXO1DgFFDkHwC
+            wCVK\\/M184r+9gW2HPIlggl9V1rsYi6KXenVDxLvejpxb7tR+1PCdzISGhPqgWfD8=\",
+            \n \"type\" : \"public-key\"\n, \"pinCode\" : 3632}"
+        },
+        "response": {
           "answerCorrect": true,
-          "publicChallengeParameters": { 
-            "pinCode": "REQUIRED" 
-          } 
+          "publicChallengeParameters": {
+            "pinCode": "REQUIRED"
+          }
         }
     }
-
+----
 ===== DefineChallenge: ***Received*** from VerifyAuthChallenge
 
 image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 11 - Define Auth Challenge Received from Verify Challenge*
 
 The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, will then either require the user’s network PIN to be provided, or proceed if User Verification is supported on the WebAuthn registration.
-
+[source, json]
+----
     ...
         "session": [
           {
@@ -354,30 +367,31 @@ The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, w
         "failAuthentication": null
       }
     }
-
+----
 ===== DefineChallenge: ***Returned*** from DefineAuthChallenge to User
 
 image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 12 - Define Auth Challenge Returned to User*
 
 Finally, DefineChallenge returns a success response and token approval to Cognito. Cognito passes on the success status and auth token to the client.
-
-    ... 
+[source, json]
+----
+    ...
           "session": [
-             { 
-                "challengeName": "CUSTOM_CHALLENGE", 
-                "challengeResult": true, 
+            {
+                "challengeName": "CUSTOM_CHALLENGE",
+                "challengeResult": true,
                 "challengeMetadata": null
-             }
-          ] 
-        }, 
+            }
+         ]
+        },
         "response": {
-            "challengeName": null, 
-            "issueTokens": true, 
+            "challengeName": null,
+            "issueTokens": true,
             "failAuthentication": false
         }
     }
-
+----
 
 === Authentication
 
@@ -395,37 +409,38 @@ image::Images/back3-define-auth-challenge-v1.png[]
 
 Cognito, after receiving the authentication request from the client, triggers the DefineChallenge Lambda function to determine which flow to use -as the user is prompted to authenticate with a register WebAuthn Authenticator, it selects the Authenticate flow.
 
-
-    { 
-       "version": "1", 
-       "region": "us-west-2", 
-       "userPoolId": "us-west-2_GqV3Smaw8", 
-       "userName": "fred", 
+[source, json]
+----
+    {
+       "version": "1",
+       "region": "us-west-2",
+       "userPoolId": "us-west-2_GqV3Smaw8",
+       "userName": "fred",
        "callerContext": {
          "awsSdkVersion": "aws-sdk-ios-2.13.0",
-         "clientId": "6ftfcihr71p8mhg9jehge2pvu7" 
-       }, 
-       "triggerSource": "DefineAuthChallenge_Authentication", 
+         "clientId": "6ftfcihr71p8mhg9jehge2pvu7"
+       },
+       "triggerSource": "DefineAuthChallenge_Authentication",
        "request": {
-         "userAttributes": { 
-            "sub": "1650c848-09a9-4515-a388-ec2168231d2f", 
+         "userAttributes": {
+            "sub": "1650c848-09a9-4515-a388-ec2168231d2f",
             "cognito:user_status": "CONFIRMED"
-         }, 
+         },
          "session": [
-              { 
-                "challengeName": "SRP_A", 
-                "challengeResult": true, 
+             {
+                "challengeName": "SRP_A",
+                "challengeResult": true,
                 "challengeMetadata": null
-              }
-         ] 
-       }, 
+             }
+         ]
+       },
        "response": {
-         "challengeName": null, 
-         "issueTokens": null, 
+         "challengeName": null,
+         "issueTokens": null,
          "failAuthentication": null
-      }
+       }
     }
-
+----
 
 ===== DefineChallenge: ***Returned*** from DefineChallenge
 
@@ -433,24 +448,26 @@ image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 15 - Define Auth Challenge Returned*
 
 The DefineChallenge Lambda function sends the details to the CreateChallenge function, prompting the creation of a WebAuthn Authentication event.
-
+[source, json]
+----
     ...
-            "session": [] 
-      }, 
+            "session": []
+      },
       "response": {
-          "challengeName": "CUSTOM_CHALLENGE", 
-          "issueTokens": false, 
+          "challengeName": "CUSTOM_CHALLENGE",
+          "issueTokens": false,
           "failAuthentication": false
       }
     }
-
+----
 ===== CreateChallenge: ***Received*** from DefineChallenge
 
 image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 16 - Create Auth Challenge Received*
 
 The CreateChallenge Lambda function receives the details from the DefineChallenge function and proceeds to creating the WebAuthn Authentication event.
-
+[source, json]
+----
     ... 
         "challengeName": "CUSTOM_CHALLENGE", 
         "session": [] 
@@ -461,14 +478,15 @@ The CreateChallenge Lambda function receives the details from the DefineChalleng
                "challengeMetadata": null
         }
       }
-
+----
 ===== CreateChallenge: ***Response*** from CreateChallenge to Client
 
 image::Images/back4-create-auth-challenge-v1.png[]
 *Figure 17 - Create Auth Challenge Response to Client*
 
 CreateChallenge returns to Cognito the challenge with the WebAuthn Authentication challenge.
-
+[source, json]
+----
     ... 
          "challengeName": "CUSTOM_CHALLENGE", 
          "session": [] 
@@ -477,11 +495,11 @@ CreateChallenge returns to Cognito the challenge with the WebAuthn Authenticatio
          "publicChallengeParameters": { 
             "type": "webauthn.get", 
             "publicKeyCredentialRequestOptions": "{\"publicKey\":{\"
-challenge\":\"ajVK32daMKfccQPcSLiwIq4gVVYbqj1Z\",\"rpId\":\"fido2kit.
-com\",\"timeout\":60000,\"userVerification\":\"preferred\",\"
-allowCredentials\":[{\"id\":\"XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\"type\":\"
-public-key\"}]}}"
+            challenge\":\"ajVK32daMKfccQPcSLiwIq4gVVYbqj1Z\",\"rpId\":\"fido2kit.
+            com\",\"timeout\":60000,\"userVerification\":\"preferred\",\"
+            allowCredentials\":[{\"id\":\"XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\"type\":\"
+            public-key\"}]}}"
          }, 
         "privateChallengeParameters": {
              "type": "webauthn.get" 
@@ -489,7 +507,7 @@ public-key\"}]}}"
         "challengeMetadata": null
       }
     }
-
+----
 
 This challenge is then sent by Cognito to the client’s WebAuthn supporting browser or application. Refer to the WebAuthn Browser Support Matrix for a list of supported platforms. The WebAuthn Client browser or application will interface with the Authenticator (either the host system, called a platform authenticator, or a connected device such as a YubiKey, called a roaming authenticator), perform the authentication event, and return the response to Cognito.
 
@@ -499,7 +517,8 @@ image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 18 - Verify Auth Challenge Received from Client*
 
 Once Cognito receives the Authentication response, containing the authenticator response and client data, from the Client as a challenge response, which is then passed to the VerifyChallange Lambda function. Note that the “challengeAnswer” is ALL provided from the client.
-
+[source, json]
+----
     { 
         "version": "1", 
         "region": "us-west-2", 
@@ -519,22 +538,22 @@ Once Cognito receives the Authentication response, containing the authenticator 
               "type": "webauthn.get" 
           }, 
           "challengeAnswer": "{\n \"id\" : \"
-XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"
-clientDataJSON\" : \"
-eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYWpWSzMyZGFNS2ZjY1FQY1NM
-aXdJcTRnVlZZYnFqMVoiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n \"
-authenticatorData\" : \"
-WRF7+aOIgt7r4ovwDrKrAdTcITGrynAjLwyQa6p8kMUBAAAACA==\",\n \"
-signature\" : \"MEQCICOiVRdbKHuSJwHN6qf5I8TroBhxqeHWtRhgtW+kg\\
-/iLAiAmfP+YP14PxbTHuf+cpUNnQ5H9yp2RBXcyDiiZaxc4Eg==\",\n \"pinCode\" :
-0\n}"
+            XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"
+            clientDataJSON\" : \"
+            eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYWpWSzMyZGFNS2ZjY1FQY1NM
+            aXdJcTRnVlZZYnFqMVoiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n \"
+            authenticatorData\" : \"
+            WRF7+aOIgt7r4ovwDrKrAdTcITGrynAjLwyQa6p8kMUBAAAACA==\",\n \"
+            signature\" : \"MEQCICOiVRdbKHuSJwHN6qf5I8TroBhxqeHWtRhgtW+kg\\
+            /iLAiAmfP+YP14PxbTHuf+cpUNnQ5H9yp2RBXcyDiiZaxc4Eg==\",\n \"pinCode\" :
+            0\n}"
         }, 
         "response": { 
             "answerCorrect": null 
         }
     }
-
+----
 
 ===== VerifyChallenge: ***Returned*** to DefineAuthChallenge
 
@@ -542,35 +561,37 @@ image::Images/back5-verify-auth-challenge-v1.png[]
 *Figure 19 - Verify Auth Challenge Returned*
 
 The VerifyChallenge will proceed to verify the WebAuthn Authentication.
-
+[source, json]
+----
     ...
         },
         "privateChallengeParameters": {
             "type": "webauthn.get"
         },
         "challengeAnswer": "{\n \"id\" : \"
-XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
-/m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"
-clientDataJSON\" : \"
-eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYWpWSzMyZGFNS2ZjY1FQY1NM
-aXdJcTRnVlZZYnFqMVoiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n \" authenticatorData\" : \"
-WRF7+aOIgt7r4ovwDrKrAdTcITGrynAjLwyQa6p8kMUBAAAACA==\",\n \"
-signature\" : \"MEQCICOiVRdbKHuSJwHN6qf5I8TroBhxqeHWtRhgtW+kg\\
-/iLAiAmfP+YP14PxbTHuf+cpUNnQ5H9yp2RBXcyDiiZaxc4Eg==\",\n \"pinCode\" :
-0\n}"
+            XVLCsZZzbOsjqLclpOFQcICd6NEjYEtxbDTC\\
+            /m1VmxgL9qyFKLUIchFQ72wuhJNMTdhjducDUBy3E0UeLtpYRg==\",\n \"
+            clientDataJSON\" : \"
+            eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYWpWSzMyZGFNS2ZjY1FQY1NM
+            aXdJcTRnVlZZYnFqMVoiLCJvcmlnaW4iOiJmaWRvMmtpdC5jb20ifQ==\",\n \" authenticatorData\" : \"
+            WRF7+aOIgt7r4ovwDrKrAdTcITGrynAjLwyQa6p8kMUBAAAACA==\",\n \"
+            signature\" : \"MEQCICOiVRdbKHuSJwHN6qf5I8TroBhxqeHWtRhgtW+kg\\
+            /iLAiAmfP+YP14PxbTHuf+cpUNnQ5H9yp2RBXcyDiiZaxc4Eg==\",\n \"pinCode\" :
+            0\n}"
         },
         "response": {
             "answerCorrect": true
         }
     }
-
+----
 ===== DefineChallenge: ***Received*** from VerifyAuthChallenge
 
 image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 20 - Define Auth Challenge Received*
 
 The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, will then either require the user’s network PIN to be provided, or proceed if User Verification is supported on the WebAuthn registration.
-
+[source, json]
+----
     ...
         "session": [
              { 
@@ -586,14 +607,15 @@ The DefineChallenge, upon receiving the response from the VerifyAuthChallenge, w
             "failAuthentication": null
         }
     }
-
+----
 ===== DefineChallenge: ***Returned*** from DefineAuthChallenge to User
 
 image::Images/back3-define-auth-challenge-v1.png[]
 *Figure 21 - Define Auth Challenge Returned to User*
 
 Finally, DefineChallenge returns a success response and token approval to Cognito. Cognito passes on the success status and auth token to the client.
-
+[source, json]
+----
     ... 
         "session": [
              { 
@@ -609,7 +631,7 @@ Finally, DefineChallenge returns a success response and token approval to Cognit
          "failAuthentication": false
        }
     }
-
+----
 ===== Usernameless flow
 
 If an account has already been created, a user may add a FIDO2 Authenticator using a usernameless flow - that is, the user does not need to enter their username at login. The logic for registration and authentication are identical to the Adaptive Multi-Factor Authentication flow discussed above - the primary change is that the `username` field is replaced with `preferred_username`. During authentication, the `preferred_username` is passed from the WebAuthn authentication data sent by the authenticator, and passed to Cognito.
