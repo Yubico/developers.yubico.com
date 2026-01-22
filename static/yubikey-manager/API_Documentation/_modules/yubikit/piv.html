@@ -5,16 +5,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.piv &mdash; yubikey-manager 5.8.0 documentation</title>
+  <title>yubikit.piv &mdash; yubikey-manager 5.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f63c98e8"></script>
+      <script src="../../_static/documentation_options.js?v=87e9d2b1"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -105,10 +105,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">base64</span><span class="w"> </span><span class="kn">import</span> <span class="n">b64decode</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">astuple</span><span class="p">,</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">unique</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">overload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography</span><span class="w"> </span><span class="kn">import</span> <span class="n">x509</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
@@ -797,6 +799,60 @@
         <span class="k">return</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePublicKey</span><span class="o">.</span><span class="n">from_encoded_point</span><span class="p">(</span><span class="n">curve</span><span class="p">(),</span> <span class="n">data</span><span class="p">[</span><span class="mh">0x86</span><span class="p">])</span>
 
 
+<span class="c1"># This data embeds pre-computed structures used by the zlib deflate algorithm</span>
+<span class="c1"># It&#39;s purpose is to avoid to store the full dictionary in the compressed</span>
+<span class="c1"># stream, thus reducing the size of the certificate</span>
+<span class="c1"># Source: https://datatracker.ietf.org/doc/html/draft-pritikin-comp-x509-00#appendix-A</span>
+<span class="n">_cxf_dictionary</span> <span class="o">=</span> <span class="n">b64decode</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">MIIBOTCCASOgAwIBAgIBATANBgkqhkiG9w0BAQUFADAZMRcwFQYDVQQDEw5odHRw</span>
+<span class="s2">Oi8vd3d3LmNvbTAeFw0xMDA1MTExOTEzMDNaFw0xMTA1MTExOTEzMDNaMF8xEDAO</span>
+<span class="s2">BgkqhkiG9w0BCQEWAUAxCjAIBgNVBAMTASAxCzAJBgNVBAYTAlVTMQswCQYDVQQI</span>
+<span class="s2">EwJXSTELMAkGA1UEChMCb24xDDAKBgNVBAsTA291bjEKMAgGA1UEBRMBIDAfMA0G</span>
+<span class="s2">CSqGSIb3DQEBAQUAAw4AMAsCBG6G5ZUCAwEAAaNNMEswCQYDVR0TBAIwADAdBgNV</span>
+<span class="s2">HQ4EFgQUHSkK6busCxxK6PKpBlL9q8K1mcQwHwYDVR0jBBgwFoAUn7r/DVMuEpK9</span>
+<span class="s2">Rxq3nyiLml10+nQwDQYJKoZIhvcNAQEFBQADAQA=</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="decompress_certificate">
+<a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.decompress_certificate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">decompress_certificate</span><span class="p">(</span><span class="n">cert_data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decompress a compressed certificate using various methods.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Certificate is compressed, decompressing...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># CXF Deflate Method (as used by Pointsharp Net iD)</span>
+    <span class="k">if</span> <span class="n">cert_data</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\01\00</span><span class="s2">&quot;</span><span class="p">:</span>
+        <span class="n">expected_length</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">cert_data</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;little&quot;</span><span class="p">)</span>
+        <span class="n">decompressor</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompressobj</span><span class="p">(</span><span class="n">wbits</span><span class="o">=</span><span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span><span class="p">,</span> <span class="n">zdict</span><span class="o">=</span><span class="n">_cxf_dictionary</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cert_data</span> <span class="o">=</span> <span class="n">decompressor</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">cert_data</span><span class="p">[</span><span class="mi">4</span><span class="p">:])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span> <span class="o">!=</span> <span class="n">expected_length</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s2">&quot;Unexpected decompressed length, expected </span><span class="si">%d</span><span class="s2">, got </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">expected_length</span><span class="p">,</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">cert_data</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Decompressed length does not match expected length&quot;</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Decompressed certificate with CXF deflate format&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cert_data</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">zlib</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to decompress with CXF format&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Gzip Method (default)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cert_data</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Decompressed certificate with basic gzip format&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cert_data</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">zlib</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">gzip</span><span class="o">.</span><span class="n">BadGzipFile</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to decompressed with basic gzip format&quot;</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Failed to decompress certificate&quot;</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="PivSession">
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.PivSession">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PivSession</span><span class="p">:</span>
@@ -1012,6 +1068,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">verify_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify the user by PIN.</span>
 
+<span class="sd">        NOTE: InvalidPinError raised from this method will cap remaining_attempts</span>
+<span class="sd">        at 15, even if the true number of remaining attempts is higher.</span>
+
 <span class="sd">        :param pin: The PIN.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Verifying PIN&quot;</span><span class="p">)</span>
@@ -1123,6 +1182,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">change_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the PIN.</span>
 
+<span class="sd">        NOTE: InvalidPinError raised from this method will cap remaining_attempts</span>
+<span class="sd">        at 15, even if the true number of remaining attempts is higher.</span>
+
 <span class="sd">        :param old_pin: The current PIN.</span>
 <span class="sd">        :param new_pin: The new PIN.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1135,6 +1197,9 @@
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.PivSession.change_puk">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">change_puk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_puk</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_puk</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the PUK.</span>
+
+<span class="sd">        NOTE: InvalidPinError raised from this method will cap remaining_attempts</span>
+<span class="sd">        at 15, even if the true number of remaining attempts is higher.</span>
 
 <span class="sd">        :param old_puk: The current PUK.</span>
 <span class="sd">        :param new_puk: The new PUK.</span>
@@ -1153,6 +1218,9 @@
 <a class="viewcode-back" href="../../autoapi/yubikit/piv/index.html#yubikit.piv.PivSession.unblock_pin">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">unblock_pin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">puk</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset PIN with PUK.</span>
+
+<span class="sd">        NOTE: InvalidPinError raised from this method will cap remaining_attempts</span>
+<span class="sd">        at 15, even if the true number of remaining attempts is higher.</span>
 
 <span class="sd">        :param puk: The PUK.</span>
 <span class="sd">        :param new_pin: The new PIN.</span>
@@ -1432,11 +1500,7 @@
 
         <span class="k">if</span> <span class="n">cert_info</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># Compressed certificate</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Certificate is compressed, decompressing...&quot;</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">cert_data</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span>
-            <span class="k">except</span> <span class="n">gzip</span><span class="o">.</span><span class="n">BadGzipFile</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">BadResponseError</span><span class="p">(</span><span class="s2">&quot;Unable to decompress certificate&quot;</span><span class="p">)</span>
+            <span class="n">cert_data</span> <span class="o">=</span> <span class="n">decompress_certificate</span><span class="p">(</span><span class="n">cert_data</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">cert_info</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;Unsupported value in CertInfo&quot;</span><span class="p">)</span>
 
@@ -1517,7 +1581,7 @@
         <span class="k">if</span> <span class="n">key_type</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">ALGORITHM</span><span class="o">.</span><span class="n">RSA</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateKey</span><span class="p">)</span>  <span class="c1"># noqa: S101</span>
             <span class="n">numbers</span> <span class="o">=</span> <span class="n">private_key</span><span class="o">.</span><span class="n">private_numbers</span><span class="p">()</span>
-            <span class="n">numbers</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">rsa</span><span class="o">.</span><span class="n">RSAPrivateNumbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">)</span>
+            <span class="n">numbers</span> <span class="o">=</span> <span class="n">numbers</span>
             <span class="k">if</span> <span class="n">numbers</span><span class="o">.</span><span class="n">public_numbers</span><span class="o">.</span><span class="n">e</span> <span class="o">!=</span> <span class="mi">65537</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">NotSupportedError</span><span class="p">(</span><span class="s2">&quot;RSA exponent must be 65537&quot;</span><span class="p">)</span>
             <span class="n">ln</span> <span class="o">//=</span> <span class="mi">2</span>
@@ -1538,7 +1602,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">private_key</span><span class="p">,</span> <span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateKey</span><span class="p">)</span>  <span class="c1"># noqa: S101</span>
             <span class="n">numbers</span> <span class="o">=</span> <span class="n">private_key</span><span class="o">.</span><span class="n">private_numbers</span><span class="p">()</span>
-            <span class="n">numbers</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">ec</span><span class="o">.</span><span class="n">EllipticCurvePrivateNumbers</span><span class="p">,</span> <span class="n">numbers</span><span class="p">)</span>
+            <span class="n">numbers</span> <span class="o">=</span> <span class="n">numbers</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">Tlv</span><span class="p">(</span><span class="mh">0x06</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">private_value</span><span class="p">,</span> <span class="n">ln</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">pin_policy</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_PIN_POLICY</span><span class="p">,</span> <span class="n">int2bytes</span><span class="p">(</span><span class="n">pin_policy</span><span class="p">))</span>
