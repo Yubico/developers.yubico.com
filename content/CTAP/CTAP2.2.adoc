@@ -1,6 +1,6 @@
 == CTAP 2.2: Enhanced FIDO2 Features and Enterprise Security
 :description: Comprehensive guide to CTAP 2.2 features including Persistent PIN/UV Auth Tokens, PIN complexity policies, and enterprise attestation. Learn implementation with Yubico SDKs.
-:keywords: CTAP 2.2, FIDO2, persistent PIN tokens, PIN complexity, enterprise attestation, thirdPartyPayment, credential management, alwaysUv, YubiKey SDK
+:keywords: CTAP 2.2, FIDO2, persistent PIN tokens, PIN complexity, enterprise attestation, thirdPartyPayment, credential management, YubiKey SDK
 :author: Yubico Developer Relations
 :page-layout: technical-guide
 :page-category: Authentication Protocols
@@ -37,9 +37,7 @@ This guide provides a practical reference for developers integrating CTAP 2.2 fe
 | Expanding passwordless to regulated payments | Experimental SPC support | thirdPartyPayment Extension | Enables Secure Payment Confirmation (SPC) across domains, critical for standards like PSD2 and card network compliance.
 | Richer, safer credential lifecycle management | Basic credential management existed, but platforms had limited ability to query metadata without user verification. | Persistent Credential Management – Read-only (pcmr) permission | Lets applications query stored credentials with more detail for auditing or UI improvements, without granting destructive permissions.
 | Applications needing per-service secrets | A secret could be derived from a single credential, but this was a distinct step. | hmac-secret-mc / PRF | Provides scoped secrets tied to credentials during creation, useful for secure local storage or encrypted app data.
-| Mitigating risk of unlocked, unattended authenticators | N/A | Always-Require-User-Verification (alwaysUv) | A configurable state that forces user verification (PIN/biometric) on all sensitive operations, critical for high-assurance environments.
 | Enabling advanced key agreement protocols | N/A | ARKG extension | Enables asynchronous remote key generation, allowing authenticators to generate key pairs where the private key remains on the device while the public key can be computed remotely, supporting advanced cryptographic protocols.
-| Enterprises managing multiple IdPs or test/prod environments | 2 RPIDs | Increased RPID storage for Enterprise Attestation to 16 | Simplifies deployment and management across complex corporate environments by allowing a single key to be attested for multiple services.
 | Richer authenticator metadata | Provided basic information like supported versions and algorithms. | New getInfo properties | Applications can query authenticator capabilities like UV counters, attestation formats, and max PIN length to adapt their UX dynamically.
 |===
 
@@ -124,7 +122,7 @@ The pcmr permission enables credential enumeration without the destructive capab
 
 ===== hmac-secret-mc / PRF
 
-Spec:: Provides a multi-credential variant of hmac-secret that can be invoked during credential creation.
+Spec:: Extends the hmac-secret extension to support invocation during credential creation (MakeCredential), in addition to authentication (GetAssertion).
 Use Case:: Applications needing per-credential secrets for encrypting local data—for example, password managers encrypting vaults or sync systems deriving encryption keys.
 Yubico Support:: Available in Yubico.NET SDK, yubikit-android, and python-fido2.
 
@@ -146,21 +144,6 @@ These guides walk you through practical use cases like building end-to-end encry
 **WebAuthn Integration**: The PRF extension is exposed through WebAuthn and has growing browser support. However, implementation details vary—consult our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser compatibility guide] for current support status across platforms.
 ====
 
-===== Always-Require-User-Verification (AlwaysUV)
-
-Spec:: A configurable authenticator state that forces user verification (PIN/biometric) for every FIDO2 operation.
-Use Case:: High-assurance environments (government/finance) where the risk of using an unlocked, unattended authenticator must be mitigated.
-Yubico Support:: Available in Yubico.NET SDK, libfido2, and python-fido2.
-
-AlwaysUV provides an enterprise safety control: when enabled, every FIDO2 operation requires user verification regardless of what the relying party requests. This prevents attacks where an adversary with physical access to an unlocked authenticator could use it without entering the PIN.
-
-This setting is particularly valuable in shared workstation environments or high-security facilities where leaving an authenticated session unattended poses significant risk. YubiKey Bio Series devices enable this by default.
-
-[CAUTION]
-====
-**Configuration Tool Required**: AlwaysUV cannot be toggled via WebAuthn—it requires direct authenticator configuration using command-line tools (fido2-token) or SDKs. This is an administrative setting, not something end-user web applications can control.
-====
-
 ===== ARKG Extension
 
 Spec:: Asynchronous Remote Key Generation enables authenticators to participate in advanced key agreement protocols where the private key remains on the device while the public key can be computed remotely.
@@ -172,14 +155,6 @@ ARKG enables a cryptographic technique where an authenticator generates a key pa
 This capability opens doors for sophisticated protocols: threshold authentication systems where multiple parties must cooperate, privacy-preserving credential systems, and decentralized identity frameworks where identity providers need to compute public keys for credentials without the authenticator revealing sensitive key material.
 
 For technical details on the cryptographic construction and security properties, see the link:https://datatracker.ietf.org/doc/draft-bradleylundberg-cfrg-arkg/[ARKG IETF draft specification].
-
-===== Increased RPID Storage for Enterprises
-
-Spec:: Security keys supporting CTAP 2.2 can store up to 16 Relying Party IDs for Enterprise Attestation, up from 2 in CTAP 2.1.
-Use Case:: Organizations with multiple identity providers or separate development, staging, and production environments (e.g., dev.example.com, staging.example.com, prod.example.com).
-Yubico Support:: Check security key firmware documentation for specific implementation details.
-
-Enterprise Attestation allows organizations to configure security keys that return uniquely identifying attestation only for pre-approved relying party IDs. The increased storage from 2 to 16 RPIDs simplifies management for enterprises with complex infrastructure, eliminating the need for separate keys across environments.
 
 ===== getInfo Metadata Extensions
 
@@ -202,9 +177,9 @@ These metadata fields enable smarter application behavior without trial-and-erro
 |===
 | SDK | CTAP 2.2 Support | Notes
 | python-fido2 | ✅ Full Support | Maintained by Yubico. Comprehensive CTAP 2.2 implementation including PPUAT, hmac-secret-mc, thirdPartyPayment, new getInfo fields.
-| Yubico.NET SDK | ✅ Extensive Support | Supports PPUAT, thirdPartyPayment, hmac-secret-mc, PIN complexity policies, extended getInfo properties, and AlwaysUV configuration.
+| Yubico.NET SDK | ✅ Extensive Support | Supports PPUAT, thirdPartyPayment, hmac-secret-mc, PIN complexity policies, and extended getInfo properties.
 | yubikit-android | ✅ Good Support | Supports PPUAT, getInfo metadata, and RPID-related functionality. Actively maintained with ongoing CTAP 2.2 feature additions.
-| libfido2 / fido2-token | ✅ Command-line Support | Lower-level C library with tools supporting AlwaysUV configuration, getInfo querying, and PIN management. Foundation for python-fido2.
+| libfido2 / fido2-token | ✅ Command-line Support | Lower-level C library with tools supporting getInfo querying and PIN management.
 | yubikit-swift | ⚠️ Limited | Modern Swift SDK for iOS/macOS. CTAP 2.2 feature support under development.
 | yubikit-ios (Objective-C) | ⚠️ Limited | Legacy Objective-C SDK. Partial getInfo support but missing most CTAP 2.2 features. Consider yubikit-swift for new projects.
 |===
