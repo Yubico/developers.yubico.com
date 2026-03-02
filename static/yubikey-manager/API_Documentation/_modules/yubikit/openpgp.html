@@ -5,16 +5,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.openpgp &mdash; yubikey-manager 5.8.0 documentation</title>
+  <title>yubikit.openpgp &mdash; yubikey-manager 5.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f63c98e8"></script>
+      <script src="../../_static/documentation_options.js?v=87e9d2b1"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1528,7 +1528,10 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INS</span><span class="o">.</span><span class="n">VERIFY</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pw</span> <span class="o">+</span> <span class="n">mode</span><span class="p">,</span> <span class="n">pin_enc</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">SECURITY_CONDITION_NOT_SATISFIED</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">SECURITY_CONDITION_NOT_SATISFIED</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="c1"># Pre 4.0 firmware returns this on incorrect PIN/PUK</span>
+                <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x63</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="n">attempts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pin_status</span><span class="p">()</span><span class="o">.</span><span class="n">get_attempts</span><span class="p">(</span><span class="n">pw</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">InvalidPinError</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">AUTH_METHOD_BLOCKED</span><span class="p">:</span>
@@ -1589,7 +1592,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_process_pin</span><span class="p">(</span><span class="n">kdf</span><span class="p">,</span> <span class="n">pw</span><span class="p">,</span> <span class="n">pin</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_pin</span><span class="p">(</span><span class="n">kdf</span><span class="p">,</span> <span class="n">pw</span><span class="p">,</span> <span class="n">new_pin</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">SECURITY_CONDITION_NOT_SATISFIED</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">SECURITY_CONDITION_NOT_SATISFIED</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="c1"># Pre 4.0 firmware returns this on incorrect PIN/PUK</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">CONDITIONS_NOT_SATISFIED</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_version</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="n">attempts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pin_status</span><span class="p">()</span><span class="o">.</span><span class="n">get_attempts</span><span class="p">(</span><span class="n">pw</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">InvalidPinError</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">sw</span> <span class="o">==</span> <span class="n">SW</span><span class="o">.</span><span class="n">AUTH_METHOD_BLOCKED</span><span class="p">:</span>

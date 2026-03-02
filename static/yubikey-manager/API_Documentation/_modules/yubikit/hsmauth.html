@@ -5,16 +5,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>yubikit.hsmauth &mdash; yubikey-manager 5.8.0 documentation</title>
+  <title>yubikit.hsmauth &mdash; yubikey-manager 5.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=f63c98e8"></script>
+      <script src="../../_static/documentation_options.js?v=87e9d2b1"></script>
       <script src="../../_static/doctools.js?v=9a2dae69"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -159,6 +159,7 @@
 <span class="n">INS_PUT_MANAGEMENT_KEY</span> <span class="o">=</span> <span class="mh">0x08</span>
 <span class="n">INS_GET_MANAGEMENT_KEY_RETRIES</span> <span class="o">=</span> <span class="mh">0x09</span>
 <span class="n">INS_GET_PUBLIC_KEY</span> <span class="o">=</span> <span class="mh">0x0A</span>
+<span class="n">INS_CHANGE_CREDENTIAL_PASSWORD</span> <span class="o">=</span> <span class="mh">0x0B</span>
 
 <span class="c1"># Lengths for parameters</span>
 <span class="n">MANAGEMENT_KEY_LEN</span> <span class="o">=</span> <span class="mi">16</span>
@@ -596,6 +597,85 @@
                 <span class="n">attempts_remaining</span><span class="o">=</span><span class="n">retries</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Invalid management key, </span><span class="si">{</span><span class="n">retries</span><span class="si">}</span><span class="s2"> attempts remaining&quot;</span><span class="p">,</span>
             <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_change_credential_password</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">use_management_key</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">require_version</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="o">.</span><span class="n">send_apdu</span><span class="p">(</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">INS_CHANGE_CREDENTIAL_PASSWORD</span><span class="p">,</span>
+                <span class="mi">1</span> <span class="k">if</span> <span class="n">use_management_key</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">data</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Credential password changed&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApduError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">retries</span> <span class="o">=</span> <span class="n">_retries_from_sw</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">sw</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">retries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">raise</span> <span class="n">InvalidPinError</span><span class="p">(</span>
+                <span class="n">attempts_remaining</span><span class="o">=</span><span class="n">retries</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Invalid auth, </span><span class="si">{</span><span class="n">retries</span><span class="si">}</span><span class="s2"> attempts remaining&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="HsmAuthSession.change_credential_password">
+<a class="viewcode-back" href="../../autoapi/yubikit/hsmauth/index.html#yubikit.hsmauth.HsmAuthSession.change_credential_password">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_credential_password</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">credential_password</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">new_credential_password</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the password of a YubiHSM Auth credential.</span>
+
+<span class="sd">        :param label: The label of the credential.</span>
+<span class="sd">        :param credential_password: The current credential password.</span>
+<span class="sd">        :param new_credential_password: The new credential password.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_LABEL</span><span class="p">,</span> <span class="n">_parse_label</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span>
+                <span class="n">TAG_CREDENTIAL_PASSWORD</span><span class="p">,</span> <span class="n">_parse_credential_password</span><span class="p">(</span><span class="n">credential_password</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span>
+                <span class="n">TAG_CREDENTIAL_PASSWORD</span><span class="p">,</span>
+                <span class="n">_parse_credential_password</span><span class="p">(</span><span class="n">new_credential_password</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_change_credential_password</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HsmAuthSession.change_credential_password_admin">
+<a class="viewcode-back" href="../../autoapi/yubikit/hsmauth/index.html#yubikit.hsmauth.HsmAuthSession.change_credential_password_admin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_credential_password_admin</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">management_key</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">new_credential_password</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the password of a YubiHSM Auth credential with management key.</span>
+
+<span class="sd">        :param label: The label of the credential.</span>
+<span class="sd">        :param management_key: The management key.</span>
+<span class="sd">        :param new_credential_password: The new credential password.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">management_key</span><span class="p">)</span> <span class="o">!=</span> <span class="n">MANAGEMENT_KEY_LEN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Management key must be </span><span class="si">%d</span><span class="s2"> bytes long&quot;</span> <span class="o">%</span> <span class="n">MANAGEMENT_KEY_LEN</span>
+            <span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_LABEL</span><span class="p">,</span> <span class="n">_parse_label</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span><span class="n">TAG_MANAGEMENT_KEY</span><span class="p">,</span> <span class="n">management_key</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">Tlv</span><span class="p">(</span>
+                <span class="n">TAG_CREDENTIAL_PASSWORD</span><span class="p">,</span>
+                <span class="n">_parse_credential_password</span><span class="p">(</span><span class="n">new_credential_password</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_change_credential_password</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HsmAuthSession.put_management_key">
