@@ -105,9 +105,13 @@ Figure 4 demonstrates the statement needed to filter your instance of MDS to onl
 --
 [source,java]
 ----
+MetadataBLOB blob = downloader.loadCachedBlob();
+
 FidoMetadataService mds = FidoMetadataService.builder()
-  .useBlob(downloader)
-  .filter(blobEntry -> !aaguids.contains(blobEntry.getAaguid().get().asGuidString()))
+  .useBlob(blob)
+  .prefilter(entry -> entry.getAaguid()
+    .map(aaguid -> !aaguids.contains(aaguid.asGuidString()))
+    .orElse(true))
   .build();
 ----
 --
