@@ -23,6 +23,7 @@
 <h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
 <code class="Nm" title="Nm">fido_cred_new</code>,
   <code class="Nm" title="Nm">fido_cred_free</code>,
+  <code class="Nm" title="Nm">fido_cred_payment</code>,
   <code class="Nm" title="Nm">fido_cred_pin_minlen</code>,
   <code class="Nm" title="Nm">fido_cred_prot</code>,
   <code class="Nm" title="Nm">fido_cred_fmt</code>,
@@ -35,6 +36,7 @@
   <code class="Nm" title="Nm">fido_cred_clientdata_hash_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_id_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_aaguid_ptr</code>,
+  <code class="Nm" title="Nm">fido_cred_hmac_secret_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_largeblob_key_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_pubkey_ptr</code>,
   <code class="Nm" title="Nm">fido_cred_sig_ptr</code>,
@@ -48,6 +50,7 @@
   <code class="Nm" title="Nm">fido_cred_clientdata_hash_len</code>,
   <code class="Nm" title="Nm">fido_cred_id_len</code>,
   <code class="Nm" title="Nm">fido_cred_aaguid_len</code>,
+  <code class="Nm" title="Nm">fido_cred_hmac_secret_len</code>,
   <code class="Nm" title="Nm">fido_cred_largeblob_key_len</code>,
   <code class="Nm" title="Nm">fido_cred_pubkey_len</code>,
   <code class="Nm" title="Nm">fido_cred_sig_len</code>,
@@ -72,6 +75,11 @@
 <br/>
 <code class="Fn" title="Fn">fido_cred_free</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   **cred_p</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">bool</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_payment</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">size_t</var>
 <br/>
@@ -131,6 +139,11 @@
 <var class="Ft" title="Ft">const unsigned char *</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_aaguid_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">const unsigned char *</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_hmac_secret_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_cred_t *cred</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">const unsigned char *</var>
@@ -197,6 +210,11 @@
 <var class="Ft" title="Ft">size_t</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_aaguid_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_cred_t *cred</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_hmac_secret_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
   fido_cred_t *cred</var>);
 <div class="Pp"></div>
 <var class="Ft" title="Ft">size_t</var>
@@ -280,6 +298,14 @@ The <code class="Fn" title="Fn">fido_cred_free</code>() function releases the
   <var class="Fa" title="Fa">*cred_p</var> may be NULL, in which case
   <code class="Fn" title="Fn">fido_cred_free</code>() is a NOP.
 <div class="Pp"></div>
+If the CTAP 2.2 <code class="Dv" title="Dv">FIDO_EXT_PAYMENT</code> extension is
+  enabled on <var class="Fa" title="Fa">cred</var>, then the
+  <code class="Fn" title="Fn">fido_cred_payment</code>() function returns
+  <code class="Dv" title="Dv">true</code>. Since the extension has no output,
+  the <code class="Fn" title="Fn">fido_cred_payment</code>() function is only
+  useful if <var class="Fa" title="Fa">cred</var> was retrieved via
+  <a class="Xr" title="Xr" href="fido_credman_rk.html">fido_credman_rk(3)</a>.
+<div class="Pp"></div>
 If the CTAP 2.1 <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code> extension
   is enabled on <var class="Fa" title="Fa">cred</var>, then the
   <code class="Fn" title="Fn">fido_cred_pin_minlen</code>() function returns the
@@ -328,18 +354,26 @@ The <code class="Fn" title="Fn">fido_cred_authdata_ptr</code>(),
   <var class="Fa" title="Fa">cred</var>, or NULL if the respective entry is not
   set.
 <div class="Pp"></div>
-The corresponding length can be obtained by
-  <code class="Fn" title="Fn">fido_cred_authdata_len</code>(),
+The <code class="Fn" title="Fn">fido_cred_hmac_secret_ptr</code>() function
+  returns a pointer to the hmac-secret attribute of
+  <var class="Fa" title="Fa">cred</var>. The HMAC Secret MC Extension
+  (hmac-secret-mc) is a CTAP 2.2 extension. Note that the resulting hmac-secret
+  varies according to whether user verification was performed by the
+  authenticator.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_cred_authdata_len</code>(),
   <code class="Fn" title="Fn">fido_cred_authdata_raw_len</code>(),
   <code class="Fn" title="Fn">fido_cred_clientdata_hash_len</code>(),
   <code class="Fn" title="Fn">fido_cred_id_len</code>(),
   <code class="Fn" title="Fn">fido_cred_aaguid_len</code>(),
+  <code class="Fn" title="Fn">fido_cred_hmac_secret_len</code>(),
   <code class="Fn" title="Fn">fido_cred_largeblob_key_len</code>(),
   <code class="Fn" title="Fn">fido_cred_pubkey_len</code>(),
   <code class="Fn" title="Fn">fido_cred_sig_len</code>(),
   <code class="Fn" title="Fn">fido_cred_user_id_len</code>(),
   <code class="Fn" title="Fn">fido_cred_x5c_len</code>(), and
-  <code class="Fn" title="Fn">fido_cred_attstmt_len</code>().
+  <code class="Fn" title="Fn">fido_cred_attstmt_len</code>() functions return
+  the length of the given attribute.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_x5c_list_count</code>() function
   returns the length of the x509 certificate chain in
@@ -404,11 +438,12 @@ If not NULL, pointers returned by
   <a class="Xr" title="Xr" href="fido_cred_set_prot.html">fido_cred_set_prot(3)</a>,
   <a class="Xr" title="Xr" href="fido_cred_verify.html">fido_cred_verify(3)</a>,
   <a class="Xr" title="Xr" href="fido_credman_metadata_new.html">fido_credman_metadata_new(3)</a>,
+  <a class="Xr" title="Xr" href="fido_credman_rk.html">fido_credman_rk(3)</a>,
   <a class="Xr" title="Xr" href="fido_dev_largeblob_get.html">fido_dev_largeblob_get(3)</a>,
   <a class="Xr" title="Xr" href="fido_dev_make_cred.html">fido_dev_make_cred(3)</a></div>
 <table class="foot">
   <tr>
-    <td class="foot-date">May 23, 2018</td>
-    <td class="foot-os">Linux 5.3.12-arch1-1</td>
+    <td class="foot-date">March 26, 2026</td>
+    <td class="foot-os">Linux 6.19.11-arch1-1</td>
   </tr>
 </table>

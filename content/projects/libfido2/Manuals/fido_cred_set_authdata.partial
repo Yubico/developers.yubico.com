@@ -35,6 +35,8 @@
   <code class="Nm" title="Nm">fido_cred_set_entattest</code>,
   <code class="Nm" title="Nm">fido_cred_set_extensions</code>,
   <code class="Nm" title="Nm">fido_cred_set_blob</code>,
+  <code class="Nm" title="Nm">fido_cred_set_hmac_salt</code>,
+  <code class="Nm" title="Nm">fido_cred_set_hmac_secret</code>,
   <code class="Nm" title="Nm">fido_cred_set_pin_minlen</code>,
   <code class="Nm" title="Nm">fido_cred_set_prot</code>,
   <code class="Nm" title="Nm">fido_cred_set_rk</code>,
@@ -154,6 +156,20 @@ typedef enum {
 <var class="Ft" title="Ft">int</var>
 <br/>
 <code class="Fn" title="Fn">fido_cred_set_blob</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_set_hmac_salt</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
+  *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_cred_set_hmac_secret</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_cred_t
   *cred</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
   unsigned char *ptr</var>,
   <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
@@ -303,16 +319,31 @@ The <code class="Fn" title="Fn">fido_cred_set_extensions</code>() function sets
   <code class="Dv" title="Dv">FIDO_EXT_CRED_BLOB</code>,
   <code class="Dv" title="Dv">FIDO_EXT_CRED_PROTECT</code>,
   <code class="Dv" title="Dv">FIDO_EXT_HMAC_SECRET</code>,
-  <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code>, and
-  <code class="Dv" title="Dv">FIDO_EXT_LARGEBLOB_KEY</code> extensions are
-  supported. If <var class="Fa" title="Fa">flags</var> is zero, the extensions
-  of <var class="Fa" title="Fa">cred</var> are cleared.
+  <code class="Dv" title="Dv">FIDO_EXT_HMAC_SECRET_MC</code>,
+  <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code>,
+  <code class="Dv" title="Dv">FIDO_EXT_LARGEBLOB_KEY</code>, and
+  <code class="Dv" title="Dv">FIDO_EXT_PAYMENT</code> extensions are supported.
+  If <var class="Fa" title="Fa">flags</var> is zero, the extensions of
+  <var class="Fa" title="Fa">cred</var> are cleared.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_blob</code>() function sets the
   &#x201C;credBlob&#x201D; to be stored with
   <var class="Fa" title="Fa">cred</var> to the data pointed to by
   <var class="Fa" title="Fa">ptr</var>, which must be
   <var class="Fa" title="Fa">len</var> bytes long.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_cred_set_hmac_salt</code>() and
+  <code class="Fn" title="Fn">fido_cred_set_hmac_secret</code>() functions set
+  the hmac-salt and hmac-secret parts of <var class="Fa" title="Fa">cred</var>
+  to <var class="Fa" title="Fa">ptr</var>, where
+  <var class="Fa" title="Fa">ptr</var> points to
+  <var class="Fa" title="Fa">len</var> bytes. A copy of
+  <var class="Fa" title="Fa">ptr</var> is made and no references to the passed
+  pointer are kept. The HMAC secret MakeCredential (hmac-secret-mc) extension is
+  a CTAP 2.2 extension. Note that the resulting hmac-secret varies according to
+  whether user verification was performed by the authenticator. The
+  <code class="Fn" title="Fn">fido_cred_set_hmac_secret</code>() function is
+  normally only useful when writing tests.
 <div class="Pp"></div>
 The <code class="Fn" title="Fn">fido_cred_set_pin_minlen</code>() function
   enables the CTAP 2.1 <code class="Dv" title="Dv">FIDO_EXT_MINPINLEN</code>
@@ -395,7 +426,7 @@ The error codes returned by the
   <a class="Xr" title="Xr" href="fido_dev_make_cred.html">fido_dev_make_cred(3)</a></div>
 <table class="foot">
   <tr>
-    <td class="foot-date">July 15, 2022</td>
-    <td class="foot-os">Debian</td>
+    <td class="foot-date">March 10, 2026</td>
+    <td class="foot-os">Linux 6.19.11-arch1-1</td>
   </tr>
 </table>
