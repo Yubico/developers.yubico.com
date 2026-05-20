@@ -1,0 +1,146 @@
+== Setting up SSH with GPG ==
+
+You can use the OpenPGP applet on your YubiKey to authenticate to SSH servers.
+In particular, when using SSH you can use authenticate to GitHub or other Git servers using a PGP key stored on your YubiKey.
+
+This guide explains how.
+
+== Software
+
+Linux
+Many distros have SSH installed by default. If not, install OpenSSH through your package manager.
+
+macOS
+SSH comes preinstalled with macOS. No additional software is required.
+
+Windows
+OpenSSH actually comes with Windows 10 v1709 and later as an “Optional Feature”
+(also known as a link:https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/features-on-demand-non-language-fod?view=windows-11[Feature on Demand]).
+It’s likely installed by default.
+To ensure the OpenSSH Client is installed, you can follow the directions here to install the Client:
+link:https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse[Get started with OpenSSH for Windows].
+Ignore any steps about the OpenSSH Server (e.g. sshd).
+
+[NOTE]
+====
+GPG must be v2.4.0 or later.
+====
+
+== SSH configuration
+
+=== Enable SSH support in gpg-agent
+
+Linux/macOS:
+
+  echo 'enable-ssh-support:0:1' | gpgconf --change-options gpg-agent
+
+Windows:
+
+  echo 'enable-win32-openssh-support' | gpgconf --change-options gpg-agent
+
+If the command gives an error regarding an ‘unknown option’, as an alternative you can create the following text file: `%APPDATA%\gnupg\gpg-agent.conf`.
+In the file, add a line with the text `enable-win32-openssh-support`
+
+=== Inform SSH how to speak with GPG
+
+Linux/macOS:
+
+Add the following to your ~/.bash_profile (or equivalent profile file for your shell of choice):
+
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  gpgconf --launch gpg-agent
+
+You will need to source the new .bash_profile for these new settings to take effect.
+
+Windows:
+
+Execute the following line at a command prompt (cmd.exe):
+
+  setx SSH_AUTH_SOCK "\\.\pipe\openssh-ssh-agent"
+
+If you want to do this for all users instead of just you, add a `/M` after `setx`.
+To do that, your command prompt will need to be running as admin.
+It is recommended to reboot for these new settings to take effect.
+
+== Testing things out
+
+You should be able to see if things are working by issuing the following command.
+You should get output similar to what you see below.
+
+
+  $ ssh-add -L
+  ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCra7tMQX5yI8NN5gbKHR7+Oyt6wsZfyZnbtHoU
+  RIvyQdVbkg8hveehkCz4KUXopPhWp5P33Ungv0MjywmV5d2OKa2IyTHE8cbuTcCj3xZgTfGZ3R5V
+  ZQv7RLGPlwX0nOEiES5mX/f2y7hQClbfsUJb0Ui+r6F6rtQJhRLsrYaXRauDUpnWwiDW6KrRZRtC
+  0fwphv/4T9w1tNB8xmaMmuUkeA5tFNNsEcBKhCdo8c2ILq8oEfVhFN2rAjg+MYhgvn9ML+0WNvW8
+  hBjY7FZ8pmIxWi8I44fFTcp8/nGnfAgW97sljklRXpgqfRInp4g/VyX7bz4olfgM57PqiQJR3FFp
+  xtEymGjw1kRUabQX15lwfF1QIk/pq2+BdmIGAqH6dmOYfisQI2J+c11KEz/UI9CbdDJVQ9bU0267
+  fnI/CSBuHp1k1fCwEREVh03zh8RQU/GQsb9zc3daTT46OVKMQi+pCL9a3ZdhqF20wzHncsFYLhog
+  GcBw5MGqzKEUip0mzDW1lKk9jXw7Nj0Z0kMsPp89fRCQ0vMeCnlqKOu50pf1DuuEvuD92HedVSyo
+  2OOZH2eC4dWTx/F4DhSDnPlQhld0ZWO4mAUF035fYz5icr/4w9Nt6jNuXwEF6MCp/LhUJQTOuahS
+  TUdX0epjAFjHvVaZcW2HnGABJH8RlwtEpjxXAw== cardno:000610269356
+
+If you see the message "The agent has no identities", check all of your settings above, and be sure to remember to restart the terminal process.
+
+Sometimes the gpg-agent doesn’t automatically start.
+Try running this command and then retry the operation.
+
+  gpgconf --kill gpg-agent
+
+If that doesn’t work, try to force the GPG agent to start by sending a command to list the available keys, and then retry the operation.
+
+  gpg -K
+
+
+== SSH hardening
+
+Save your public identity to a file
+
+The client hardening below utilizes an IdentityFile for particular SSH hosts.
+This is so that you can avoid broadcasting all of the keys available on the client to the server.
+
+Windows:
+
+First you’ll need to create the .ssh directory, and then add your public key file.
+
+  mkdir ~/.ssh
+  ssh-add -L >> ~/.ssh/yubikey_rsa.pub
+
+The file must use UTF-8 encoding.
+If the encoding is incorrect, later when you try to connect to GitHub through SSH you might get an error like
+
+  Load key "~/.ssh/yubikey_rsa.pub": invalid format
+  git@github.com: Permission denied (publickey).
+
+Linux/macOS:
+
+Add your public key to the .ssh directory, and set access permissions to Owner:Read and Owner:Write.
+
+  ssh-add -L >> ~/.ssh/yubikey_rsa.pub
+  chmod 600 ~/.ssh/yubikey_rsa.pub
+
+
+==
+
+add the following to ~/.ssh/config (create the file if it doesn’t already exist).
+
+  Host github.com
+    IdentityFile ~/.ssh/yubikey_rsa.pub
+
+
+== GitHub configuration
+
+Follow the guides on GitHub to add and test your connection:
+
+ - link:https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account[Adding a new SSH key to your GitHub account]
+ - link:https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection[Testing your SSH connection]
+
+== Troubleshooting
+
+Windows:
+
+Sometimes the gpg-agent doesn’t automatically start. Try running
+
+  gpgconf --kill gpg-agent
+
+and then try the operation again.
