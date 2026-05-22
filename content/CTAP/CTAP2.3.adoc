@@ -1,0 +1,278 @@
+== CTAP 2.3: Protocol Refinements and PIN Complexity Improvements
+:description: Comprehensive guide to CTAP 2.3 features including BLE hybrid transport, PIN complexity policy URL, long touch for reset, and protocol clarifications. Learn what changed from CTAP 2.2.
+:keywords: CTAP 2.3, FIDO2, PIN complexity policy, hybrid transport, BLE, long touch reset, FIDO_2_3, authenticatorGetInfo, pinComplexityPolicyURL
+:author: Yubico Developer Relations
+:page-layout: technical-guide
+:page-category: Authentication Protocols
+:page-tags: CTAP 2.3, FIDO2, PIN Complexity, Hybrid Transport
+:toc: left
+:toclevels: 3
+:sectanchors:
+:source-highlighter: highlight.js
+:page-last-updated: 2026-05-22
+
+[.lead]
+CTAP 2.3 is an incremental, backwards-compatible update to CTAP 2.2. It refines PIN complexity interactions, adds `pinComplexityPolicyURL` to improve PIN rejection UX, extends hybrid transport with a BLE channel, and clarifies several protocol edge cases.
+
+++++
+<div class="last-updated-banner">
+    <!-- Simple clock icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Last Updated on 22 May 2026</span>
+</div>
+++++
+
+[NOTE]
+====
+*WebAuthn and Browser Support*: While CTAP 2.3 features are available at the protocol level, WebAuthn applications depend on browser support for these capabilities. Consult our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support] page before implementation.
+====
+
+=== Relationship to CTAP 2.2
+
+The FIDO Alliance published CTAP 2.3 on February 26, 2026. It introduces no breaking changes: any CTAP 2.2-conformant implementation is automatically conformant to CTAP 2.3.
+
+Because no breaking changes were introduced, the Alliance did not create a separate certification category for CTAP 2.2. All FIDO2 authenticator certifications are issued against CTAP 2.3. There is no `FIDO_2_2` version string in `authenticatorGetInfo`; a device advertising CTAP 2.3 support reports `FIDO_2_3`.
+
+This means:
+
+* Existing CTAP 2.2 implementations do not need protocol changes to be CTAP 2.3 conformant.
+* New CTAP 2.3 features are additive—platforms and authenticators signal support via `authenticatorGetInfo` as always.
+
+For context on the features CTAP 2.2 introduced, see the link:CTAP2.2.adoc[CTAP 2.2 guide].
+
+=== What's New in CTAP 2.3
+
+[cols="2,3,3", options="header"]
+|===
+| Feature | Description | Developer Benefit
+
+| *BLE Data Transfer Channel for Hybrid* _(New in 2.3)_
+| QR-initiated hybrid transactions can now specify Bluetooth Low Energy as the data transfer channel, in addition to the WebSocket channel supported since CTAP 2.2.
+| Enables cross-device authentication in constrained or offline network environments where WebSocket connections to relay servers may be blocked.
+
+| *`FIDO_2_3` Version String* _(New in 2.3)_
+| The value `FIDO_2_3` is added to the `versions` array in `authenticatorGetInfo` to indicate CTAP 2.3 support. No `FIDO_2_2` value was defined.
+| Platforms can reliably detect CTAP 2.3 support and gate features accordingly.
+
+| *Long Touch for Reset* _(New in 2.3)_
+| Authenticators can advertise via `authenticatorGetInfo` that their reset ceremony requires a long touch. The `enableLongTouchForReset` subcommand of `authenticatorConfig` controls whether this behavior is active.
+| Platforms can display accurate reset instructions without guessing device-specific UX, preventing failed resets from insufficient touch duration.
+
+| *PIN Complexity + Minimum PIN Length Refinement* _(Refined in 2.3)_
+| The interaction between `pinComplexityPolicy` and `setMinPINLength` is clarified. `pinComplexityPolicyURL` is added, providing a URL where platforms can direct users to read device-specific PIN composition rules.
+| Enables platforms to surface actionable guidance when a PIN is rejected for complexity reasons—replacing a generic error with a specific explanation and a link to the applicable rules.
+
+| *`smart-card` Interface* _(New in 2.3)_
+| `smart-card` is added to the list of valid FIDO Interface values in `authenticatorGetInfo`.
+| Authenticators accessed via ISO 7816 contact readers can correctly advertise their interface type, improving interoperability with enterprise credential management systems.
+
+| *FIDO Applet Explicit Selection Required* _(New in 2.3)_
+| Authenticators are prohibited from allowing FIDO Applets to be implicitly selected or enabled. Explicit applet selection is required.
+| Hardens the security boundary around FIDO operations in multi-application smart-card scenarios, reducing the risk of unintended applet activation.
+
+| *`authenticatorReset` Clarification* _(Clarified in 2.3)_
+| Authenticators SHOULD support `authenticatorReset`, or MUST provide an alternate mechanism to return the device to factory default state.
+| Guarantees every CTAP 2.3 authenticator has a defined reset path, even if it is not via the CTAP reset command directly.
+
+| *`setMinPINLength` with Built-in UV* _(Clarified in 2.3)_
+| `setMinPINLength` may be used when the authenticator supports PIN entry via built-in user verification (e.g., on-device input), not only via client-side PIN collection.
+| Broadens the applicability of minimum PIN length policies to authenticators with integrated PIN input mechanisms.
+
+| *ISO 7816 (Contact + NFC) Clarification* _(Clarified in 2.3)_
+| The NFC evidence-of-user-interaction model is generalized to cover both NFC and ISO 7816 contact interfaces. Terminology updated and timeout behaviors for `NFCCTAP_GETRESPONSE` refined.
+| Eliminates ambiguity for authenticators that support both contact and contactless interfaces, ensuring consistent user-presence semantics across physical interface types.
+
+|===
+
+=== CTAP 2.3 Features Explained
+
+==== BLE Data Transfer Channel for Hybrid Transport
+
+Spec:: QR-initiated hybrid transactions can now negotiate a Bluetooth Low Energy channel as an alternative to the WebSocket channel defined in CTAP 2.2.
+Use Case:: Environments with restricted internet access, air-gapped networks, or scenarios requiring low-latency local radio communication.
+Yubico Support:: Not applicable to roaming security keys—hybrid transport is implemented by platform authenticators and clients.
+
+CTAP 2.2 specified WebSocket-based encrypted tunnels as the data transfer mechanism for QR-initiated hybrid authentication. CTAP 2.3 extends this by adding BLE as a negotiable alternative. The QR code payload specifies which channel the Credential Provider Hosting Device supports, and the client selects accordingly.
+
+This matters for enterprise deployments with strict network egress filtering, where WebSocket connections to FIDO relay servers may be blocked. A BLE channel allows cross-device authentication entirely over local radio, with no internet connectivity required for the data transfer phase.
+
+[NOTE]
+====
+*Platform and OS support required*: BLE hybrid transport requires coordinated support in both the initiating platform (desktop OS/browser) and the device providing the platform authenticator (phone). Check platform release notes for availability.
+====
+
+==== FIDO_2_3 Version String
+
+Spec:: `FIDO_2_3` is added to the supported version strings returned by `authenticatorGetInfo`. No `FIDO_2_2` string was defined.
+Use Case:: Platform feature detection for CTAP 2.3-specific behaviors.
+
+When a platform needs to gate a CTAP 2.3-only feature—such as BLE hybrid channels or `longTouchForReset`—it checks for `FIDO_2_3` in the `authenticatorGetInfo` `versions` array.
+
+There is a gap in version string granularity: no single version string distinguishes CTAP 2.2-only from CTAP 2.3. For CTAP 2.2 features specifically, platforms should use field-level feature detection via the relevant `authenticatorGetInfo` fields rather than relying on version strings.
+
+==== Long Touch for Reset
+
+Spec:: An authenticator can advertise via `authenticatorGetInfo` that its reset ceremony requires a long touch. The `enableLongTouchForReset` subcommand of `authenticatorConfig` controls whether this mode is active.
+Use Case:: Enterprise deployments where accidental resets are a concern; any device that uses sustained touch to differentiate reset from normal operation.
+Yubico Support:: Check Yubico release notes for firmware and SDK availability.
+
+Before CTAP 2.3, platforms had no standard way to know whether a device's reset ceremony required a brief touch or a sustained one. This caused UX confusion—users who didn't hold long enough would fail the reset without a clear explanation.
+
+With CTAP 2.3, an authenticator that requires a long touch sets `longTouchForReset: true` in `authenticatorGetInfo`. Platforms should check this before presenting reset instructions and adjust the UI accordingly.
+
+==== PIN Complexity Policy URL
+
+Spec:: `pinComplexityPolicyURL` is a new optional string field in the `authenticatorGetInfo` response. When present, it provides a URL where the platform can direct users to read the PIN composition rules that apply to their device.
+Use Case:: Platforms building PIN rejection UX for devices with firmware-level PIN complexity enabled.
+Yubico Support:: Check Yubico release notes for firmware and SDK availability.
+
+===== The Problem This Solves
+
+Before CTAP 2.3, when a user entered a PIN that violated a complexity policy, the authenticator returned a generic rejection error. Platforms had no standard way to:
+
+. Distinguish "PIN too short" from "PIN not complex enough"
+. Tell users what the complexity rules are or where to read them
+. Provide actionable guidance beyond a generic error message
+
+This was particularly notable with devices that have firmware-enforced PIN complexity via certification (Common Criteria, FIPS 140-3). A YubiKey 5 FIPS or Enhanced PIN device would reject a non-compliant PIN with a generic error; the user had no indication that complexity—rather than length—was the issue.
+
+===== What CTAP 2.3 Adds
+
+When `pinComplexityPolicyURL` is present in `authenticatorGetInfo`, platforms should:
+
+* Query `pinComplexityPolicy` on every session to detect whether complexity is active.
+* If `pinComplexityPolicy` is `true` and a PIN is rejected, display a message that specifically identifies the complexity failure (distinct from length failures).
+* If `pinComplexityPolicyURL` is present, offer a link so users can read the applicable rules.
+
+===== Relationship to `minPINLength`
+
+`pinComplexityPolicy` and `setMinPINLength` are complementary and may both be active on the same device. CTAP 2.3 clarifies the precedence of these two checks in the authenticator's PIN validation logic, ensuring consistent rejection behavior across authenticators.
+
+===== YubiKey-Specific Context
+
+PIN complexity behavior varies by YubiKey variant and firmware:
+
+[cols="2,1,2", options="header"]
+|===
+| YubiKey Variant | PIN Complexity Default | Notes
+
+| YubiKey 5 Series (standard)
+| Off (requires configuration)
+| Can be enabled via custom pre-registration configuration
+
+| YubiKey 5 FIPS Series
+| On
+| Required by FIPS 140-3 / Common Criteria certification
+
+| YubiKey 5 Enhanced PIN Series
+| On
+| Always on; cannot be permanently disabled
+
+| Security Key Series
+| Off (enterprise variants: configurable)
+| —
+
+|===
+
+YubiKey's PIN complexity policy blocks trivial and commonly-used values: sequential patterns, repeated digits, dictionary words, and values on a device-specific blocklist. This follows the NIST SP 800-63B recommendation to check PINs against commonly-used values, rather than requiring specific character types (which NIST SP 800-63B explicitly discourages).
+
+==== smart-card Interface
+
+Spec:: `smart-card` is added to the list of valid FIDO Interface values in `authenticatorGetInfo`.
+Use Case:: Authenticators accessed via ISO 7816 contact smart-card readers in enterprise deployments.
+Yubico Support:: Applicable to YubiKey deployments in contact smart-card reader environments.
+
+Prior to CTAP 2.3, the recognized transport/interface values were `usb`, `nfc`, `ble`, and `internal`. Smart-card (ISO 7816 contact) interfaces lacked a dedicated value, which caused ambiguity in enterprise environments where YubiKeys are inserted into smart-card readers rather than USB ports.
+
+Adding `smart-card` enables credential management systems and relying parties to accurately identify the physical interface in use and apply interface-specific policies—for example, requiring contact-based authentication for high-assurance operations.
+
+==== FIDO Applet Explicit Selection
+
+Spec:: Authenticators are prohibited from allowing FIDO Applets to be implicitly selected or enabled.
+Use Case:: Multi-application smart-card environments where FIDO and PIV or other applets coexist on the same device.
+
+In multi-applet environments—such as YubiKey, which supports FIDO2, PIV, OpenPGP, and OTP simultaneously—there was previously no normative requirement preventing a FIDO Applet from being activated without an explicit selection command. CTAP 2.3 normatively prohibits implicit selection, ensuring that FIDO operations can only begin after the platform has explicitly selected the FIDO Applet.
+
+==== authenticatorReset Clarification
+
+Spec:: `authenticatorReset` SHOULD be supported. If it is not, the authenticator MUST provide an alternate, documented mechanism for returning the device to factory default state.
+Use Case:: Enterprise device lifecycle management; security key recovery scenarios.
+
+This clarification ensures that every CTAP 2.3 authenticator provides a defined reset path. Platforms building device management workflows can assume a reset path exists, even if it is not via the CTAP `authenticatorReset` command.
+
+=== Feature Detection Guidance
+
+Because CTAP 2.3 introduced no breaking changes, platforms should use field-level feature detection rather than relying solely on version strings.
+
+[cols="2,2", options="header"]
+|===
+| Feature to detect | `authenticatorGetInfo` field to check
+
+| CTAP 2.3 advertised
+| `versions` contains `FIDO_2_3`
+
+| PIN Complexity is active
+| `pinComplexityPolicy: true`
+
+| PIN Complexity policy URL available
+| `pinComplexityPolicyURL` present and non-empty
+
+| Long Touch for Reset required
+| `longTouchForReset: true`
+
+| PPUAT (persistent read-only token)
+| `options.persistentUvAuthToken: true`
+
+| Minimum PIN length
+| `minPINLength` present (CTAP 2.1+)
+
+| Maximum PIN length
+| `maxPINLength` present (CTAP 2.2+)
+
+|===
+
+=== Yubico SDKs and CTAP 2.3 Support
+
+[cols="1,1,3", options="header"]
+|===
+| SDK | CTAP 2.3 Support | Notes
+
+| yubikit-android
+| ✅ v3.0.0+
+| Full CTAP 2.3 support. Actively maintained.
+
+| Yubico.NET SDK
+| ✅ In progress
+| Check link:https://docs.yubico.com/yesdk/users-manual/getting-started/whats-new.html[What's New in the SDK] for current CTAP 2.3 feature coverage.
+
+| python-fido2
+| ✅ v2.0.0+
+| CTAP 2.3 feature coverage follows FIDO Alliance spec additions. Check link:https://github.com/Yubico/python-fido2[python-fido2 release notes] for specific feature availability.
+
+| libfido2 / fido2-token
+| ⚠️ Partial
+| C library and command-line tools. Check link:https://github.com/Yubico/libfido2[libfido2 release notes] for current coverage.
+
+| yubikit-swift
+| ⚠️ In development
+| Modern Swift SDK for iOS/macOS. CTAP 2.3 feature support under development.
+
+| yubikit-ios (Objective-C)
+| ❌ Not planned
+| Legacy SDK. Migrate to yubikit-swift for new projects.
+
+|===
+
+=== References
+
+* link:https://fidoalliance.org/specs/fido-v2.3-ps-20260226/fido-client-to-authenticator-protocol-v2.3-ps-20260226.html[CTAP 2.3 Specification (FIDO Alliance)]
+* link:https://fidoalliance.org/specs/fido-v2.2-ps-20250714/fido-client-to-authenticator-protocol-v2.2-ps-20250714.html[CTAP 2.2 Specification (FIDO Alliance)]
+* link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support Matrix]
+* link:CTAP2.2.adoc[CTAP 2.2 Feature Reference]
+* link:CTAP2.1.adoc[CTAP 2.1 Feature Reference]
+* link:https://docs.yubico.com/hardware/yubikey/yk-tech-manual/yk5-firmware-overview.html[YubiKey 5 Firmware Overview]
+* link:https://docs.yubico.com/yesdk/users-manual/getting-started/whats-new.html[Yubico .NET SDK — What's New]
+* link:https://github.com/Yubico/python-fido2[python-fido2 on GitHub]
+* link:https://github.com/Yubico/yubikit-android[yubikit-android on GitHub]
