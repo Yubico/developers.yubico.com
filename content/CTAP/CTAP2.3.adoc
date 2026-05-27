@@ -12,7 +12,7 @@
 :page-last-updated: 2026-05-22
 
 [.lead]
-CTAP 2.3 is an incremental, backwards-compatible update to CTAP 2.2. It refines PIN complexity interactions, adds `pinComplexityPolicyURL` to improve PIN rejection UX, extends hybrid transport with a BLE channel, and clarifies several protocol edge cases.
+CTAP 2.3 is an incremental, backwards-compatible update to CTAP 2.2. It extends hybrid transport with a BLE channel, updates the long touch for reset timeout, and clarifies several protocol edge cases including smart-card interface handling and ISO 7816 user-presence semantics.
 
 ++++
 <div class="last-updated-banner">
@@ -56,13 +56,9 @@ For context on the features CTAP 2.2 introduced, see the link:CTAP2.2.adoc[CTAP 
 | The value `FIDO_2_3` is added to the `versions` array in `authenticatorGetInfo` to indicate CTAP 2.3 support. No `FIDO_2_2` value was defined.
 | Platforms can reliably detect CTAP 2.3 support and gate features accordingly.
 
-| *Long Touch for Reset* _(New in 2.3)_
-| Authenticators can advertise via `authenticatorGetInfo` that their reset ceremony requires a long touch. The `enableLongTouchForReset` subcommand of `authenticatorConfig` controls whether this behavior is active.
+| *Long Touch for Reset* _(Introduced in 2.2; updated in 2.3)_
+| Authenticators can advertise via `authenticatorGetInfo` that their reset ceremony requires a long touch. CTAP 2.3 reduces the required hold duration from 10 seconds to 5 seconds. The `enableLongTouchForReset` subcommand of `authenticatorConfig` allows toggling this behavior on authenticators that support it; note that YubiKeys do not support this toggle.
 | Platforms can display accurate reset instructions without guessing device-specific UX, preventing failed resets from insufficient touch duration.
-
-| *PIN Complexity + Minimum PIN Length Refinement* _(Refined in 2.3)_
-| The interaction between `pinComplexityPolicy` and `setMinPINLength` is clarified. `pinComplexityPolicyURL` is added, providing a URL where platforms can direct users to read device-specific PIN composition rules.
-| Enables platforms to surface actionable guidance when a PIN is rejected for complexity reasons—replacing a generic error with a specific explanation and a link to the applicable rules.
 
 | *`smart-card` Interface* _(New in 2.3)_
 | `smart-card` is added to the list of valid FIDO Interface values in `authenticatorGetInfo`.
@@ -114,79 +110,23 @@ There is a gap in version string granularity: no single version string distingui
 
 ==== Long Touch for Reset
 
-Spec:: An authenticator can advertise via `authenticatorGetInfo` that its reset ceremony requires a long touch. The `enableLongTouchForReset` subcommand of `authenticatorConfig` controls whether this mode is active.
+Spec:: An authenticator can advertise via `authenticatorGetInfo` that its reset ceremony requires a long touch. CTAP 2.3 reduces the required hold duration from 10 seconds to 5 seconds. The `enableLongTouchForReset` subcommand of `authenticatorConfig` allows toggling this behavior on authenticators that support it; YubiKeys do not support this toggle.
 Use Case:: Enterprise deployments where accidental resets are a concern; any device that uses sustained touch to differentiate reset from normal operation.
 Yubico Support:: Check Yubico release notes for firmware and SDK availability.
 
-Before CTAP 2.3, platforms had no standard way to know whether a device's reset ceremony required a brief touch or a sustained one. This caused UX confusion—users who didn't hold long enough would fail the reset without a clear explanation.
+Before CTAP 2.2, platforms had no standard way to know whether a device's reset ceremony required a brief touch or a sustained one. This caused UX confusion—users who didn't hold long enough would fail the reset without a clear explanation.
 
-With CTAP 2.3, an authenticator that requires a long touch sets `longTouchForReset: true` in `authenticatorGetInfo`. Platforms should check this before presenting reset instructions and adjust the UI accordingly.
-
-==== PIN Complexity Policy URL
-
-Spec:: `pinComplexityPolicyURL` is a new optional string field in the `authenticatorGetInfo` response. When present, it provides a URL where the platform can direct users to read the PIN composition rules that apply to their device.
-Use Case:: Platforms building PIN rejection UX for devices with firmware-level PIN complexity enabled.
-Yubico Support:: Check Yubico release notes for firmware and SDK availability.
-
-===== The Problem This Solves
-
-Before CTAP 2.3, when a user entered a PIN that violated a complexity policy, the authenticator returned a generic rejection error. Platforms had no standard way to:
-
-. Distinguish "PIN too short" from "PIN not complex enough"
-. Tell users what the complexity rules are or where to read them
-. Provide actionable guidance beyond a generic error message
-
-This was particularly notable with devices that have firmware-enforced PIN complexity via certification (Common Criteria, FIPS 140-3). A YubiKey 5 FIPS or Enhanced PIN device would reject a non-compliant PIN with a generic error; the user had no indication that complexity—rather than length—was the issue.
-
-===== What CTAP 2.3 Adds
-
-When `pinComplexityPolicyURL` is present in `authenticatorGetInfo`, platforms should:
-
-* Query `pinComplexityPolicy` on every session to detect whether complexity is active.
-* If `pinComplexityPolicy` is `true` and a PIN is rejected, display a message that specifically identifies the complexity failure (distinct from length failures).
-* If `pinComplexityPolicyURL` is present, offer a link so users can read the applicable rules.
-
-===== Relationship to `minPINLength`
-
-`pinComplexityPolicy` and `setMinPINLength` are complementary and may both be active on the same device. CTAP 2.3 clarifies the precedence of these two checks in the authenticator's PIN validation logic, ensuring consistent rejection behavior across authenticators.
-
-===== YubiKey-Specific Context
-
-PIN complexity behavior varies by YubiKey variant and firmware:
-
-[cols="2,1,2", options="header"]
-|===
-| YubiKey Variant | PIN Complexity Default | Notes
-
-| YubiKey 5 Series (standard)
-| Off (requires configuration)
-| Can be enabled via custom pre-registration configuration
-
-| YubiKey 5 FIPS Series
-| On
-| Required by FIPS 140-3 / Common Criteria certification
-
-| YubiKey 5 Enhanced PIN Series
-| On
-| Always on; cannot be permanently disabled
-
-| Security Key Series
-| Off (enterprise variants: configurable)
-| —
-
-|===
-
-YubiKey's PIN complexity policy blocks trivial and commonly-used values: sequential patterns, repeated digits, dictionary words, and values on a device-specific blocklist. This follows the NIST SP 800-63B recommendation to check PINs against commonly-used values, rather than requiring specific character types (which NIST SP 800-63B explicitly discourages).
+With CTAP 2.2, an authenticator that requires a long touch sets `longTouchForReset: true` in `authenticatorGetInfo`. CTAP 2.3 updates the required hold duration from 10 seconds to 5 seconds. Platforms should check this field before presenting reset instructions and adjust the UI accordingly.
 
 ==== smart-card Interface
 
 Spec:: `smart-card` is added to the list of valid FIDO Interface values in `authenticatorGetInfo`.
-Use Case:: Authenticators accessed via ISO 7816 contact smart-card readers in enterprise deployments.
-Yubico Support:: Applicable to YubiKey deployments in contact smart-card reader environments.
+Use Case:: Authenticators with an ISO 7816 contact smart-card form factor in enterprise deployments.
+Yubico Support:: Applicable to Yubico authenticators accessed via the ISO 7816 contact interface.
 
-Prior to CTAP 2.3, the recognized transport/interface values were `usb`, `nfc`, `ble`, and `internal`. Smart-card (ISO 7816 contact) interfaces lacked a dedicated value, which caused ambiguity in enterprise environments where YubiKeys are inserted into smart-card readers rather than USB ports.
+Prior to CTAP 2.3, the recognized transport/interface values were `usb`, `nfc`, `ble`, and `internal`. Authenticators with an ISO 7816 contact smart-card form factor had no dedicated value to advertise that interface.
 
-Adding `smart-card` enables credential management systems and relying parties to accurately identify the physical interface in use and apply interface-specific policies—for example, requiring contact-based authentication for high-assurance operations.
+Adding `smart-card` allows such authenticators to correctly report their interface type in `authenticatorGetInfo`.
 
 ==== FIDO Applet Explicit Selection
 
@@ -216,7 +156,7 @@ Because CTAP 2.3 introduced no breaking changes, platforms should use field-leve
 | PIN Complexity is active
 | `pinComplexityPolicy: true`
 
-| PIN Complexity policy URL available
+| PIN Complexity policy URL available (CTAP 2.2+)
 | `pinComplexityPolicyURL` present and non-empty
 
 | Long Touch for Reset required

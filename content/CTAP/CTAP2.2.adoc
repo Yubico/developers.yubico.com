@@ -38,7 +38,7 @@ CTAP 2.2 strengthens the FIDO2 protocol with persistent PIN tokens, configurable
 
 The Client to Authenticator Protocol (CTAP) defines how authenticators communicate with clients for FIDO2 authentication. CTAP 2.2 strengthens the protocol with features that address enterprise deployment requirements and expand authentication options across the FIDO ecosystem.
 
-For roaming authenticators like YubiKeys, this release delivers capabilities that reduce friction in enterprise workflows: persistent PIN/UV auth tokens provide long-lived, read-only tokens for credential enumeration without repeated PIN entry; PIN complexity policies enable authenticators to advertise and enforce device-specific PIN requirements; and the `thirdPartyPayment` extension enables cross-domain authentication for regulated payment transactions.
+For roaming authenticators like YubiKeys, this release delivers capabilities that reduce friction in enterprise workflows: persistent PIN/UV auth tokens provide long-lived, read-only tokens for credential enumeration without repeated PIN entry; PIN complexity policies give platforms a standard way to query whether device-specific PIN requirements are active; and the `thirdPartyPayment` extension enables cross-domain authentication for regulated payment transactions.
 
 CTAP 2.2 also formalizes hybrid transport, a protocol mechanism for cross-device authentication using QR codes and proximity pairing. This allows a platform authenticator on a phone to authenticate sessions on other devices like desktops. Hybrid flows use platform authenticators (such as those on smartphones) or multi-device passkeys. For scenarios requiring attestation and non-exportable keys, hardware security keys remain the appropriate authenticator choice.
 
@@ -78,7 +78,7 @@ CTAP 2.2 introduces new protocol capabilities and expands features established i
 
 | *Attestation Formats Preference (`attestationFormatsPreference`)* _(New in 2.2)_
 | A new `authenticatorMakeCredential` option allowing the platform to send an ordered list of preferred attestation statement formats. The authenticator selects the most preferred format it supports.
-| Enables clients to signal format preferences (e.g., `packed` over `fido-u2f`), reducing format negotiation overhead and simplifying attestation verification logic.
+| Allows clients to signal preferred attestation statement formats. Authenticators that support multiple formats select the highest-priority match, reducing format negotiation overhead for relying parties.
 
 | *Enhanced Authenticator Metadata (`getInfo`)* _(Expanded in 2.2)_
 | Richer self-description capabilities including UV counters (`uvCountSinceLastPinEntry`), supported attestation formats (`attestationFormats`), PIN complexity policy status (`pinComplexityPolicy`), and maximum PIN length (`maxPINLength`).
@@ -96,7 +96,7 @@ CTAP 2.2 introduces new protocol capabilities and expands features established i
 ==== Persistent PIN/UV Auth Tokens (PPUAT)
 
 Spec:: Allows long-lived, read-only tokens for credential management operations without repeated PIN entry.
-Use Case:: Enterprise SSO portals performing background credential audits; password managers that resume enumeration across sessions.
+Use Case:: Enterprise SSO portals performing background credential audits; password managers that resume enumeration across sessions; browsers implementing autofill or conditional mediation UX for hardware security keys.
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, yubikit-android v2.9.0+, and python-fido2 v2.0.0+.
 
 CTAP 2.1 introduced `pinUvAuthToken` with a permissions model. A single PIN entry produces a token with `cm` (credential management) scope, valid for the duration of that session. PPUATs extend this by introducing a separate, narrower token that persists across power cycles and is scoped exclusively to _read-only_ credential management operations: `enumerateRPs`, `enumerateCredentials`, and `getCredentialMetadata`. This eliminates re-authentication in long-running or resumable enumeration workflows without granting the broader write access carried by a full `cm`-scoped token.
@@ -114,7 +114,7 @@ Spec:: Authenticators can enforce PIN rules beyond minimum length and can advert
 Use Case:: Enterprises with organizational PIN policies; devices configured for Common Criteria or equivalent certification requirements.
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, libfido2, and python-fido2 v2.0.0+.
 
-CTAP 2.1 introduced minimum PIN length enforcement via `minPINLength`. CTAP 2.2 expands this with the `pinComplexityPolicy` mechanism, allowing authenticators to advertise and enforce additional PIN quality rules.
+CTAP 2.1 introduced minimum PIN length enforcement via `minPINLength`. CTAP 2.2 expands this with the `pinComplexityPolicy` mechanism, allowing authenticators to advertise whether a PIN complexity policy is active.
 
 What this mechanism does—and does not—mandate:
 
@@ -125,10 +125,39 @@ What this mechanism does—and does not—mandate:
 
 Clients can query the `pinComplexityPolicy` field in `authenticatorGetInfo` to detect whether PIN complexity is enabled on a given device and adapt their UX accordingly.
 
-[NOTE]
-====
-*CTAP 2.3 and PIN Complexity*: CTAP 2.3 adds `pinComplexityPolicyURL`—a URL the authenticator can return pointing to device-specific PIN composition rules. This lets platforms tell users not just that their PIN was rejected, but why, and where to learn more. See the link:CTAP2.3.adoc[CTAP 2.3 guide] for details.
-====
+===== PIN Complexity Policy URL
+
+`pinComplexityPolicyURL` is an optional string field also introduced in CTAP 2.2's `authenticatorGetInfo` response. When present, it provides a URL where the platform can direct users to read the PIN composition rules that apply to their device.
+
+Before this mechanism, when a user entered a PIN that violated a complexity policy, the authenticator returned a generic rejection error. Platforms had no standard way to distinguish "PIN too short" from "PIN not complex enough," or to tell users where to read the applicable rules. This was particularly notable with devices that have firmware-enforced PIN complexity (YubiKey 5 FIPS Series, YubiKey 5 Enhanced PIN)—the user had no indication that complexity rather than length was the issue.
+
+Platforms building PIN rejection UX should:
+
+. Query `pinComplexityPolicy` on every session to detect whether complexity is active.
+. If `pinComplexityPolicy` is `true` and a PIN is rejected, display a message that specifically identifies the complexity failure (distinct from length failures).
+. If `pinComplexityPolicyURL` is present, offer a link so users can read the applicable rules.
+
+[cols="2,1,2", options="header"]
+|===
+| YubiKey Variant | PIN Complexity Default | Notes
+
+| YubiKey 5 Series (standard)
+| Off (requires configuration)
+| Can be enabled via custom pre-registration configuration
+
+| YubiKey 5 FIPS Series
+| On
+| Required by FIPS 140-3 / Common Criteria certification
+
+| YubiKey 5 Enhanced PIN Series
+| On
+| Always on; cannot be permanently disabled
+
+| Security Key Series
+| Off (enterprise variants: configurable)
+| —
+
+|===
 
 ==== thirdPartyPayment Extension
 
@@ -211,6 +240,9 @@ CTAP 2.2 expands the `authenticatorGetInfo` response with several new fields:
 | `maxPINLength`
 | Maximum PIN length the authenticator will accept. Complements `minPINLength` (CTAP 2.1) to allow platforms to provide accurate PIN input constraints.
 
+| `pinComplexityPolicyURL`
+| Optional URL pointing to device-specific PIN composition rules. When present, platforms should offer a link when rejecting a PIN for complexity reasons, directing users to the applicable policy documentation.
+
 |===
 
 === Yubico SDKs and CTAP 2.2 Support
@@ -232,8 +264,8 @@ CTAP 2.2 expands the `authenticatorGetInfo` response with several new fields:
 | v2.9.0+ supports PPUAT, `hmac-secret-mc`, `thirdPartyPayment`, and expanded `getInfo` members. v3.0.0+ additionally supports CTAP 2.3. Actively maintained.
 
 | libfido2 / fido2-token
-| ⚠️ Limited
-| C library and command-line tools. Check the link:https://github.com/Yubico/libfido2[libfido2 release notes] for current CTAP 2.2 feature coverage.
+| ✅ Full Support (v1.17.0+)
+| v1.17.0+ supports most CTAP 2.2 features. Check the link:https://github.com/Yubico/libfido2[libfido2 release notes] for specific feature coverage, or open an issue or pull request on GitHub if something is missing.
 
 | yubikit-swift
 | ⚠️ Limited
