@@ -6,12 +6,33 @@ SSH also offers passwordless authentication. In this scenario, a public-private 
 
 The YubiKey supports four methods for hardware-backed SSH, each suited to a different situation:
 
+* *FIDO2* is the simplest option for most users: one key for SSH and your other FIDO2 logins, built into OpenSSH with no extra modules.
 * *PIV* suits organizations with an established CA.
 * *PGP* fits individuals already invested in OpenPGP.
-* *FIDO2* gives you one key for SSH and your other FIDO2 logins, built into OpenSSH with no extra modules.
 * *OTP* covers legacy systems and older SSH servers.
 
 Each section below covers the trade-offs and links to a step-by-step setup guide.
+
+=== FIDO2
+
+OpenSSH 8.2 added support for FIDO hardware authenticators, exposed through the key types `ecdsa-sk` and `ed25519-sk` and their matching certificate types. Use `ssh-keygen` to generate a FIDO-backed key, then use it like any other SSH key, as long as the YubiKey is plugged in.
+
+The Security Key Series by Yubico, the YubiKey 5 Series, and the YubiKey Bio Series all support SSH authentication with FIDO2.
+
+.Pros:
+* No vendor drivers or middleware: FIDO uses USB HID, the same interface as a keyboard
+* Resident key files can be downloaded from the YubiKey on any machine with `ssh-keygen -K`, so there are no key files to carry around
+* One YubiKey covers SSH and your other FIDO2/WebAuthn logins, no device dedicated to one job
+
+.Cons:
+* Requires OpenSSH 8.2 or later; requiring a PIN for each use with `verify-required` needs 8.4+
+* On macOS, the bundled OpenSSH ships without FIDO support; install OpenSSH from link:https://brew.sh/[Homebrew] (`brew install openssh`) and put it ahead of the system version on your `PATH`
+* On Windows, FIDO support requires OpenSSH 8.9 or later; check `ssh -V`. Recent in-box Windows builds (9.x) include it, but older ones do not. If yours is older, update Windows or install link:https://github.com/PowerShell/Win32-OpenSSH/releases[Win32-OpenSSH] 8.9+.
+* `ed25519-sk` keys require firmware 5.2.3+; largeBlobs (used to store SSH certificates on the key) require firmware 5.7+ on the YubiKey 5 Series
+
+Follow the link:/SSH/Securing_SSH_with_FIDO2.html[step-by-step guide to SSH authentication with FIDO2].
+
+You can also use the same FIDO2 key to link:/SSH/Securing_git_with_SSH_and_FIDO2.html[sign your git commits] and to link:/SSH/Storing_SSH_Certificates.html[store SSH certificates on the key itself].
 
 === PIV
 
@@ -24,6 +45,7 @@ The YubiKey stores and manages RSA and Elliptic Curve (EC) asymmetric keys in it
 * Ideal for organizations with an existing PKI deployment
 
 .Cons:
+* Requires a PKI deployment (at minimum a CA), which adds complexity and ongoing maintenance
 * Requires a vendor PKCS#11 module, which is not built into OpenSSH
 * No chain validation of certificates
 * Each key must be revoked individually
@@ -49,27 +71,6 @@ The YubiKey stores and manages OpenPGP keys in its OpenPGP module. It works with
 Read about the link:/PIV/Guides/Securing_SSH_with_OpenPGP_or_PIV.html#openpgp[advantages and considerations of configuring OpenSSH to use a YubiKey with OpenPGP].
 
 Follow the link:/PGP/SSH_authentication/index.html[step-by-step instructions to enable SSH authentication with the YubiKey and OpenPGP].
-
-=== FIDO2
-
-OpenSSH 8.2 added support for FIDO hardware authenticators, exposed through the key types `ecdsa-sk` and `ed25519-sk` and their matching certificate types. Use `ssh-keygen` to generate a FIDO-backed key, then use it like any other SSH key, as long as the YubiKey is plugged in.
-
-The Security Key Series by Yubico, the YubiKey 5 Series, and the YubiKey Bio Series all support SSH authentication with FIDO2.
-
-.Pros:
-* No vendor drivers or middleware: FIDO uses USB HID, the same interface as a keyboard
-* Resident key files can be downloaded from the YubiKey on any machine with `ssh-keygen -K`, so there are no key files to carry around
-* One YubiKey covers SSH and your other FIDO2/WebAuthn logins, no device dedicated to one job
-
-.Cons:
-* Requires OpenSSH 8.2 or later; requiring a PIN for each use with `verify-required` needs 8.4+
-* On macOS, the bundled OpenSSH ships without FIDO support; install OpenSSH from link:https://brew.sh/[Homebrew] (`brew install openssh`) and put it ahead of the system version on your `PATH`
-* On Windows, FIDO support requires OpenSSH 8.9 or later; check `ssh -V`. Recent in-box Windows builds (9.x) include it, but older ones do not. If yours is older, update Windows or install link:https://github.com/PowerShell/Win32-OpenSSH/releases[Win32-OpenSSH] 8.9+.
-* `ed25519-sk` keys require firmware 5.2.3+; largeBlobs (used to store SSH certificates on the key) require firmware 5.7+ on the YubiKey 5 Series
-
-Follow the link:/SSH/Securing_SSH_with_FIDO2.html[step-by-step guide to SSH authentication with FIDO2].
-
-You can also use the same FIDO2 key to link:/SSH/Securing_git_with_SSH_and_FIDO2.html[sign your git commits] and to link:/SSH/Storing_SSH_Certificates.html[store SSH certificates on the key itself].
 
 === OTP
 
