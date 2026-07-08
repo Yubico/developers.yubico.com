@@ -1,0 +1,150 @@
+<style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+    div.Nd, div.Bf, div.Op { display: inline; }
+    span.Pa, span.Ad { font-style: italic; }
+    span.Ms { font-weight: bold; }
+    dl.Bl-diag > dt { font-weight: bold; }
+    code.Nm, code.Fl, code.Cm, code.Ic, code.In, code.Fd, code.Fn,
+    code.Cd { font-weight: bold; font-family: monospace; }
+    var { font-family: monospace; }
+    .Sh { font-size: 1.5em; padding-top: 1em; padding-bottom: 1em; }
+</style>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">FIDO_DEV_GET_PUAT(3)</td>
+    <td class="head-vol">Library Functions Manual</td>
+    <td class="head-rtitle">FIDO_DEV_GET_PUAT(3)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<code class="Nm" title="Nm">fido_dev_get_puat</code>,
+  <code class="Nm" title="Nm">fido_dev_set_puat</code>,
+  <code class="Nm" title="Nm">fido_dev_puat_ptr</code>,
+  <code class="Nm" title="Nm">fido_dev_puat_len</code> &#x2014;
+<div class="Nd" title="Nd">FIDO2 PIN/UV Auth token management functions</div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<code class="In" title="In">#include
+  &lt;<a class="In" title="In">fido.h</a>&gt;</code>
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_get_puat</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">unsigned
+  int perm</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  char *rpid</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">const char
+  *pin</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">int</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_set_puat</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">fido_dev_t
+  *dev</var>, <var class="Fa" title="Fa" style="white-space: nowrap;">const
+  unsigned char *ptr</var>,
+  <var class="Fa" title="Fa" style="white-space: nowrap;">size_t len</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">const unsigned char *</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_puat_ptr</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_dev_t *dev</var>);
+<div class="Pp"></div>
+<var class="Ft" title="Ft">size_t</var>
+<br/>
+<code class="Fn" title="Fn">fido_dev_puat_len</code>(<var class="Fa" title="Fa" style="white-space: nowrap;">const
+  fido_dev_t *dev</var>);
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The <code class="Fn" title="Fn">fido_dev_get_puat</code>() negotiates a FIDO2
+  PIN/UV Auth token with the permission bitmask specified by
+  <var class="Fa" title="Fa">perm</var> and associates it with
+  <var class="Fa" title="Fa">dev</var>. If <var class="Fa" title="Fa">perm</var>
+  does not require specifying a relying party ID,
+  <var class="Fa" title="Fa">rpid</var> may be NULL. Otherwise
+  <var class="Fa" title="Fa">rpid</var> must point to a NUL-terminated UTF-8
+  string. If a PIN is not needed to authenticate against
+  <var class="Fa" title="Fa">dev</var>, then
+  <var class="Fa" title="Fa">pin</var> may be NULL. Otherwise
+  <var class="Fa" title="Fa">pin</var> must point to a NUL-terminated UTF-8
+  string. Supported flags for <var class="Fa" title="Fa">perm</var> are
+<dl class="Bl-tag">
+  <dt><a class="permalink" href="#FIDO_PUAT_MAKECRED"><code class="Dv" title="Dv" id="FIDO_PUAT_MAKECRED">FIDO_PUAT_MAKECRED</code></a></dt>
+  <dd>Permission for <code class="Fn" title="Fn">fido_dev_make_cred</code>(). An
+      <var class="Fa" title="Fa">rpid</var> is required.</dd>
+  <dt><a class="permalink" href="#FIDO_PUAT_GETASSERT"><code class="Dv" title="Dv" id="FIDO_PUAT_GETASSERT">FIDO_PUAT_GETASSERT</code></a></dt>
+  <dd>Permission for <code class="Fn" title="Fn">fido_dev_get_assert</code>().
+      An <var class="Fa" title="Fa">rpid</var> is required.</dd>
+  <dt><a class="permalink" href="#FIDO_PUAT_CREDMAN"><code class="Dv" title="Dv" id="FIDO_PUAT_CREDMAN">FIDO_PUAT_CREDMAN</code></a></dt>
+  <dd>Permission for the credential management API. An
+      <var class="Fa" title="Fa">rpid</var> is optional.</dd>
+  <dt><a class="permalink" href="#FIDO_PUAT_BIOENROLL"><code class="Dv" title="Dv" id="FIDO_PUAT_BIOENROLL">FIDO_PUAT_BIOENROLL</code></a></dt>
+  <dd>Permission for the biometric enrollment API. The
+      <var class="Fa" title="Fa">rpid</var> is ignored.</dd>
+  <dt><a class="permalink" href="#FIDO_PUAT_LARGEBLOB"><code class="Dv" title="Dv" id="FIDO_PUAT_LARGEBLOB">FIDO_PUAT_LARGEBLOB</code></a></dt>
+  <dd>Permission for the large blobs API. The
+      <var class="Fa" title="Fa">rpid</var> is ignored.</dd>
+  <dt><a class="permalink" href="#FIDO_PUAT_CONFIG"><code class="Dv" title="Dv" id="FIDO_PUAT_CONFIG">FIDO_PUAT_CONFIG</code></a></dt>
+  <dd>Permission for the authenticator config API. The
+      <var class="Fa" title="Fa">rpid</var> is ignored.</dd>
+  <dt><a class="permalink" href="#FIDO_PUAT_CREDMAN_RO"><code class="Dv" title="Dv" id="FIDO_PUAT_CREDMAN_RO">FIDO_PUAT_CREDMAN_RO</code></a></dt>
+  <dd>Persistent read-only permission for the credential management API. The
+      <var class="Fa" title="Fa">rpid</var> is ignored.</dd>
+</dl>
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_set_puat</code>() function can be used
+  to associate a token retrieved out-of-band with
+  <var class="Fa" title="Fa">dev</var>. No references to
+  <var class="Fa" title="Fa">ptr</var> are kept. If
+  <var class="Fa" title="Fa">ptr</var> is NULL or
+  <var class="Fa" title="Fa">len</var> is zero, the token is cleared from
+  <var class="Fa" title="Fa">dev</var>.
+<div class="Pp"></div>
+The <code class="Fn" title="Fn">fido_dev_puat_ptr</code>() function returns a
+  pointer to the PIN/UV Auth token currently associated with
+  <var class="Fa" title="Fa">dev</var>. The corresponding length can be obtained
+  by calling <code class="Fn" title="Fn">fido_dev_puat_len</code>().
+<div class="Pp"></div>
+Associating a token with <var class="Fa" title="Fa">dev</var> has the main
+  benefit of reducing the user interaction to a minimum in a sequence of
+  operations where each would require some form of UV. Likewise, if multiple
+  operations in a sequence need to be authenticated by a PIN, using a token
+  avoids the need of caching the PIN for the duration of the whole sequence.
+<div class="Pp"></div>
+Once a token is associated with <var class="Fa" title="Fa">dev</var>, it will
+  take precedence over the regular PIN/UV Authentication for all operations that
+  support the use of a token, until it is cleared from
+  <var class="Fa" title="Fa">dev</var>. The validity of the token is determined
+  by the authenticator; it may expire and its permissions may be affected by its
+  use. An invalid token is not automatically cleared from
+  <var class="Fa" title="Fa">dev</var>. Applications can call
+  <code class="Fn" title="Fn">fido_dev_set_puat</code>() or
+  <code class="Fn" title="Fn">fido_dev_get_puat</code>() to discard or obtain a
+  new PIN/UV Auth token and retry the failed operation as appropriate.
+<div class="Pp"></div>
+For further details on token semantics, please refer to the FIDO Client to
+  Authenticator Protocol (CTAP) standard.
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+On success, <code class="Fn" title="Fn">fido_dev_get_puat</code>() and
+  <code class="Fn" title="Fn">fido_dev_set_puat</code>() return
+  <code class="Dv" title="Dv">FIDO_OK</code>. On error, a different error code
+  defined in
+  <code class="In" title="In">&lt;<a class="In" title="In">fido/err.h</a>&gt;</code>
+  is returned.
+<div class="Pp"></div>
+<code class="Fn" title="Fn">fido_dev_puat_ptr</code>() may return NULL if there
+  is no PIN/UV Auth token associated with <var class="Fa" title="Fa">dev</var>.
+  If not NULL, the returned pointer is guaranteed to exist until either
+  <code class="Fn" title="Fn">fido_dev_get_puat</code>()
+  <code class="Fn" title="Fn">fido_dev_set_puat</code>(), or
+  <code class="Fn" title="Fn">fido_dev_free</code>() is invoked.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a class="Xr" title="Xr" href="fido_dev_new.html">fido_dev_new(3)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">April 8, 2026</td>
+    <td class="foot-os">Linux 6.19.11-arch1-1</td>
+  </tr>
+</table>

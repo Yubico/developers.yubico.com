@@ -1,37 +1,50 @@
 == CTAP 2.2: Enhanced FIDO2 Features and Enterprise Security
-:description: Comprehensive guide to CTAP 2.2 features including Persistent PIN/UV Auth Tokens, PIN complexity policies, and enterprise attestation. Learn implementation with Yubico SDKs.
-:keywords: CTAP 2.2, FIDO2, persistent PIN tokens, PIN complexity, enterprise attestation, thirdPartyPayment, credential management, YubiKey SDK
+:description: Comprehensive guide to CTAP 2.2 features including Persistent PIN/UV Auth Tokens, PIN complexity policies, payment authentication, and HMAC secret extensions. Learn implementation with Yubico SDKs.
+:keywords: CTAP 2.2, FIDO2, persistent PIN tokens, PIN complexity, enterprise attestation, thirdPartyPayment, hmac-secret-mc, credential management, YubiKey SDK
 :author: Yubico Developer Relations
 :page-layout: technical-guide
 :page-category: Authentication Protocols
 :page-tags: CTAP 2.2, FIDO2, Enterprise Security, PIN Policies, Payment Authentication
 :toc: left
-:toclevels: 4
+:toclevels: 3
 :sectanchors:
 :source-highlighter: highlight.js
-:page-last-updated: 2025-01-15
+:page-last-updated: 2026-05-22
 
 [.lead]
-CTAP 2.2 delivers powerful new capabilities for enterprise deployments and improved user experiences. This technical guide covers persistent PIN tokens, payment authentication, and other protocol enhancements—along with SDK support status across Yubico's developer tools.
+CTAP 2.2 strengthens the FIDO2 protocol with persistent PIN tokens, configurable PIN complexity policies, payment authentication support, and richer authenticator metadata. This guide covers each feature from an implementation perspective, with specific guidance for Yubico SDKs.
 
-=== CTAP 2.2: Protocol Advances for Enterprise and Ecosystem Growth
-
-==== Introduction
-
-The Client to Authenticator Protocol (CTAP) defines how authenticators communicate with clients for FIDO2 authentication. CTAP 2.2 strengthens the protocol with features that address enterprise deployment requirements and expand authentication options across the FIDO ecosystem.
-
-For roaming authenticators like YubiKeys, this release delivers capabilities that reduce friction in enterprise workflows: persistent PIN/UV auth tokens eliminate repeated prompts during credential enumeration, PIN complexity policies enforce compliance requirements at the hardware level, and the thirdPartyPayment extension enables cross-domain authentication for regulated payment transactions.
-
-CTAP 2.2 also formalizes hybrid transport, a protocol mechanism for cross-device authentication using QR codes and proximity pairing. This allows a platform authenticator on a phone to authenticate sessions on other devices like desktops—useful for everyday scenarios where convenience matters more than the highest assurance levels. Hybrid flows can create device-bound credentials (hardware-bound, like YubiKeys) or multi-device credentials (syncable across a user's devices). For scenarios requiring attestation and non-exportable keys, hardware security keys remain the appropriate authenticator choice.
-
-This guide covers CTAP 2.2 features from an implementation perspective, with specific guidance for Yubico SDKs. Many features operate at the native application layer—check our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser support matrix] for WebAuthn API availability.
+++++
+<div class="last-updated-banner">
+    <!-- Simple clock icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Last Updated on 22 May 2026</span>
+</div>
+++++
 
 [NOTE]
 ====
-**WebAuthn and Browser Support**: While CTAP 2.2 features are available at the protocol level, WebAuthn applications depend on browser support for these capabilities. Not all CTAP 2.2 features are exposed through the WebAuthn JavaScript API, and browser implementations vary. For web developers, consult our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support] page to verify which features your target browsers support before implementation.
+*WebAuthn and Browser Support*: While CTAP 2.2 features are available at the protocol level, WebAuthn applications depend on browser support for these capabilities. Not all CTAP 2.2 features are exposed through the WebAuthn JavaScript API. For web developers, consult our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support] page before implementation.
 ====
 
-==== What's New in CTAP 2.2
+[NOTE]
+====
+*CTAP 2.2 and Certification*: The FIDO Alliance did not create a separate certification category for CTAP 2.2. Certifications are issued against CTAP 2.3, which is fully backwards-compatible with CTAP 2.2. There is no `FIDO_2_2` version string in `authenticatorGetInfo`. See our link:CTAP2.3.adoc[CTAP 2.3 guide] for what CTAP 2.3 adds.
+====
+
+=== Introduction
+
+The Client to Authenticator Protocol (CTAP) defines how authenticators communicate with clients for FIDO2 authentication. CTAP 2.2 strengthens the protocol with features that address enterprise deployment requirements and expand authentication options across the FIDO ecosystem.
+
+For roaming authenticators like YubiKeys, this release delivers capabilities that reduce friction in enterprise workflows: persistent PIN/UV auth tokens provide long-lived, read-only tokens for credential enumeration without repeated PIN entry; PIN complexity policies give platforms a standard way to query whether device-specific PIN requirements are active; and the `thirdPartyPayment` extension enables cross-domain authentication for regulated payment transactions.
+
+CTAP 2.2 also formalizes hybrid transport, a protocol mechanism for cross-device authentication using QR codes and proximity pairing. This allows a platform authenticator on a phone to authenticate sessions on other devices like desktops. Hybrid flows use platform authenticators (such as those on smartphones) or multi-device passkeys. For scenarios requiring attestation and non-exportable keys, hardware security keys remain the appropriate authenticator choice.
+
+This guide covers CTAP 2.2 features from an implementation perspective, with specific guidance for Yubico SDKs. Many features operate at the native application layer—check our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser support matrix] for WebAuthn API availability.
+
+=== What's New in CTAP 2.2
 
 CTAP 2.2 introduces new protocol capabilities and expands features established in CTAP 2.1. The table below highlights major changes, organized by relevance to roaming authenticators like YubiKeys.
 
@@ -39,95 +52,139 @@ CTAP 2.2 introduces new protocol capabilities and expands features established i
 |===
 | Feature | Description | Developer Benefit
 
-| **Persistent PIN/UV Auth Tokens (PPUAT)** +
-_(New in 2.2)_
-| Long-lived tokens scoped to read-only credential management operations, eliminating repeated PIN prompts when enumerating stored credentials.
-| Dramatically improves UX in enterprise SSO portals and password managers. Reduces authentication fatigue in multi-step workflows where users enumerate credentials across relying parties.
+| *Persistent PIN/UV Auth Tokens (PPUAT)* _(New in 2.2)_
+| Long-lived, read-only tokens scoped to credential enumeration operations (`enumerateRPs`, `enumerateCredentials`, `getCredentialMetadata`). Tokens persist across power cycles.
+| Improves UX in enterprise SSO portals and password managers during long-running or resumable credential enumeration. Complements the session-scoped `cm`-permission tokens from CTAP 2.1 without replacing them.
 
-| **PIN Complexity Policies** +
-_(New in 2.2)_
-| Hardware-enforced PIN requirements including character set constraints, expanding CTAP 2.1's minimum PIN length enforcement to full complexity policies.
-| Meets enterprise compliance requirements (NIST SP 800-63B) at the authenticator level. Security policies cannot be circumvented by clients.
+| *PIN Complexity Policies* _(New in 2.2)_
+| A protocol mechanism for authenticators to advertise PIN complexity requirements. Authenticators with PIN complexity enabled—via device configuration or certification requirements—can reject PINs that fail their policy.
+| Enables platforms to detect that PIN complexity is active and adapt their UX accordingly. Complements minimum-length enforcement introduced by `minPINLength` in CTAP 2.1.
 
-| **thirdPartyPayment Extension** +
-_(New in 2.2)_
+| *thirdPartyPayment Extension* _(New in 2.2)_
 | Allows a credential to be asserted in a context where the transaction initiator (e.g., a merchant) differs from the relying party that created the credential (e.g., a bank), without requiring redirects.
 | Critical for payment industry compliance with PSD2 Strong Customer Authentication. Enables standardized, phishing-resistant payment flows required by card networks and regulators.
 
-| **HMAC Secret MakeCredential (hmac-secret-mc)** +
-_(New in 2.2)_
-| Extends the existing hmac-secret extension to also support secret derivation during credential creation (MakeCredential). The original hmac-secret extension for GetAssertion continues to function unchanged.
-| Enables immediate encryption of local data with hardware-backed secrets at registration time. Critical for password managers, encrypted vaults, and offline workstation scenarios that need a secret before first authentication.
+| *HMAC Secret MakeCredential (`hmac-secret-mc`)* _(New in 2.2)_
+| Extends the existing `hmac-secret` extension to also support secret derivation during credential creation (`authenticatorMakeCredential`).
+| Enables immediate encryption of local data with hardware-backed secrets at registration time. Critical for password managers, encrypted vaults, and offline workstation scenarios.
 
-| **Hybrid Transport** +
-_(New in 2.2)_
-| Cross-device authentication protocol using QR code initiation and proximity-based pairing (BLE + network tunnel). Enables a platform authenticator on one device to authenticate sessions on another.
-| Expands FIDO adoption for consumer applications where convenience is prioritized. Developers can implement passwordless experiences that leverage users' existing devices.
+| *Hybrid Transport* _(New in 2.2)_
+| Cross-device authentication protocol using QR code initiation and proximity-based pairing (BLE + encrypted network tunnel). Enables a platform authenticator on one device to authenticate sessions on another.
+| Expands FIDO adoption for consumer applications. Developers can implement passwordless experiences that leverage users' existing devices.
 
-| **JSON-Based Messaging** +
-_(New in 2.2)_
-| Optional JSON encoding for specific CTAP commands, supplementing the existing CBOR format. Primarily used in browser-mediated credential management contexts.
-| Simplifies integration for web-based credential management UIs. JavaScript applications can parse authenticator responses without CBOR decoding in certain scenarios.
+| *JSON-Based Messaging* _(New in 2.2)_
+| Adds support for Digital Credentials API requests using JSON-based messages over hybrid transport. Signaled by the `dc` capability indicator in the hybrid handshake.
+| Enables browsers to exchange CTAP-compliant requests and responses via the Digital Credentials API without requiring CBOR decoding at the JavaScript layer.
 
-| **Enhanced Authenticator Metadata (getInfo)** +
-_(Expanded in 2.2)_
-| Richer self-description capabilities including UV counters, supported attestation formats, PIN complexity policy details, and maximum PIN length.
+| *Attestation Formats Preference (`attestationFormatsPreference`)* _(New in 2.2)_
+| A new `authenticatorMakeCredential` option allowing the platform to send an ordered list of preferred attestation statement formats. The authenticator selects the most preferred format it supports.
+| Allows clients to signal preferred attestation statement formats. Authenticators that support multiple formats select the highest-priority match, reducing format negotiation overhead for relying parties.
+
+| *Enhanced Authenticator Metadata (`getInfo`)* _(Expanded in 2.2)_
+| Richer self-description capabilities including UV counters (`uvCountSinceLastPinEntry`), supported attestation formats (`attestationFormats`), PIN complexity policy status (`pinComplexityPolicy`), and maximum PIN length (`maxPINLength`).
 | Enables adaptive client behavior. Applications can dynamically adjust UI and validation logic based on authenticator capabilities without trial-and-error probing.
 
 |===
 
 [NOTE]
 ====
-**Protocol Capabilities vs Device Support**: This table reflects CTAP 2.2 protocol features. Individual authenticator implementations vary—check YubiKey firmware documentation and SDK support matrices for specific device capabilities.
+*Protocol Capabilities vs Device Support*: This table reflects CTAP 2.2 protocol features. Individual authenticator implementations vary—check YubiKey firmware documentation and SDK support matrices for specific device capabilities.
 ====
 
-==== CTAP 2.2 Features Explained
+=== CTAP 2.2 Features Explained
 
-===== Persistent PIN/UV Auth Tokens (PPUAT)
+==== Persistent PIN/UV Auth Tokens (PPUAT)
 
-Spec:: Allows long-lived tokens for read-only credential management operations without repeated PIN entry.
-Use Case:: Enterprise SSO portals where users browse multiple apps in one session.
+Spec:: Allows long-lived, read-only tokens for credential management operations without repeated PIN entry.
+Use Case:: Enterprise SSO portals performing background credential audits; password managers that resume enumeration across sessions; browsers implementing autofill or conditional mediation UX for hardware security keys.
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, yubikit-android v2.9.0+, and python-fido2 v2.0.0+.
 
-When an application needs to enumerate stored credentials—for example to list available passkeys across relying parties—CTAP 2.1 required re-entering the PIN for each discovery operation. PPUATs allow the authenticator to issue a longer-lived token scoped specifically to read-only credential management operations (`enumerateRPs`, `enumerateCredentials`, `getCredentialMetadata`), dramatically improving the experience in enterprise portals and password managers. PPUATs do not grant assertion or credential creation permissions.
+CTAP 2.1 introduced `pinUvAuthToken` with a permissions model. A single PIN entry produces a token with `cm` (credential management) scope, valid for the duration of that session. PPUATs extend this by introducing a separate, narrower token that persists across power cycles and is scoped exclusively to _read-only_ credential management operations: `enumerateRPs`, `enumerateCredentials`, and `getCredentialMetadata`. This eliminates re-authentication in long-running or resumable enumeration workflows without granting the broader write access carried by a full `cm`-scoped token.
+
+PPUATs do not grant assertion or credential creation permissions.
 
 [CAUTION]
 ====
-**Browser Limitation**: PPUATs are a protocol-level feature not currently exposed through WebAuthn APIs. This feature is primarily useful for native applications that communicate directly with authenticators via CTAP.
+*Browser Limitation*: PPUATs are a protocol-level feature not currently exposed through WebAuthn APIs. This feature is primarily useful for native applications that communicate directly with authenticators via CTAP.
 ====
 
-===== PIN Complexity Policies
+==== PIN Complexity Policies
 
-Spec:: Authenticators can enforce PIN rules beyond minimum length, including character set requirements.
-Use Case:: Enterprises subject to NIST SP 800-63B or similar requirements.
+Spec:: Authenticators can enforce PIN rules beyond minimum length and can advertise whether a complexity policy is active.
+Use Case:: Enterprises with organizational PIN policies; devices configured for Common Criteria or equivalent certification requirements.
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, libfido2, and python-fido2 v2.0.0+.
 
-CTAP 2.1 introduced minimum PIN length enforcement. CTAP 2.2 expands this to full complexity policies, allowing authenticators to require not only longer PINs but also specific character set requirements. Enforcement happens at the hardware level, so security policies cannot be bypassed by a non-compliant client.
+CTAP 2.1 introduced minimum PIN length enforcement via `minPINLength`. CTAP 2.2 expands this with the `pinComplexityPolicy` mechanism, allowing authenticators to advertise whether a PIN complexity policy is active.
 
-===== thirdPartyPayment Extension
+What this mechanism does—and does not—mandate:
+
+* The CTAP 2.2 specification introduces the _protocol_ for expressing and querying PIN complexity status. It does not define specific complexity rules or require all CTAP 2.2 authenticators to enforce complexity.
+* Enforcement is authenticator-specific and typically driven by device certification requirements (such as Common Criteria) or explicit configuration during provisioning.
+* On standard YubiKey 5 Series devices, PIN complexity requires explicit configuration. On YubiKey 5 FIPS Series and YubiKey 5 Enhanced PIN, it is enabled by default.
+* YubiKey's PIN complexity policy blocks trivial and commonly-used values such as sequential patterns and dictionary words. This follows NIST SP 800-63B guidance to check PINs against commonly-used values. Note that NIST SP 800-63B explicitly _discourages_ character-composition rules (requiring uppercase, digits, etc.); Yubico's implementation follows this approach.
+
+Clients can query the `pinComplexityPolicy` field in `authenticatorGetInfo` to detect whether PIN complexity is enabled on a given device and adapt their UX accordingly.
+
+===== PIN Complexity Policy URL
+
+`pinComplexityPolicyURL` is an optional string field also introduced in CTAP 2.2's `authenticatorGetInfo` response. When present, it provides a URL where the platform can direct users to read the PIN composition rules that apply to their device.
+
+Before this mechanism, when a user entered a PIN that violated a complexity policy, the authenticator returned a generic rejection error. Platforms had no standard way to distinguish "PIN too short" from "PIN not complex enough," or to tell users where to read the applicable rules. This was particularly notable with devices that have firmware-enforced PIN complexity (YubiKey 5 FIPS Series, YubiKey 5 Enhanced PIN)—the user had no indication that complexity rather than length was the issue.
+
+Platforms building PIN rejection UX should:
+
+. Query `pinComplexityPolicy` on every session to detect whether complexity is active.
+. If `pinComplexityPolicy` is `true` and a PIN is rejected, display a message that specifically identifies the complexity failure (distinct from length failures).
+. If `pinComplexityPolicyURL` is present, offer a link so users can read the applicable rules.
+
+[cols="2,1,2", options="header"]
+|===
+| YubiKey Variant | PIN Complexity Default | Notes
+
+| YubiKey 5 Series (standard)
+| Off (requires configuration)
+| Can be enabled via custom pre-registration configuration
+
+| YubiKey 5 FIPS Series
+| On
+| Required by FIPS 140-3 / Common Criteria certification
+
+| YubiKey 5 Enhanced PIN Series
+| On
+| Always on; cannot be permanently disabled
+
+| Security Key Series
+| Off (enterprise variants: configurable)
+| —
+
+|===
+
+==== thirdPartyPayment Extension
 
 Spec:: Enables assertion of a credential where the transaction initiator differs from the credential's relying party.
 Use Case:: Payment providers integrating PSD2 SCA via Secure Payment Confirmation (SPC).
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, yubikit-android v2.9.0+, and python-fido2 v2.0.0+.
 
-The thirdPartyPayment extension allows a credential registered at one origin (e.g., a bank) to be used for authentication in a context where a different party initiates the transaction (e.g., a merchant checkout). This is the protocol primitive that makes Secure Payment Confirmation possible under PSD2. Note that most of the SPC-specific processing must be handled by a compliant browser or client—this extension alone is not sufficient to implement a complete SPC flow.
+The `thirdPartyPayment` extension allows a credential registered at one origin (e.g., a bank) to be used for authentication in a context where a different party initiates the transaction (e.g., a merchant checkout). This is the protocol primitive that makes Secure Payment Confirmation possible under PSD2. Note that most of the SPC-specific processing must be handled by a compliant browser or client—this extension alone is not sufficient to implement a complete SPC flow.
 
 [NOTE]
 ====
-**Browser Support Required**: Secure Payment Confirmation requires coordinated browser support. Check our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser support matrix] before implementing SPC workflows, as browser adoption is still evolving.
+*Browser Support Required*: Secure Payment Confirmation requires coordinated browser support. Check our link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[browser support matrix] before implementing SPC workflows, as browser adoption is still evolving.
 ====
 
-===== hmac-secret-mc
+==== hmac-secret-mc
 
-Spec:: Adds secret derivation support to the MakeCredential operation, complementing the existing hmac-secret extension for GetAssertion.
+Spec:: Adds secret derivation support to the `authenticatorMakeCredential` operation, complementing the existing `hmac-secret` extension for `authenticatorGetAssertion`.
 Use Case:: Applications needing a per-credential secret immediately at registration—for example, password managers encrypting vaults or offline workstation access systems.
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, yubikit-android v2.9.0+, and python-fido2 v2.0.0+.
 
-The hmac-secret extension has existed since CTAP 2.1 and returns a credential-specific secret during GetAssertion. The hmac-secret-mc extension adds the ability to retrieve that secret during MakeCredential as well, enabling applications to immediately encrypt data with a hardware-backed secret without requiring the user to perform a separate authentication step first.
+The `hmac-secret` extension has existed since CTAP 2.1 and returns a credential-specific secret during `authenticatorGetAssertion`. The `hmac-secret-mc` extension adds the ability to retrieve that secret during `authenticatorMakeCredential` as well, enabling applications to immediately encrypt data with a hardware-backed secret without requiring the user to perform a separate authentication step first.
 
 [NOTE]
 ====
-**Relationship to WebAuthn PRF**: The WebAuthn PRF extension maps to the hmac-secret extension at the CTAP level for GetAssertion flows. PRF also gained MakeCredential support (via `evalByCredential`) at the WebAuthn layer, which is the browser-API equivalent of hmac-secret-mc—but they are distinct mechanisms operating at different layers of the stack.
+*Relationship to WebAuthn PRF*: The WebAuthn PRF extension maps to the `hmac-secret` extension at the CTAP level for `authenticatorGetAssertion` flows. PRF also gained `authenticatorMakeCredential` support at the WebAuthn layer via the `eval` field of the PRF extension input—this is the browser-API equivalent of `hmac-secret-mc`, and the two mechanisms operate at different layers of the stack.
+
+Note: `evalByCredential` is a separate, `authenticatorGetAssertion`-only field that allows the PRF to be evaluated against specific credential IDs when multiple credentials are eligible. It is not related to `authenticatorMakeCredential` support.
 
 For comprehensive implementation guidance, see our PRF extension documentation:
 
@@ -136,69 +193,104 @@ For comprehensive implementation guidance, see our PRF extension documentation:
 * link:https://developers.yubico.com/WebAuthn/Concepts/PRF_Extension/CTAP2_HMAC_Secret_Deep_Dive.html[CTAP2 HMAC-Secret Deep Dive]
 ====
 
-===== Hybrid Transport
+==== Hybrid Transport
 
 Spec:: Cross-device authentication protocol using QR codes and BLE proximity pairing.
 Use Case:: Enables FIDO authentication on devices without built-in authenticators by leveraging a phone's platform authenticator.
 Yubico Support:: Not applicable—hybrid transport is implemented by platform authenticators and clients, not roaming security keys.
 
-Hybrid transport allows a platform authenticator on a phone to complete authentication for sessions on other devices like desktops. The user scans a QR code displayed on the desktop, and the phone establishes a secure connection via BLE and an encrypted tunnel to complete the FIDO ceremony.
+Hybrid transport allows a platform authenticator on a phone to complete authentication for sessions on other devices like desktops. The user scans a QR code displayed on the desktop, and the phone establishes a secure connection via BLE and an encrypted network tunnel to complete the FIDO ceremony.
+
+CTAP 2.2 defines WebSocket-based tunnels as the data transfer channel for QR-initiated hybrid transactions. CTAP 2.3 extends this with Bluetooth Low Energy as an alternative channel. See the link:CTAP2.3.adoc[CTAP 2.3 guide] for details.
 
 [NOTE]
 ====
-**Implementation Note**: Browsers and operating systems handle hybrid transport. Application developers design flows that support both roaming authenticators and cross-device authentication, depending on user hardware availability.
+*Implementation Note*: Browsers and operating systems handle hybrid transport. Application developers design flows that support both roaming authenticators and cross-device authentication, depending on user hardware availability.
 ====
 
-===== JSON-Based Messaging
+==== JSON-Based Messaging
 
-Spec:: Optional JSON encoding for credential management commands, supplementing CBOR.
-Use Case:: Browser credential management UIs.
-Yubico Support:: Transparent to SDK usage—Yubico SDKs use CBOR when communicating with YubiKeys.
+Spec:: Adds support for Digital Credentials API requests using JSON-based messages over hybrid transport. Support is indicated by the `dc` capability in the hybrid handshake message.
+Use Case:: Browsers implementing the Digital Credentials API over cross-device hybrid transport.
+Yubico Support:: Transparent to SDK usage—Yubico SDKs use CBOR when communicating with YubiKeys directly.
 
-CTAP 2.2 allows JSON encoding for specific credential management operations. This simplifies browser implementations that would otherwise need CBOR decoding in JavaScript. The core protocol continues using CBOR.
+CTAP 2.2 defines a JSON-based message format for Digital Credentials API requests exchanged over hybrid transport channels. This allows browsers to process CTAP-compliant requests and responses without CBOR decoding at the JavaScript layer. The core protocol continues using CBOR for all direct CTAP communication.
 
-===== getInfo Metadata Extensions
+==== getInfo Metadata Extensions
 
 Spec:: Richer authenticator self-description including PIN complexity policies, attestation formats, UV counters, and more.
-Use Case:: Applications that adapt their behavior based on authenticator capabilities—for example, adjusting PIN requirements or choosing attestation verification strategies.
+Use Case:: Applications that adapt their behavior based on authenticator capabilities.
 Yubico Support:: Available in Yubico.NET SDK v1.14.0+, yubikit-android v2.9.0+, python-fido2 v2.0.0+, and exposed via libfido2/fido2-token.
 
-CTAP 2.2 expands the authenticatorGetInfo response with fields like `uvCountSinceLastPinEntry`, `attestationFormats`, `pinComplexityPolicy`, and `maxPinLength`. These metadata fields enable smarter application behavior without trial-and-error probing of authenticator capabilities.
+CTAP 2.2 expands the `authenticatorGetInfo` response with several new fields:
 
-==== Yubico SDKs and CTAP 2.2 Support
+[cols="1,2", options="header"]
+|===
+| Field | Purpose
 
-[cols="1,1,1", options="header"]
+| `uvCountSinceLastPinEntry`
+| Number of user verifications performed since the last PIN entry. Supports adaptive client logic—for example, determining whether a PIN prompt can be deferred.
+
+| `attestationFormats`
+| List of attestation statement formats supported by the authenticator. Allows relying parties to select a preferred format for verification without trial-and-error.
+
+| `pinComplexityPolicy`
+| Boolean indicating whether PIN complexity policy is enabled on the authenticator. Platforms should check this field before presenting PIN entry UI and adjust guidance accordingly.
+
+| `maxPINLength`
+| Maximum PIN length the authenticator will accept. Complements `minPINLength` (CTAP 2.1) to allow platforms to provide accurate PIN input constraints.
+
+| `pinComplexityPolicyURL`
+| Optional URL pointing to device-specific PIN composition rules. When present, platforms should offer a link when rejecting a PIN for complexity reasons, directing users to the applicable policy documentation.
+
+|===
+
+=== Yubico SDKs and CTAP 2.2 Support
+
+[cols="1,1,3", options="header"]
 |===
 | SDK | CTAP 2.2 Support | Notes
-| python-fido2 | ✅ Full Support | v2.0.0+ supports PPUAT, hmac-secret-mc, thirdPartyPayment, and expanded getInfo fields. Note: thirdPartyPayment is not included in the default extensions list and requires a client that supports the WebAuthn payment extension.
-| Yubico.NET SDK | ✅ Extensive Support | v1.14.0+ supports PPUAT, PIN complexity policies, thirdPartyPayment, hmac-secret-mc, and expanded getInfo properties.
-| yubikit-android | ✅ Good Support | v2.9.0+ supports PPUAT, hmac-secret-mc, thirdPartyPayment, and expanded getInfo members. v3.0.0+ additionally supports CTAP 2.3. Actively maintained.
-| libfido2 / fido2-token | ⚠️ Limited | C library and command-line tools. Check the link:https://github.com/Yubico/libfido2[libfido2 release notes] for current CTAP 2.2 feature coverage.
-| yubikit-swift | ⚠️ Limited | Modern Swift SDK for iOS/macOS. CTAP 2.2 feature support under development.
-| yubikit-ios (Objective-C) | ⚠️ Limited | Legacy Objective-C SDK. Missing most CTAP 2.2 features. Consider yubikit-swift for new projects.
+
+| python-fido2
+| ✅ Full Support
+| v2.0.0+ supports PPUAT, `hmac-secret-mc`, `thirdPartyPayment`, and expanded `getInfo` fields. Note: `thirdPartyPayment` is not included in the default extensions list and requires a client that supports the WebAuthn payment extension.
+
+| Yubico.NET SDK
+| ✅ Extensive Support
+| v1.14.0+ supports PPUAT, PIN complexity policies, `thirdPartyPayment`, `hmac-secret-mc`, and expanded `getInfo` properties.
+
+| yubikit-android
+| ✅ Good Support
+| v2.9.0+ supports PPUAT, `hmac-secret-mc`, `thirdPartyPayment`, and expanded `getInfo` members. v3.0.0+ additionally supports CTAP 2.3. Actively maintained.
+
+| libfido2 / fido2-token
+| ✅ Full Support (v1.17.0+)
+| v1.17.0+ supports most CTAP 2.2 features. Check the link:https://github.com/Yubico/libfido2[libfido2 release notes] for specific feature coverage.
+
+| yubikit-swift
+| ⚠️ Limited
+| Modern Swift SDK for iOS/macOS. CTAP 2.2 feature support under development.
+
+| yubikit-ios (Objective-C)
+| ⚠️ Limited
+| Legacy Objective-C SDK. Missing most CTAP 2.2 features. Consider yubikit-swift for new projects.
+
 |===
 
 [NOTE]
 ====
-**Feature Coverage**: Hybrid transport and JSON messaging are handled by browsers and operating systems, not SDK implementations.
+*Feature Coverage*: Hybrid transport and JSON messaging are handled by browsers and operating systems, not SDK implementations.
 ====
 
-===== References
+=== References
 
+* link:https://fidoalliance.org/specs/fido-v2.2-ps-20250714/fido-client-to-authenticator-protocol-v2.2-ps-20250714.html[CTAP 2.2 Specification (FIDO Alliance)]
+* link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support Matrix]
+* link:CTAP2.1.adoc[CTAP 2.1 Feature Reference]
+* link:CTAP2.3.adoc[CTAP 2.3 Feature Reference]
 * link:https://github.com/Yubico/Yubico.NET.SDK/[Yubico.NET SDK on GitHub]
 * link:https://github.com/Yubico/yubikit-android[yubikit-android on GitHub]
 * link:https://github.com/Yubico/python-fido2[python-fido2 on GitHub]
 * link:https://github.com/Yubico/libfido2[libfido2 on GitHub]
 * link:https://github.com/Yubico/yubikit-ios[yubikit-ios on GitHub]
 * link:https://github.com/Yubico/yubikit-swift[yubikit-swift on GitHub]
-* link:https://fidoalliance.org/specs/fido-v2.2-ps-20250714/fido-client-to-authenticator-protocol-v2.2-ps-20250714.html[CTAP 2.2 Specification (FIDO Alliance)]
-* link:https://developers.yubico.com/WebAuthn/WebAuthn_Browser_Support/[WebAuthn Browser Support Matrix]
-
-==== Where to Learn More
-
-* link:https://fidoalliance.org/specifications/[FIDO Alliance Specifications]
-* link:https://github.com/Yubico[Yubico on GitHub]
-* link:https://support.yubico.com[Yubico Support]
-
-[.text-center]
-_Have questions about implementing CTAP 2.2 features? Visit our link:https://support.yubico.com[Support Portal] or join the conversation in our link:https://github.com/Yubico[GitHub repositories]._
