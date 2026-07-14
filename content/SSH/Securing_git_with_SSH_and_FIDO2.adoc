@@ -3,7 +3,6 @@
 :toc: left
 :toclevels: 3
 :sectnums:
-:icons: font
 :source-highlighter: rouge
 :experimental:
 :revdate: {docdate}
@@ -34,7 +33,7 @@ Before you begin, ensure you have the following:
 * **Git Version:** Git 2.34 or newer. Check with `git --version`.
 * **OpenSSH Client Version:**
 ** OpenSSH 8.2 or newer for basic FIDO2 SSH key support.
-** OpenSSH 8.3 or newer is highly recommended for the `-O verify-required` option.
+** OpenSSH 8.4 or newer for the `-O verify-required` option.
 ** Check with `ssh -V`. (See our guide on link:/SSH/Securing_SSH_with_FIDO2.html[Securing SSH with FIDO2] for platform-specific OpenSSH setup if needed).
 * **FIDO2 PIN Set (Recommended):** For resident keys, a FIDO2 PIN must be set on your YubiKey using link:https://www.yubico.com/support/download/yubikey-manager/[YubiKey Manager].
 
@@ -230,13 +229,13 @@ While local verification is important, seeing a "Verified" badge next to your co
 
 For GitHub to display your SSH-signed commits as "Verified":
 
-1.  **Upload Your Signing Key to GitHub as an SSH Key:** The *same* SSH public key (`~/.ssh/id_ed25519_sk_git_signing.pub` in our example) that you use for signing must also be added to your GitHub account under "SSH and GPG keys" as an **authentication key**.
+1.  **Add Your Signing Key to GitHub as a Signing Key:** Add the public key (`~/.ssh/id_ed25519_sk_git_signing.pub` in our example) to your GitHub account under "SSH and GPG keys".
     * Go to GitHub > Settings > SSH and GPG keys.
-    * Click "New SSH key" or "Add SSH key."
-    * Paste the contents of your signing *public* key.
-    * Give it a descriptive title.
+    * Click "New SSH key".
+    * Set **Key type** to **Signing Key** (not Authentication Key). This is required for commit signatures to show as "Verified". The same public key can be added separately as an Authentication Key if you also use it to authenticate.
+    * Paste the contents of your signing *public* key and give it a descriptive title.
 
-GitHub will then associate signatures made by this key with your account and mark the commits as "Verified" if the committer email also matches an email verified on your GitHub account.
+GitHub will then mark commits signed with this key as "Verified", provided the committer email also matches a verified email on your GitHub account.
 
 === GitLab
 
@@ -271,7 +270,7 @@ ssh-add "$env:USERPROFILE\.ssh\id_ed25519_sk_git_signing"
 * **Troubleshooting Agent Issues:**
 ** **"Agent refused operation" / "sign_and_send_pubkey: signing failed":** Ensure the correct key is added and that your YubiKey is accessible. Sometimes `ssh-add -D` (to remove all identities) followed by re-adding the specific key helps.
 ** **Multiple Agents:** On systems like Linux with GNOME or macOS, there may be multiple agents running. Use `echo $SSH_AUTH_SOCK` to confirm which one you’re interacting with.
-** **Windows:** If using the Windows OpenSSH agent, confirm the service is running. For WSL, agent integration might require additional setup (e.g., `npiperelay` or WSL’s built-in SSH agent forwarding).
+** **Windows:** If using the Windows OpenSSH agent, confirm the `ssh-agent` service is running. For WSL, agent integration might require additional setup (e.g., `npiperelay` or WSL’s built-in SSH agent forwarding).
 
 
 [[key-management-lifecycle]]
