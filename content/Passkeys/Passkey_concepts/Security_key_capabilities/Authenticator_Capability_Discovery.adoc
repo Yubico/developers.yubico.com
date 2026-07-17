@@ -1,0 +1,44 @@
+= Authenticator Capability Discovery
+:description: Discover authenticator capabilities with the new authenticatorGetInfo fields in YubiKey firmware 5.8 - maxPINLength, pinComplexityPolicy, uvCountSinceLastPinEntry, transportsForReset, longTouchForReset, and attestationFormats.
+:keywords: authenticatorGetInfo, maxPINLength, pinComplexityPolicy, pinComplexityPolicyURL, uvCountSinceLastPinEntry, transportsForReset, longTouchForReset, attestationFormats, CTAP, YubiKey 5.8
+
+YubiKey firmware 5.8 adds new fields to the `authenticatorGetInfo` response that let applications discover PIN policy, reset capability, and attestation format support. Reading these fields is a read-only operation: no credentials are created and no PIN or touch is required.
+
+== PIN and User Verification
+
+* `maxPINLength`: Maximum PIN length in Unicode code points. There is also a separate 63-byte limit on the UTF-8 wire encoding, so multi-byte characters can hit the byte ceiling before the code-point ceiling. Check both when validating client-side so you can reject a PIN before the authenticator does and give the user a clear error message.
+* `pinComplexityPolicy`: Boolean. When `true`, the authenticator enforces requirements beyond minimum length (e.g. no repeated digits). Query this so you can warn users up front that extra rules apply, instead of letting them hit a vague rejection after they submit.
+* `pinComplexityPolicyURL`: Optional URL to a human-readable description of the PIN policy. Independent of `pinComplexityPolicy` and not guaranteed to be present even when complexity is enabled. When available, link users directly so they know exactly what the authenticator expects.
+* `uvCountSinceLastPinEntry`: Number of consecutive UV operations since the authenticator last required PIN entry. Use this to implement "re-enter your PIN after N biometric uses" policies so users don't go months without typing their PIN and then forget it.
+
+== Reset-Related Capability Discovery
+
+* `transportsForReset`: Array of transports that accept the CTAP reset command. USB-only prevents remote reset over NFC, which stops someone from wiping a key without physical USB access.
+* `longTouchForReset`: Boolean. When `true`, a sustained touch (~5 seconds) is required to confirm factory reset instead of a quick tap. This prevents accidental resets. Your UX needs to tell the user to hold the key, not just tap it, or the reset will fail silently.
+
+== Attestation Formats
+
+* `attestationFormats`: Supported attestation statement formats. Currently `packed`. This field is future-proofing for when alternate formats (e.g. post-quantum) are standardized. Not much to act on today, but worth logging so you know when that changes.
+
+== Compatibility
+
+On firmware older than 5.8 the authenticator omits these CBOR keys from the `getInfo` response. Client libraries typically fall back to sensible defaults when the keys are absent:
+
+[cols="1,1", options="header"]
+|===
+| Field | Typical default when absent
+| `maxPINLength` | `63` (the FIDO2 protocol maximum)
+| `pinComplexityPolicy` | unset
+| `pinComplexityPolicyURL` | unset
+| `uvCountSinceLastPinEntry` | unset
+| `transportsForReset` | empty list
+| `longTouchForReset` | `false`
+| `attestationFormats` | empty list
+|===
+
+== References
+
+* link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-authenticator-config.html[Authenticator configuration]
+* link:https://docs.yubico.com/yesdk/users-manual/sdk-programming-guide/pin-complexity-policy.html[PIN complexity policy]
+
+link:/Passkeys/Passkey_concepts/Security_key_capabilities/[Return to security key capabilities]
