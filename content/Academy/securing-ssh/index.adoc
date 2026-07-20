@@ -1,0 +1,813 @@
+= Securing SSH with FIDO2: Hardware Keys for Git Signing and Remote Access
+:description: Replace traditional SSH private key files with FIDO2 hardware-bound credentials. Covers key generation, user verification, resident keys, Git commit signing, device attestation, and agent forwarding.
+:level: Intermediate
+:tools: OpenSSH 8.9+, libfido2, Docker, Python 3.10+
+
+Traditional SSH key pairs have a weakness that most developers don't think about until it matters. The private key is a file. Anyone who copies that file can impersonate you — from anywhere, until you revoke it. A leaked private key is invisible until something goes wrong.
+
+FIDO2 SSH keys work differently. The file that `ssh-keygen` writes to disk contains only a *credential handle* — a pointer to a key that lives inside the YubiKey's secure element and cannot be exported by any software. Commit that file to a public repo by accident and nothing is compromised. The key is still on the hardware.
+
+This tutorial walks through five progressively advanced exercises based on the https://github.com/YubicoLabs/fido-openssh-workshop[fido-openssh-workshop] by Yubico Labs. By the end you will have hardware-backed SSH authentication, PIN-enforced Git commit signing, and the ability to prove your key is on certified hardware using the FIDO Metadata Service.
+
+++++
+<div class="last-updated-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Last Updated on 18 July 2026</span>
+</div>
+++++
+
+----
+SSH:        OpenSSH 8.9+ (client and server)
+FIDO:       libfido2 1.14+ (provides fido2-token CLI)
+Server:     Docker (Ubuntu 24.04 container)
+Signing:    Python 3.10+ with fido2 package (attestation exercise)
+Estimated:  ~3 hours
+----
+
+== Why traditional SSH keys can be stolen
+
+Run `ls ~/.ssh/` on most developer machines and you will see files like `id_rsa` or `id_ed25519`. That file *is* the private key. The entire cryptographic secret lives in plaintext on disk (or encrypted with a passphrase that often lives in the macOS keychain, which an attacker with disk access can also reach).
+
+A compromised laptop, an accidentally committed file, a misconfigured S3 bucket, or a stolen backup — any of these exposes the key permanently. Rotating is manually intensive: generate a new key, remove the old public key from every system it was authorised on, and hope you have a complete list.
+
+FIDO2 SSH keys have a fundamentally different structure. The `ssh-keygen -t ecdsa-sk` command generates a key *inside the YubiKey* and writes a credential handle to disk — a reference to that key, not the key itself. The actual private key is protected by the YubiKey's hardware and cannot be extracted.
+
+[source,bash]
+----
+$ cat ~/.ssh/id_ecdsa_sk
+-----BEGIN OPENSSH PRIVATE KEY-----
+# This is a credential handle, not a private key.
+# It identifies a key on a hardware device.
+# Copying this file to another machine is useless without the YubiKey.
+-----END OPENSSH PRIVATE KEY-----
+----
+
+The credential handle *does* need to be protected — it identifies which key to use — but losing it is inconvenient, not catastrophic. You cannot impersonate anyone without the physical device.
+
+On my first day with a new team, I found a `.ssh/` directory in the git history of an old services repository. Someone had accidentally committed a traditional private key three years earlier, deleted it in the next commit, but it was still in git history. We rotated every system that key had ever touched. With a FIDO2 SSH key, committing the credential file to a public repository would have been an embarrassing mistake, not an incident.
+
+== Before you start
+
+You need:
+
+* **A hardware security key** — a YubiKey 5 series is ideal. FIDO2 SSH is not optional here the way it is in the passkey tutorial.
+* **OpenSSH 8.9+** with FIDO2 support. Run `ssh -V` to check. On macOS, the system-installed OpenSSH lacks FIDO2 support — install the homebrew version:
++
+[source,bash]
+----
+$ ssh -V
+OpenSSH_9.x                  # good
+
+$ ssh -V
+OpenSSH_8.6p1, LibreSSL 3.3.6   # this is macOS's built-in — missing FIDO2 support
+----
++
+If you have the macOS built-in, install the full version and fix your PATH:
++
+[source,bash]
+----
+brew install openssh
+echo 'export PATH="$(brew --prefix openssh)/bin:$PATH"' >> ~/.zprofile
+source ~/.zprofile
+----
+
+* **libfido2** — provides the `fido2-token` CLI for inspecting and managing the YubiKey:
++
+[source,bash]
+----
+brew install libfido2           # macOS
+sudo apt install libfido2-dev fido2-tools   # Ubuntu / Debian
+----
+
+* **Docker** — the tutorial uses a Docker container as an SSH server to avoid modifying your system's `sshd`.
+* **Python 3.10+** and a virtualenv (for the attestation exercise only):
++
+[source,bash]
+----
+cd tools
+python3 -m venv venv && source venv/bin/activate
+pip install fido2 requests PyYAML
+----
+
+Clone the workshop repository:
+
+[source,bash]
+----
+git clone https://github.com/YubicoLabs/fido-openssh-workshop.git
+cd fido-openssh-workshop
+----
+
+== Inspect your security key
+
+Before generating keys, understand what your YubiKey currently supports. The `fido2-token` tool communicates directly with the authenticator over USB HID or NFC.
+
+List connected FIDO2 devices:
+
+[source,bash]
+----
+$ fido2-token -L
+/dev/hidraw1: vendor=0x1050, product=0x0407 (Yubico YubiKey OTP+FIDO+CCID)
+
+# macOS uses ioreg: paths. Strip the trailing colon before using the path:
+$ fido2-token -L
+ioreg://entry:4503600287870977,n=IOUSBHostDevice:a1b2c3d4/:
+
+# Use without the trailing colon:
+# fido2-token -I ioreg://entry:4503600287870977,n=IOUSBHostDevice:a1b2c3d4/
+----
+
+Inspect the device detail (replace the path with what you see):
+
+[source,bash]
+----
+$ fido2-token -I /dev/hidraw1
+proto: 0x02
+major: 0x05
+minor: 0x04
+build: 0x04
+caps: 0x04 (cbor, nmsg)
+version strings: FIDO_2_0, FIDO_2_1
+extension strings: credProtect, hmac-secret, largeBlobKey, credBlob, minPinLength
+aaguid: ee882879721c49139775 3dfcce97072a
+options: rk, clientPin, largeBlobs, pinUvAuthToken, makeCredUvNotRqd, noMcGaPermissionsWithClientPin
+maxMsgSize: 1200
+fwVersion: 0x050404
+----
+
+Key fields:
+
+* `extension strings` — what the key supports. `largeBlobKey` means the largeBlob exercise will work. `hmac-secret` enables the PRF extension from the WebAuthn deep dive.
+* `options: rk` — resident keys (discoverable credentials) are supported.
+* `options: clientPin` — the key supports a PIN. Note `noclientPin` or `clientPin` here; if `clientPin` appears it means a PIN *can* be set, not that one *is* set. Check separately with `fido2-token -I` and look for the `clientPin` option being `set`.
+
+If the key has no PIN set, set one now — it is needed for the user verification exercises:
+
+[source,bash]
+----
+$ fido2-token -S /dev/hidraw1
+Enter new PIN for /dev/hidraw1:
+Enter the same PIN again:
+----
+
+PINs can be alphanumeric (not just numbers). Maximum length is 64 characters.
+
+== Generate your first FIDO2 SSH key
+
+Move into the `keys` exercise directory:
+
+[source,bash]
+----
+cd exercises/keys
+----
+
+Generate an `ecdsa-sk` key. The `-sk` suffix stands for security key:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk -f ./id_ecdsa_sk -N ''
+----
+
+Your YubiKey's LED will blink. Touch it to confirm the operation. `ssh-keygen` prompts for physical touch for every key generation — this is user presence, confirming you are present and consenting to create a credential on this device.
+
+Examine what was written to disk:
+
+[source,bash]
+----
+$ python3 ../../tools/openssh-key-v1.py ./id_ecdsa_sk
+sk-ecdsa-sha2-nistp256@openssh.com
+application: ssh:
+keyHandle: <64 bytes — the credential ID on the YubiKey>
+publicKey: <65 bytes — the ECDSA public key>
+----
+
+The private key file holds: the key type, an RP ID (`ssh:` by default), the credential handle, and the public key. The actual signing key material is on the YubiKey.
+
+Now build an SSH server container and test authentication:
+
+[NOTE]
+======
+The Dockerfile bakes the public key into the image at build time. If you regenerate the SSH key (for example, to test different options), you must run `docker build` again — the running container still has the old public key in `authorized_keys` and will reject the new credential.
+======
+
+[source,bash]
+----
+# Build the server image with your public key baked into authorized_keys
+docker build --build-arg user=ubuntu -t ssh-server .
+
+# Start the server on port 22
+docker run --rm -d -p 22:22 --name ssh_demo ssh-server
+----
+
+Connect — touch the key when the LED blinks:
+
+[source,bash]
+----
+ssh -i ./id_ecdsa_sk -o StrictHostKeyChecking=no ubuntu@localhost
+----
+
+You should land in a shell. The YubiKey signed the SSH challenge; no password, no passphrase. Exit and clean up:
+
+[source,bash]
+----
+exit
+docker stop ssh_demo
+----
+
+== Touch and PIN: user presence and user verification
+
+The default FIDO2 SSH key requires only a *touch* (user presence, UP). That proves the device is physically in someone's hands, but does not prove who that person is.
+
+*User verification* (UV) additionally requires the PIN — proving both possession of the hardware and knowledge of the PIN. The equivalent of a hardware token plus password, in a single tap.
+
+=== Require UV at key creation
+
+Generate a key that requires the PIN for every signature:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk -f ./id_ecdsa_sk_uv -N '' -O verify-required
+----
+
+Add it to the SSH server and enforce UV in `authorized_keys`:
+
+[source,bash]
+----
+# Prepend the verify-required option to the public key line
+sed -e 's/^/verify-required /' id_ecdsa_sk_uv.pub >> authorized_keys_uv
+
+docker build --build-arg user=ubuntu --build-arg authorized_keys=authorized_keys_uv \
+    -t ssh-server-uv .
+docker run --rm -d -p 2222:22 --name ssh_demo_uv ssh-server-uv
+----
+
+Connect — the key will prompt for your PIN before the touch:
+
+[source,bash]
+----
+ssh -i ./id_ecdsa_sk_uv -o StrictHostKeyChecking=no -p 2222 ubuntu@localhost
+----
+
+[source,text]
+----
+Enter PIN for ecdsa-sk key ./id_ecdsa_sk_uv:
+----
+
+Enter your PIN, then touch when the LED blinks. Clean up:
+
+[source,bash]
+----
+docker stop ssh_demo_uv
+----
+
+The `verify-required` option travels with the credential handle (stored in the private key file) and in `authorized_keys`. If either is missing, `sshd` can enforce it on the server side or the authenticator enforces it client-side. For defence in depth, set both.
+
+== Resident keys and identity portability
+
+Resident keys (discoverable credentials in WebAuthn terminology) store the credential handle *on the YubiKey itself*, not just in a file on your laptop. This has a useful property: you can regenerate the private key files from the device on any machine. Your identity travels with the hardware.
+
+=== Create a resident key
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk -f ./id_ecdsa_sk_resident -N '' -O resident -O verify-required
+----
+
+Touch when prompted. This stores a discoverable credential in the YubiKey's resident key storage. YubiKey 5 series holds up to 25 resident credentials.
+
+Verify it is on the device:
+
+[source,bash]
+----
+$ fido2-token -L -r /dev/hidraw1
+00: ssh: ubuntu . <credential_id_hash>
+----
+
+The default RP ID for SSH is `ssh:`. This is the FIDO2 equivalent of the WebAuthn RP ID — it namespaces the credential so SSH and web browser passkeys do not interfere with each other.
+
+=== Recovering key files from the device
+
+If you lose the credential handle file, recover it from the YubiKey:
+
+[source,bash]
+----
+ssh-keygen -K
+----
+
+This exports all resident SSH credentials from the connected device, writing files named after the key type and RP ID. The public key goes to `id_ecdsa_sk_rk.pub`; the private credential handle to `id_ecdsa_sk_rk`.
+
+=== Scoping resident keys with a custom RP ID
+
+The default `ssh:` RP ID applies to all SSH uses. You can scope a key to a specific service with the `application` option — useful if you want separate credentials for GitHub, a corporate server, and personal use:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk -f ./id_ecdsa_sk_github -N '' \
+    -O resident \
+    -O application=ssh:github \
+    -C "github-key"
+----
+
+The credential is now namespaced to `ssh:github` and will not appear when listing credentials for `ssh:`.
+
+=== Remove a resident credential from the device
+
+[source,bash]
+----
+# List resident credentials to get the credential ID hash
+fido2-token -L -r /dev/hidraw1
+
+# Delete by credential ID hash
+fido2-token -D -i <credential_id_hash> /dev/hidraw1
+----
+
+== Sign data and Git commits
+
+Move to the signing exercise:
+
+[source,bash]
+----
+cd ../sign
+----
+
+FIDO2 SSH keys are not only for authentication — they also produce cryptographic signatures for arbitrary data. This is the same mechanism Git uses for commit signing.
+
+=== Generate a signing key
+
+Create a dedicated key for signing (with UV required):
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk \
+    -f ./id_ecdsa_sk_sign \
+    -C "signing key" \
+    -N '' \
+    -O verify-required
+----
+
+Keeping your authentication key and signing key separate is good practice — each has a single purpose, and you can revoke one without affecting the other.
+
+=== Sign and verify a file
+
+Sign a message:
+
+[source,bash]
+----
+echo "hello academy" > message
+ssh-keygen -Y sign -f ./id_ecdsa_sk_sign -n test message
+# YubiKey LED blinks — enter PIN, then touch
+# Writes message.sig
+----
+
+Create an `allowed_signers` file mapping identities to public keys:
+
+[source,bash]
+----
+echo "johndoe@example.org $(cat id_ecdsa_sk_sign.pub)" > allowed_signers
+----
+
+Verify:
+
+[source,bash]
+----
+ssh-keygen -Y verify -f ./allowed_signers -I johndoe@example.org -n test -s message.sig < message
+----
+
+[source,text]
+----
+Good "test" signature for johndoe@example.org with ecdsa-sk-sha2-nistp256 key SHA256:...
+----
+
+=== Configure Git to sign commits with your YubiKey
+
+Set up a clean isolated git environment for this exercise (avoids touching your global git config):
+
+[source,bash]
+----
+export GIT_DIR=dotgit
+export GIT_CONFIG_GLOBAL=
+export GIT_CONFIG_SYSTEM=
+mkdir -p dotgit
+git init
+----
+
+Configure SSH signing:
+
+[source,bash]
+----
+git config gpg.format ssh
+git config user.signingkey "$(cat id_ecdsa_sk_sign.pub)"
+git config user.name "Developer Name"
+git config user.email "johndoe@example.org"
+git config gpg.ssh.allowedSignersFile ./allowed_signers
+----
+
+Create a commit with a signature:
+
+[source,bash]
+----
+echo "signed commit" > test.txt
+git add test.txt
+git commit -S -m "feat: first hardware-signed commit"
+# Enter PIN and touch the YubiKey
+----
+
+Verify the signature:
+
+[source,bash]
+----
+git log --show-signature -1
+----
+
+[source,text]
+----
+commit abc123...
+Good "git" signature for johndoe@example.org with ecdsa-sk-sha2-nistp256 key SHA256:...
+Author: Developer Name <johndoe@example.org>
+Date:   ...
+
+    feat: first hardware-signed commit
+----
+
+Enable auto-signing for all commits:
+
+[source,bash]
+----
+git config commit.gpgsign true
+----
+
+Now every commit in this repository requires a touch (and PIN, because you created the key with `verify-required`). Unsigned commits from unverified machines cannot be retroactively produced for this key — the signing key is on hardware.
+
+== GitHub: auth keys and signing keys
+
+GitHub supports two distinct uses of SSH keys: authentication (for `git push`/`git pull`) and commit signature verification (for the "Verified" badge on commits).
+
+=== Authentication key for GitHub
+
+Create a resident key scoped to GitHub:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk \
+    -f ./id_ecdsa_sk_github_auth \
+    -N '' \
+    -O resident \
+    -O application=ssh:github \
+    -C "github auth key"
+----
+
+Add the public key to your GitHub account: **Settings → SSH and GPG keys → New SSH key** — type: **Authentication Key**.
+
+Test:
+
+[source,bash]
+----
+ssh -T git@github.com -i ./id_ecdsa_sk_github_auth
+----
+
+[source,text]
+----
+Hi username! You've successfully authenticated, but GitHub does not provide shell access.
+----
+
+Verify the public key is on your account:
+
+[source,bash]
+----
+curl https://github.com/<username>.keys
+----
+
+Your FIDO2 public key should appear in the output.
+
+=== Signing key for the "Verified" badge
+
+Register your signing key with GitHub: **Settings → SSH and GPG keys → New SSH key** — type: **Signing Key** (same key as `id_ecdsa_sk_sign.pub`, or a separate dedicated signing key).
+
+When GitHub receives a signed commit from a committer email that has this public key in their account, it displays the "Verified" badge. The signature is verified against GitHub's trusted keys for that account — without any `allowed_signers` file on GitHub's end.
+
+[NOTE]
+======
+GitHub signing keys are implicitly trusted — GitHub verifies the signature against the public key associated with the committer's email. There is no separate CA or allowed_signers file on GitHub's side. A signed commit's "Verified" badge means the signature was made with a key registered to that GitHub account.
+======
+
+== FIDO2 attestation: verify it is real hardware
+
+Move to the attestation exercise:
+
+[source,bash]
+----
+cd ../attest
+----
+
+Attestation lets you prove to a third party that a credential was created on a specific certified hardware device, not in software. In an enterprise context, this means proving to an audit log that the keys used for SSH and signing are on physical FIDO2 hardware — not software-generated files that could be copied.
+
+=== Generate a key with an attestation statement
+
+Generate a random challenge (the challenge prevents replay attacks — an attestation is only valid for this specific challenge):
+
+[source,bash]
+----
+openssl rand 128 > challenge.bin
+----
+
+Generate the key and request an attestation statement:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk \
+    -f ./id_ecdsa_sk_attest \
+    -N '' \
+    -O challenge=challenge.bin \
+    -O write-attestation=attestation.bin
+----
+
+Touch the key when prompted. Two files are written: the credential handle (`id_ecdsa_sk_attest`) and the attestation statement (`attestation.bin`) — a structure signed by the YubiKey's factory-embedded attestation certificate.
+
+=== Fetch the FIDO Metadata Service blob
+
+The FIDO Alliance publishes a signed blob containing metadata for thousands of authenticator models, including their attestation root certificates:
+
+[source,bash]
+----
+curl -Ls https://mds.fidoalliance.org/ --output mds.jwt
+----
+
+=== Verify the attestation
+
+The workshop's `ssh-sk-attest.py` tool verifies the attestation:
+
+[source,bash]
+----
+source ../../tools/venv/bin/activate    # activate the Python venv if not already active
+
+python3 ../../tools/ssh-sk-attest.py \
+    --key id_ecdsa_sk_attest.pub \
+    --attestation attestation.bin \
+    --challenge challenge.bin \
+    --mds mds.jwt
+----
+
+A successful verification on a genuine YubiKey produces:
+
+[source,text]
+----
+Checking attestation for YubiKey 5 NFC (AAGUID: ee882879-721c-4913-9775-3dfcce97072a)
+  [OK] Attestation signature valid
+  [OK] Public key matches credential
+  [OK] MDS signature valid
+  [OK] Attestation cert chained to MDS issuer
+  [OK] Device is FIDO certified (L1)
+  Attestation type: packed (basic)
+----
+
+=== How attestation works
+
+The attestation statement contains:
+
+1. **The credential public key** — the key created by the YubiKey
+2. **The attestation certificate** — a batch cert issued by Yubico at manufacture, chaining to a Yubico root CA
+3. **A signature** — the attestation private key signing the credential public key and the challenge
+
+The `ssh-sk-attest.py` tool:
+1. Parses the attestation statement format
+2. Verifies the attestation signature with the attestation certificate
+3. Verifies the credential public key matches `id_ecdsa_sk_attest.pub`
+4. Verifies the MDS blob's signature against the FIDO Alliance root
+5. Looks up the AAGUID in the MDS and checks for certification status
+
+If the verification passes, you have cryptographic proof that this specific key pair was generated on a certified FIDO2 hardware device — not created by software.
+
+[NOTE]
+======
+The AAGUID for each YubiKey family is unique and documented in the FIDO MDS. You can look up any AAGUID at https://mds.fidoalliance.org or via the FIDO MDS explorer at opotonniee.github.io/fido-mds-explorer. A non-matching AAGUID or failed signature verification means the attestation is either invalid or from an uncertified device.
+======
+
+== Store your SSH certificate on the key (largeBlob)
+
+Move to the certs exercise:
+
+[source,bash]
+----
+cd ../certs
+----
+
+This exercise combines SSH certificates with FIDO2's `largeBlob` extension. The result: your identity (including your signed certificate) is entirely self-contained on the YubiKey. On any machine, you insert the key, export the credential and certificate, and have full authenticated access.
+
+Check that your key supports `largeBlobs` (you saw this in `fido2-token -I` output earlier):
+
+[source,bash]
+----
+fido2-token -I /dev/hidraw1 | grep largeBlobs
+----
+
+=== Create a certificate authority and resident key
+
+Create a local CA keypair:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa -f ./id_userca
+----
+
+Create a resident, UV-required FIDO2 user key:
+
+[source,bash]
+----
+ssh-keygen -t ecdsa-sk \
+    -f ./id_ecdsa_sk_user \
+    -N '' \
+    -O resident \
+    -O verify-required \
+    -O application=ssh:demo \
+    -O user=ubuntu
+----
+
+Touch when the LED blinks (enter PIN first, because `verify-required`).
+
+Sign a certificate for the user key — valid for one year:
+
+[source,bash]
+----
+ssh-keygen -s ./id_userca \
+    -I "ubuntu@example.org" \
+    -V +52w \
+    -n ubuntu,ubuntu@example.org \
+    -O verify-required \
+    id_ecdsa_sk_user.pub
+# Writes id_ecdsa_sk_user-cert.pub
+----
+
+=== Store the certificate in largeBlob
+
+The `largeBlob` extension lets FIDO2 authenticators store small opaque data blobs per credential. Here you use it to store the certificate alongside the private key — on the device.
+
+Store the certificate (uses the RP ID `ssh:demo` to scope it to this credential):
+
+[source,bash]
+----
+fido2-token -S -b -n ssh:demo id_ecdsa_sk_user-cert.pub /dev/hidraw1
+----
+
+Verify it was stored:
+
+[source,bash]
+----
+fido2-token -L -b /dev/hidraw1
+----
+
+[source,text]
+----
+ssh:demo: 1234 bytes
+----
+
+=== Start the certificate-auth SSH server
+
+[source,bash]
+----
+# Build server with TrustedUserCAKeys configured (no per-user authorized_keys)
+docker build --build-arg user=ubuntu -t ssh-server-cert .
+docker run --rm -d -p 3333:22 --name ssh_demo_cert ssh-server-cert
+----
+
+=== Authenticate
+
+Connect using the certificate rather than `authorized_keys`:
+
+[source,bash]
+----
+ssh -i ./id_ecdsa_sk_user-cert.pub \
+    -i ./id_ecdsa_sk_user \
+    -o StrictHostKeyChecking=no \
+    -p 3333 ubuntu@localhost
+----
+
+=== Recover everything from the YubiKey alone
+
+On a fresh machine with no files:
+
+[source,bash]
+----
+# 1. Export the credential handle from the YubiKey
+ssh-keygen -K
+# Writes: id_ecdsa_sk_rk (credential handle) and id_ecdsa_sk_rk.pub (public key)
+
+# 2. Retrieve the certificate from largeBlob
+fido2-token -G -b -n ssh:demo cert_from_key.pub /dev/hidraw1
+
+# 3. Authenticate
+ssh -i cert_from_key.pub -i id_ecdsa_sk_rk -p 3333 ubuntu@localhost
+----
+
+The YubiKey is a self-contained identity: credential handle, public key, and signed certificate. Insert it in any machine with OpenSSH 8.9+ and `fido2-token`, and you have full access.
+
+Clean up:
+
+[source,bash]
+----
+docker stop ssh_demo_cert
+----
+
+== ssh-agent and agent forwarding
+
+Move to the forwarding exercise:
+
+[source,bash]
+----
+cd ../forward
+----
+
+`ssh-agent` stores decrypted private keys in memory, so you authenticate once and the agent handles subsequent signatures. With FIDO2 SSH keys, the agent caches the credential handle — but the YubiKey must still be present for every signature. The agent is a convenience layer, not a security bypass.
+
+=== Add a FIDO2 key to the agent
+
+[source,bash]
+----
+ssh-add ./id_ecdsa_sk
+# LED blinks — touch to confirm. The agent now holds the credential handle.
+
+ssh-add -l    # verify it was added
+----
+
+With the key in the agent, SSH connections use it without specifying `-i`:
+
+[source,bash]
+----
+ssh ubuntu@localhost   # uses agent automatically
+----
+
+=== Destination constraints (OpenSSH 8.9+)
+
+By default, an agent-forwarded connection can use any key in the agent to reach any host. Destination constraints restrict which hosts a forwarded key can authenticate to:
+
+[source,bash]
+----
+ssh-add -h jump.example.com -h internal.example.com ./id_ecdsa_sk
+----
+
+This key can now only be used to reach `jump.example.com` or `internal.example.com` — even if the agent is forwarded to another host and an attacker on that host tries to use it.
+
+=== Agent forwarding
+
+Forward the agent to a remote host (`-A` flag). The remote host can use your local agent for further hops:
+
+[source,bash]
+----
+ssh -A ubuntu@jump.example.com
+# Now on the jump host:
+ssh ubuntu@internal.example.com   # uses your local agent, touch the YubiKey
+----
+
+[NOTE]
+======
+Agent forwarding requires trusting the remote host. If a remote machine is compromised and an attacker has root access, they can use your forwarded agent to sign on your behalf — as long as your YubiKey is connected and you have not disabled the agent. Use destination constraints (`ssh-add -h`) to limit blast radius.
+======
+
+=== UV through the agent with ssh-askpass
+
+When the agent forwards to a remote host, PIN prompts require a UI channel back to your local machine. `ssh-askpass` provides one:
+
+[source,bash]
+----
+export SSH_ASKPASS=ssh-askpass
+export SSH_ASKPASS_REQUIRE=force
+ssh ubuntu@localhost
+----
+
+With these environment variables set, OpenSSH invokes `ssh-askpass` to prompt for the PIN via a local dialog rather than the terminal. This works for automated environments where stdin is not a TTY.
+
+== What to build next
+
+You now have hardware-backed SSH authentication, hardware-signed Git commits with the "Verified" badge on GitHub, FIDO2 device attestation against the FIDO MDS, SSH certificates stored on the YubiKey, and destination-constrained agent forwarding.
+
+The WebAuthn specification that underpins FIDO2 SSH also powers browser-based passkey authentication. If you want to understand the full WebAuthn security model — attestation types, backup state flags, PRF extension, and how to enforce hardware-only credentials in a relying party — the link:/Academy/webauthn-deep-dive/[WebAuthn deep dive tutorial] covers it in depth.
+
+=== FAQ
+
+*My ssh-keygen says `unknown key type ecdsa-sk`. What is wrong?*
+
+Your system's OpenSSH does not have FIDO2 support compiled in. This is the default on macOS (LibreSSL-based build). Install `openssh` via Homebrew and ensure `/opt/homebrew/bin` (or wherever Homebrew installs to) comes before `/usr/bin` in your PATH.
+
+*Do I need to set a PIN?*
+
+For the basic key generation and authentication exercises, no — touch (user presence) is sufficient. For `verify-required` keys, git signing, and largeBlob, yes — the PIN is required. Set one with `fido2-token -S /dev/hidraw1` before you start.
+
+*Is `ecdsa-sk` or `ed25519-sk` better?*
+
+Both are FIDO2 key types. `ed25519-sk` uses Ed25519 (EdDSA) which is smaller and generally preferred for new keys when your SSH server supports it. `ecdsa-sk` uses ECDSA over P-256 and has slightly broader legacy compatibility. For modern servers (OpenSSH 8.9+), use `ed25519-sk`. The workshop uses `ecdsa-sk` throughout for maximum compatibility.
+
+*Can I use this key with GitHub CI/CD?*
+
+Not directly — CI runners cannot physically touch a YubiKey. FIDO2 SSH keys are for human-in-the-loop authentication. For CI/CD, the pattern is: sign artifacts with the YubiKey locally or in a separate signing workflow, then verify signatures in the pipeline. Alternatively, CI authentication uses deploy keys (traditional SSH) scoped to specific repositories, while developer authentication uses FIDO2.
+
+*How many resident keys can a YubiKey hold?*
+
+YubiKey 5 series holds 25 resident credentials across all applications (FIDO2, PIV, etc.). Non-resident FIDO2 SSH keys (without `-O resident`) do not use this storage — they rely on the credential handle file. If you work with many services that require resident keys, track usage with `ykman fido credentials list`.
+
+*The largeBlob exercise fails with `CTAP_ERR_UNSUPPORTED_OPTION`. What does that mean?*
+
+The key does not support `largeBlobs`. Run `fido2-token -I` and check the extension strings. If `largeBlobKey` is not listed, the key does not support this extension. YubiKey 5 series with firmware 5.2.4+ supports it.
+
+*Can I use a YubiKey FIDO2 SSH key alongside a PIV smart card for SSH?*
+
+Yes. FIDO2 SSH and PIV SSH are independent. FIDO2 keys appear as `ecdsa-sk`/`ed25519-sk` key types; PIV keys appear via PKCS#11 (`-I /usr/lib/libykcs11.so`). Both can coexist in an `authorized_keys` file and in `ssh-agent`. The YubiKey hardware enforces touch for FIDO2 operations and PIN or touch for PIV operations independently.

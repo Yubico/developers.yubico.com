@@ -1,0 +1,735 @@
+= How WebAuthn Actually Works: Attestation, Hardware Trust, and the Passkey Security Model
+:description: A backend developer's deep dive into WebAuthn — attestation types, backup flags, user verification policy, discoverable credentials, and the PRF extension using java-webauthn-server 2.9.0.
+:level: Advanced
+:tools: Java 17, java-webauthn-server 2.9.0, ykman
+
+You shipped passkeys and the green checkmark appeared. But there is a question worth asking before you close that ticket: is a passkey synced across iCloud or Google Password Manager as secure as a passkey on a YubiKey?
+
+The answer depends on your threat model — and WebAuthn gives you the tools to tell the difference and enforce your policy. Most implementations don't use them.
+
+This tutorial assumes you already understand the basic registration and authentication ceremony. If you haven't worked through the link:/Academy/passkey-app/[passkey-app tutorial], start there. Here you go deeper: attestation, backup state flags, user verification policy, discoverable credentials, and the PRF extension — with real code using `com.yubico:webauthn-server-core` 2.9.0.
+
+++++
+<div class="last-updated-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Last Updated on 18 July 2026</span>
+</div>
+++++
+
+----
+Backend:    Java 17 + com.yubico:webauthn-server-core 2.9.0
+Metadata:   com.yubico:webauthn-server-attestation 2.9.0
+Inspector:  ykman 5.x (https://developers.yubico.com/yubikey-manager/)
+Estimated:  ~4 hours
+----
+
+== The passkey security model you think you understand
+
+Every browser that reports a successful WebAuthn ceremony returns the same success shape. What the ceremony response does not tell you automatically is *what kind* of authenticator created the credential.
+
+A passkey created by Touch ID on a MacBook Pro can sync to every Apple device the user owns via iCloud Keychain. That is convenient, phishing-resistant (the domain is cryptographically bound), and sufficient for most applications. But if an attacker compromises the user's Apple ID, they can access the passkey from another device.
+
+A passkey created on a YubiKey stays on the YubiKey. The private key is generated inside the device's secure element and cannot be extracted by software, ever. Stealing the file from disk is useless — the credential ID stored in that file is a pointer to a key that will never leave the hardware.
+
+Neither is wrong. Consumer-facing applications want cloud sync for account recovery. High-assurance applications — regulated industries, employee authentication, high-value accounts — need hardware binding. WebAuthn supports both. What the RP does with this information is entirely up to you.
+
+This is the mental model most developers are missing: *WebAuthn authentication is only as strong as the authenticator type you allow, and you control that at the RP.*
+
+[NOTE]
+======
+The distinction between synced and hardware-bound passkeys matters most in regulated industries (finance, government, healthcare), enterprise zero-trust deployments, and any application where "something you physically possess" is a security requirement. If your threat model doesn't include cloud account compromise, platform authenticators with sync are a sensible default.
+======
+
+== What registration actually produces
+
+Start by seeing everything the library gives you on a successful registration. Add the core dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>webauthn-server-core</artifactId>
+    <version>2.9.0</version>
+</dependency>
+----
+
+A minimal `RelyingParty`:
+
+[source,java]
+----
+RelyingPartyIdentity rpIdentity = RelyingPartyIdentity.builder()
+    .id("example.com")
+    .name("Example Corp")
+    .build();
+
+RelyingParty rp = RelyingParty.builder()
+    .identity(rpIdentity)
+    .credentialRepository(yourCredentialRepository)
+    .build();
+----
+
+When `finishRegistration()` returns, the `RegistrationResult` contains more than most implementations read:
+
+[source,java]
+----
+RegistrationResult result = rp.finishRegistration(
+    FinishRegistrationOptions.builder()
+        .request(requestFromStartRegistration)
+        .response(parseFromHttpRequest)
+        .build()
+);
+
+// The credential to persist
+RegisteredCredential credential = result.toRegisteredCredential();
+
+// The fields most implementations ignore
+System.out.println("Attestation type:         " + result.getAttestationType());
+System.out.println("Backup eligible (BE):      " + result.isBackupEligible());
+System.out.println("Currently backed up (BS):  " + result.isBackedUp());
+System.out.println("Discoverable credential:   " + result.isDiscoverable());
+System.out.println("User verification done:    " + result.isUserVerified());
+System.out.println("AAGUID:                    " + result.getAaguid());
+----
+
+`isBackupEligible()` and `isBackedUp()` are where your security policy lives. They almost never get logged.
+
+== Backup eligibility and backup state: your security posture controls
+
+These two flags correspond to the `BE` and `BS` bits in the authenticator data, defined in the WebAuthn Level 3 spec:
+
+* **`isBackupEligible()` (`BE=1`)** — the credential was created on an authenticator that supports multi-device synchronisation. A passkey on a phone or Mac sets this. A YubiKey never does — its key material cannot leave the device.
+* **`isBackedUp()` (`BS=1`)** — the credential is currently synchronised to at least one additional device. Requires `BE=1`.
+
+A hardware YubiKey always returns `BE=false` and `BS=false`. A synced platform passkey returns `BE=true`.
+
+Both flags appear on every assertion response as well, not just registration. This matters because a credential can change state: a user might start with a hardware key (`BE=false`) and later re-register with a phone (`BE=true`). Tracking per-authentication gives you the full picture.
+
+=== Enforcing hardware-only at registration
+
+[source,java]
+----
+RegistrationResult result = rp.finishRegistration(options);
+
+if (result.isBackupEligible()) {
+    throw new PolicyViolationException(
+        "This application requires a hardware security key. " +
+        "Platform authenticators and synced passkeys are not accepted."
+    );
+}
+----
+
+You can also steer the ceremony toward cross-platform (roaming) authenticators at the start:
+
+[source,java]
+----
+StartRegistrationOptions startOptions = StartRegistrationOptions.builder()
+    .user(userIdentity)
+    .authenticatorSelection(
+        AuthenticatorSelectionCriteria.builder()
+            .authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM) // <1>
+            .residentKey(ResidentKeyRequirement.PREFERRED)
+            .userVerification(UserVerificationRequirement.PREFERRED)
+            .build()
+    )
+    .build();
+----
+<1> Tells the browser to offer only roaming authenticators (security keys), hiding Touch ID, Windows Hello, and passkey managers. This is a *hint* — the server-side `isBackupEligible()` check at `finishRegistration()` is the authoritative enforcement point.
+
+Store the `BE` flag in your credential table. On each subsequent assertion, compare the received flag against what you stored at registration. A transition from `false` to `true` signals the user re-enrolled from a different device type and deserves a notification or review.
+
+[source,java]
+----
+// At registration: store BE flag
+credentialStore.save(credential, result.isBackupEligible());
+
+// At assertion: detect drift
+AssertionResult assertionResult = rp.finishAssertion(assertionOptions);
+boolean currentlyEligible = assertionResult.isBackupEligible();
+boolean registeredEligible = credentialStore.getBackupEligible(credentialId);
+
+if (registeredEligible != currentlyEligible) {
+    auditLog.warn("BE flag changed for credential {} — review required", credentialId);
+}
+----
+
+== User verification versus user presence
+
+Every WebAuthn ceremony involves at minimum a *user presence* (UP) check — the user physically touches the authenticator. This proves the device is nearby but not that the user is a specific, verified person.
+
+*User verification* (UV) goes further: the user is present AND has verified their identity to the authenticator — by entering a PIN, using biometrics, or both. UV is what collapses two authentication factors (possession + knowledge/biometric) into a single gesture.
+
+The three UV policies in the WebAuthn API:
+
+[cols="1,3,3"]
+|===
+| Policy | What the browser requests | Security posture
+
+| `required`
+| UV must succeed. The ceremony fails if the authenticator cannot perform UV (e.g., no PIN is set).
+| Phishing-resistant MFA in a single touch. Hardware key + PIN = the strongest standard authentication available.
+
+| `preferred` (default)
+| UV if the authenticator supports it; touch-only otherwise.
+| Widely compatible, but a YubiKey without a PIN set silently provides only UP — weaker than it looks.
+
+| `discouraged`
+| Skip UV. Touch only.
+| Appropriate for step-up auth where identity is already established by another factor.
+|===
+
+When you receive an assertion, `result.isUserVerified()` tells you what actually happened — regardless of what you requested. This is the field to check, not the request policy:
+
+[source,java]
+----
+AssertionResult result = rp.finishAssertion(options);
+
+if (uvRequired && !result.isUserVerified()) {
+    // UV was requested preferred/required but not performed
+    throw new AuthenticationException(
+        "User verification required. " +
+        "Please set a PIN on your security key (ykman fido access change-pin) and try again."
+    );
+}
+----
+
+The mistake I ran into during testing: I set UV to `preferred`, ran against a YubiKey without a PIN set, saw authentication succeed, and assumed UV was performed. It was not. The key provided only UP. Checking `isUserVerified()` in the response — not just the request policy — is what caught it. Every high-assurance application should assert this at login time.
+
+[NOTE]
+======
+Setting a PIN on a YubiKey requires only the `ykman` CLI: `ykman fido access change-pin`. Once set, any ceremony with UV `preferred` or `required` will prompt for the PIN before the touch.
+======
+
+== Attestation: proving hardware origin
+
+Attestation is the mechanism by which an authenticator cryptographically proves what it is. The authenticator produces a statement — signed by a key embedded at manufacture — that vouches for the type, model, and certification status of the device.
+
+By default, `webauthn-server-core` does not verify attestation — it accepts any well-formed ceremony response. For most consumer applications, that is intentional: attestation reveals the exact device model and manufacturer, which is a meaningful privacy disclosure for end users.
+
+For high-assurance applications, attestation is what transforms "a passkey was created" into "a certified hardware security key created this passkey."
+
+=== Attestation formats
+
+[cols="1,3"]
+|===
+| Format | What it means
+
+| `none`
+| The authenticator provided no attestation statement. Common for platform authenticators protecting user privacy. You cannot verify device type.
+
+| `self`
+| The authenticator signed the attestation with the credential's own key — no separate attestation key. Cannot be verified against an external trust source.
+
+| `packed` (basic)
+| The authenticator used a batch attestation certificate issued by the manufacturer. YubiKeys use this by default. Verifiable against FIDO MDS.
+
+| `attCA`
+| Attestation certificate issued by an Attestation CA — typically an enterprise CA for managed device fleets. Used for enterprise attestation.
+|===
+
+=== The FIDO Metadata Service
+
+The FIDO Alliance publishes the Metadata Service (MDS3) — a signed JWT containing metadata for thousands of certified authenticator models: their attestation root certificates, device capabilities, and current certification status.
+
+The `com.yubico:webauthn-server-attestation` module wraps MDS3 verification:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.yubico</groupId>
+    <artifactId>webauthn-server-attestation</artifactId>
+    <version>2.9.0</version>
+</dependency>
+----
+
+Set up a downloader that caches the MDS blob to disk:
+
+[source,java]
+----
+FidoMetadataService mds = FidoMetadataService.builder()
+    .useBlob(
+        FidoMetadataDownloader.builder()
+            .expectLegalHeader(                                         // <1>
+                "Retrieval and use of this BLOB indicates acceptance " +
+                "of the appropriate agreement located at " +
+                "https://fidoalliance.org/metadata/metadata-legal-terms/"
+            )
+            .useDefaultTrustRoot()
+            .useDefaultBlob()
+            .clock(Clock.systemUTC())
+            .cacheFile(new File("/var/cache/fido-mds-blob.jwt"))       // <2>
+            .build()
+            .loadCachedBlob()
+    )
+    .build();
+----
+<1> The legal header is required — the downloader verifies it is present in the blob.
+<2> Cache to disk. The MDS blob updates roughly every 30 days. Loading it on every startup adds latency and unnecessary load on the FIDO Alliance endpoint.
+
+Wire it into your `RelyingParty`:
+
+[source,java]
+----
+RelyingParty rp = RelyingParty.builder()
+    .identity(rpIdentity)
+    .credentialRepository(yourCredentialRepository)
+    .attestationTrustSource(mds)                                    // <1>
+    .attestationConveyancePreference(                               // <2>
+        AttestationConveyancePreference.DIRECT
+    )
+    .build();
+----
+<1> Provides the trust anchors. `finishRegistration()` now verifies the attestation chain.
+<2> Requests the authenticator include full attestation. Without this, many browsers and platform authenticators return `none`.
+
+=== Reading the attestation result
+
+[source,java]
+----
+RegistrationResult result = rp.finishRegistration(options);
+
+// AAGUID identifies the exact authenticator model
+AAGUID aaguid = result.getAaguid();
+System.out.println("AAGUID: " + aaguid);
+// e.g. ee882879-721c-4913-9775-3dfcce97072a = YubiKey 5 NFC
+
+// Attestation type — if you configured MDS, this is verified
+System.out.println("Attestation: " + result.getAttestationType());
+// AttestationType.BASIC for YubiKey packed attestation
+----
+
+The AAGUID is the 16-byte identifier for a specific authenticator model. Look it up in the https://mds.fidoalliance.org[FIDO MDS explorer] or programmatically:
+
+[source,java]
+----
+mds.findEntries(aaguid).stream()
+    .findFirst()
+    .flatMap(e -> e.getMetadataStatement()
+        .flatMap(MetadataStatement::getDescription))
+    .ifPresent(desc -> System.out.println("Device: " + desc));
+// Device: YubiKey 5 NFC
+----
+
+For regulated environments, you can also inspect the `statusReports` field of the metadata entry to confirm the device is FIDO L1/L2 certified and has no active security advisories.
+
+== Discoverable credentials and usernameless authentication
+
+A *discoverable credential* (the term the spec now uses for what was previously called a resident key) stores the user handle and credential metadata on the authenticator itself. This makes it possible to authenticate without providing a username — the authenticator enumerates its stored credentials for your RP ID and the browser presents a picker.
+
+YubiKey 5 series supports up to 25 discoverable credentials. Each `REQUIRED` registration uses one slot.
+
+=== Requesting discoverable credentials
+
+[source,java]
+----
+StartRegistrationOptions options = StartRegistrationOptions.builder()
+    .user(userIdentity)
+    .authenticatorSelection(
+        AuthenticatorSelectionCriteria.builder()
+            .residentKey(ResidentKeyRequirement.REQUIRED)            // <1>
+            .userVerification(UserVerificationRequirement.REQUIRED)  // <2>
+            .build()
+    )
+    .build();
+----
+<1> `REQUIRED` fails the ceremony if the authenticator cannot store a discoverable credential. `PREFERRED` stores one if possible and silently falls back to non-discoverable.
+<2> Discoverable credentials for passwordless flows must require UV. Touch-only would let anyone who finds the key sign in.
+
+=== Usernameless authentication
+
+[source,java]
+----
+// Start assertion with no username — the authenticator decides
+AssertionRequest request = rp.startAssertion(
+    StartAssertionOptions.builder()
+        .username(Optional.empty())                                  // <1>
+        .userVerification(UserVerificationRequirement.REQUIRED)
+        .build()
+);
+----
+<1> An empty username triggers the credential picker. The RP sends no credential IDs in the `allowCredentials` list — the authenticator shows all discoverable credentials it holds for your RP ID.
+
+On the client:
+
+[source,javascript]
+----
+import { get } from "@github/webauthn-json";
+
+const assertion = await get({
+    publicKey: {
+        ...requestFromServer,
+        // allowCredentials is empty — authenticator picks
+    }
+});
+----
+
+=== The credProps extension
+
+Request `credProps` to learn whether the created credential was actually stored as discoverable, regardless of what you requested:
+
+[source,java]
+----
+StartRegistrationOptions options = StartRegistrationOptions.builder()
+    .user(userIdentity)
+    .extensions(
+        RegistrationExtensionInputs.builder()
+            .credProps()    // ask the authenticator to report discoverability
+            .build()
+    )
+    .build();
+----
+
+After `finishRegistration()`:
+
+[source,java]
+----
+Optional<Boolean> discoverable = result.isDiscoverable();
+// Optional.of(true)  — confirmed discoverable
+// Optional.of(false) — confirmed non-discoverable
+// Optional.empty()   — authenticator did not return credProps
+----
+
+Store this. If you requested `PREFERRED` and got `Optional.of(false)`, that user cannot do usernameless auth — your UX should reflect that.
+
+=== Inspecting credentials with ykman
+
+`ykman fido credentials list` shows every discoverable credential stored on the connected YubiKey:
+
+[source,bash]
+----
+$ ykman fido credentials list
+Enter your PIN:
+example.com      user@example.com   user_display_name
+ssh:             alice              alice
+----
+
+For development, clean up test credentials with:
+
+[source,bash]
+----
+ykman fido credentials delete <CREDENTIAL_ID>
+----
+
+Or reset the entire FIDO2 application (removes all credentials and PIN — requires touch within 5 seconds of insertion, before any other FIDO operation):
+
+[source,bash]
+----
+ykman fido reset
+----
+
+== Conditional UI: passkey autofill
+
+Conditional UI lets the browser surface the passkey picker inside the username field's autofill dropdown — no explicit "Sign in with passkey" button required. From the user's perspective it works exactly like autofill, but the ceremony is phishing-resistant.
+
+Add `autocomplete="username webauthn"` to the username input:
+
+[source,html]
+----
+<input
+  type="text"
+  id="username"
+  autocomplete="username webauthn"
+  placeholder="Email or press Enter for passkey"
+/>
+----
+
+Start a conditional assertion on page load with an `AbortController` so you can cancel it if the user submits the form manually instead:
+
+[source,javascript]
+----
+const abortController = new AbortController();
+
+if (await PublicKeyCredential.isConditionalMediationAvailable()) {
+    const assertion = await get({
+        publicKey: {
+            ...requestFromServer,
+            rpId: "example.com"
+        },
+        mediation: "conditional",      // <1>
+        signal: abortController.signal
+    });
+    // User picked a passkey from autofill — submit
+    submitAssertion(assertion);
+}
+----
+<1> `"conditional"` starts the ceremony without showing a modal. The browser waits for the user to interact with the autofill UI.
+
+The server-side `finishAssertion()` call is identical to standard assertion — no changes needed there. Browser support as of mid-2026: Chrome 108+, Safari 16+, Firefox 119+.
+
+== The PRF extension: deriving symmetric keys from a passkey
+
+PRF (Pseudo-Random Function) extends WebAuthn authentication to produce a symmetric key as a side effect of the ceremony. The use case: per-user client-side encryption where the decryption key is never stored anywhere — it is derived fresh from the passkey on each login.
+
+The mechanism: the authenticator runs a PRF over an application-provided salt and returns 256 bits. The output is deterministic for a given passkey + salt, but the passkey private key never leaves the authenticator. Two authentications with the same salt produce the same 256-bit output.
+
+YubiKey 5 series (firmware 5.2+) supports PRF. Support on platform authenticators varies by OS version.
+
+=== Requesting PRF at registration
+
+Signal at registration time that you intend to use PRF with this credential:
+
+[source,javascript]
+----
+const credential = await create({
+    publicKey: {
+        ...registrationOptions,
+        extensions: {
+            prf: {}     // signal intent; does not yet evaluate anything
+        }
+    }
+});
+
+const prfEnabled = credential.getClientExtensionResults().prf?.enabled;
+// true if the authenticator supports PRF — store this flag
+----
+
+=== Using PRF at authentication
+
+[source,javascript]
+----
+// Encode the salt (up to 256 bytes, deterministic per-user or per-context)
+const salt = new Uint8Array(32);  // load from your application state
+
+const assertion = await get({
+    publicKey: {
+        ...assertionOptions,
+        extensions: {
+            prf: {
+                eval: {
+                    first: salt.buffer   // ArrayBuffer
+                }
+            }
+        }
+    }
+});
+
+const derivedKey = assertion.getClientExtensionResults().prf?.results?.first;
+// Uint8Array(32) — your symmetric key, available for this session only
+----
+
+Use the derived key immediately — decrypt a wrapped per-user data key, derive an AES key for local storage, or pass it to Web Crypto. Do not store it. The next authentication with the same salt produces the same key.
+
+The server-side receives a standard assertion and calls `finishAssertion()` as usual — the PRF output is client-side only. The library does not need any changes to support PRF.
+
+=== What PRF enables
+
+PRF is the building block for:
+
+* **Per-user encrypted vaults** — user's data is wrapped with a key derived from their passkey. Server never holds the plaintext or the key.
+* **End-to-end encrypted collaboration** — shared symmetric key derived from both parties' passkeys, negotiated via key agreement.
+* **Offline decryption** — the derived key can seed local encryption without a network round-trip.
+
+It is a fundamentally different capability than authentication. Authentication proves *who you are*. PRF derives *a key only you can derive, from hardware you physically possess*.
+
+== Putting it together: complete java-webauthn-server configuration
+
+A production `RelyingParty` for a high-assurance application — hardware-only, UV required, attestation verified:
+
+[source,java]
+----
+// 1. Load the FIDO MDS blob (download once, cache, refresh periodically)
+FidoMetadataService mds = FidoMetadataService.builder()
+    .useBlob(
+        FidoMetadataDownloader.builder()
+            .expectLegalHeader(
+                "Retrieval and use of this BLOB indicates acceptance " +
+                "of the appropriate agreement located at " +
+                "https://fidoalliance.org/metadata/metadata-legal-terms/"
+            )
+            .useDefaultTrustRoot()
+            .useDefaultBlob()
+            .clock(Clock.systemUTC())
+            .cacheFile(Paths.get("/var/cache/fido-mds-blob.jwt").toFile())
+            .build()
+            .loadCachedBlob()
+    )
+    .build();
+
+// 2. Configure the RelyingParty
+RelyingParty rp = RelyingParty.builder()
+    .identity(
+        RelyingPartyIdentity.builder()
+            .id("example.com")
+            .name("Example Corp")
+            .build()
+    )
+    .credentialRepository(credentialRepository)
+    .attestationTrustSource(mds)
+    .attestationConveyancePreference(AttestationConveyancePreference.DIRECT)
+    .build();
+----
+
+Registration handler with full policy enforcement:
+
+[source,java]
+----
+public RegisteredCredential registerKey(
+        HttpSession session,
+        String responseJson) throws Exception {
+
+    PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs> pkc =
+        PublicKeyCredential.parseRegistrationResponseJson(responseJson);
+
+    PublicKeyCredentialCreationOptions request =
+        (PublicKeyCredentialCreationOptions) session.getAttribute("registration-request");
+
+    RegistrationResult result = rp.finishRegistration(
+        FinishRegistrationOptions.builder()
+            .request(request)
+            .response(pkc)
+            .build()
+    );
+
+    // Policy: hardware-only
+    if (result.isBackupEligible()) {
+        throw new PolicyViolationException(
+            "Hardware security key required. Platform authenticators and " +
+            "cloud-synced passkeys are not accepted by this application."
+        );
+    }
+
+    // Policy: UV must have been performed
+    if (!result.isUserVerified()) {
+        throw new PolicyViolationException(
+            "User verification required. Set a PIN on your security key " +
+            "with 'ykman fido access change-pin' and try again."
+        );
+    }
+
+    // Persist the credential with all relevant flags
+    RegisteredCredential credential = result.toRegisteredCredential();
+    credentialStore.save(
+        credential,
+        result.getAaguid(),
+        result.isBackupEligible(),   // always false for hardware keys — assert so
+        result.isBackedUp(),         // always false for hardware keys
+        result.isDiscoverable()      // Optional<Boolean>
+    );
+
+    return credential;
+}
+----
+
+Authentication handler with drift detection:
+
+[source,java]
+----
+public UserIdentity authenticate(
+        HttpSession session,
+        String responseJson) throws Exception {
+
+    PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> pkc =
+        PublicKeyCredential.parseAssertionResponseJson(responseJson);
+
+    AssertionRequest request =
+        (AssertionRequest) session.getAttribute("assertion-request");
+
+    AssertionResult result = rp.finishAssertion(
+        FinishAssertionOptions.builder()
+            .request(request)
+            .response(pkc)
+            .build()
+    );
+
+    if (!result.isSuccess()) {
+        throw new AuthenticationException("Authentication failed");
+    }
+
+    // Policy: UV required at assertion time too
+    if (!result.isUserVerified()) {
+        throw new AuthenticationException(
+            "User verification required at sign-in. " +
+            "Ensure a PIN is set on your security key."
+        );
+    }
+
+    // Drift detection: alert if BE flag changed since registration
+    ByteArray credId = result.getCredential().getCredentialId();
+    boolean registeredBE = credentialStore.getBackupEligible(credId);
+    if (result.isBackupEligible() != registeredBE) {
+        securityAlerts.backupFlagChanged(credId, registeredBE, result.isBackupEligible());
+    }
+
+    return result.getCredential().getUserHandle();
+}
+----
+
+== Inspection with ykman
+
+`ykman` is the YubiKey Manager CLI. It reaches capabilities of the FIDO2 application that the WebAuthn API cannot — direct CTAP communication with the key, without a browser in the loop.
+
+Install from https://developers.yubico.com/yubikey-manager/ or via Homebrew on macOS (`brew install ykman`).
+
+[source,bash]
+----
+# Check FIDO2 application status — PIN state, CTAP version, resident key count
+ykman fido info
+
+# List all discoverable (resident) credentials on the key
+ykman fido credentials list
+
+# Delete a specific credential by its credential ID hash (from the list output)
+ykman fido credentials delete <CREDENTIAL_ID>
+
+# Set or change the FIDO2 PIN
+ykman fido access change-pin
+
+# Verify the current PIN (useful in scripts to test whether a PIN works)
+ykman fido access verify-pin
+
+# Set minimum PIN length (change requires power cycle to take effect)
+ykman fido access set-min-length 8
+
+# Show fingerprint slots (YubiKey Bio series only)
+ykman fido fingerprints list
+
+# Reset the entire FIDO2 application — removes all credentials and PIN
+# IMPORTANT: key must be removed and re-inserted; touch within 5 seconds
+ykman fido reset
+----
+
+`ykman fido credentials list` is indispensable during development. When you implement `ResidentKeyRequirement.REQUIRED` and run registration tests, this shows you exactly what was stored — RP ID, username, display name. When you exhaust the 25-credential limit on a YubiKey 5 during repeated test runs, `ykman fido reset` gets you back to a clean state fast.
+
+[NOTE]
+======
+`ykman fido info` reports the number of remaining discoverable credential slots. If you see `Resident credential slots: 0/25` you have hit the limit. Either delete specific credentials with `ykman fido credentials delete` or reset the FIDO2 application.
+======
+
+== What to build next
+
+You now understand the full security model: the `BE`/`BS` flags that distinguish hardware-bound from cloud-synced passkeys, the difference between UP and UV, how attestation chains back to certified hardware, and how PRF turns a passkey into an encryption key.
+
+The same hardware that makes WebAuthn phishing-resistant also makes SSH phishing-resistant. If you want to replace traditional SSH private key files with hardware-bound FIDO2 credentials — including Git commit signing and device attestation — the link:/Academy/securing-ssh/[Securing SSH with FIDO2 tutorial] covers it from first key generation to MDS attestation verification.
+
+=== FAQ
+
+*Does attestation break if a user upgrades to a newer YubiKey model?*
+
+No — each model has its own AAGUID, and both old and new models appear in MDS. When a user registers a new key, you run the full attestation check on the new registration. The old credential stays valid until you choose to revoke it.
+
+*Can I distinguish hardware-bound passkeys without attestation?*
+
+Yes. The `BE` flag (`isBackupEligible()`) is set by the authenticator independently of attestation. A hardware key sets `BE=false` even without attestation requested. Attestation is the additional step that proves a *specific certified hardware model* set that flag — useful when you want to enforce "only FIDO L2 certified hardware."
+
+*What if a user's YubiKey is lost?*
+
+Hardware-only applications need a deliberate recovery flow. Common approaches: require two hardware keys at enrollment; provide an admin-controlled one-time recovery token stored offline; or allow a temporary fallback to a verified out-of-band channel (email magic link with short TTL and single use). Do not silently fall back to password — that destroys the security model.
+
+*Is PRF available on platform authenticators?*
+
+Platform support is expanding. As of mid-2026 it works on YubiKey 5 firmware 5.2+, and browser/OS combinations vary. Treat PRF as a progressive enhancement for users who have compatible hardware; do not require it for the primary auth flow.
+
+*The FIDO MDS blob download fails at startup. What do I do?*
+
+The `FidoMetadataDownloader.loadCachedBlob()` method will use the cached blob if available, and only fetches a fresh copy if the cache is missing or expired. For air-gapped environments, download the blob separately and load it via `loadBlobFromFile()` or `loadBlobFromUrl()` pointed at an internal mirror. Check the `webauthn-server-attestation` Javadoc for the full API.
+
+*How do I test attestation without a physical YubiKey?*
+
+The https://github.com/Yubico/java-webauthn-server[java-webauthn-server repository] includes a test fixture that produces `packed` attestation. For integration tests you can also use Chrome DevTools' virtual authenticator, which returns `none` attestation — useful for testing the happy path without attestation-specific logic.
+
+*Should I implement signature counter checks to detect cloned authenticators?*
+
+Signature counters were designed to catch cloned authenticators — if a counter jumps backward or diverges, the credential has been copied. In practice, most synced passkeys (iCloud Keychain, Google Password Manager) report a counter of `0` on every assertion and never increment it. If your application accepts both hardware keys and platform passkeys, a counter-based clone-detection policy will silently do nothing for the majority of your users.
+
+For hardware-only deployments (YubiKey, all assertions with `BE=false`), counter checks are meaningful — YubiKeys do increment the counter. The library makes the counter available via `AssertionResult.getSignatureCounterValue()`. Whether you enforce it is a policy decision: enforcement creates false-positive lockouts if the user registers the same key on two computers (both legitimately advance the counter). A common approach: log counter anomalies for audit rather than hard-rejecting. The `BE=false` + attestation combination is a stronger hardware guarantee than the counter alone.

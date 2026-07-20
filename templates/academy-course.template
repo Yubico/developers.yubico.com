@@ -1,0 +1,162 @@
+{% extends "boilerplate.template" %}
+
+{% block head %}
+  <link rel="stylesheet" href="/css/academy.css">
+{% endblock %}
+
+{% block body %}
+  <nav class="navbar navbar-expand-lg navbar-top navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/"><img src="/logo.png"></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="navbar-collapse collapse" id="navbarToggler">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% for sect in nav -%}
+            {%- if sect.hidden -%}
+            {%- elif sect.active -%}
+              <li class="nav-item"><a class="nav-link active fw-bold" aria-current="page" href="{{ sect.url }}">{{ sect.name }}</a></li>
+            {%- else -%}
+              <li class="nav-item"><a class="nav-link fw-bold" href="{{ sect.url }}">{{ sect.name }}</a></li>
+            {%- endif -%}
+          {%- endfor %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container academy-course-page">
+    <!-- Breadcrumb -->
+    <div class="row bg-light">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/Academy/">Developer Academy</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+      </ol>
+    </div>
+
+    <!-- Course header band -->
+    <div class="academy-course-header">
+      <h1 class="academy-course-title">{{ title }}</h1>
+      <div class="academy-course-pills">
+        {% if duration %}<span class="badge academy-pill-duration">&#9201; {{ duration }}</span>{% endif %}
+        {% if level %}<span class="badge academy-pill-level">{{ level }}</span>{% endif %}
+        {% if tools %}<span class="badge academy-pill-tools">{{ tools }}</span>{% endif %}
+        {% if status == 'coming-soon' %}
+          <span class="badge academy-pill-status-soon">Coming Soon</span>
+        {% else %}
+          <span class="badge academy-pill-status-live">Live</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if status == 'coming-soon' %}
+    <!-- Coming Soon state -->
+    <div class="row">
+      <div class="col-md-3 d-none d-md-block">
+        <div class="academy-sidebar">
+          {% include "academy-sidebar-classes.template" ignore missing %}
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div class="academy-coming-soon">
+          <div id="page-content">
+            {{ content }}
+          </div>
+          <p class="academy-coming-soon-back">
+            <a href="/Academy/passkey-app/">&larr; Start the passkey tutorial</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Live class state -->
+    <div class="row">
+      <!-- Sidebar (left) -->
+      <div class="col-md-3 d-none d-md-block">
+        <div class="academy-sidebar sticky-top">
+          <!-- Step navigator (JS-driven) -->
+          <div class="academy-step-nav">
+            <p class="academy-step-nav-label"><strong>In this tutorial</strong></p>
+            <ol class="academy-step-list" id="academy-step-list">
+              <!-- Populated by academy.js via IntersectionObserver -->
+            </ol>
+          </div>
+
+          <hr>
+
+          <!-- Class progression -->
+          <div class="academy-class-list">
+            <p class="academy-step-nav-label"><strong>In the Academy</strong></p>
+            <ul class="list-unstyled">
+              <li class="academy-class-item academy-class-live"><a href="/Academy/passkey-app/">How a Passkey App Works</a></li>
+              <li class="academy-class-item academy-class-live"><a href="/Academy/webauthn-deep-dive/">How WebAuthn Actually Works</a></li>
+              <li class="academy-class-item academy-class-live"><a href="/Academy/securing-ssh/">Securing SSH with FIDO2</a></li>
+              <li class="academy-class-item academy-class-soon">PIV &amp; Enterprise Smart Cards</li>
+              <li class="academy-class-item academy-class-soon">Dev Pipeline &amp; HSMs</li>
+              <li class="academy-class-item academy-class-soon">Securing the AI Stack</li>
+            </ul>
+          </div>
+
+          <hr>
+
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="col-md-9">
+        {% if youtube_id %}
+        <div class="academy-video">
+          <iframe width="100%" style="aspect-ratio:16/9" src="https://www.youtube.com/embed/{{ youtube_id }}"
+            frameborder="0" allowfullscreen></iframe>
+        </div>
+        {% endif %}
+
+        <div id="page-content">
+          {{ content }}
+        </div>
+
+        <div class="academy-end-of-class">
+          <hr>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <footer class="container">
+    <div class="row" style="margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+      <div class="col-md-3">
+        <p style="line-height:2em;font-size:90%">
+          <strong><a href="https://developers.yubico.com/" style="color:#000">DEV.YUBICO</a></strong><br>
+          {% for sect in nav -%}
+            {%- if not sect.hidden %}
+            <a href="{{ sect.url }}">{{ sect.name }}</a><br>
+            {% endif -%}
+          {%- endfor %}
+        </p>
+      </div>
+      <div class="col-md-3">
+        <p style="line-height:2em;font-size:90%"><strong>RESOURCES</strong><br>
+          <a href="https://www.yubico.com/store/" target="_blank">Buy YubiKeys</a><br>
+          <a href="https://www.yubico.com/blog/" target="_blank">Blog</a><br>
+          <a href="https://www.yubico.com/newsletter/" target="_blank">Newsletter</a><br>
+          <a href="https://forum.yubico.com/" target="_blank">Yubico Forum Archive</a></p>
+      </div>
+      <div class="col-md-3">
+        <p style="line-height:2em;font-size:90%"><strong><a href="https://www.yubico.com/" style="color:#000" target="_blank">YUBICO.COM</a></strong><br>
+          <a href="https://www.yubico.com/why-yubico/" target="_blank">Why Yubico</a><br>
+          <a href="https://www.yubico.com/about/about-us/" target="_blank">About Yubico</a><br>
+          <a href="https://www.yubico.com/support/terms-conditions/cookie-notice/" target="_blank">Cookie</a><br>
+          <a href="https://www.yubico.com/support/terms-conditions/" target="_blank">Legal</a><br>
+          <a href="https://www.yubico.com/support/terms-conditions/privacy-notice/" target="_blank">Privacy</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/academy.js"></script>
+  <script src="/vendor/mermaid/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+{% endblock %}

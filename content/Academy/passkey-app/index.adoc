@@ -1,0 +1,667 @@
+= How a Passkey App Works: Spring Boot, React, and YubiKey
+:description: Run, explore, and understand the Yubico passkey-workshop reference implementation — a production-realistic WebAuthn application using Spring Boot, React, Keycloak, and a YubiKey.
+:level: Intermediate
+:tools: Java 17, Spring Boot 3, React 18, Keycloak, Docker
+
+Hardware security keys like YubiKey are the only authentication factor that physically cannot be exported, synced, or phished — the private key is generated inside a tamper-resistant secure element and cannot leave it. This workshop walks through a production-realistic implementation of that guarantee: a complete WebAuthn application where you run the code, trace each ceremony through the source, and test with a YubiKey.
+
+You are looking at an existing reference implementation, not a greenfield project. By the end you will understand what every component does, how the registration and authentication ceremonies work end to end, and where to go deeper.
+
+++++
+<div class="last-updated-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>Last Updated on 18 July 2026</span>
+</div>
+++++
+
+----
+Backend:    Java 17 + Spring Boot 3 + com.yubico:webauthn-server-core
+Auth:       Keycloak 21 (identity provider)
+Database:   MySQL 8
+Frontend:   React 18 + @github/webauthn-json
+Deploy:     Docker Compose via deploy.sh
+Estimated:  ~3 hours
+----
+
+== Before you start
+
+You need:
+
+* Docker and Docker Compose — `docker compose version` to check
+* Git — `git --version` to check
+* A browser that supports WebAuthn: Chrome, Firefox, Safari, or Edge (any current version)
+* A FIDO2 authenticator — a YubiKey, or a device with Touch ID, Windows Hello, or another platform authenticator
+
+[NOTE]
+======
+A hardware security key is not required to complete the workshop. Platform authenticators (Touch ID, Windows Hello) work for all sections except the hardware-specific section at the end. If you have a YubiKey, plug it in when prompted — the hardware section shows what hardware attestation looks like.
+======
+
+== Clone and deploy
+
+Clone the repository and move into the `deploy` directory:
+
+[source,bash]
+----
+git clone https://github.com/YubicoLabs/passkey-workshop.git
+cd passkey-workshop/deploy
+----
+
+The deploy directory contains a `default.env` file with sane defaults for localhost. Copy it:
+
+[source,bash]
+----
+cp default.env .env
+----
+
+Then run the deploy script:
+
+[role="code-tabs"]
+--
+.macOS / Linux
+[source,bash]
+----
+./deploy.sh
+----
+
+.Windows
+[source,powershell]
+----
+.\deploy.ps1
+----
+--
+
+The script uses Docker Compose to build and start all four services. The first run downloads base images and takes a few minutes. Subsequent starts are fast.
+
+When it finishes, your services are available at:
+
+[cols="2,4,4"]
+|===
+| Service | URL | What it is
+
+| React client | http://localhost:3000 | The web application you will interact with
+| Spring Boot RP | http://localhost:8080 | WebAuthn relying party + Swagger UI
+| Keycloak | http://localhost:8081 | Identity provider (admin: `admin` / `admin`)
+| MySQL | localhost:3306 | Credential and request storage
+|===
+
+Open http://localhost:3000 in your browser. You should see a form with username, registration, and authentication controls. Leave it open.
+
+Open http://localhost:8080 to confirm the Spring Boot relying party is running. You will see the Swagger UI showing the live API — useful for exploring request and response shapes while you read the code.
+
+== The architecture
+
+Understanding what each service does saves confusion later.
+
+[mermaid]
+----
+flowchart TB
+  subgraph browser["Browser (user's device)"]
+    App["React app\n@github/webauthn-json"]
+    Authn["Authenticator\nYubiKey / Touch ID"]
+    App <-->|"WebAuthn API\nnavigator.credentials"| Authn
+  end
+  subgraph docker["Docker Compose"]
+    React[":3000 React dev server"]
+    RP[":8080 Spring Boot RP\nwebauthn-server-core"]
+    DB[("MySQL :3306\ncredential_registrations\nattestation_requests\nassertion_requests")]
+    KC[":8081 Keycloak\nidentity provider"]
+  end
+  React -.->|serves| App
+  App -->|"REST /v1/*"| RP
+  RP --> DB
+  KC -.->|"OAuth2\nbank demo only"| RP
+----
+
+For this tutorial, the demo client at port 3000 talks directly to the Spring Boot RP at port 8080. Keycloak runs in the background and is used by a separate bank demo scenario — you can explore it later.
+
+The Spring Boot RP has one REST controller (`FidoController`) mapped to `/v1`. Every WebAuthn operation goes through it:
+
+[source,text]
+----
+POST /v1/attestation/options   ← start registration
+POST /v1/attestation/result    ← finish registration
+POST /v1/assertion/options     ← start authentication
+POST /v1/assertion/result      ← finish authentication
+GET  /v1/user/credentials/:username  ← list credentials
+PUT  /v1/user/credentials      ← rename a credential
+DELETE /v1/user/credentials    ← remove a credential
+----
+
+== How registration works
+
+Registration is a challenge-response protocol. The server generates a challenge; the authenticator creates a keypair and signs the challenge with the new private key; the server stores the public key. The private key never leaves the authenticator.
+
+[mermaid]
+----
+sequenceDiagram
+  participant B as Browser
+  participant RP as Spring Boot RP
+  participant DB as MySQL
+
+  B->>RP: POST /v1/attestation/options<br/>{userName, displayName, authenticatorSelection, attestation}
+  RP->>DB: Store pending request (is_active=true)
+  RP-->>B: {requestId, publicKey: {challenge, rp, user, ...}}
+  Note over B: create(attestationOptions)<br/>navigator.credentials.create()<br/>User presence — authenticator creates keypair,<br/>signs challenge with new private key
+  B->>RP: POST /v1/attestation/result<br/>{requestId, makeCredentialResult}
+  RP->>DB: Verify is_active, then invalidate request
+  RP->>DB: Store public key in credential_registrations
+  RP-->>B: {status: "created"}
+----
+
+Two design points to understand before reading the code:
+
+* The `requestId` is a random 32-byte identifier generated by the server when it creates the challenge. It is not the username. The client gets it in the options response and must include it in the result call — this links the result to the original challenge and prevents replay attacks.
+* The pending request is stored as an `is_active` boolean in the database. The server checks `is_active` before processing a result, then invalidates the request. If the result call fails for any reason (network timeout, invalid response), the challenge is gone — the client must restart with a fresh `attestation/options` call.
+
+=== Registration API: attestation/options
+
+The request body:
+
+[source,json]
+----
+{
+  "userName": "alice@example.com",
+  "displayName": "Alice",
+  "authenticatorSelection": {
+    "residentKey": "preferred",
+    "authenticatorAttachment": "",
+    "userVerification": "preferred"
+  },
+  "attestation": "direct"
+}
+----
+
+`residentKey: "preferred"` asks the authenticator to create a discoverable credential — one stored on the authenticator that can be used for passwordless sign-in without the user typing a username first. A passkey must be a discoverable credential.
+
+`authenticatorAttachment` controls which authenticator types are allowed. Leaving it empty (the default in the demo client) allows any authenticator — platform (Touch ID, Windows Hello) or cross-platform (YubiKey). Setting it to `"cross-platform"` forces a security key.
+
+`attestation: "direct"` asks the authenticator to include its attestation statement — metadata that lets the server identify the exact authenticator make and model. This is how the server can later determine whether a credential was created by a YubiKey 5 NFC or a software passkey.
+
+The response:
+
+[source,json]
+----
+{
+  "requestId": "B-J4odOi9vcV-4TN_gpokEb1f1EI...",
+  "publicKey": {
+    "rp": { "name": "Workshop", "id": "localhost" },
+    "user": {
+      "id": "abc123",
+      "name": "alice@example.com",
+      "displayName": "Alice"
+    },
+    "challenge": "uhUjPNlZfvn7onwuhNdsLPkkE5Fv-lUN",
+    "pubKeyCredParams": [{ "type": "public-key", "alg": -7 }],
+    "timeout": 180000,
+    "excludeCredentials": [{ "type": "public-key", "id": "opQf1Wm..." }],
+    "authenticatorSelection": {
+      "residentKey": "preferred",
+      "userVerification": "preferred"
+    },
+    "attestation": "direct"
+  }
+}
+----
+
+`excludeCredentials` is a list of credential IDs already registered for this user. If the authenticator holds one of these IDs, it refuses to create a new credential — this prevents users from accidentally registering the same key twice.
+
+`requestId` is not part of the WebAuthn specification. It is a best-practice addition: a server-generated identifier that the client echoes back in the result call, so the server can find the original challenge without relying on session state or the username.
+
+The Java implementation (in `PasskeyOperations.java`):
+
+[source,java]
+----
+public AttestationOptionsResponse attestationOptions(AttestationOptionsRequest request) throws Exception {
+    // Reuse the user handle if this user has previously registered
+    Optional<ByteArray> maybeUID =
+        CredentialStorage.getUserHandleForUsername(request.getUserName());
+
+    UserIdentity userIdentity = UserIdentity.builder()
+        .name(request.getUserName())
+        .displayName(request.getDisplayName())
+        .id(maybeUID.isPresent() ? maybeUID.get() : generateRandomByteArray(16))
+        .build();
+
+    AuthenticatorSelectionCriteria optionsSelectionCriteria =
+        resolveAuthenticatorSelectionCriteria(request.getAuthenticatorSelection());
+
+    StartRegistrationOptionsBuilder regOptionsBuilder =
+        StartRegistrationOptions.builder()
+            .user(userIdentity)
+            .authenticatorSelection(optionsSelectionCriteria)
+            .timeout(180000);  // 3 minutes
+
+    if (request.getHints().isPresent()) {
+        regOptionsBuilder.hints(request.getHints().get());
+    }
+
+    PublicKeyCredentialCreationOptions pkc =
+        relyingPartyInstance.getRelyingParty().startRegistration(regOptionsBuilder.build());
+
+    ByteArray requestId = generateRandomByteArray(32);
+
+    // Store the pending request keyed by requestId (not username)
+    AttestationRequestStorage.insert(pkc, requestId.getBase64Url());
+
+    return AttestationOptionsResponseConverter.PKCtoResponse(pkc, requestId);
+}
+----
+
+The `RelyingParty` instance is a Spring singleton configured from environment variables (RP_ID, RP_NAME, RP_ALLOWED_ORIGINS). It holds a reference to the `CredentialStorage` implementation — the MySQL-backed repository that the library calls during verification.
+
+=== Registration API: attestation/result
+
+The request body:
+
+[source,json]
+----
+{
+  "requestId": "B-J4odOi9vcV-4TN_gpokEb1f1EI...",
+  "makeCredentialResult": {
+    "id": "LFdoCFJSJUHc-c72yraRc_1mDvruywA",
+    "response": {
+      "clientDataJSON": "eyJjd...",
+      "attestationObject": "o2NmbX..."
+    },
+    "type": "public-key",
+    "clientExtensionResults": {}
+  }
+}
+----
+
+The response:
+
+[source,json]
+----
+{ "status": "created" }
+----
+
+The Java implementation:
+
+[source,java]
+----
+public AttestationResultResponse attestationResult(AttestationResultRequest response) throws Exception {
+    // Look up the pending request by requestId
+    Optional<AttestationOptions> maybeOptions =
+        AttestationRequestStorage.getIfPresent(response.getRequestId());
+
+    if (!maybeOptions.isPresent()) {
+        throw new Exception("Registration request not present");
+    }
+
+    AttestationOptions options = maybeOptions.get();
+
+    if (!options.getIsActive()) {
+        throw new Exception("Registration request is no longer active");
+    }
+
+    // Invalidate before verifying — prevents replay if verification fails
+    AttestationRequestStorage.invalidate(response.getRequestId());
+
+    RegistrationResult newCred = relyingPartyInstance.getRelyingParty()
+        .finishRegistration(FinishRegistrationOptions.builder()
+            .request(options.getAttestationRequest())
+            .response(parseRegistrationResponse(response.getMakeCredentialResult()))
+            .build());
+
+    CredentialRegistration toStore = buildCredentialDBO(options.getAttestationRequest(), newCred);
+
+    if (CredentialStorage.addRegistration(toStore)) {
+        return new AttestationResultResponse().status("created");
+    } else {
+        throw new Exception("There was an unknown issue creating your credential");
+    }
+}
+----
+
+The `is_active` check runs before the invalidation. Once a request is active and present, it is invalidated before `finishRegistration` runs. If verification throws, the request is already gone — the user gets a clean error and restarts with a fresh challenge.
+
+`finishRegistration` does the cryptographic work: verifies the client data JSON matches the original challenge, verifies the attestation signature, and returns the public key and metadata. The `CredentialStorage.addRegistration` call persists the public key to the `credential_registrations` MySQL table.
+
+=== Registration client
+
+The demo React client (`PasskeyServices.js`) calls the API:
+
+[source,javascript]
+----
+const baseURL = process.env.REACT_APP_RP_API || "http://localhost:8080/v1";
+
+async function getAttestationOptions(username) {
+  const reqData = {
+    userName: username,
+    displayName: username,
+    authenticatorSelection: {
+      residentKey: "preferred",
+      authenticatorAttachment: "",
+      userVerification: "preferred"
+    },
+    attestation: "direct"
+  };
+
+  const response = await fetch(`${baseURL}/attestation/options`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(reqData)
+  });
+
+  const responseJSON = await response.json();
+  if (response.status !== 200) throw Error(responseJSON.errorMessage);
+  return responseJSON;
+}
+
+async function sendAttestationResult(requestID, makeCredentialResponse) {
+  const reqData = {
+    requestId: requestID,
+    makeCredentialResult: makeCredentialResponse
+  };
+
+  const response = await fetch(`${baseURL}/attestation/result`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(reqData)
+  });
+
+  const responseJSON = await response.json();
+  if (response.status !== 200) throw Error(responseJSON.errorMessage);
+  return responseJSON;
+}
+----
+
+The component that calls these services (`App.js`) uses `@github/webauthn-json` to bridge the JSON API to the browser's WebAuthn API:
+
+[source,javascript]
+----
+import { create, get } from "@github/webauthn-json";
+
+const register = async () => {
+  // 1. Get challenge and options from the server
+  const attestationOptions = await PasskeyServices.getAttestationOptions(username);
+
+  // 2. Invoke navigator.credentials.create() — triggers browser/OS UI
+  //    create() handles the Base64URL <-> ArrayBuffer conversions
+  //    that the browser API requires on every field
+  const makeCredential = await create(attestationOptions);
+
+  // 3. Send signed credential to server — must include requestId
+  await PasskeyServices.sendAttestationResult(
+    attestationOptions.requestId,  // from step 1
+    makeCredential
+  );
+};
+----
+
+`create()` from `@github/webauthn-json` wraps `navigator.credentials.create()`. The WebAuthn browser API requires `ArrayBuffer` values for `challenge`, user IDs, and credential IDs — JSON cannot represent `ArrayBuffer` directly. `@github/webauthn-json` converts the Base64URL strings from the server response into `ArrayBuffer` before passing them to the browser, and converts the `ArrayBuffer` fields in the browser's response back to Base64URL before returning the result. Without this, you would do these conversions manually on every field.
+
+Try it: enter any username in the demo app and click *Register passkey*. The browser shows an authenticator chooser. Select your platform authenticator (or insert a YubiKey). Complete user verification. The credential is created and stored in MySQL. Open the Swagger UI at http://localhost:8080 and try `GET /v1/user/credentials/{username}` with the username you registered — you should see the credential ID, registration time, and icon URI if the authenticator reported one.
+
+== How authentication works
+
+Authentication uses the same challenge-response structure. Instead of creating a new keypair, the authenticator finds the stored private key and signs a fresh challenge.
+
+[mermaid]
+----
+sequenceDiagram
+  participant B as Browser
+  participant RP as Spring Boot RP
+  participant DB as MySQL
+
+  B->>RP: POST /v1/assertion/options<br/>{userName: "" for discoverable, or "alice" for non-discoverable}
+  RP->>DB: Store pending request (is_active=true)
+  RP-->>B: {requestId, publicKey: {challenge, allowCredentials}}
+  Note over B: get(assertionOptions)<br/>navigator.credentials.get()<br/>User presence — authenticator finds credential,<br/>signs challenge, increments signature counter
+  B->>RP: POST /v1/assertion/result<br/>{requestId, assertionResult}
+  RP->>DB: Verify is_active, then invalidate request
+  RP->>DB: Verify signature against stored public key<br/>Check signature counter (clone detection)
+  RP-->>B: {status: "ok"}
+----
+
+An empty `userName` in the options request signals a discoverable credential flow: the browser presents all matching passkeys on the device without the user typing a username first. This is the passkey experience. A non-empty `userName` triggers a non-discoverable flow where the server returns `allowCredentials` — a list of specific credential IDs the user must have.
+
+=== Authentication API: assertion/options
+
+The request body for discoverable flow:
+
+[source,json]
+----
+{ "userName": "" }
+----
+
+The response:
+
+[source,json]
+----
+{
+  "requestId": "WlEPtNrJps-E03p_rwfXqASFkbrQ6Ml3Oy031JW4TYo",
+  "publicKey": {
+    "challenge": "NGc3jpB4Q-VnOmbhFBnDAczlYPT4soKA7xviGeJmDhc",
+    "timeout": 180000,
+    "rpId": "localhost",
+    "userVerification": "preferred"
+  }
+}
+----
+
+For non-discoverable flow (non-empty `userName`), the response also includes `allowCredentials`:
+
+[source,json]
+----
+{
+  "requestId": "...",
+  "publicKey": {
+    "challenge": "...",
+    "timeout": 180000,
+    "rpId": "localhost",
+    "allowCredentials": [
+      { "type": "public-key", "id": "opQf1WmYAa5aupUKJIQp" }
+    ],
+    "userVerification": "preferred"
+  }
+}
+----
+
+The Java implementation:
+
+[source,java]
+----
+public AssertionOptionsResponse assertionOptions(AssertionOptionsRequest request) throws Exception {
+    StartAssertionOptionsBuilder optionsBuilder = StartAssertionOptions.builder()
+        .userVerification(UserVerificationRequirement.PREFERRED)
+        .timeout(180000);
+
+    // Empty userName → discoverable flow (no allowCredentials in response)
+    // Non-empty userName → non-discoverable flow (allowCredentials populated by library)
+    Collection<CredentialRegistration> credentials =
+        storageInstance.getCredentialStorage()
+            .getRegistrationsByUsername(request.getUserName());
+
+    if (credentials.size() != 0 || request.getUserName() != "") {
+        optionsBuilder.username(request.getUserName());
+    }
+
+    if (request.getHints().isPresent()) {
+        optionsBuilder.hints(request.getHints().get());
+    }
+
+    AssertionRequest pkc = relyingPartyInstance.getRelyingParty()
+        .startAssertion(optionsBuilder.build());
+
+    ByteArray requestId = generateRandomByteArray(32);
+    AssertionRequestStorage.insert(pkc, requestId.getBase64Url());
+
+    return AssertionOptionsResponseConverter.PKCtoResponse(
+        pkc.getPublicKeyCredentialRequestOptions(), requestId);
+}
+----
+
+=== Authentication API: assertion/result
+
+The request body:
+
+[source,json]
+----
+{
+  "requestId": "WlEPtNrJps-E03p_rwfXqASFkbrQ6Ml3Oy031JW4TYo",
+  "assertionResult": {
+    "id": "LFdoCFJTyB82ZzSJUHc-c72yraRc_1mPvG",
+    "response": {
+      "authenticatorData": "SZYN5Gh0NBcPZHZgW4_krrmihjzzuoMdl2MBAAAAAA...",
+      "signature": "ME8fLjd5y6TUOLWt5l9DQIhANiYig9newAJZYTzG1i5lwP",
+      "userHandle": "abc123",
+      "clientDataJSON": "eyJjaGFsbGVuZ2UiO..."
+    },
+    "type": "public-key",
+    "clientExtensionResults": {}
+  }
+}
+----
+
+The response:
+
+[source,json]
+----
+{ "status": "ok" }
+----
+
+The Java implementation:
+
+[source,java]
+----
+public AssertionResultResponse assertionResponse(AssertionResultRequest response) throws Exception {
+    Optional<AssertionOptions> maybeOptions =
+        AssertionRequestStorage.getIfPresent(response.getRequestId());
+
+    if (!maybeOptions.isPresent()) {
+        throw new Exception("Registration request not present");
+    }
+
+    AssertionOptions options = maybeOptions.get();
+
+    if (!options.getIsActive()) {
+        throw new Exception("Registration request is no longer active");
+    }
+
+    AssertionRequestStorage.invalidate(response.getRequestId());
+
+    AssertionRequestBuilder requestBuilder = AssertionRequest.builder()
+        .publicKeyCredentialRequestOptions(
+            options.getAssertionRequest().getPublicKeyCredentialRequestOptions());
+
+    if (options.getAssertionRequest().getUsername().isPresent()) {
+        requestBuilder.username(options.getAssertionRequest().getUsername().get());
+    }
+
+    AssertionResult result = relyingPartyInstance.getRelyingParty()
+        .finishAssertion(FinishAssertionOptions.builder()
+            .request(requestBuilder.build())
+            .response(parseAssertionResponse(response.getAssertionResult()))
+            .build());
+
+    if (result.isSuccess()) {
+        return AssertionResultResponse.builder().status("ok").build();
+    } else {
+        throw new Exception("Your assertion failed for an unknown reason");
+    }
+}
+----
+
+`finishAssertion` verifies the signature against the stored public key, checks that the `rpId` in the authenticator data matches the configured RP ID, and validates the signature counter. The RP is configured with `validateSignatureCounter(true)` — if an incoming counter is not higher than the stored value, the library rejects the assertion. This is the clone detection check: hardware keys like YubiKey increment a counter in non-volatile memory inside the secure element on every signature. Platform authenticators typically report 0, which the spec permits.
+
+=== Authentication client
+
+[source,javascript]
+----
+import { create, get } from "@github/webauthn-json";
+
+const authenticate = async (authUser, isAutofill) => {
+  // 1. Get challenge from server (empty string = discoverable credential flow)
+  const assertionOptions = await PasskeyServices.getAssertionOptions(authUser);
+
+  // 2. For autofill (conditional mediation), attach AbortController
+  if (isAutofill) {
+    assertionOptions.mediation = "conditional";
+    assertionOptions.signal = authAbortController.signal;
+  }
+
+  // 3. Invoke navigator.credentials.get() — browser shows credential picker
+  const assertionResult = await get(assertionOptions);
+
+  // 4. Send signed assertion to server — must include requestId
+  const authenticationResult = await PasskeyServices.sendAssertionResult(
+    assertionOptions.requestId,  // from step 1
+    assertionResult
+  );
+
+  if (!authenticationResult.status === "ok") {
+    throw new Error("Assertion not valid in RP");
+  }
+};
+----
+
+The demo client starts a conditional mediation flow automatically on page load (via `useEffect`). Conditional mediation is the mechanism behind the passkey autofill prompt in the username field — the browser listens in the background and surfaces matching passkeys in the autofill suggestion list without the user clicking a button. The `authAbortController` signal cancels this background listener when the user initiates an explicit registration or authentication, then a fresh controller is created and autofill restarts.
+
+`get()` from `@github/webauthn-json` handles the same ArrayBuffer conversions as `create()` — the challenge and credential IDs must be `ArrayBuffer` going into `navigator.credentials.get()`, and the `authenticatorData`, `signature`, `userHandle`, and `clientDataJSON` must be Base64URL coming out.
+
+== Test with a YubiKey
+
+Platform authenticators (Touch ID, Windows Hello) store the private key in the device's TPM or secure enclave. The key is hardware-bound to that device but can be synced to the cloud — that is how a passkey moves between your iPhone and your Mac. This is the right trade-off for most consumer applications.
+
+Hardware security keys like YubiKey work differently: the private key is generated inside a tamper-resistant secure element and cannot be extracted or synced. Physical possession of the key is required for every authentication. There is no credential database to steal, no sync service to compromise.
+
+To register and authenticate with a YubiKey:
+
+. Insert your YubiKey into a USB port (or hold it near the NFC reader on mobile).
+. Open http://localhost:3000 in Chrome, Firefox, or Edge.
+. Enter a username and click *Register passkey*.
+. When the browser shows the authenticator chooser, select *Use a security key*.
+. Touch the gold contact on the YubiKey when the browser prompts for user presence.
+. Enter the YubiKey PIN if prompted (required for user verification on newer firmware).
+
+The registration modal closes. The YubiKey generated a keypair inside the secure element, stored the private key permanently in NVM, and returned only the public key.
+
+To authenticate:
+
+. Click *Authenticate with passkey*.
+. Touch the YubiKey when prompted.
+
+No password, no OTP, no phishable secret.
+
+=== What the attestation statement tells you
+
+Each YubiKey model includes an AAGUID in its attestation statement — a UUID identifying the exact authenticator model. The Spring Boot RP is configured with `attestation: "direct"` and `RP_ALLOW_UNTRUSTED_ATTESTATION=true` for the workshop. In a production deployment with strict authenticator policies, you would configure the FIDO Metadata Service (MDS) to validate attestation chains and verify AAGUIDs against known good models.
+
+Check the credential you just registered: open Swagger at http://localhost:8080, try `GET /v1/user/credentials/{username}`. The response includes an `iconURI` field — for YubiKey registrations, this is populated from the MDS with the YubiKey product icon.
+
+=== Credential management
+
+The demo client includes a *Load credentials* button that calls `GET /v1/user/credentials/{username}`. Each credential card supports:
+
+* Rename — updates the `credentialNickname` in the `credential_registrations` table (the credential itself is never modified)
+* Delete — removes the credential from storage, preventing future authentication with that key from the RP's perspective
+
+== What you built
+
+You ran a production-realistic passkey application and traced every piece:
+
+* Four services: Spring Boot RP, Keycloak, MySQL, React client — deployed by a single script
+* Two WebAuthn ceremonies (attestation and assertion), each requiring two API calls and a `requestId` to link them
+* Pending request storage in MySQL with `is_active` invalidation, preventing replays even if network calls fail
+* `@github/webauthn-json` handling the ArrayBuffer serialization that the WebAuthn browser API requires
+* Signature counter validation in the RP for clone detection on hardware keys
+* Conditional mediation (passkey autofill) driven by the browser's background credential listener
+
+The source lives in:
+
+[source,text]
+----
+examples/relyingParties/java-spring/   ← Spring Boot RP (Java)
+examples/clients/web/react/
+  passkey-client/                       ← Demo React client
+  bank-client/                          ← Bank scenario with Keycloak integration
+docs/                                   ← This documentation (Docusaurus)
+deploy/                                 ← Docker Compose configs and deploy scripts
+----
+
+link:/Academy/webauthn-deep-dive/[WebAuthn Deep Dive — Attestation policies, conditional UI, and multi-device passkeys &rarr;]

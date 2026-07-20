@@ -123,7 +123,7 @@ class PageRenderModule(Module):
         out_name = basename + '.html'
         tpltvars = dict(self._context)
         self._get_vars(basename, tpltvars)
-        tplt = self.get_template('site')
+        tplt = self.get_template(self.get_conf('layout', 'site'))
         with open(fname, 'r') as infile:
             content = infile.read().decode('utf-8')
         rendered = tplt.render(content=content, **tpltvars)
