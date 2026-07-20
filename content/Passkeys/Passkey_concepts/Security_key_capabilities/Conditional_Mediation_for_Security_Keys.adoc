@@ -17,7 +17,7 @@ A PPUAT is invalidated when:
 * The PIN is changed (including when forced by a minimum-PIN-length policy change)
 * The FIDO2 application is factory-reset
 
-== Persistent Credential Management Read Only (PCMR) Permission
+== Persistent Credential Management Read-only (PCMR) Permission
 
 The permission level assigned to a PPUAT. It grants read-only access to credential management operations:
 
@@ -49,7 +49,7 @@ The rotating ciphertext is a firmware-level guarantee.
 
 == encCredStoreState
 
-A 16-byte value that changes when credentials are added, removed, or the authenticator is reset. Platforms use it for cache invalidation:
+A 16-byte value that changes when credentials are added, removed, or the authenticator is reset. Like `encIdentifier`, it is returned encrypted (fresh IV on every `getInfo` call) using a key derived from the PPUAT, so the platform decrypts it before comparing. Platforms use it for cache invalidation:
 
 ----
 saved state == current state  ->  cache is valid, skip enumeration
@@ -79,10 +79,11 @@ Subsequent connections: No PIN required
 
 == Compatibility
 
-On firmware older than 5.8, the YubiKey does not support CTAP 2.2 persistent tokens: requests for a persistent token, the encrypted identifier, and the credential store state will not return values. Always check for support before attempting decryption, and fall back to the standard PIN flow when persistent tokens are unavailable.
+On firmware older than 5.8, the YubiKey does not support persistent tokens: requests for a persistent token, the encrypted identifier, and the credential store state will not return values. Always check for support before attempting decryption, and fall back to the standard PIN flow when persistent tokens are unavailable.
 
 == References
 
+* link:https://github.com/YubicoLabs/build-with-us/tree/main/quickstart[Build with Us quickstarts]: PPUAT demos for iOS, Android, .NET, and Python
 * link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-auth-tokens.html[FIDO2 auth tokens (PPUAT)]
 * link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-cred-mgmt.html[Credential management]
 * link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-authenticator-config.html[Authenticator configuration]
