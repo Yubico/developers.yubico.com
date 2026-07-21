@@ -32,7 +32,7 @@ Deriving public keys is cheap, so you can generate them speculatively. This matt
 When you create a credential with previewSign, the YubiKey generates two key pairs internally. The private halves (`skBl`, `skKem`) never leave the YubiKey. It gives you the public halves:
 
 * *pkBl (blinding public key):* Used to derive new unique public keys offline. Each derivation produces a new ECDSA P-256 public key that looks completely unrelated to pkBl or any other derived key.
-* *pkKem (KEM public key):* Used to produce a ticket (`arkgArgs`) during derivation. This is what you send back to the YubiKey when signing so it can recreate the matching private key on the fly.
+* *pkKem (KEM public key):* Used to produce a ticket (`arkgArgs`) during derivation. This is what you send back to the YubiKey when signing so it can create the matching private key on the fly.
 
 Both public halves are returned together as a single COSE-encoded ARKG key (the seed public key).
 
@@ -64,8 +64,8 @@ Step C: Sign (touch YubiKey, one touch per signature)             [client]
   first, then sends the digest, the key handle from Step A, and the
   ticket from Step B to the YubiKey in a GetAssertion request (with
   the credential ID from Step A in the allow-list).
-  The YubiKey reads the ticket, recreates the matching private key,
-  signs the payload, returns the signature, then discards the private
+  The YubiKey reads the ticket, creates the matching private key,
+  signs those bytes, returns the signature, then discards the private
   key.
 
 Step D: Verify (offline, no YubiKey)                              [relying party]
