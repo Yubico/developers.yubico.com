@@ -1,0 +1,115 @@
+= Signing Extension (Preview)
+:description: Sign raw data with hardware-backed keys using the previewSign FIDO2 extension and ARKG in YubiKey firmware 5.8. Generate unlimited unlinkable signing keys offline from a single credential.
+:keywords: previewSign, ARKG, raw signing, ECDSA P-256, asynchronous remote key generation, document signing, EUDI, SPIFFE, DPoP, CTAP, YubiKey 5.8
+
+The `previewSign` FIDO2 extension lets a YubiKey sign raw data. Standard FIDO2 signatures wrap your data in `authenticatorData || SHA-256(clientData)`, which means they only work with FIDO2 verifiers. With previewSign, the signed payload is your input unaltered, so the signature works with any protocol that accepts ECDSA P-256 signatures. The private key never leaves the YubiKey. Examples include PDF signing (PAdES), JWT/DPoP tokens, S/MIME email, C2PA content integrity, and SPIFFE workload identities.
+
+The 5.8 firmware implements this using ARKG (Asynchronous Remote Key Generation), specifically the `ARKG_P256_ESP256` algorithm. ARKG lets you generate unlimited unique signing keys offline from a single YubiKey credential. Each derived key is cryptographically unlinkable: a verifier cannot tell that two derived keys came from the same device. You only need to touch the YubiKey once to set up the signing key pair, and again each time you produce a signature.
+
+Deriving new public keys in between is free, and so is verification. Anyone with the derived public key can verify a signature using any standard ECDSA library, no YubiKey or Yubico SDK required.
+
+previewSign is algorithm-agnostic by design, so future firmware versions may offer different algorithms.
+
+WARNING: *Early Access Only.* The previewSign extension, its algorithm, and the algorithm ID (-65539) are not final and will change before general availability. Do not use this in production.
+
+NOTE: *Two sides: client and relying party.* previewSign splits into a client side and a relying-party (server) side. The client talks to the YubiKey: it enables the extension, reads the generated key back, requests a signature, and reads the signature back (Steps A and C below). The relying-party side derives public keys offline (Step B) and verifies signatures (Step D); those operations need no YubiKey and run on your server.
+
+== When to use this
+
+previewSign is for signing arbitrary data with hardware-backed keys. It is not for authentication.
+
+Real world examples:
+
+* *Digital identity (EUDI).* Present a wallet credential to different services, each presentation signed with a unique key, so the services cannot correlate you by a shared public key. This is key unlinkability only. Hiding or selectively disclosing attribute values (for example, proving "over 18" without revealing a birthdate) is a property of the credential format, not previewSign.
+* *Document signing.* Sign contracts, PDFs, or legal documents. The signature is standard ECDSA P-256, compatible with existing verification tools.
+* *Software signing.* Publish a derived public key as a release signing key. When you need to sign a release, touch the YubiKey to produce the signature.
+* *Workload identity.* Issue hardware-bound signing keys for SPIFFE or OAuth DPoP without exposing private key material to the host.
+
+Deriving public keys is cheap, so you can generate them speculatively. This matters for short-lived credentials like EUDI attribute certificates that expire after a week: you might derive 20 public keys upfront but only end up signing with a few of them. The unused ones cost nothing.
+
+== How ARKG works
+
+When you create a credential with previewSign, the YubiKey generates two key pairs internally. The private halves (`skBl`, `skKem`) never leave the YubiKey. It gives you the public halves:
+
+* *pkBl (blinding public key):* Used to derive new unique public keys offline. Each derivation produces a new ECDSA P-256 public key that looks completely unrelated to pkBl or any other derived key.
+* *pkKem (KEM public key):* Used to produce a ticket (`arkgArgs`) during derivation. This is what you send back to the YubiKey when signing so it can create the matching private key on the fly.
+
+Both public halves are returned together as a single COSE-encoded ARKG key (the seed public key).
+
+Algorithm: `ARKG_P256_ESP256` (-65539).
+
+== Flow
+
+----
+Step A: Generate Key (touch YubiKey, one time setup)              [client]
+  MakeCredential with the previewSign extension.
+  YubiKey returns the generated key (carrying pkBl + pkKem), a key
+  handle, and a credential ID. Save these to your database. You need
+  them to derive new keys and sign later.
+
+Step B: Derive Public Key (offline, no YubiKey, unlimited times)  [relying party]
+  Using the seed public key from Step A, the relying party derives a
+  unique signing key and an ARKG ticket (arkgArgs). Each derivation
+  uses fresh randomness (ikm), so every derived key is unique.
+  Run derivation as many times as you want for unlimited unlinkable
+  keys.
+    - derivedPublicKey: a unique P-256 public key. Share it with
+      verifiers.
+    - arkgArgs (the ticket): send it back to the client to sign.
+
+Step C: Sign (touch YubiKey, one touch per signature)             [client]
+  previewSign signs exactly the bytes provided in the request,
+  without wrapping or transforming them. Most protocols expect a
+  signature over a digest, so the client typically hashes the message
+  first, then sends the digest, the key handle from Step A, and the
+  ticket from Step B to the YubiKey in a GetAssertion request (with
+  the credential ID from Step A in the allow-list).
+  The YubiKey reads the ticket, creates the matching private key,
+  signs those bytes, returns the signature, then discards the private
+  key.
+
+Step D: Verify (offline, no YubiKey)                              [relying party]
+  The derived key is a plain P-256 key, so verification is standard
+  ECDSA against the signature, the message, and the derived public
+  key. Anyone with the derived public key can verify. No secrets, no
+  YubiKey needed.
+----
+
+=== What to store
+
+After Step A (once):
+
+* The credential ID: included in the assertion allow-list so the YubiKey knows which credential to use
+* The key handle of the generated signing key: supplied with each signing request (different from the credential ID; mixing them causes a firmware error)
+* The seed public key: the COSE ARKG key carrying pkBl + pkKem, used to derive future keys
+
+After Step B (per derived key):
+
+* Derived public key, to share with verifiers
+* ARKG ticket (`arkgArgs`), to request signatures from the YubiKey
+* Context label, for your own bookkeeping
+
+The random bytes (`ikm`) used for each derivation do not need to be stored. They are baked into the ticket.
+
+=== What the verifier receives
+
+Three things:
+
+* The original document
+* The ECDSA signature
+* The derived public key
+
+The derived public key is a standard P-256 key. The verifier does not need to know about ARKG, previewSign, or the YubiKey. They just run standard ECDSA verification.
+
+== Compatibility
+
+previewSign requires firmware 5.8+. Check for the `"previewSign"` extension in the authenticator's supported extensions and stop if it is missing.
+
+== References
+
+* link:https://github.com/YubicoLabs/build-with-us/tree/main/quickstart[Build with Us quickstarts]: ARKG demos for iOS, Android, .NET, and Python
+* link:https://yubicolabs.github.io/webauthn-sign-extension/[previewSign spec (version 4)]
+* link:https://github.com/w3c/webauthn/blob/main/explainers/raw-signing-extension.md[previewSign explainer]
+* link:https://www.ietf.org/archive/id/draft-bradleylundberg-cfrg-arkg-08.html[ARKG specification (IETF draft-bradleylundberg-cfrg-arkg-08)]
+
+link:/Passkeys/Passkey_concepts/Security_key_capabilities/[Return to security key capabilities]
