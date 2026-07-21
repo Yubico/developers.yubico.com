@@ -32,7 +32,7 @@ Deriving public keys is cheap, so you can generate them speculatively. This matt
 When you create a credential with previewSign, the YubiKey generates two key pairs internally. The private halves (`skBl`, `skKem`) never leave the YubiKey. It gives you the public halves:
 
 * *pkBl (blinding public key):* Used to derive new unique public keys offline. Each derivation produces a new ECDSA P-256 public key that looks completely unrelated to pkBl or any other derived key.
-* *pkKem (KEM public key):* Used to produce a ticket (`arkgArgs`) during derivation. This is what you send back to the YubiKey when signing so it can recreate the matching private key on the fly.
+* *pkKem (KEM public key):* Used to produce a ticket (`arkgArgs`) during derivation. This is what you send back to the YubiKey when signing so it can create the matching private key on the fly.
 
 Both public halves are returned together as a single COSE-encoded ARKG key (the seed public key).
 
@@ -58,12 +58,14 @@ Step B: Derive Public Key (offline, no YubiKey, unlimited times)  [relying party
     - arkgArgs (the ticket): send it back to the client to sign.
 
 Step C: Sign (touch YubiKey, one touch per signature)             [client]
-  previewSign signs the input unaltered, so the client hashes the
-  message first, then sends the digest, the key handle from Step A,
-  and the ticket from Step B to the YubiKey in a GetAssertion request
-  (with the credential ID from Step A in the allow-list).
-  The YubiKey reads the ticket, recreates the matching private key,
-  signs the digest, returns the signature, then discards the private
+  previewSign signs exactly the bytes provided in the request,
+  without wrapping or transforming them. Most protocols expect a
+  signature over a digest, so the client typically hashes the message
+  first, then sends the digest, the key handle from Step A, and the
+  ticket from Step B to the YubiKey in a GetAssertion request (with
+  the credential ID from Step A in the allow-list).
+  The YubiKey reads the ticket, creates the matching private key,
+  signs those bytes, returns the signature, then discards the private
   key.
 
 Step D: Verify (offline, no YubiKey)                              [relying party]
@@ -105,6 +107,7 @@ previewSign requires firmware 5.8+. Check for the `"previewSign"` extension in t
 
 == References
 
+* link:https://github.com/YubicoLabs/build-with-us/tree/main/quickstart[Build with Us quickstarts]: ARKG demos for iOS, Android, .NET, and Python
 * link:https://yubicolabs.github.io/webauthn-sign-extension/[previewSign spec (version 4)]
 * link:https://github.com/w3c/webauthn/blob/main/explainers/raw-signing-extension.md[previewSign explainer]
 * link:https://www.ietf.org/archive/id/draft-bradleylundberg-cfrg-arkg-08.html[ARKG specification (IETF draft-bradleylundberg-cfrg-arkg-08)]
