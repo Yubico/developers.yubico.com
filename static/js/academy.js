@@ -1,3 +1,132 @@
+var academyAnalyticsState = { currentSection: '' };
+
+function analyticsConsentGranted() {
+  try {
+    return Boolean(window.cc && typeof window.cc.allowedCategory === 'function' &&
+      window.cc.allowedCategory('analytics'));
+  } catch (e) {
+    return false;
+  }
+}
+
+function pushAcademyEvent(eventName, params) {
+  if (!analyticsConsentGranted()) return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(Object.assign({ event: eventName }, params || {}));
+}
+
+window.pushAcademyEvent = pushAcademyEvent;
+
+(function () {
+  document.querySelectorAll('[data-academy-notify]').forEach(function (link) {
+    link.addEventListener('click', function () {
+      pushAcademyEvent('notify_me_click', {
+        tutorial_name: link.dataset.tutorialName,
+        tutorial_slug: link.dataset.tutorialSlug
+      });
+    });
+  });
+
+  var page = document.querySelector('[data-academy-page-status="live"]');
+  if (!page) return;
+
+  var tutorialName = page.dataset.tutorialName;
+  var tutorialSlug = page.dataset.tutorialSlug;
+  var knownTutorials = (page.dataset.academyTutorials || '').split('|');
+  var headings = document.querySelectorAll('#page-content h2');
+  var seenSections = {};
+  var startSeen = false;
+  var completeSeen = false;
+
+  if (headings.length) {
+    var analyticsObserver = new IntersectionObserver(function (entries) {
+      entries.filter(function (entry) { return entry.isIntersecting; })
+        .sort(function (left, right) {
+          return Array.prototype.indexOf.call(headings, left.target) -
+            Array.prototype.indexOf.call(headings, right.target);
+        })
+        .forEach(function (entry) {
+          var sectionIndex = Array.prototype.indexOf.call(headings, entry.target);
+          var sectionName = entry.target.textContent.trim();
+          academyAnalyticsState.currentSection = sectionName;
+          if (seenSections[entry.target.id]) return;
+          seenSections[entry.target.id] = true;
+
+          if (sectionIndex === 0 && !startSeen) {
+            startSeen = true;
+            pushAcademyEvent('tutorial_start', {
+              tutorial_name: tutorialName,
+              tutorial_slug: tutorialSlug
+            });
+          }
+          pushAcademyEvent('tutorial_section', {
+            tutorial_name: tutorialName,
+            section_name: sectionName,
+            section_index: sectionIndex + 1,
+            section_total: headings.length
+          });
+          if (sectionIndex === headings.length - 1 && !completeSeen) {
+            completeSeen = true;
+            pushAcademyEvent('tutorial_complete', { tutorial_name: tutorialName });
+          }
+        });
+    }, { rootMargin: '0px 0px -60% 0px', threshold: 0 });
+    headings.forEach(function (heading) { analyticsObserver.observe(heading); });
+  }
+
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('a');
+    if (link) {
+      var href = link.href;
+      var sdkDomains = ['github.com', 'mvnrepository.com', 'pypi.org', 'pkg.go.dev', 'npmjs.com', 'crates.io'];
+      var parsedUrl;
+      try { parsedUrl = new URL(href, window.location.href); } catch (e) {}
+      if (parsedUrl && sdkDomains.indexOf(parsedUrl.hostname) !== -1) {
+        pushAcademyEvent('sdk_clickout', {
+          tutorial_name: tutorialName,
+          sdk_url: href
+        });
+      }
+      if (parsedUrl) {
+        var match = parsedUrl.pathname.match(/^\/Academy\/([^/]+)\/?$/);
+        if (match && knownTutorials.indexOf(match[1]) !== -1) {
+          pushAcademyEvent('tutorial_progression', {
+            tutorial_name: tutorialName,
+            destination_tutorial: match[1]
+          });
+        }
+      }
+    }
+
+    var shareControl = event.target.closest('[data-academy-share]');
+    if (shareControl) {
+      pushAcademyEvent('tutorial_share', {
+        tutorial_name: tutorialName,
+        share_platform: shareControl.dataset.academyShare,
+        section_name: academyAnalyticsState.currentSection,
+        share_type: 'end-of-tutorial'
+      });
+    }
+  });
+
+  var nativeShare = document.querySelector('[data-academy-native-share]');
+  if (nativeShare && navigator.share) {
+    nativeShare.addEventListener('click', function () {
+      var separator = page.dataset.canonicalUrl.indexOf('?') === -1 ? '?' : '&';
+      var shareUrl = page.dataset.canonicalUrl + separator +
+        'utm_source=academy-share&utm_medium=social&utm_campaign=' + encodeURIComponent(tutorialSlug);
+      navigator.share({ url: shareUrl, title: tutorialName }).then(function () {
+        pushAcademyEvent('tutorial_share', {
+          tutorial_name: tutorialName,
+          share_platform: 'native-share',
+          section_name: academyAnalyticsState.currentSection,
+          share_type: 'end-of-tutorial'
+        });
+      }).catch(function () {});
+    });
+  }
+}());
+
 (function () {
   var filters = document.querySelectorAll('[data-academy-filter]');
   var cards = document.querySelectorAll('[data-academy-card]');
@@ -125,6 +254,17 @@
           btn.classList.remove('academy-copy-btn--copied');
           btn.querySelector('.academy-copy-label').textContent = 'Copy';
         }, 1500);
+        var livePage = document.querySelector('[data-academy-page-status="live"]');
+        if (livePage) {
+          var codeElement = pre.querySelector('code');
+          var languageMatch = codeElement && codeElement.className.match(/language-(\w+)/);
+          if (!languageMatch) languageMatch = pre.closest('.listingblock').className.match(/language-(\w+)/);
+          pushAcademyEvent('code_copy', {
+            tutorial_name: livePage.dataset.tutorialName,
+            section_name: academyAnalyticsState.currentSection,
+            code_language: languageMatch ? languageMatch[1] : 'unknown'
+          });
+        }
       });
     });
     content.appendChild(btn);
