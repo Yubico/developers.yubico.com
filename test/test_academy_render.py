@@ -6,6 +6,8 @@ import shutil
 import sys
 
 import pytest
+from bs4 import BeautifulSoup
+from jinja2 import Environment, FileSystemLoader
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +37,16 @@ def write_child(academy_dir, slug, update):
     config = json.loads(filename.read_text())
     update(config["vars"][0]["values"])
     filename.write_text(json.dumps(config))
+
+
+def render_hub(academy_dir):
+    context = load_academy_context(str(academy_dir))
+    context.update({"content": "", "nav": [], "title": "Developer Academy"})
+    environment = Environment(loader=FileSystemLoader(str(REPO_ROOT / "templates")))
+    return BeautifulSoup(
+        environment.get_template("academy.template").render(**context),
+        "html.parser",
+    )
 
 
 def test_ordered_configuration_produces_normalized_academy_context():
@@ -77,6 +89,75 @@ def test_ordered_configuration_produces_normalized_academy_context():
             "status": "coming-soon",
             "url": "/Academy/soon-course/",
         },
+    ]
+
+
+def test_hub_renders_cards_filters_and_guidance_from_configuration():
+    page = render_hub(FIXTURES / "valid" / "Academy")
+
+    cards = page.select("[data-academy-card]")
+    assert [card["data-tutorial-slug"] for card in cards] == [
+        "live-course",
+        "soon-course",
+    ]
+    assert cards[0].select_one(".academy-card-title").get_text(strip=True) == (
+        "Build a Live Course"
+    )
+    assert cards[0].select_one(".academy-card-status").get_text(strip=True) == "Live"
+    assert cards[0].select_one(".academy-card-timing").get_text(strip=True) == "~2 hrs"
+    assert cards[0].select_one(".academy-card-prerequisite").get_text(" ", strip=True).startswith(
+        "Before you start: Comfortable with web development"
+    )
+    assert cards[1].select_one(".academy-card-status").get_text(strip=True) == (
+        "Coming Soon"
+    )
+    assert cards[1].select_one(".academy-card-timing").get_text(strip=True) == (
+        "Coming Q4 2026"
+    )
+    assert cards[1].select_one(".academy-card-notify")["href"].startswith(
+        "https://www.yubico.com/newsletter/"
+    )
+
+    assert [button.get_text(strip=True) for button in page.select("[data-academy-filter]")] == [
+        "All",
+        "WebAuthn",
+        "FIPS",
+    ]
+    assert [item["data-tutorial-slug"] for item in page.select(".academy-start-item")] == [
+        "live-course",
+        "soon-course",
+    ]
+    assert page.select_one(".academy-hero-cta")["href"] == "/Academy/live-course/"
+
+
+def test_adding_ordered_configuration_adds_hub_card_and_filter(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    new_course = academy_dir / "ssh-course"
+    shutil.copytree(academy_dir / "live-course", new_course)
+    write_child(
+        academy_dir,
+        "ssh-course",
+        lambda values: values.update(
+            {
+                "title": "Secure an SSH Workflow",
+                "tags": ["SSH"],
+            }
+        ),
+    )
+    write_root(academy_dir, lambda config: config["order"].append("ssh-course"))
+
+    page = render_hub(academy_dir)
+
+    assert [card["data-tutorial-slug"] for card in page.select("[data-academy-card]")] == [
+        "live-course",
+        "soon-course",
+        "ssh-course",
+    ]
+    assert [button.get_text(strip=True) for button in page.select("[data-academy-filter]")] == [
+        "All",
+        "WebAuthn",
+        "FIPS",
+        "SSH",
     ]
 
 

@@ -31,26 +31,67 @@
     <div class="container">
       <h1 class="academy-hero-title">Yubico Developer Academy</h1>
       <p class="academy-hero-sub">Practical tutorials for building with FIDO2 and hardware security keys.</p>
-      <a href="/Academy/passkey-app/" class="btn btn-primary btn-lg academy-hero-cta">Start the first tutorial &rarr;</a>
+      {% set live_tutorials = academy_order | selectattr('status', 'equalto', 'live') | list %}
+      {% if live_tutorials %}
+      <a href="{{ live_tutorials[0].url }}" class="btn btn-primary btn-lg academy-hero-cta">Start the first tutorial &rarr;</a>
+      {% endif %}
     </div>
   </div>
 
   <div class="container academy-main">
-    <!-- Course cards (rendered from AsciiDoc content below) -->
-    <div id="page-content">
-      {{ content }}
-    </div>
+    <section class="academy-discovery" aria-labelledby="academy-tutorials-heading">
+      <h2 id="academy-tutorials-heading">Choose a tutorial</h2>
+      <div class="academy-filters" aria-label="Filter tutorials by technology">
+        <span class="academy-filter-label">Technology</span>
+        <div class="academy-filter-controls">
+          <button type="button" class="academy-filter is-selected" data-academy-filter="all" aria-pressed="true">All</button>
+          {% for tag in active_tags %}
+          <button type="button" class="academy-filter" data-academy-filter="{{ tag }}" aria-pressed="false">{{ tag }}</button>
+          {% endfor %}
+        </div>
+      </div>
 
-    <!-- Role recommendations -->
-    <div class="academy-roles">
-      <h2>Where to start</h2>
-      <table class="table table-borderless academy-roles-table">
-        <tbody>
-          <tr><td><strong>Backend developer?</strong></td><td>Start with the passkey tutorial, then the WebAuthn deep dive.</td></tr>
-          <tr><td><strong>DevOps engineer?</strong></td><td>Start with the passkey tutorial, then SSH &amp; the dev pipeline.</td></tr>
-          <tr><td><strong>Security architect?</strong></td><td>Start with the passkey tutorial and WebAuthn Deep Dive, then PIV &amp; Enterprise Smart Cards or Securing the AI Stack.</td></tr>
-        </tbody>
-      </table>
+      <div class="academy-card-grid" data-academy-card-grid>
+        {% for tutorial in academy_order %}
+        <article class="academy-card academy-card--{{ tutorial.status }}"
+                 data-academy-card
+                 data-tutorial-slug="{{ tutorial.slug }}"
+                 data-tutorial-tags="{{ tutorial.tags | join('|') }}">
+          <div class="academy-card-header">
+            <span class="academy-card-status">{{ 'Live' if tutorial.status == 'live' else 'Coming Soon' }}</span>
+            <span class="academy-card-timing">{{ tutorial.duration if tutorial.status == 'live' else tutorial.availability }}</span>
+          </div>
+          <h3 class="academy-card-title"><a href="{{ tutorial.url }}">{{ tutorial.title }}</a></h3>
+          <p class="academy-card-description">{{ tutorial.description }}</p>
+          <p class="academy-card-prerequisite"><strong>Before you start:</strong> {{ tutorial.prerequisite }}</p>
+          <ul class="academy-card-tags" aria-label="Technologies">
+            {% for tag in tutorial.tags %}<li>{{ tag }}</li>{% endfor %}
+          </ul>
+          {% if tutorial.status == 'coming-soon' %}
+          <a class="academy-card-notify"
+             href="https://www.yubico.com/newsletter/?utm_source=developer-academy&amp;utm_medium=referral&amp;utm_campaign={{ tutorial.slug }}">Notify me when this tutorial launches</a>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+      <p class="academy-filter-empty" data-academy-filter-empty hidden>No tutorials match this technology.</p>
+    </section>
+
+    <section class="academy-roles" aria-labelledby="academy-start-heading">
+      <h2 id="academy-start-heading">Where to start</h2>
+      <ul class="academy-start-list">
+        {% for recommendation in where_to_start %}
+        <li class="academy-start-item" data-tutorial-slug="{{ recommendation.slug }}">
+          <span>{{ recommendation.prompt }}</span>
+          <a href="{{ recommendation.url }}">{{ recommendation.title }}</a>
+          {% if recommendation.status == 'coming-soon' %}<span class="academy-start-status">Coming Soon</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <div id="page-content" hidden>
+      <h1>Developer Academy</h1>
     </div>
 
     <!-- Community -->
@@ -95,4 +136,5 @@
       </div>
     </div>
   </footer>
+  <script src="/js/academy.js"></script>
 {% endblock %}
