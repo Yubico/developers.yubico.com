@@ -232,6 +232,42 @@ def test_live_page_renders_sidebar_and_live_only_adjacency(tmp_path):
     assert page.select_one(".academy-prev-next .academy-next") is None
 
 
+def test_reorder_and_launch_transitions_update_every_rendered_surface(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    write_child(
+        academy_dir,
+        "soon-course",
+        lambda values: values.update({"duration": "~3 hrs"}),
+    )
+    write_root(
+        academy_dir,
+        lambda config: config.update(
+            {
+                "order": ["soon-course", "live-course"],
+                "hidden": [],
+            }
+        ),
+    )
+
+    hub = render_hub(academy_dir)
+    cards = hub.select("[data-academy-card]")
+    assert [card["data-tutorial-slug"] for card in cards] == [
+        "soon-course",
+        "live-course",
+    ]
+    assert cards[0].select_one(".academy-card-status").get_text(strip=True) == "Live"
+    assert cards[0].select_one(".academy-card-timing").get_text(strip=True) == "~3 hrs"
+    assert cards[0].select_one("[data-academy-notify]") is None
+
+    course = render_course(academy_dir, "soon-course", '<h2 id="published">Published</h2>')
+    assert course.select_one("[data-academy-page-status='live']") is not None
+    assert [item["data-tutorial-slug"] for item in course.select(".academy-class-item")] == [
+        "soon-course",
+        "live-course",
+    ]
+    assert course.select_one(".academy-next")["href"] == "/Academy/live-course/"
+
+
 def test_duplicate_order_slug_fails_with_config_path(tmp_path):
     academy_dir = mutable_academy(tmp_path)
     write_root(
