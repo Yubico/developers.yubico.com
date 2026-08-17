@@ -32,44 +32,72 @@
   var stepList = document.getElementById('academy-step-list');
   if (!stepList) return;
 
+  var academyPage = document.querySelector('[data-academy-page-status="live"]');
+  if (!academyPage) return;
   var headings = document.querySelectorAll('#page-content h2');
   if (!headings.length) return;
 
-  var STORAGE_KEY = 'academy-visited-' + window.location.pathname;
-  var visited = {};
-  try { visited = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) {}
+  var slug = academyPage.dataset.tutorialSlug;
+  var storageKey = 'academy-progress-' + slug;
+  var progress = { current: null, visited: [] };
+  try {
+    var savedProgress = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    if (savedProgress && Array.isArray(savedProgress.visited)) progress = savedProgress;
+  } catch (e) {}
 
-  // Build step dots from H2 headings
+  var toggle = document.querySelector('[data-academy-nav-toggle]');
+  if (toggle) {
+    var panel = document.getElementById(toggle.getAttribute('aria-controls'));
+    toggle.addEventListener('click', function () {
+      var isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+      if (panel) panel.hidden = isExpanded;
+    });
+  }
+
   headings.forEach(function (h, i) {
     if (!h.id) h.id = 'step-' + i;
     var li = document.createElement('li');
     li.dataset.target = h.id;
-    if (visited[h.id]) li.classList.add('is-visited');
+    if (progress.visited.indexOf(h.id) !== -1) li.classList.add('is-visited');
+    var link = document.createElement('a');
+    link.href = '#' + h.id;
+    if (progress.current === h.id) {
+      li.classList.add('is-current');
+      link.setAttribute('aria-current', 'step');
+    }
     var dot = document.createElement('span');
     dot.className = 'academy-step-dot';
     dot.textContent = String(i + 1);
     var label = document.createElement('span');
     label.textContent = h.textContent;
-    li.appendChild(dot);
-    li.appendChild(label);
-    li.addEventListener('click', function () { h.scrollIntoView({ behavior: 'smooth' }); });
+    link.appendChild(dot);
+    link.appendChild(label);
+    li.appendChild(link);
     stepList.appendChild(li);
   });
 
   var items = stepList.querySelectorAll('li');
 
-  // IntersectionObserver: highlight current section, mark visited
   var observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (!entry.isIntersecting) return;
-      var id = entry.target.id;
-      items.forEach(function (li) {
-        var isCurrent = li.dataset.target === id;
-        li.classList.toggle('is-current', isCurrent);
-        if (isCurrent) { li.classList.add('is-visited'); visited[id] = 1; }
-      });
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(visited)); } catch (e) {}
+    var visibleHeadings = entries.filter(function (entry) { return entry.isIntersecting; });
+    if (!visibleHeadings.length) return;
+    visibleHeadings.sort(function (left, right) {
+      return Array.prototype.indexOf.call(headings, left.target) -
+        Array.prototype.indexOf.call(headings, right.target);
     });
+    var id = visibleHeadings[0].target.id;
+    progress.current = id;
+    if (progress.visited.indexOf(id) === -1) progress.visited.push(id);
+    items.forEach(function (li) {
+      var isCurrent = li.dataset.target === id;
+      li.classList.toggle('is-current', isCurrent);
+      if (isCurrent) li.classList.add('is-visited');
+      var link = li.querySelector('a');
+      if (isCurrent) link.setAttribute('aria-current', 'step');
+      else link.removeAttribute('aria-current');
+    });
+    try { localStorage.setItem(storageKey, JSON.stringify(progress)); } catch (e) {}
   }, { rootMargin: '0px 0px -60% 0px', threshold: 0 });
 
   headings.forEach(function (h) { observer.observe(h); });

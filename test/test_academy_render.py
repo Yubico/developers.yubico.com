@@ -205,6 +205,33 @@ def test_coming_soon_page_suppresses_body_and_renders_preview_metadata():
     ]
 
 
+def test_live_page_renders_sidebar_and_live_only_adjacency(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    write_child(
+        academy_dir,
+        "soon-course",
+        lambda values: values.update({"duration": "~3 hrs"}),
+    )
+    write_root(academy_dir, lambda config: config.update({"hidden": []}))
+
+    page = render_course(
+        academy_dir,
+        "soon-course",
+        '<h2 id="first-step">First step</h2><p>Published tutorial content.</p>',
+    )
+
+    assert [item["data-tutorial-slug"] for item in page.select(".academy-class-item")] == [
+        "live-course",
+        "soon-course",
+    ]
+    current = page.select_one('.academy-class-item[aria-current="page"]')
+    assert current["data-tutorial-slug"] == "soon-course"
+    assert page.select_one(".academy-prev-next .academy-previous")["href"] == (
+        "/Academy/live-course/"
+    )
+    assert page.select_one(".academy-prev-next .academy-next") is None
+
+
 def test_duplicate_order_slug_fails_with_config_path(tmp_path):
     academy_dir = mutable_academy(tmp_path)
     write_root(

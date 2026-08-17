@@ -79,10 +79,12 @@
 
     {% else %}
     <!-- Live class state -->
-    <div class="row">
-      <!-- Sidebar (left) -->
-      <div class="col-md-3 d-none d-md-block">
-        <div class="academy-sidebar sticky-top">
+    <div class="academy-live-layout" data-academy-page-status="live" data-tutorial-slug="{{ current_slug }}">
+      <button type="button" class="academy-nav-toggle" data-academy-nav-toggle
+              aria-expanded="false" aria-controls="academy-step-panel">
+        Tutorial progress
+      </button>
+      <aside class="academy-sidebar" id="academy-step-panel">
           <!-- Step navigator (JS-driven) -->
           <div class="academy-step-nav">
             <p class="academy-step-nav-label"><strong>In this tutorial</strong></p>
@@ -97,22 +99,20 @@
           <div class="academy-class-list">
             <p class="academy-step-nav-label"><strong>In the Academy</strong></p>
             <ul class="list-unstyled">
-              <li class="academy-class-item academy-class-live"><a href="/Academy/passkey-app/">How a Passkey App Works</a></li>
-              <li class="academy-class-item academy-class-live"><a href="/Academy/webauthn-deep-dive/">How WebAuthn Actually Works</a></li>
-              <li class="academy-class-item academy-class-live"><a href="/Academy/securing-ssh/">Securing SSH with FIDO2</a></li>
-              <li class="academy-class-item academy-class-soon">PIV &amp; Enterprise Smart Cards</li>
-              <li class="academy-class-item academy-class-soon">Dev Pipeline &amp; HSMs</li>
-              <li class="academy-class-item academy-class-soon">Securing the AI Stack</li>
+              {% for tutorial in sidebar_entries %}
+              <li class="academy-class-item academy-class-{{ tutorial.status }}"
+                  data-tutorial-slug="{{ tutorial.slug }}"
+                  {% if tutorial.slug == current_slug %}aria-current="page"{% endif %}>
+                <a href="{{ tutorial.url }}">{{ tutorial.title }}</a>
+                <span class="academy-class-status">{{ 'Live' if tutorial.status == 'live' else 'Coming Soon' }}</span>
+              </li>
+              {% endfor %}
             </ul>
           </div>
-
-          <hr>
-
-        </div>
-      </div>
+      </aside>
 
       <!-- Main content -->
-      <div class="col-md-9">
+      <main class="academy-course-content">
         {% if youtube_id %}
         <div class="academy-video">
           <iframe width="100%" style="aspect-ratio:16/9" src="https://www.youtube.com/embed/{{ youtube_id }}"
@@ -126,8 +126,12 @@
 
         <div class="academy-end-of-class">
           <hr>
+          <nav class="academy-prev-next" aria-label="Tutorial sequence">
+            {% if prev_tutorial %}<a class="academy-previous" href="{{ prev_tutorial.url }}">&larr; {{ prev_tutorial.title }}</a>{% endif %}
+            {% if next_tutorial %}<a class="academy-next" href="{{ next_tutorial.url }}">{{ next_tutorial.title }} &rarr;</a>{% endif %}
+          </nav>
         </div>
-      </div>
+      </main>
     </div>
     {% endif %}
   </div>
