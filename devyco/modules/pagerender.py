@@ -8,6 +8,7 @@ Entries in the "links" entry of the .conf.json will be shown on the page.
 from os import path
 from fnmatch import fnmatch
 from bs4 import BeautifulSoup
+from devyco.academy import academy_course_context, load_academy_context
 from devyco.module import Module, noext, merge_data
 import os
 import re
@@ -58,6 +59,7 @@ class PageRenderModule(Module):
         self._site = {'id': '', 'children': [], 'url': ''}
 
     def _run(self):
+        self._add_academy_context()
         current = self._get_current()
         documents = self.list_files(['*.partial', '*.html'])
         children = self.list_files(['*.partial', '*.html'], include_dirs=True)
@@ -65,6 +67,25 @@ class PageRenderModule(Module):
         self._context['nav'] = self._site['children']
         self._render_children(current, filter(lambda x: x.endswith('.partial'),
                                               documents))
+
+    def _add_academy_context(self):
+        path_parts = self._context.get('path', [])
+        if not path_parts or path_parts[0] != 'Academy':
+            return
+
+        academy_dir = path.join(self._conf['maindir'], 'content', 'Academy')
+        academy = load_academy_context(academy_dir)
+        self._context.update(academy)
+
+        if len(path_parts) == 2:
+            current_slug = path_parts[1]
+            ordered_slugs = [item['slug']
+                             for item in academy['academy_order']]
+            if current_slug in ordered_slugs:
+                self._context.update(academy_course_context(
+                    academy,
+                    current_slug,
+                ))
 
     def _post_run(self):
         self._get_current()
