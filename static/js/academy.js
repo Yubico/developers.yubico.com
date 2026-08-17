@@ -100,6 +100,20 @@ window.pushAcademyEvent = pushAcademyEvent;
 
     var shareControl = event.target.closest('[data-academy-share]');
     if (shareControl) {
+      if (shareControl.dataset.academyShare === 'copy-link') {
+        if (!navigator.clipboard) return;
+        navigator.clipboard.writeText(shareControl.dataset.academyCopyLink).then(function () {
+          var status = document.querySelector('.academy-share-status');
+          if (status) status.textContent = 'Copied!';
+          pushAcademyEvent('tutorial_share', {
+            tutorial_name: tutorialName,
+            share_platform: 'copy-link',
+            section_name: academyAnalyticsState.currentSection,
+            share_type: 'end-of-tutorial'
+          });
+        }).catch(function () {});
+        return;
+      }
       pushAcademyEvent('tutorial_share', {
         tutorial_name: tutorialName,
         share_platform: shareControl.dataset.academyShare,
@@ -111,6 +125,7 @@ window.pushAcademyEvent = pushAcademyEvent;
 
   var nativeShare = document.querySelector('[data-academy-native-share]');
   if (nativeShare && navigator.share) {
+    page.classList.add('academy-native-share-available');
     nativeShare.addEventListener('click', function () {
       var separator = page.dataset.canonicalUrl.indexOf('?') === -1 ? '?' : '&';
       var shareUrl = page.dataset.canonicalUrl + separator +
@@ -124,6 +139,8 @@ window.pushAcademyEvent = pushAcademyEvent;
         });
       }).catch(function () {});
     });
+  } else if (nativeShare) {
+    nativeShare.hidden = true;
   }
 }());
 

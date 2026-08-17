@@ -25,7 +25,7 @@ function academyPage(status = 'live', consent = false) {
         <a class="progression" href="/Academy/next-course/">Next</a>
         <h2 id="last">Last section</h2>
       </div>
-      ${isLive ? '<button data-academy-share="twitter">Share</button><button data-academy-native-share>Share natively</button>' : ''}
+      ${isLive ? '<button data-academy-share="twitter">Share</button><button data-academy-share="copy-link" data-academy-copy-link="https://developers.yubico.com/Academy/live-course/?utm_source=academy-share&utm_medium=social&utm_campaign=live-course">Copy Link</button><button data-academy-native-share>Share natively</button><span class="academy-share-status" role="status"></span>' : ''}
       <a data-academy-notify data-tutorial-name="Build a Live Course" data-tutorial-slug="live-course" href="https://www.yubico.com/newsletter/">Notify me</a>
     </main>
   `, { runScripts: 'outside-only', url: 'https://developers.yubico.com/Academy/live-course/' });
@@ -138,6 +138,47 @@ test('cancelled native sharing emits no share event', async () => {
   await new Promise(resolve => page.dom.window.setTimeout(resolve, 0));
 
   assert.equal(academyEvents(page.dom).some(item => item.event === 'tutorial_share'), false);
+});
+
+test('copy link writes the UTM URL and announces success before emitting', async () => {
+  const page = academyPage('live', true);
+  let copiedUrl;
+  Object.defineProperty(page.dom.window.navigator, 'clipboard', {
+    value: { writeText: value => { copiedUrl = value; return Promise.resolve(); } },
+    configurable: true,
+  });
+  page.dom.window.eval(academyScript);
+
+  page.dom.window.document.querySelector('[data-academy-share="copy-link"]').click();
+  await new Promise(resolve => page.dom.window.setTimeout(resolve, 0));
+
+  assert.match(copiedUrl, /utm_source=academy-share/);
+  assert.match(copiedUrl, /utm_medium=social/);
+  assert.match(copiedUrl, /utm_campaign=live-course/);
+  assert.equal(page.dom.window.document.querySelector('.academy-share-status').textContent, 'Copied!');
+  assert.equal(
+    academyEvents(page.dom).filter(item => item.event === 'tutorial_share')[0].share_platform,
+    'copy-link'
+  );
+});
+
+test('successful native sharing receives the UTM URL and emits after resolution', async () => {
+  const page = academyPage('live', true);
+  let sharePayload;
+  Object.defineProperty(page.dom.window.navigator, 'share', {
+    value: payload => { sharePayload = payload; return Promise.resolve(); },
+    configurable: true,
+  });
+  page.dom.window.eval(academyScript);
+
+  page.dom.window.document.querySelector('[data-academy-native-share]').click();
+  await new Promise(resolve => page.dom.window.setTimeout(resolve, 0));
+
+  assert.match(sharePayload.url, /utm_source=academy-share/);
+  assert.equal(
+    academyEvents(page.dom).filter(item => item.event === 'tutorial_share')[0].share_platform,
+    'native-share'
+  );
 });
 
 test('Coming Soon pages bind only notify_me_click', () => {

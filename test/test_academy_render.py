@@ -268,6 +268,57 @@ def test_reorder_and_launch_transitions_update_every_rendered_surface(tmp_path):
     assert course.select_one(".academy-next")["href"] == "/Academy/live-course/"
 
 
+@pytest.mark.parametrize("slug", ["live-course", "soon-course"])
+def test_course_renders_safe_canonical_and_open_graph_metadata(slug):
+    page = render_course(
+        FIXTURES / "valid" / "Academy",
+        slug,
+        '<p>UNPUBLISHED META MARKER</p>',
+    )
+    academy = load_academy_context(str(FIXTURES / "valid" / "Academy"))
+    tutorial = next(item for item in academy["academy_order"] if item["slug"] == slug)
+
+    assert page.select_one('link[rel="canonical"]')["href"] == (
+        "https://developers.yubico.com%s" % tutorial["url"]
+    )
+    assert page.select_one('meta[property="og:title"]')["content"] == tutorial["title"]
+    assert page.select_one('meta[property="og:description"]')["content"] == tutorial["description"]
+    assert page.select_one('meta[property="og:image"]')["content"] == (
+        "https://developers.yubico.com/img/academy-social.png"
+    )
+    assert page.select_one('meta[property="og:url"]')["content"].endswith(tutorial["url"])
+    assert page.select_one('meta[name="twitter:card"]')["content"] == "summary_large_image"
+    assert "UNPUBLISHED META MARKER" not in str(page.head)
+
+
+def test_live_course_renders_share_controls_and_newsletter_cta():
+    page = render_course(FIXTURES / "valid" / "Academy", "live-course", "<h2>FAQ</h2>")
+
+    share = page.select_one(".academy-share-row")
+    assert share is not None
+    assert [control.get_text(" ", strip=True) for control in share.select("[data-academy-share]")] == [
+        "Twitter/X",
+        "LinkedIn",
+        "Bluesky",
+        "Copy Link",
+    ]
+    for control in share.select("[data-academy-share]"):
+        assert control.get("aria-label")
+    for control in share.select('a[data-academy-share]'):
+        assert "utm_source%3Dacademy-share" in control["href"]
+        assert "utm_medium%3Dsocial" in control["href"]
+        assert "utm_campaign%3Dlive-course" in control["href"]
+    copy_link = share.select_one('[data-academy-share="copy-link"]')
+    assert copy_link["data-academy-copy-link"].endswith(
+        "?utm_source=academy-share&utm_medium=social&utm_campaign=live-course"
+    )
+    assert share.select_one('[role="status"][aria-live="polite"]') is not None
+    assert page.select_one("[data-academy-native-share]") is not None
+    assert page.select_one(".academy-newsletter-cta")["href"].startswith(
+        "https://www.yubico.com/newsletter/"
+    )
+
+
 def test_duplicate_order_slug_fails_with_config_path(tmp_path):
     academy_dir = mutable_academy(tmp_path)
     write_root(
