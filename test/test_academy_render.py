@@ -49,6 +49,19 @@ def render_hub(academy_dir):
     )
 
 
+def render_course(academy_dir, slug, content=""):
+    academy = load_academy_context(str(academy_dir))
+    context = academy_course_context(academy, slug)
+    context.update(academy)
+    context.update(context["current_tutorial"])
+    context.update({"content": content, "nav": [], "title": context["current_tutorial"]["title"]})
+    environment = Environment(loader=FileSystemLoader(str(REPO_ROOT / "templates")))
+    return BeautifulSoup(
+        environment.get_template("academy-course.template").render(**context),
+        "html.parser",
+    )
+
+
 def test_ordered_configuration_produces_normalized_academy_context():
     context = load_academy_context(str(FIXTURES / "valid" / "Academy"))
 
@@ -158,6 +171,37 @@ def test_adding_ordered_configuration_adds_hub_card_and_filter(tmp_path):
         "WebAuthn",
         "FIPS",
         "SSH",
+    ]
+
+
+def test_coming_soon_page_suppresses_body_and_renders_preview_metadata():
+    page = render_course(
+        FIXTURES / "valid" / "Academy",
+        "soon-course",
+        '<h2>UNPUBLISHED BODY MARKER</h2><p>Secret implementation details.</p>',
+    )
+
+    assert "UNPUBLISHED BODY MARKER" not in page.get_text()
+    stub = page.select_one("[data-academy-stub]")
+    assert stub is not None
+    assert page.select_one("h1").get_text(strip=True) == "Prepare a Coming Soon Course"
+    assert page.select_one(".academy-stub-description").get_text(strip=True).startswith(
+        "Plan a compliance workflow"
+    )
+    assert page.select_one(".academy-stub-prerequisite").get_text(" ", strip=True).startswith(
+        "Before you start: Comfortable with PKI concepts"
+    )
+    assert page.select_one(".academy-stub-availability").get_text(strip=True) == (
+        "Coming Q4 2026"
+    )
+    assert [tag.get_text(strip=True) for tag in page.select(".academy-stub-tags li")] == [
+        "FIPS"
+    ]
+    assert page.select_one(".academy-stub-notify")["href"].startswith(
+        "https://www.yubico.com/newsletter/"
+    )
+    assert [link["href"] for link in page.select(".academy-live-cross-sell a")] == [
+        "/Academy/live-course/"
     ]
 
 

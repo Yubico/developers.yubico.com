@@ -43,7 +43,7 @@
         {% if duration %}<span class="badge academy-pill-duration">&#9201; {{ duration }}</span>{% endif %}
         {% if level %}<span class="badge academy-pill-level">{{ level }}</span>{% endif %}
         {% if tools %}<span class="badge academy-pill-tools">{{ tools }}</span>{% endif %}
-        {% if status == 'coming-soon' %}
+        {% if is_stub %}
           <span class="badge academy-pill-status-soon">Coming Soon</span>
         {% else %}
           <span class="badge academy-pill-status-live">Live</span>
@@ -51,24 +51,30 @@
       </div>
     </div>
 
-    {% if status == 'coming-soon' %}
+    {% if is_stub %}
     <!-- Coming Soon state -->
-    <div class="row">
-      <div class="col-md-3 d-none d-md-block">
-        <div class="academy-sidebar">
-          {% include "academy-sidebar-classes.template" ignore missing %}
-        </div>
-      </div>
-      <div class="col-md-9">
-        <div class="academy-coming-soon">
-          <div id="page-content">
-            {{ content }}
-          </div>
-          <p class="academy-coming-soon-back">
-            <a href="/Academy/passkey-app/">&larr; Start the passkey tutorial</a>
-          </p>
-        </div>
-      </div>
+    <div class="academy-stub-layout" data-academy-stub data-academy-page-status="coming-soon">
+      <main class="academy-coming-soon">
+        <p class="academy-stub-eyebrow">Tutorial preview</p>
+        <p class="academy-stub-description">{{ current_tutorial.description }}</p>
+        <p class="academy-stub-prerequisite"><strong>Before you start:</strong> {{ current_tutorial.prerequisite }}</p>
+        <ul class="academy-stub-tags" aria-label="Technologies">
+          {% for tag in current_tutorial.tags %}<li>{{ tag }}</li>{% endfor %}
+        </ul>
+        <p class="academy-stub-availability">{{ current_tutorial.availability }}</p>
+        <a class="btn btn-primary academy-stub-notify"
+           href="https://www.yubico.com/newsletter/?utm_source=developer-academy&amp;utm_medium=referral&amp;utm_campaign={{ current_tutorial.slug }}">Notify me when this tutorial launches</a>
+        <div id="page-content" hidden><h2>Coming Soon</h2></div>
+      </main>
+
+      <aside class="academy-live-cross-sell" aria-labelledby="academy-live-heading">
+        <h2 id="academy-live-heading">Explore a Live tutorial</h2>
+        <ul>
+          {% for tutorial in sidebar_entries if tutorial.status == 'live' %}
+          <li><a href="{{ tutorial.url }}">{{ tutorial.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </aside>
     </div>
 
     {% else %}
