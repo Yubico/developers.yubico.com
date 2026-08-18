@@ -160,6 +160,9 @@ def test_academy_pages_render_canonical_global_footer():
     assert standard_footer is not None
     newsletter = standard_footer.find("a", string="Newsletter")
     assert newsletter["href"] == "https://www.yubico.com/email-subscription/"
+    assert standard_footer.select_one('a[title="YouTube"]')["href"] == (
+        "https://www.youtube.com/@YubicoDevelopers"
+    )
     for page in (hub, course):
         footers = page.select("footer")
         assert len(footers) == 1
@@ -245,6 +248,15 @@ def test_hub_renders_cards_filters_and_guidance_from_configuration():
         "soon-course",
     ]
     assert page.select_one(".academy-hero-cta")["href"] == "/Academy/live-course/"
+
+    community_links = {
+        link.get_text(" ", strip=True): link["href"]
+        for link in page.select(".academy-community a")
+    }
+    assert community_links["YubicoLabs on GitHub"] == "https://github.com/yubicolabs/"
+    assert community_links["Yubico Developers on YouTube"] == (
+        "https://www.youtube.com/@YubicoDevelopers"
+    )
 
 
 def test_adding_ordered_configuration_adds_hub_card_and_filter(tmp_path):
