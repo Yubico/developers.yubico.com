@@ -19,17 +19,17 @@ Figure 1 includes the link:https://github.com/Yubico/java-webauthn-server[Yubico
 <dependency>
     <groupId>com.yubico</groupId>
     <artifactId>webauthn-server-core</artifactId>
-    <version>2.0.0</version>
+    <version>2.8.1</version>
 </dependency>
 <dependency>
     <groupId>com.yubico</groupId>
     <artifactId>webauthn-server-attestation</artifactId>
-    <version>2.0.0</version>
+    <version>2.8.1</version>
 </dependency>
 <dependency>
     <groupId>com.yubico</groupId>
     <artifactId>yubico-util</artifactId>
-    <version>2.0.0</version>
+    <version>2.8.1</version>
 </dependency>
 
 ----
@@ -45,12 +45,12 @@ Figure 2 demonstrates a code sample can be used to initialize the MDS in your ap
 --
 [source,java]
 ----
-MetadataBLOB downloader = FidoMetadataDownloader.builder()
+FidoMetadataDownloader downloader = FidoMetadataDownloader.builder()
     .expectLegalHeader("Put the legal header here (get exact wording from BLOB)")
     .useDefaultTrustRoot()
-    .useTrustRootCache(new File("/tmp/fido-mds-trust-root-cache.bin"))
+    .useTrustRootCacheFile(new File("/tmp/fido-mds-trust-root-cache.bin"))
     .useDefaultBlob()
-    .useBlobCache(new File("/tmp/fido-mds-blob-cache.bin"))
+    .useBlobCacheFile(new File("/tmp/fido-mds-blob-cache.bin"))
     .build();
 ----
 --
@@ -74,18 +74,20 @@ Figure 3 includes the statement required to populate the `.expectLegalHeader()` 
 --
 **Figure 3**
 
-Next you will get the Trust Root Certificates for the MDS. You can proceed with the default method using `useDefaultTrustRoot()` while building your downloader. Next is `useTrustRootCache()` - the FIDO Spec notes that when grabbing the Trust Root Certificate, your app should have some sort of caching logic. Our example above is writing this to a file in a directory named "tmp"
+Next you will get the Trust Root Certificates for the MDS. You can proceed with the default method using `useDefaultTrustRoot()` while building your downloader. Next is `useTrustRootCacheFile()` - the FIDO Spec notes that when grabbing the Trust Root Certificate, your app should have some sort of caching logic. Our example above is writing this to a file in a directory named "tmp"
 
 The next two lines are used to download the BLOB repository. In this example we are pulling the default BLOB, and telling the downloader to cache it in the "tmp" directory.
 
-Figure 4 will be used to create a `FidoMetadataService` object
+Figure 4 demonstrates how to load the BLOB and create a `FidoMetadataService` object. First, call `loadCachedBlob()` on the downloader to retrieve the metadata BLOB, then pass it to the `FidoMetadataService` builder.
 
 [role="dark"]
 --
 [source,java]
 ----
+MetadataBLOB blob = downloader.loadCachedBlob();
+
 FidoMetadataService mds = FidoMetadataService.builder()
-    .useDownloader(downloader)
+    .useBlob(blob)
     .build();
 ----
 --
@@ -116,7 +118,7 @@ RelyingPartyIdentity rpID = RelyingPartyIdentity.builder()
     .name("passkey.app.com")
     .build()
 
-Set<Strings> allowedOrigins = new HashSet<String>;
+Set<String> allowedOrigins = new HashSet<>();
 allowedOrigins.add("https://passkey.app.com");
 
 private final RelyingParty rp = RelyingParty.builder()

@@ -1,0 +1,43 @@
+= Third-Party Payment Extension
+:description: Use the thirdPartyPayment extension in YubiKey firmware 5.8 to mark credentials for delegated payment flows, with credBlob metadata and credProtect user-verification enforcement.
+:keywords: thirdPartyPayment, Secure Payment Confirmation, SPC, credBlob, credProtect, payment authentication, PSD2, CTAP 2.2, YubiKey 5.8
+
+The `thirdPartyPayment` extension marks a credential for delegated payment use: a credential created by one relying party (for example, a bank) can later be asserted in a transaction initiated by a third party (for example, a merchant), without redirects back to the bank. Combined with `credBlob` for per-credential metadata and `credProtect` for user-verification enforcement, it provides the authenticator-side building blocks for Secure Payment Confirmation (SPC) flows.
+
+== The three extensions
+
+* *thirdPartyPayment*: Marks a credential for delegated payment use. The YubiKey stores this flag with the credential; during a later assertion, the authenticator confirms the flag is set.
+* *credBlob*: Stores per-credential metadata, such as a card label. Platforms can display this in the payment UI (e.g. "Pay with Visa 4242") without a network round-trip.
+* *credProtect*: Enforces a protection policy on the credential. With user verification required, every assertion needs a PIN or biometric, preventing a stolen session from silently authorizing transactions.
+
+== Flow
+
+=== Step A: Bank registration
+
+The user registers a payment credential with their bank. With `thirdPartyPayment` enabled, this credential can later be used by a merchant site to confirm a transaction. No redirect back to the bank is needed.
+
+The registration request combines four elements:
+
+. *thirdPartyPayment:* Set the extension to `true` in the `MakeCredential` request. The YubiKey stores this flag with the credential.
+. *Discoverable credential (resident key):* Set the `rk` option to `true`. Required so the merchant can trigger an assertion without knowing the credential ID in advance.
+. *credProtect:* Set the policy to require user verification, so every assertion requires a PIN or biometric.
+. *credBlob:* Attach a card label (for example, "Visa 4242") as per-credential metadata.
+
+After creation, the client can verify the attestation signature to confirm the credential was created by a genuine authenticator, and confirm the `thirdPartyPayment` flag is set in the authenticator data.
+
+=== Step B: Merchant checkout
+
+A merchant site triggers payment confirmation using the bank credential. The platform (browser/OS) would show something like "Pay $42.00 with Visa 4242?" instead of a generic login prompt.
+
+In a real SPC flow, the merchant calls `navigator.credentials.get()` with the payment extension. At the CTAP level, the assertion request:
+
+. Requests `thirdPartyPayment` confirmation. The authenticator returns `true` if the credential was created with the extension enabled.
+. Requests the `credBlob` so the platform can display the card label.
+
+The assertion response confirms the credential is authorized for third-party payment flows, and the card label read back from `credBlob` can be shown in the payment UI.
+
+== Compatibility
+
+`thirdPartyPayment` is advertised in `getInfo.extensions`. Only YubiKeys with firmware 5.8+ support it. `credBlob` and `credProtect` are optional companions. Check the authenticator's supported extensions (and the maximum `credBlob` length) at runtime.
+
+link:/Passkeys/Passkey_concepts/Security_key_capabilities/[Return to security key capabilities]

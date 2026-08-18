@@ -1,0 +1,91 @@
+= Conditional Mediation for Security Keys
+:description: How YubiKey firmware 5.8 supports conditional mediation for hardware security keys with Persistent PIN User Access Tokens (PPUAT), the PCMR permission, encIdentifier, and encCredStoreState.
+:keywords: PPUAT, PCMR, encIdentifier, encCredStoreState, persistent token, device identity, conditional mediation, passkey autofill, CTAP 2.2, YubiKey 5.8
+
+Firmware 5.8 implements the primitives that support conditional mediation for hardware security keys: PPUAT, PCMR, `encIdentifier`, and `encCredStoreState`.
+
+Before firmware 5.8, hardware keys were invisible to passkey autofill. A platform had no way to know which passkeys lived on a YubiKey without asking for the PIN every time. These four features change that: the user enters their PIN once, and from that point on the platform can silently recognize the key, check whether its credentials have changed, and populate the autofill dropdown without another PIN prompt.
+
+== Persistent PIN User Access Token (PPUAT)
+
+A long-lived authentication token acquired through PIN verification. Unlike a standard PIN/UV auth token, a PPUAT persists across sessions and application restarts: a client acquires the token once through PIN verification, saves it, and can load it into a new session later with no PIN prompt.
+
+This is what makes silent credential discovery possible. IDPs and password managers can query the key on every connection without interrupting the user.
+
+A PPUAT is invalidated when:
+
+* The PIN is changed (including when forced by a minimum-PIN-length policy change)
+* The FIDO2 application is factory-reset
+
+== Persistent Credential Management Read-only (PCMR) Permission
+
+The permission level assigned to a PPUAT. It grants read-only access to credential management operations:
+
+* Credential metadata: credential count and remaining slot count
+* Enumerating relying parties: list all RPs with stored credentials
+* Enumerating credentials per relying party
+
+PCMR explicitly does not grant delete or modify permissions. A compromised PPUAT cannot remove credentials.
+
+NOTE: A PPUAT with PCMR is for discovery and management only. It cannot perform a `GetAssertion` (i.e. log a user in). Actual login still requires a standard assertion with user interaction. The PPUAT just makes finding which credential to use much faster.
+
+== encIdentifier
+
+A stable 16-byte device identifier, encrypted using a key derived from the PPUAT via HKDF-SHA-256 + AES-128-CBC. The raw `getInfo` response returns a different ciphertext on each call (16-byte IV + 16-byte ciphertext), preventing correlation by observers. Only a valid PPUAT holder can decrypt it to the stable value.
+
+The identifier is constant across PIN changes, allowing a platform to map sessions to a physical authenticator.
+
+*Who can track the YubiKey?*
+
+[cols="1,1,2", options="header"]
+|===
+| Observer | Can they identify the key? | Why
+| Random website | No | `getInfo` returns a fresh IV + ciphertext every call
+| Unauthorized app | No | Cannot decrypt without the PPUAT
+| Authorized platform | Yes | Holds the PPUAT, can decrypt to the stable device ID
+|===
+
+The rotating ciphertext is a firmware-level guarantee.
+
+== encCredStoreState
+
+A 16-byte value that changes when credentials are added, removed, or the authenticator is reset. Like `encIdentifier`, it is returned encrypted (fresh IV on every `getInfo` call) using a key derived from the PPUAT, so the platform decrypts it before comparing. Platforms use it for cache invalidation:
+
+----
+saved state == current state  ->  cache is valid, skip enumeration
+saved state != current state  ->  re-enumerate credentials
+----
+
+This is what makes autofill instant. If the state hasn't changed since last time, the platform already knows what passkeys are on the key and skips enumeration entirely.
+
+== Typical platform flow
+
+----
+First connection: User enters PIN
+  Platform acquires PPUAT (PCMR permission)
+  Decrypts encIdentifier  ->  device ID
+  Decrypts encCredStoreState  ->  credential state
+  Enumerates credentials
+  Caches: { device ID, credential state, credential list }
+  Stores PPUAT
+
+Subsequent connections: No PIN required
+  Platform loads saved PPUAT into the session
+  Decrypts encIdentifier  ->  same device ID  ->  cache hit
+  Decrypts encCredStoreState  ->  compare with cached state
+  If unchanged: use cached credential list
+  If changed: re-enumerate
+----
+
+== Compatibility
+
+On firmware older than 5.8, the YubiKey does not support persistent tokens: requests for a persistent token, the encrypted identifier, and the credential store state will not return values. Always check for support before attempting decryption, and fall back to the standard PIN flow when persistent tokens are unavailable.
+
+== References
+
+* link:https://github.com/YubicoLabs/build-with-us/tree/main/quickstart[Build with Us quickstarts]: PPUAT demos for iOS, Android, .NET, and Python
+* link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-auth-tokens.html[FIDO2 auth tokens (PPUAT)]
+* link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-cred-mgmt.html[Credential management]
+* link:https://docs.yubico.com/yesdk/users-manual/application-fido2/fido2-authenticator-config.html[Authenticator configuration]
+
+link:/Passkeys/Passkey_concepts/Security_key_capabilities/[Return to security key capabilities]

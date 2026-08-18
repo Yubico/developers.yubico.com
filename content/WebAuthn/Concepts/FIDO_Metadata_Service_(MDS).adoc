@@ -105,32 +105,32 @@ The following lines should be added to your dependency file
 <dependency>
     <groupId>com.yubico</groupId>
     <artifactId>webauthn-server-core</artifactId>
-    <version>2.0.0</version>
+    <version>2.8.1</version>
 </dependency>
 <dependency>
     <groupId>com.yubico</groupId>
     <artifactId>webauthn-server-attestation</artifactId>
-    <version>2.0.0</version>
+    <version>2.8.1</version>
 </dependency>
 <dependency>
     <groupId>com.yubico</groupId>
     <artifactId>yubico-util</artifactId>
-    <version>2.0.0</version>
+    <version>2.8.1</version>
 </dependency>
 ----
 
 The project can also be found on GitHub at https://github.com/Yubico/java-webauthn-server[https://github.com/Yubico/java-webauthn-server]
 
 === Downloading the FIDO MDS Repository
-Your FIDO Server will need to download the MDS directly from the FIDO Alliance. The Yubico java-webauthn-server v2.0.0 has built in capabilities to download the repository. The following Java code sample can be used to initialize the MDS in your application.
+Your FIDO Server will need to download the MDS directly from the FIDO Alliance. The Yubico java-webauthn-server has built in capabilities to download the repository. The following Java code sample can be used to initialize the MDS in your application.
 
 ----
-downloader = FidoMetadataDownloader.builder()
+FidoMetadataDownloader downloader = FidoMetadataDownloader.builder()
   .expectLegalHeader("Put the legal header here (get exact wording from BLOB)")
   .useDefaultTrustRoot()
-  .useTrustRootCache(new File("/tmp/fido-mds-trust-root-cache.bin"))
+  .useTrustRootCacheFile(new File("/tmp/fido-mds-trust-root-cache.bin"))
   .useDefaultBlob()
-  .useBlobCache(new File("/tmp/fido-mds-blob-cache.bin"))
+  .useBlobCacheFile(new File("/tmp/fido-mds-blob-cache.bin"))
   .build();
 ----
 
@@ -140,14 +140,16 @@ Let's explore this code in more detail. The first point of interest is "expectLe
 "Retrieval and use of this BLOB indicates acceptance of the appropriate agreement located at https://fidoalliance.org/metadata/metadata-legal-terms/"
 ----
 
-Next you will get the Trust Root Certificates for the MDS. You can proceed with the default method using useDefaultTrustRoot() while building your downloader. Next is useTrustRootCache - the FIDO Spec notes that when grabbing the Trust Root Certificate, your app should have some sort of caching logic. Our example above is writing this to a file in a directory named "tmp"
+Next you will get the Trust Root Certificates for the MDS. You can proceed with the default method using useDefaultTrustRoot() while building your downloader. Next is useTrustRootCacheFile - the FIDO Spec notes that when grabbing the Trust Root Certificate, your app should have some sort of caching logic. Our example above is writing this to a file in a directory named "tmp"
 
 The next two lines are used to download the BLOB repository. In this example we are pulling the default BLOB, and telling the downloader to cache it in the "tmp" directory. 
 
-The next step will be to create a FidoMetadataService Object as such
+The next step will be to load the BLOB and create a FidoMetadataService object. First, call `loadCachedBlob()` on the downloader to retrieve the metadata BLOB, then pass it to the FidoMetadataService builder:
 ----
-mds = FidoMetadataService.builder()
-  .useDownloader(downloader)
+MetadataBLOB blob = downloader.loadCachedBlob();
+
+FidoMetadataService mds = FidoMetadataService.builder()
+  .useBlob(blob)
   .build();
 ----
 
@@ -157,7 +159,7 @@ RelyingParty rp =RelyingParty.builder()
   .identity(/*... */)
   .credentialRepository(/*... */)
   .attestationTrustSource(mds)
-  .allowUntrustedAttestation(true); //Optional step: set to true (default) or false
+  .allowUntrustedAttestation(true) //Optional step: set to true (default) or false
   .build();
 ----
 
@@ -180,10 +182,13 @@ The sample below will demonstrate how to filter for only platform authenticators
 
 ----
 FidoMetadataService.builder()
-  .useBlob(downloader)
-  .filter(blobEntry -> 
-    blobEntry.getMetadataEntry().getMetadataStatement().get()
-    .getAttachmentHint().get().contains(AttachmentHint.ATTACHMENT_HINT_INTERNAL))
+  .useBlob(blob)
+  .prefilter(entry -> 
+    entry.getMetadataStatement()
+      .map(ms -> ms.getAttachmentHint()
+        .map(hints -> hints.contains(AttachmentHint.ATTACHMENT_HINT_INTERNAL))
+        .orElse(false))
+      .orElse(false))
   .build();
 ----
 
@@ -198,3 +203,30 @@ The FIDO specification mentions the recommendation to cache the metadata BLOB ob
 
 === High Security Environments
 Some applications, especially in the enterprise space, may require the use of specific authenticators. In this case instead of adding all of the repository into a Trusted Attestation group (and additionally filtering to get a subset of the entire BLOB), it might make more sense to construct your own BLOB with the limited authenticators that you plan to allow. MDS acts as a baseline for most Relying Parties, so it's up to you to determine the affect on your users if you were to deny certain authenticators.
+
+== Convenience Metadata Service
+The FIDO Alliance also provides a link:https://fidoalliance.org/specs/mds/fido-convenience-metadata-service-v1.0-ps-20250521.html[Convenience Metadata Service (C-MDS)], separate from the security-focused MDS BLOB. This service is designed specifically for building user-friendly credential management interfaces by providing:
+
+* Human-readable authenticator display names (`friendlyNames`) with localization support
+* Authenticator icons (`icon`, `iconDark`)
+* Provider logos (`providerLogoLight`, `providerLogoDark`)
+
+This data is useful for showing users which authenticators they've registered, without mixing security metadata with display concerns.
+
+=== Accessing the Convenience Metadata Service
+The service is available at https://c-mds.fidoalliance.org/ and returns a JSON object keyed by AAGUID:
+
+----
+{
+  "7409272d-1ff9-4e10-9fc9-ac0019c124fd": {
+    "friendlyNames": {"en-US": "YubiKey Bio Series"},
+    "icon": "data:image/png;base64,..."
+  },
+  "d7781e5d-e353-46aa-afe2-3ca49f13332a": {
+    "friendlyNames": {"en-US": "YubiKey 5 Series with NFC"},
+    "icon": "data:image/png;base64,..."
+  }
+}
+----
+
+NOTE: The Convenience Metadata Service is intended for UI display purposes only. Continue using the main MDS BLOB for attestation validation and security decisions.
