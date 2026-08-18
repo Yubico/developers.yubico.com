@@ -18,6 +18,11 @@ from devyco.academy import academy_course_context, load_academy_context  # noqa:
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "academy"
+GLOBAL_NAV = [
+    {"active": False, "hidden": False, "name": "Passkeys", "url": "/Passkeys/"},
+    {"active": True, "hidden": False, "name": "Academy", "url": "/Academy/"},
+    {"active": False, "hidden": True, "name": "Hidden", "url": "/Hidden/"},
+]
 
 
 def test_mobile_academy_breadcrumb_does_not_inherit_ordered_list_margin():
@@ -76,10 +81,26 @@ def write_child(academy_dir, slug, update):
 
 def render_hub(academy_dir):
     context = load_academy_context(str(academy_dir))
-    context.update({"content": "", "nav": [], "title": "Developer Academy"})
+    context.update({"content": "", "nav": GLOBAL_NAV, "title": "Developer Academy"})
     environment = Environment(loader=FileSystemLoader(str(REPO_ROOT / "templates")))
     return BeautifulSoup(
         environment.get_template("academy.template").render(**context),
+        "html.parser",
+    )
+
+
+def render_site(content="<p>Standard content marker</p>"):
+    context = {
+        "content": content,
+        "current": None,
+        "is_index": False,
+        "nav": GLOBAL_NAV,
+        "sidelinks": [],
+        "title": "Standard page",
+    }
+    environment = Environment(loader=FileSystemLoader(str(REPO_ROOT / "templates")))
+    return BeautifulSoup(
+        environment.get_template("site.template").render(**context),
         "html.parser",
     )
 
@@ -89,12 +110,60 @@ def render_course(academy_dir, slug, content=""):
     context = academy_course_context(academy, slug)
     context.update(academy)
     context.update(context["current_tutorial"])
-    context.update({"content": content, "nav": [], "title": context["current_tutorial"]["title"]})
+    context.update(
+        {
+            "content": content,
+            "nav": GLOBAL_NAV,
+            "title": context["current_tutorial"]["title"],
+        }
+    )
     environment = Environment(loader=FileSystemLoader(str(REPO_ROOT / "templates")))
     return BeautifulSoup(
         environment.get_template("academy-course.template").render(**context),
         "html.parser",
     )
+
+
+def test_academy_pages_render_canonical_global_navigation():
+    standard = render_site()
+    hub = render_hub(FIXTURES / "valid" / "Academy")
+    course = render_course(FIXTURES / "valid" / "Academy", "live-course")
+
+    standard_nav = standard.select_one("nav.navbar-top")
+    assert standard_nav is not None
+    assert [link.get_text(strip=True) for link in standard_nav.select(".nav-link")] == [
+        "Passkeys",
+        "Academy",
+    ]
+    assert standard_nav.select_one('.nav-link[aria-current="page"]')["href"] == "/Academy/"
+    toggler = standard_nav.select_one(".navbar-toggler")
+    assert toggler["aria-controls"] == "navbarToggler"
+    assert toggler["data-bs-target"] == "#navbarToggler"
+    assert standard_nav.select_one("#navbarToggler") is not None
+    for page in (hub, course):
+        navigation = page.select("nav.navbar-top")
+        assert len(navigation) == 1
+        assert navigation[0].decode() == standard_nav.decode()
+        search = navigation[0].select_one("#search-box")
+        assert search is not None
+        loader = search.select_one('script[data-cookiecategory="functional"]')
+        assert loader is not None
+        assert "https://www.google.com/cse/cse.js?cx=" in loader.string
+
+
+def test_academy_pages_render_canonical_global_footer():
+    standard = render_site()
+    hub = render_hub(FIXTURES / "valid" / "Academy")
+    course = render_course(FIXTURES / "valid" / "Academy", "live-course")
+
+    standard_footer = standard.select_one("footer")
+    assert standard_footer is not None
+    newsletter = standard_footer.find("a", string="Newsletter")
+    assert newsletter["href"] == "https://www.yubico.com/email-subscription/"
+    for page in (hub, course):
+        footers = page.select("footer")
+        assert len(footers) == 1
+        assert footers[0].decode() == standard_footer.decode()
 
 
 def test_ordered_configuration_produces_normalized_academy_context():
@@ -163,7 +232,7 @@ def test_hub_renders_cards_filters_and_guidance_from_configuration():
         "Coming Q4 2026"
     )
     assert cards[1].select_one(".academy-card-notify")["href"].startswith(
-        "https://www.yubico.com/newsletter/"
+        "https://www.yubico.com/email-subscription/"
     )
 
     assert [button.get_text(strip=True) for button in page.select("[data-academy-filter]")] == [
@@ -233,7 +302,7 @@ def test_coming_soon_page_suppresses_body_and_renders_preview_metadata():
         "FIPS"
     ]
     assert page.select_one(".academy-stub-notify")["href"].startswith(
-        "https://www.yubico.com/newsletter/"
+        "https://www.yubico.com/email-subscription/"
     )
     assert [link["href"] for link in page.select(".academy-live-cross-sell a")] == [
         "/Academy/live-course/"
@@ -350,7 +419,7 @@ def test_live_course_renders_share_controls_and_newsletter_cta():
     assert share.select_one('[role="status"][aria-live="polite"]') is not None
     assert page.select_one("[data-academy-native-share]") is not None
     assert page.select_one(".academy-newsletter-cta")["href"].startswith(
-        "https://www.yubico.com/newsletter/"
+        "https://www.yubico.com/email-subscription/"
     )
 
 
