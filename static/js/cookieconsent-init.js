@@ -52,6 +52,7 @@ cc.run({
   languages: {
     en: {
       consent_modal: {
+        title: "Cookie preferences",
         description:
           "We use cookies to ensure that you get the best experience on our site and to present relevant content and advertising. By browsing this site without restricting the use of cookies, you consent to our and third party use of cookies as set out in our Cookie Notice.",
         secondary_btn: {

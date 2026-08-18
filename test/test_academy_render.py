@@ -19,6 +19,26 @@ from devyco.academy import academy_course_context, load_academy_context  # noqa:
 FIXTURES = Path(__file__).parent / "fixtures" / "academy"
 
 
+def test_mobile_academy_breadcrumb_does_not_inherit_ordered_list_margin():
+    academy_css = (REPO_ROOT / "static" / "css" / "academy.css").read_text()
+
+    assert ".academy-course-page .breadcrumb { margin-left: 0; }" in academy_css
+    assert ".academy-course-content p a," in academy_css
+    assert "text-decoration: underline;" in academy_css
+
+
+def test_academy_shared_markup_and_content_include_accessibility_semantics():
+    boilerplate = (REPO_ROOT / "templates" / "boilerplate.template").read_text()
+    cookie_config = (REPO_ROOT / "static" / "js" / "cookieconsent-init.js").read_text()
+    passkey_content = (
+        REPO_ROOT / "content" / "Academy" / "passkey-app" / "index.adoc"
+    ).read_text()
+
+    assert '<html lang="en" class="no-js' in boilerplate
+    assert 'consent_modal: {\n        title: "Cookie preferences",' in cookie_config
+    assert '[cols="2,4,4", options="header"]' in passkey_content
+
+
 def mutable_academy(tmp_path):
     target = tmp_path / "Academy"
     shutil.copytree(FIXTURES / "valid" / "Academy", target)
