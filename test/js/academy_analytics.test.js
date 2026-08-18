@@ -162,6 +162,35 @@ test('copy link writes the UTM URL and announces success before emitting', async
   );
 });
 
+test('copy link exposes a selected manual fallback when clipboard access is unavailable or rejected', async () => {
+  for (const clipboard of [undefined, { writeText: () => Promise.reject(new Error('denied')) }]) {
+    const page = academyPage('live', true);
+    Object.defineProperty(page.dom.window.navigator, 'clipboard', {
+      value: clipboard,
+      configurable: true,
+    });
+    page.dom.window.eval(academyScript);
+
+    page.dom.window.document.querySelector('[data-academy-share="copy-link"]').click();
+    await new Promise(resolve => page.dom.window.setTimeout(resolve, 0));
+
+    const fallback = page.dom.window.document.querySelector('.academy-share-copy-fallback');
+    assert.ok(fallback);
+    assert.match(fallback.value, /utm_source=academy-share/);
+    assert.equal(fallback.readOnly, true);
+    assert.equal(fallback.selectionStart, 0);
+    assert.equal(fallback.selectionEnd, fallback.value.length);
+    assert.match(
+      page.dom.window.document.querySelector('.academy-share-status').textContent,
+      /copy the link manually/i
+    );
+    assert.equal(
+      academyEvents(page.dom).some(item => item.event === 'tutorial_share'),
+      false
+    );
+  }
+});
+
 test('successful native sharing receives the UTM URL and emits after resolution', async () => {
   const page = academyPage('live', true);
   let sharePayload;

@@ -699,3 +699,44 @@ def test_course_context_derives_stub_navigation_metadata_and_analytics():
     assert stub["sidebar_entries"] is academy["academy_order"]
     assert stub["prev_tutorial"]["slug"] == "live-course"
     assert stub["next_tutorial"] is None
+
+
+def test_live_sequence_renders_hub_return_only_for_the_last_tutorial(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    shutil.copytree(academy_dir / "soon-course", academy_dir / "last-course")
+    write_child(
+        academy_dir,
+        "soon-course",
+        lambda values: values.update({"duration": "~3 hrs"}),
+    )
+    write_child(
+        academy_dir,
+        "last-course",
+        lambda values: values.update({
+            "title": "Finish the Academy Sequence",
+            "duration": "~1 hrs",
+        }),
+    )
+    for slug in ("soon-course", "last-course"):
+        write_child(academy_dir, slug, lambda values: values.pop("availability", None))
+    write_root(
+        academy_dir,
+        lambda config: config.update({
+            "order": ["live-course", "soon-course", "last-course"],
+            "hidden": [],
+        }),
+    )
+
+    first = render_course(academy_dir, "live-course")
+    middle = render_course(academy_dir, "soon-course")
+    last = render_course(academy_dir, "last-course")
+
+    assert first.select_one(".academy-previous") is None
+    assert first.select_one(".academy-next") is not None
+    assert first.select_one(".academy-hub-return") is None
+    assert middle.select_one(".academy-previous") is not None
+    assert middle.select_one(".academy-next") is not None
+    assert middle.select_one(".academy-hub-return") is None
+    assert last.select_one(".academy-previous") is not None
+    assert last.select_one(".academy-next") is None
+    assert last.select_one(".academy-hub-return")["href"] == "/Academy/"

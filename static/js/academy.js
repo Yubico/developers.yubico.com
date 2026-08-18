@@ -38,6 +38,24 @@ window.pushAcademyEvent = pushAcademyEvent;
   var startSeen = false;
   var completeSeen = false;
 
+  function showManualCopyFallback(url) {
+    var status = document.querySelector('.academy-share-status');
+    var fallback = document.querySelector('.academy-share-copy-fallback');
+    if (!fallback) {
+      fallback = document.createElement('input');
+      fallback.type = 'text';
+      fallback.className = 'academy-share-copy-fallback';
+      fallback.readOnly = true;
+      fallback.setAttribute('aria-label', 'Tutorial link to copy manually');
+      if (status && status.parentNode) status.parentNode.insertBefore(fallback, status);
+    }
+    fallback.value = url;
+    fallback.hidden = false;
+    fallback.focus();
+    fallback.select();
+    if (status) status.textContent = 'Copy unavailable. Select and copy the link manually.';
+  }
+
   if (headings.length) {
     var analyticsObserver = new IntersectionObserver(function (entries) {
       entries.filter(function (entry) { return entry.isIntersecting; })
@@ -101,7 +119,10 @@ window.pushAcademyEvent = pushAcademyEvent;
     var shareControl = event.target.closest('[data-academy-share]');
     if (shareControl) {
       if (shareControl.dataset.academyShare === 'copy-link') {
-        if (!navigator.clipboard) return;
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+          showManualCopyFallback(shareControl.dataset.academyCopyLink);
+          return;
+        }
         navigator.clipboard.writeText(shareControl.dataset.academyCopyLink).then(function () {
           var status = document.querySelector('.academy-share-status');
           if (status) status.textContent = 'Copied!';
@@ -111,7 +132,9 @@ window.pushAcademyEvent = pushAcademyEvent;
             section_name: academyAnalyticsState.currentSection,
             share_type: 'end-of-tutorial'
           });
-        }).catch(function () {});
+        }).catch(function () {
+          showManualCopyFallback(shareControl.dataset.academyCopyLink);
+        });
         return;
       }
       pushAcademyEvent('tutorial_share', {
