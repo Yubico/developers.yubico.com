@@ -41,9 +41,13 @@ docker-httpd:
 	@docker build -t yubico/developers/httpd -f Dockerfile.httpd .
 
 httpd: docker-httpd
+	@echo "Serving the generated site at http://localhost:8080"
 	@docker run --rm \
-		-v $(shell pwd)/htdocs/dist:/var/www/localhost/htdocs \
-		-p 8080:8080 \
+		-v $(shell pwd)/htdocs/dist:/var/www/localhost/htdocs:ro \
+		-p 127.0.0.1:8080:8080 \
 		yubico/developers/httpd
 
-.PHONY: all clean docker-build build docker-httpd httpd
+httpd-smoke:
+	@./test/httpd-smoke.sh
+
+.PHONY: all clean docker-build build docker-httpd httpd httpd-smoke

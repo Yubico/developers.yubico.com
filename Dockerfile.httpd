@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:3.22
 
 RUN apk --no-cache add apache2
 
@@ -12,4 +12,6 @@ COPY httpd.conf /etc/apache2/
 VOLUME /var/www/localhost/htdocs
 EXPOSE 8080
 USER www
+HEALTHCHECK --interval=5s --timeout=2s --start-period=2s --retries=6 \
+    CMD wget --quiet --output-document=/dev/null http://127.0.0.1:8080/ || exit 1
 CMD ["httpd", "-DFOREGROUND", "-f/etc/apache2/httpd.conf"]
