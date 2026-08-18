@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import re
 import shutil
 import sys
 
@@ -25,6 +26,20 @@ def test_mobile_academy_breadcrumb_does_not_inherit_ordered_list_margin():
     assert ".academy-course-page .breadcrumb { margin-left: 0; }" in academy_css
     assert ".academy-course-content p a," in academy_css
     assert "text-decoration: underline;" in academy_css
+
+
+def test_share_links_keep_contrasting_text_on_hover():
+    academy_css = (REPO_ROOT / "static" / "css" / "academy.css").read_text()
+
+    hover_rule = re.search(
+        r"\.academy-course-page \.academy-share-controls a:hover[^\{]*\{([^}]*)\}",
+        academy_css,
+    )
+
+    assert hover_rule is not None
+    declarations = hover_rule.group(1)
+    assert "background: var(--academy-teal);" in declarations
+    assert "color: #fff;" in declarations
 
 
 def test_academy_shared_markup_and_content_include_accessibility_semantics():
