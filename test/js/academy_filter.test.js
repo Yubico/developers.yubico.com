@@ -14,7 +14,9 @@ test('technology filters show matching tutorials and All restores every card', (
     <button data-academy-filter="all" aria-pressed="true">All</button>
     <button data-academy-filter="WebAuthn" aria-pressed="false">WebAuthn</button>
     <button data-academy-filter="FIPS" aria-pressed="false">FIPS</button>
-    <article data-academy-card data-tutorial-tags="WebAuthn"></article>
+    <article data-academy-card data-tutorial-tags="WebAuthn">
+      <button data-academy-filter="WebAuthn" aria-pressed="false">WebAuthn</button>
+    </article>
     <article data-academy-card data-tutorial-tags="FIPS|PIV"></article>
     <p data-academy-filter-empty hidden>No tutorials match.</p>
   `, { runScripts: 'outside-only', url: 'https://developers.yubico.com/Academy/' });
@@ -29,7 +31,14 @@ test('technology filters show matching tutorials and All restores every card', (
   assert.equal(cards[0].hidden, false);
   assert.equal(cards[1].hidden, true);
   assert.equal(filters[1].getAttribute('aria-pressed'), 'true');
+  assert.equal(filters[3].getAttribute('aria-pressed'), 'true');
   assert.equal(filters[0].getAttribute('aria-pressed'), 'false');
+
+  filters[3].click();
+  assert.equal(cards[0].hidden, false);
+  assert.equal(cards[1].hidden, true);
+  assert.equal(filters[1].getAttribute('aria-pressed'), 'true');
+  assert.equal(filters[3].getAttribute('aria-pressed'), 'true');
 
   filters[0].click();
   assert.equal(cards[0].hidden, false);

@@ -7,6 +7,7 @@ compatible with the site's Python 2 build image.
 import json
 import os
 import re
+import struct
 
 
 VALID_TAGS = set(['WebAuthn', 'SSH', 'PIV', 'HSM', 'AI', 'FIPS', 'Mobile',
@@ -24,7 +25,22 @@ def _child_values(academy_dir, slug):
     return child_config['vars'][0]['values']
 
 
-def _validate_child(filename, values, is_hidden):
+def _project_root(academy_dir):
+    parent = os.path.dirname(academy_dir)
+    if os.path.basename(parent) == 'content':
+        return os.path.dirname(parent)
+    return parent
+
+
+def _png_dimensions(filename):
+    with open(filename, 'rb') as image_file:
+        header = image_file.read(24)
+    if len(header) != 24 or header[:8] != b'\x89PNG\r\n\x1a\n':
+        raise ValueError('%s: image must be a PNG' % filename)
+    return struct.unpack('>II', header[16:24])
+
+
+def _validate_child(filename, values, is_hidden, academy_dir):
     if 'status' in values:
         raise ValueError('%s: status is a legacy lifecycle field; remove it' %
                          filename)
@@ -48,6 +64,26 @@ def _validate_child(filename, values, is_hidden):
     duration = values.get('duration')
     if duration and not DURATION.match(duration):
         raise ValueError('%s: invalid duration %s' % (filename, duration))
+
+    image = values.get('image')
+    if image:
+        if image != os.path.basename(image):
+            raise ValueError('%s: image must be a basename' % filename)
+        if not image.lower().endswith('.png'):
+            raise ValueError('%s: image must be a PNG basename' % filename)
+        if not values.get('image_alt'):
+            raise ValueError('%s: image_alt is required with image' % filename)
+        image_file = os.path.join(_project_root(academy_dir), 'static', 'img', image)
+        if not os.path.isfile(image_file):
+            raise ValueError('%s: image file is missing: %s' % (filename, image_file))
+        width, height = _png_dimensions(image_file)
+        if width < 1200 or height < 630:
+            raise ValueError('%s: image must be at least 1200x630' % filename)
+        display_file = os.path.join(
+            os.path.dirname(image_file), image[:-4] + '.webp')
+        if not os.path.isfile(display_file):
+            raise ValueError('%s: optimized display image is missing: %s' %
+                             (filename, display_file))
 
 
 def load_academy_context(academy_dir):
@@ -82,7 +118,14 @@ def load_academy_context(academy_dir):
             raise ValueError('%s: tutorial content is missing' % child_content)
         values = _child_values(academy_dir, slug)
         is_hidden = slug in hidden
-        _validate_child(child_config, values, is_hidden)
+        _validate_child(child_config, values, is_hidden, academy_dir)
+        image = values.get('image')
+        display_image = image[:-4] + '.webp' if image else None
+        display_height = None
+        if image:
+            image_file = os.path.join(_project_root(academy_dir), 'static', 'img', image)
+            image_width, image_height = _png_dimensions(image_file)
+            display_height = int(round(float(image_height) * 1200 / image_width))
         academy_order.append({
             'slug': slug,
             'title': values['title'],
@@ -96,6 +139,11 @@ def load_academy_context(academy_dir):
             'availability': values.get('availability') if is_hidden else None,
             'url': '/Academy/%s/' % slug,
             'youtube_id': values.get('youtube_id'),
+            'image': image,
+            'image_alt': values.get('image_alt') if image else None,
+            'image_url': '/img/%s' % display_image if display_image else None,
+            'image_width': 1200 if image else None,
+            'image_height': display_height,
         })
 
     by_slug = dict((item['slug'], item) for item in academy_order)
@@ -178,8 +226,12 @@ def academy_course_context(academy, current_slug):
                           current_slug),
         'og_title': current['title'],
         'og_description': current['description'],
-        'og_image_url': ('https://developers.yubico.com/img/'
-                         'academy-social.png'),
+        'image_url': current.get('image_url'),
+        'image_alt': current.get('image_alt'),
+        'image_width': current.get('image_width'),
+        'image_height': current.get('image_height'),
+        'og_image_url': ('https://developers.yubico.com/img/%s' %
+                         (current.get('image') or 'academy-social.png')),
         'og_safe': True,
         'analytics_tutorial_name': current['title'],
         'analytics_tutorial_slug': current_slug,

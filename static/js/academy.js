@@ -151,25 +151,28 @@ window.pushAcademyEvent = pushAcademyEvent;
 
   var emptyState = document.querySelector('[data-academy-filter-empty]');
 
+  function applyFilter(selectedTag) {
+    var visibleCount = 0;
+
+    filters.forEach(function (candidate) {
+      var isSelected = candidate.dataset.academyFilter === selectedTag;
+      candidate.classList.toggle('is-selected', isSelected);
+      candidate.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    });
+
+    cards.forEach(function (card) {
+      var tags = (card.dataset.tutorialTags || '').split('|');
+      var isVisible = selectedTag === 'all' || tags.indexOf(selectedTag) !== -1;
+      card.hidden = !isVisible;
+      if (isVisible) visibleCount += 1;
+    });
+
+    if (emptyState) emptyState.hidden = visibleCount !== 0;
+  }
+
   filters.forEach(function (filter) {
     filter.addEventListener('click', function () {
-      var selectedTag = filter.dataset.academyFilter;
-      var visibleCount = 0;
-
-      filters.forEach(function (candidate) {
-        var isSelected = candidate === filter;
-        candidate.classList.toggle('is-selected', isSelected);
-        candidate.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      });
-
-      cards.forEach(function (card) {
-        var tags = (card.dataset.tutorialTags || '').split('|');
-        var isVisible = selectedTag === 'all' || tags.indexOf(selectedTag) !== -1;
-        card.hidden = !isVisible;
-        if (isVisible) visibleCount += 1;
-      });
-
-      if (emptyState) emptyState.hidden = visibleCount !== 0;
+      applyFilter(filter.dataset.academyFilter);
     });
   });
 }());

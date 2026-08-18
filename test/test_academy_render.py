@@ -25,6 +25,26 @@ GLOBAL_NAV = [
 ]
 
 
+def test_global_navigation_configuration_follows_product_and_traffic_priority():
+    config = json.loads((REPO_ROOT / "content" / ".conf.json").read_text())
+
+    assert config["order"] == [
+        "Academy",
+        "Passkeys",
+        "SSH",
+        "WebAuthn",
+        "OTP",
+        "PIV",
+        "CTAP",
+        "Secure_Domain",
+        "Software_Projects",
+        "YubiHSM2",
+        "OATH",
+        "PGP",
+    ]
+    assert "SSH" not in config["hidden"]
+
+
 def test_mobile_academy_breadcrumb_does_not_inherit_ordered_list_margin():
     academy_css = (REPO_ROOT / "static" / "css" / "academy.css").read_text()
 
@@ -131,7 +151,12 @@ def test_academy_pages_render_canonical_global_navigation():
 
     standard_nav = standard.select_one("nav.navbar-top")
     assert standard_nav is not None
-    assert [link.get_text(strip=True) for link in standard_nav.select(".nav-link")] == [
+    assert "navbar-expand-md" in standard_nav.get("class", [])
+    assert standard_nav.has_attr("data-priority-nav")
+    primary_links = standard_nav.select(
+        "[data-priority-items] > li:not([data-priority-more]) > .nav-link"
+    )
+    assert [link.get_text(strip=True) for link in primary_links] == [
         "Passkeys",
         "Academy",
     ]
@@ -139,7 +164,17 @@ def test_academy_pages_render_canonical_global_navigation():
     toggler = standard_nav.select_one(".navbar-toggler")
     assert toggler["aria-controls"] == "navbarToggler"
     assert toggler["data-bs-target"] == "#navbarToggler"
-    assert standard_nav.select_one("#navbarToggler") is not None
+    collapse = standard_nav.select_one("#navbarToggler")
+    assert collapse is not None
+    assert collapse.select_one("[data-priority-items]") is not None
+    more = collapse.select_one("[data-priority-more]")
+    assert more is not None
+    assert more.select_one("[data-priority-overflow]") is not None
+    search = standard_nav.select_one("#search-box")
+    assert search is not None
+    assert search.find_parent(id="navbarToggler") is None
+    assert search["role"] == "search"
+    assert search["aria-label"] == "Site search"
     for page in (hub, course):
         navigation = page.select("nav.navbar-top")
         assert len(navigation) == 1
@@ -188,8 +223,13 @@ def test_ordered_configuration_produces_normalized_academy_context():
         "roles": ["app-builder"],
         "availability": None,
         "url": "/Academy/live-course/",
-        "youtube_id": None,
-    }
+            "youtube_id": None,
+            "image": None,
+            "image_alt": None,
+            "image_url": None,
+            "image_width": None,
+            "image_height": None,
+        }
     assert context["academy_order"][1]["status"] == "coming-soon"
     assert context["academy_order"][1]["is_hidden"] is True
     assert context["academy_order"][1]["availability"] == "Coming Q4 2026"
@@ -238,10 +278,13 @@ def test_hub_renders_cards_filters_and_guidance_from_configuration():
         "https://www.yubico.com/email-subscription/"
     )
 
-    assert [button.get_text(strip=True) for button in page.select("[data-academy-filter]")] == [
+    assert [button.get_text(strip=True) for button in page.select(".academy-filter-controls [data-academy-filter]")] == [
         "All",
         "WebAuthn",
         "FIPS",
+    ]
+    assert [button.get_text(strip=True) for button in cards[0].select(".academy-card-tag")] == [
+        "WebAuthn"
     ]
     assert [item["data-tutorial-slug"] for item in page.select(".academy-start-item")] == [
         "live-course",
@@ -282,7 +325,7 @@ def test_adding_ordered_configuration_adds_hub_card_and_filter(tmp_path):
         "soon-course",
         "ssh-course",
     ]
-    assert [button.get_text(strip=True) for button in page.select("[data-academy-filter]")] == [
+    assert [button.get_text(strip=True) for button in page.select(".academy-filter-controls [data-academy-filter]")] == [
         "All",
         "WebAuthn",
         "FIPS",
@@ -405,6 +448,73 @@ def test_course_renders_safe_canonical_and_open_graph_metadata(slug):
     assert page.select_one('meta[property="og:url"]')["content"].endswith(tutorial["url"])
     assert page.select_one('meta[name="twitter:card"]')["content"] == "summary_large_image"
     assert "UNPUBLISHED META MARKER" not in str(page.head)
+
+
+def test_live_tutorial_artwork_maps_to_hub_hero_and_social_metadata():
+    academy_dir = REPO_ROOT / "content" / "Academy"
+    academy = load_academy_context(str(academy_dir))
+    expected = {
+        "passkey-app": "academy-passkey-app.png",
+        "webauthn-deep-dive": "academy-webauthn-deep-dive.png",
+        "securing-ssh": "academy-securing-ssh.png",
+    }
+    assert {item["slug"]: item["image"] for item in academy["academy_order"] if item["image"]} == expected
+
+    hub = render_hub(academy_dir)
+    for slug, filename in expected.items():
+        card = hub.select_one('[data-tutorial-slug="%s"]' % slug)
+        image = card.select_one("img.academy-card-image")
+        image_link = image.find_parent("a")
+        assert image["src"] == "/img/%s" % filename.replace(".png", ".webp")
+        assert image["alt"]
+        assert image["width"] == "1200"
+        assert image["height"] == "670" or image["height"] == "634"
+        assert image_link["href"] == "/Academy/%s/" % slug
+        assert image_link["aria-label"] == "Open %s" % card.select_one(
+            ".academy-card-title"
+        ).get_text(strip=True)
+        assert "academy-card-image-link" in image_link.get("class", [])
+
+        page = render_course(academy_dir, slug, "<h2>Introduction</h2>")
+        hero = page.select_one("img.academy-course-image")
+        assert hero["src"] == image["src"]
+        assert hero["alt"] == image["alt"]
+        assert page.select_one('meta[property="og:image"]')["content"] == (
+            "https://developers.yubico.com/img/%s" % filename
+        )
+
+
+def test_tutorial_without_artwork_uses_shared_social_fallback_and_no_empty_image():
+    academy_dir = FIXTURES / "valid" / "Academy"
+    hub = render_hub(academy_dir)
+    page = render_course(academy_dir, "live-course", "<h2>Introduction</h2>")
+    assert hub.select_one(".academy-card-image") is None
+    assert page.select_one(".academy-course-image") is None
+    assert page.select_one('meta[property="og:image"]')["content"] == (
+        "https://developers.yubico.com/img/academy-social.png"
+    )
+
+
+def test_artwork_rejects_unsafe_paths_and_requires_alt_text(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    write_child(academy_dir, "live-course", lambda values: values.update({"image": "../secret.png", "image_alt": "Secret"}))
+    with pytest.raises(ValueError, match=r"live-course/\.conf\.json.*image.*basename"):
+        load_academy_context(str(academy_dir))
+
+    write_child(academy_dir, "live-course", lambda values: values.update({"image": "missing.png", "image_alt": ""}))
+    with pytest.raises(ValueError, match=r"live-course/\.conf\.json.*image_alt.*required"):
+        load_academy_context(str(academy_dir))
+
+
+def test_artwork_requires_a_png_basename(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    write_child(
+        academy_dir,
+        "live-course",
+        lambda values: values.update({"image": "tutorial.jpg", "image_alt": "Tutorial artwork"}),
+    )
+    with pytest.raises(ValueError, match=r"live-course/\.conf\.json.*image.*PNG basename"):
+        load_academy_context(str(academy_dir))
 
 
 def test_live_course_renders_share_controls_and_newsletter_cta():
