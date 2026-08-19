@@ -97,6 +97,16 @@ def load_academy_context(academy_dir):
             raise ValueError('%s: duplicate slug in order: %s' %
                              (root_filename, slug))
         seen.add(slug)
+    child_slugs = set(
+        name for name in os.listdir(academy_dir)
+        if not name.startswith('.') and
+        os.path.isdir(os.path.join(academy_dir, name))
+    )
+    unregistered = sorted(child_slugs - seen)
+    if unregistered:
+        raise ValueError(
+            '%s: tutorial directory is not registered in order: %s' %
+            (root_filename, unregistered[0]))
     hidden = set(root.get('hidden', []))
     for slug in hidden:
         if slug not in seen:

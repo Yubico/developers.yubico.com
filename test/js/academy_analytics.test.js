@@ -126,6 +126,26 @@ test('live click events use the contracted parameters', async () => {
   assert.equal(events.find(item => item.event === 'tutorial_share').share_platform, 'twitter');
 });
 
+test('code copy reports clipboard permission failures without emitting an event', async () => {
+  const page = academyPage('live', true);
+  Object.defineProperty(page.dom.window.navigator, 'clipboard', {
+    value: { writeText: () => Promise.reject(new Error('denied')) },
+    configurable: true,
+  });
+  page.dom.window.eval(academyScript);
+
+  const button = page.dom.window.document.querySelector('.academy-copy-btn');
+  button.click();
+  await new Promise(resolve => page.dom.window.setTimeout(resolve, 0));
+
+  assert.equal(button.querySelector('.academy-copy-label').textContent, 'Copy failed');
+  assert.match(button.getAttribute('aria-label'), /select the code manually/i);
+  assert.equal(
+    academyEvents(page.dom).some(item => item.event === 'code_copy'),
+    false
+  );
+});
+
 test('cancelled native sharing emits no share event', async () => {
   const page = academyPage('live', true);
   Object.defineProperty(page.dom.window.navigator, 'share', {

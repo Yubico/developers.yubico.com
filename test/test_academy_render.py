@@ -14,7 +14,11 @@ from jinja2 import Environment, FileSystemLoader
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from devyco.academy import academy_course_context, load_academy_context  # noqa: E402
+from devyco.academy import (  # noqa: E402
+    _png_dimensions,
+    academy_course_context,
+    load_academy_context,
+)
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "academy"
@@ -277,6 +281,8 @@ def test_hub_renders_cards_filters_and_guidance_from_configuration():
     assert cards[1].select_one(".academy-card-notify")["href"].startswith(
         "https://www.yubico.com/email-subscription/"
     )
+    assert cards[1].select_one(".academy-card-notify")["target"] == "_blank"
+    assert cards[1].select_one(".academy-card-notify")["rel"] == ["noopener", "noreferrer"]
 
     assert [button.get_text(strip=True) for button in page.select(".academy-filter-controls [data-academy-filter]")] == [
         "All",
@@ -359,6 +365,8 @@ def test_coming_soon_page_suppresses_body_and_renders_preview_metadata():
     assert page.select_one(".academy-stub-notify")["href"].startswith(
         "https://www.yubico.com/email-subscription/"
     )
+    assert page.select_one(".academy-stub-notify")["target"] == "_blank"
+    assert page.select_one(".academy-stub-notify")["rel"] == ["noopener", "noreferrer"]
     assert [link["href"] for link in page.select(".academy-live-cross-sell a")] == [
         "/Academy/live-course/"
     ]
@@ -458,6 +466,11 @@ def test_live_tutorial_artwork_maps_to_hub_hero_and_social_metadata():
         "webauthn-deep-dive": "academy-webauthn-deep-dive.png",
         "securing-ssh": "academy-securing-ssh.png",
     }
+    for filename in list(expected.values()) + ["academy-social.png"]:
+        image_path = REPO_ROOT / "static" / "img" / filename
+        assert _png_dimensions(str(image_path)) == (1200, 630)
+        assert image_path.stat().st_size <= 750 * 1024
+
     assert {item["slug"]: item["image"] for item in academy["academy_order"] if item["image"]} == expected
 
     hub = render_hub(academy_dir)
@@ -468,7 +481,7 @@ def test_live_tutorial_artwork_maps_to_hub_hero_and_social_metadata():
         assert image["src"] == "/img/%s" % filename.replace(".png", ".webp")
         assert image["alt"]
         assert image["width"] == "1200"
-        assert image["height"] == "670" or image["height"] == "634"
+        assert image["height"] == "630"
         assert image_link["href"] == "/Academy/%s/" % slug
         assert image_link["aria-label"] == "Open %s" % card.select_one(
             ".academy-card-title"
@@ -543,6 +556,8 @@ def test_live_course_renders_share_controls_and_newsletter_cta():
     assert page.select_one(".academy-newsletter-cta")["href"].startswith(
         "https://www.yubico.com/email-subscription/"
     )
+    assert page.select_one(".academy-newsletter-cta")["target"] == "_blank"
+    assert page.select_one(".academy-newsletter-cta")["rel"] == ["noopener", "noreferrer"]
 
 
 def test_duplicate_order_slug_fails_with_config_path(tmp_path):
@@ -566,6 +581,17 @@ def test_hidden_slug_outside_order_fails_with_config_path(tmp_path):
     with pytest.raises(
         ValueError,
         match=r"\.conf\.json.*hidden.*orphan-course.*order",
+    ):
+        load_academy_context(str(academy_dir))
+
+
+def test_unregistered_tutorial_directory_fails_with_config_path(tmp_path):
+    academy_dir = mutable_academy(tmp_path)
+    shutil.copytree(academy_dir / "live-course", academy_dir / "orphan-course")
+
+    with pytest.raises(
+        ValueError,
+        match=r"\.conf\.json.*not registered.*orphan-course",
     ):
         load_academy_context(str(academy_dir))
 

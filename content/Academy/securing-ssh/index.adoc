@@ -197,14 +197,15 @@ The Dockerfile bakes the public key into the image at build time. If you regener
 docker build --build-arg user=ubuntu -t ssh-server .
 
 # Start the server on port 22
-docker run --rm -d -p 22:22 --name ssh_demo ssh-server
+docker run --rm -d -p 127.0.0.1:2222:22 --name ssh_demo ssh-server
 ----
 
 Connect — touch the key when the LED blinks:
 
 [source,bash]
 ----
-ssh -i ./id_ecdsa_sk -o StrictHostKeyChecking=no ubuntu@localhost
+ssh -i ./id_ecdsa_sk -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    -p 2222 ubuntu@localhost
 ----
 
 You should land in a shell. The YubiKey signed the SSH challenge; no password, no passphrase. Exit and clean up:
@@ -239,14 +240,15 @@ sed -e 's/^/verify-required /' id_ecdsa_sk_uv.pub >> authorized_keys_uv
 
 docker build --build-arg user=ubuntu --build-arg authorized_keys=authorized_keys_uv \
     -t ssh-server-uv .
-docker run --rm -d -p 2222:22 --name ssh_demo_uv ssh-server-uv
+docker run --rm -d -p 127.0.0.1:2222:22 --name ssh_demo_uv ssh-server-uv
 ----
 
 Connect — the key will prompt for your PIN before the touch:
 
 [source,bash]
 ----
-ssh -i ./id_ecdsa_sk_uv -o StrictHostKeyChecking=no -p 2222 ubuntu@localhost
+ssh -i ./id_ecdsa_sk_uv -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null -p 2222 ubuntu@localhost
 ----
 
 [source,text]
@@ -667,7 +669,7 @@ ssh:demo: 1234 bytes
 ----
 # Build server with TrustedUserCAKeys configured (no per-user authorized_keys)
 docker build --build-arg user=ubuntu -t ssh-server-cert .
-docker run --rm -d -p 3333:22 --name ssh_demo_cert ssh-server-cert
+docker run --rm -d -p 127.0.0.1:3333:22 --name ssh_demo_cert ssh-server-cert
 ----
 
 === Authenticate
@@ -679,6 +681,7 @@ Connect using the certificate rather than `authorized_keys`:
 ssh -i ./id_ecdsa_sk_user-cert.pub \
     -i ./id_ecdsa_sk_user \
     -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null \
     -p 3333 ubuntu@localhost
 ----
 

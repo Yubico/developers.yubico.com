@@ -308,6 +308,10 @@ window.pushAcademyEvent = pushAcademyEvent;
             code_language: languageMatch ? languageMatch[1] : 'unknown'
           });
         }
+      }).catch(function () {
+        btn.classList.add('academy-copy-btn--failed');
+        btn.querySelector('.academy-copy-label').textContent = 'Copy failed';
+        btn.setAttribute('aria-label', 'Copy failed. Select the code manually.');
       });
     });
     content.appendChild(btn);
