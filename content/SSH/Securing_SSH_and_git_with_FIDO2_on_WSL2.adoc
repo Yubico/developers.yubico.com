@@ -1,0 +1,898 @@
+== Securing SSH and Git Commit Signing with FIDO2 on WSL2
+:doctype: article
+:toc: left
+:toclevels: 3
+:source-highlighter: rouge
+:experimental:
+:revdate: {docdate}
+:description: Set up hardware-backed SSH authentication and Git commit signing from WSL2 with a YubiKey, using the FIDO components that ship with Windows. No USB passthrough and no extra software.
+:keywords: YubiKey, FIDO2, SSH, WSL2, Windows, OpenSSH, Git, Commit Signing, ed25519-sk, Discoverable Credential, Resident Key, ssh-sk-helper
+
+[[overview]]
+=== Overview
+
+This guide is intended for developers who work on Windows 11 with WSL2. It
+uses GitHub as its example service. The same key works with GitLab, Bitbucket,
+or any SSH server that accepts FIDO2 keys.
+
+When you finish, you can clone, push, and sign commits from WSL2. The private
+key never exists anywhere but on the YubiKey. Every authentication and every
+signature takes a touch and a PIN. Unplug the key and none of it works.
+
+The files this guide leaves in `~/.ssh` are key handles. They identify the
+credential. They cannot produce a signature without the hardware, so copying
+them off the machine gets an attacker nothing.
+
+Parts 1 through 4 set up the key. Parts 5 through 7 add commit signing. If you
+only need SSH authentication, stop after Part 4 and register the public key
+wherever you need it.
+
+*Why do this at all?* A conventional SSH private key is a file. Anyone who
+copies that file gets unlimited offline attempts against its passphrase. There
+is no rate limit, no lockout, and no alert. Afterward you cannot tell their
+signatures from your own. A key generated on a YubiKey gives an attacker
+nothing to copy. Every attempt has to happen on the token itself, with the key
+physically present.
+
+WSL2 cannot reach a USB security key on its own. That limitation pushes people
+toward workarounds that either take the key away from Windows or leave it
+unused. This guide routes WSL2's requests through a helper that ships with
+Windows. Browser sign-ins, Windows Hello, and WSL2 SSH all keep working at the
+same time. Common alternatives add software you have to install and maintain,
+such as a USB forwarding stack or an agent relay. This approach adds none.
+
+The main flow runs without administrator rights. Key generation,
+authentication, signing, and push all work from a normal Windows session and a
+normal Linux user. Nothing in the main flow needs elevation until the
+`ssh-keygen -K` recovery in Part 8, which reaches the FIDO device directly.
+Two side paths do need an elevated PowerShell prompt: installing OpenSSH, if
+Part 1 shows your version is too old, and any `ykman fido` command, if you
+choose to use one.
+
+[[before-you-start]]
+=== Before you start
+
+Before running this guide, complete the following prerequisites:
+
+* A Windows 11 machine with WSL2 installed and a Linux distribution set up.
+* link:https://developers.yubico.com/yubikey-manager/[YubiKey Manager]
+  (`ykman`) installed on Windows, not inside WSL2. Part 4 and Part 8 use it to
+  inspect and manage the credentials on the key.
+* A YubiKey with FIDO2 enabled. A FIDO2 PIN is required, but you do not have
+  to set one in advance: if the key has no PIN, Windows prompts you to create
+  one during Part 4.
+* A GitHub account, if you follow the signing parts. GitHub is the example
+  service in Parts 5 through 7.
+
+Version floors, checked in Part 1 (Windows) and Part 2 (WSL2):
+
+[cols="1,1,3",options="header"]
+|===
+| Component | Minimum | Why
+
+| OpenSSH for Windows
+| 8.9
+| FIDO support arrived in the Windows OpenSSH client in 8.9. The check in
+Part 1 decides this, not the Windows version. Early Windows 11 builds shipped
+OpenSSH below 8.9.
+
+| OpenSSH inside WSL2
+| 8.4
+| Current releases of most distributions ship well past this. Check yours in
+Part 2 with `ssh -V`. Version 8.3 fixed FIDO challenge hashing for
+Windows-style middleware. Version 8.4 added `verify-required`, which this key
+uses.
+
+| Git inside WSL2
+| 2.34
+| SSH-based commit signing arrived in Git 2.34. Checked in Part 2.
+
+| YubiKey firmware
+| 5.2.3 for the setup as written
+| Two independent capabilities gate this, and both land at 5.2.3 on the
+YubiKey 5 Series: Ed25519 over FIDO2, and full management of discoverable
+credentials, which the recovery in Part 8 depends on. An `ecdsa-sk` key
+without `-O resident` works on any FIDO2-capable YubiKey 5. See "Choosing a
+key type" in Part 4.
+|===
+
+If your distribution's OpenSSH is older than 8.4:
+
+. Upgrade OpenSSH through your distribution's own package manager.
+. If your distribution's packages are too old, install a newer distribution
+  alongside the existing one. WSL2 supports several at once, and
+  `wsl.exe --list --online` shows what is available. This takes less work than
+  building OpenSSH from source.
+. Build OpenSSH from source, as a last resort.
+
+All Windows commands in this guide are written for PowerShell. Git Bash is a
+separate matter: it bundles its own OpenSSH, whose FIDO2 behavior varies by
+build, so avoid it even where the syntax would work. Run all WSL2 commands in
+bash inside your distribution.
+
+[[part-1-check-the-windows-openssh-client]]
+=== Part 1: Check the Windows OpenSSH client
+
+Two checks confirm that the Windows pieces the bridge depends on are present.
+Both are read-only. Nothing on Windows is configured here.
+
+[[part-1-step-1-check-the-openssh-version]]
+==== Step 1: Check the OpenSSH version
+
+[source,powershell]
+----
+ssh -V
+----
+
+You need `8.9` or newer. Most Windows 11 machines already have it.
+
+If yours is older, reinstall the built-in client from an elevated PowerShell
+prompt. This pulls the current version from Windows Update and keeps it in
+`C:\Windows\System32\OpenSSH`, where Windows Update maintains it from then on:
+
+[source,powershell]
+----
+Remove-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+----
+
+Restart Windows, open a new terminal, then check `ssh -V` again.
+
+If it is still older than `8.9`, install the newest build from the
+link:https://github.com/PowerShell/Win32-OpenSSH/releases[Win32-OpenSSH releases page],
+following the
+link:https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH[install wiki].
+Despite the name, those are the Win64 and ARM64 builds, and every release
+there is tagged `Beta`, including the ones that ship in Windows. Install the
+newest. Windows Update does not maintain this install, so you own updating it
+from then on. It also installs to `C:\Program Files\OpenSSH`, so use that path
+wherever this guide shows a `System32\OpenSSH` example.
+
+[[part-1-step-2-locate-the-fido-helper]]
+==== Step 2: Locate the FIDO helper
+
+The helper `ssh-sk-helper.exe` is the Windows component that raises the PIN
+and touch prompts. Part 3 points WSL2 at it. To find it:
+
+[source,powershell]
+----
+(Get-Command ssh-sk-helper.exe).Source
+----
+
+Expect a path such as `C:\Windows\System32\OpenSSH\ssh-sk-helper.exe`. Note
+it, Part 3 needs it.
+
+This resolves through `PATH`, the same lookup that decides which `ssh.exe`
+answers when you type `ssh`. In the usual case each install's directory holds
+both binaries, so the helper you get comes from the same install as that
+`ssh.exe`. That pairing matters: `ssh.exe` and its helper must come from the
+same install.
+
+If the command returns nothing, OpenSSH is not on `PATH`. Install it per
+Step 1.
+
+Both checks pass: continue to Part 2.
+
+[[part-2-check-the-wsl2-tools]]
+=== Part 2: Check the WSL2 tools
+
+Two checks confirm that WSL2 has recent enough tools.
+
+[[part-2-step-1-confirm-wsl-version-2]]
+==== Step 1: Confirm your distribution runs as WSL version 2
+
+From PowerShell:
+
+[source,powershell]
+----
+wsl.exe --list --verbose
+----
+
+Your distribution must show `VERSION` 2. If it shows 1, convert it:
+
+[source,powershell]
+----
+wsl.exe --set-version <name> 2
+----
+
+[[part-2-step-2-check-openssh-and-git-versions]]
+==== Step 2: Check the OpenSSH and Git versions
+
+Inside WSL2:
+
+[source,bash]
+----
+ssh -V           # need 8.4 or newer
+git --version    # need 2.34 or newer
+----
+
+Both checks pass: continue to Part 3.
+
+[[part-3-connect-wsl2-to-the-windows-fido-helper]]
+=== Part 3: Connect WSL2 to the Windows FIDO helper
+
+Linux `ssh` inside WSL2 cannot reach the YubiKey on the USB bus. This bridge
+points WSL2's `ssh` at the Windows helper you located in Part 1, Step 2. WSL2
+runs Windows executables directly, so the helper raises the same Windows PIN
+and touch prompts. The key stays owned by Windows throughout.
+
+One caveat before you rely on it. The `SSH_SK_HELPER` environment variable is
+real and current in OpenSSH's source code, but it appears in no man page. No
+documented compatibility promise covers it. The path you set is also static,
+while the helper Windows prefers can change if a second OpenSSH install
+appears later. After a Windows or OpenSSH update, re-run the check from
+Part 1, Step 2 and update the export if the path moved.
+
+[[part-3-step-1-export-ssh-sk-helper]]
+==== Step 1: Export SSH_SK_HELPER
+
+Use the helper path you noted in Part 1, Step 2:
+
+[source,bash]
+----
+echo 'export SSH_SK_HELPER="/mnt/c/Windows/System32/OpenSSH/ssh-sk-helper.exe"' >> ~/.bashrc
+----
+
+If Part 1, Step 2 reported the `Program Files` install instead, use
+`/mnt/c/Program Files/OpenSSH/ssh-sk-helper.exe`.
+
+This export applies only to the distribution you ran it in. If you use Git
+from more than one WSL2 distribution, add it to each one. The command above
+assumes bash and `~/.bashrc`. If your shell is zsh or fish, add the equivalent
+export to that shell's own profile.
+
+[[part-3-step-2-confirm-the-bridge]]
+==== Step 2: Confirm the bridge is wired up
+
+Open a new WSL2 shell so that the variable takes effect. Then run:
+
+[source,bash]
+----
+echo "$SSH_SK_HELPER"
+test -x "$SSH_SK_HELPER" && echo "helper found"
+----
+
+Expect the path you set, followed by `helper found`. If the second command
+prints nothing, the path is wrong or WSL2 cannot reach it. Check the value
+against Part 1, Step 2. Catching a typo here saves you debugging a silent
+failure in Part 4.
+
+[[part-4-generate-the-key-on-the-yubikey]]
+=== Part 4: Generate the key on the YubiKey
+
+One command asks the YubiKey to create the credential internally. It writes
+two files to disk: a key handle and a public key. Neither one is a usable
+private key. Run it from inside WSL2, so that the bridge from Part 3 carries
+the request to the Windows helper.
+
+[[choosing-a-key-type]]
+==== Choosing a key type
+
+Check your firmware version first. In PowerShell:
+
+[source,powershell]
+----
+ykman info
+----
+
+Then pick:
+
+* *Firmware 5.2.3 or newer*: use `ed25519-sk`, the more modern of the two
+  algorithms. Run the command below as written.
+* *Required to use ECDSA for compliance*: swap `-t ed25519-sk` for
+  `-t ecdsa-sk`. Nothing else changes, except outputs read `ECDSA-SK` instead
+  of `ED25519-SK`.
+* *Firmware older than 5.2.3*: use `-t ecdsa-sk` and drop `-O resident`,
+  because the recovery and cleanup this guide relies on need 5.2.3 or newer.
+  Keep the same `-f` path, back up the handle file (it becomes your only
+  copy), and skip Part 8.
+
+The `-O resident` flag stores the credential on the YubiKey itself as a
+_discoverable credential_ (`ssh-keygen` calls it a resident key). That is what
+makes the Part 8 recovery possible.
+
+[[part-4-step-1-generate-the-key]]
+==== Step 1: Generate the key
+
+Insert the YubiKey, then run this in WSL2:
+
+[source,bash]
+----
+ssh-keygen -t ed25519-sk \
+  -O resident \
+  -O verify-required \
+  -O application=ssh:github \
+  -f "$HOME/.ssh/id_yubikey_primary" \
+  -N '' \
+  -C "yubikey-primary-github"
+----
+
+The three `-O` options decide what gets written to the YubiKey, and each has a
+benefit and a cost. Two of them have a real alternative worth knowing about.
+The remaining flags are host-side: `-f` names the handle file (Step 4 and "How
+credentials are named" cover it), `-N ''` sets its empty passphrase (explained
+after the sequence below), and `-C` is a comment.
+
+[cols="1,2,3",options="header"]
+|===
+| Flag | Benefit | Cost
+
+| `-O resident`
+| The credential lives on the YubiKey, so a new machine needs no file
+transfer. `ssh-keygen -K` regenerates the handle files, as Part 8 covers.
+| Consumes one slot from a limited pool: 25 on firmware earlier than 5.7.0,
+and 100 from 5.7.0 onward. Anyone holding the key who knows the PIN can
+enumerate the credential. Omit this flag for a non-discoverable credential,
+which nobody can enumerate. The handle file then becomes your only copy, so
+back it up. The recovery in Part 8 is no longer possible.
+
+| `-O verify-required`
+| A stolen YubiKey without its PIN cannot sign.
+| You enter the PIN at every use. Omit this flag for a touch-only key, which
+is faster and defensible if the key never leaves your person. A stolen key
+then works until you deregister it.
+
+| `-O application=ssh:github`
+| Labels the credential on the key, so that `ssh-keygen -K` can identify it
+during recovery.
+| Must begin with `ssh:`. See "How credentials are named" below.
+|===
+
+Expect the following, in order:
+
+. The terminal reports that it is generating the key pair, then prints an
+  overwrite prompt. Answer `y`. Step 2 explains why that prompt appears and
+  why answering `y` is safe.
+. A Windows Security dialog opens, titled *Save your passkey*. It shows
+  `openssh` and the credential's application string, for example
+  "Passkey for ssh:github", and asks for your security key PIN. If the key
+  has no PIN yet, the same dialog asks you to create one instead, with *New
+  Security Key PIN* and *Confirm Security Key PIN* fields. No elevation is
+  needed either way. Below the field it confirms the passkey will be saved to
+  your security key. Leave that as it is: the *Change* link beside it would
+  store the credential somewhere other than the YubiKey, which defeats the
+  portability you want. Enter your FIDO2 PIN and select *OK*.
+. The YubiKey blinks. Touch it.
+
+Your PIN goes into the Windows dialog, never into the terminal. The Windows
+helper delegates user verification to the Windows WebAuthn API, which collects
+the PIN itself. Treat the PIN with care: eight incorrect entries in a row
+block the FIDO2 application, and unblocking it requires a reset that destroys
+every credential on the key. To see how many attempts remain, run
+`ykman fido info` from an elevated PowerShell prompt.
+
+There is no passphrase prompt, because `-N ''` sets an empty passphrase on the
+handle file. The private key is on the YubiKey, not in the file, so there is
+nothing that needs encryption, and with `-O resident` the file is regenerable
+anyway.
+
+[[part-4-step-2-answer-the-overwrite-prompt]]
+==== Step 2: Answer the overwrite prompt
+
+The command prints this immediately, before any PIN or touch, even on a
+brand-new YubiKey with nothing stored on it:
+
+[source,text]
+----
+Generating public/private ed25519-sk key pair.
+You may need to touch your authenticator to authorize key generation.
+A resident key scoped to 'ssh:github' with user id 'null' already exists.
+Overwrite key in token (y/n)?
+----
+
+Answer `y`.
+
+The prompt is wrong twice over, and both errors matter.
+
+First, it fires when nothing exists. This is a known bug in Win32-OpenSSH,
+link:https://github.com/PowerShell/Win32-OpenSSH/issues/2394[issue #2394],
+confirmed to still occur on `OpenSSH_for_Windows_9.5p2`. The check appears
+even on an authenticator holding no credentials at all, with an application
+string that has never been used, so there is nothing to overwrite.
+
+Second, answering `y` does not overwrite anything. It adds a credential. If a
+credential with that application string already exists, the new one joins it,
+and both stay live on the key.
+
+That second point matters when you regenerate a key rather than create your
+first one. If you are rotating a credential you believe is compromised, the
+old one remains on the hardware and remains usable. Answering `y` does not
+retire it. Delete it explicitly, as Part 8, Step 3 describes.
+
+Answering `n` produces `Key enrollment failed: bad permissions`. That message
+does not mean a permissions problem. It means only that you declined.
+
+To see what the key actually holds before or after you answer, open an
+elevated PowerShell prompt and run:
+
+[source,powershell]
+----
+ykman fido credentials list
+----
+
+[[part-4-step-3-verify-the-key]]
+==== Step 3: Verify the key
+
+[source,bash]
+----
+ssh-keygen -lf "$HOME/.ssh/id_yubikey_primary.pub"
+----
+
+Expect a fingerprint line ending in `(ED25519-SK)`, or `(ECDSA-SK)` if you
+used that type instead.
+
+[[part-4-step-4-declare-the-key-in-ssh-config]]
+==== Step 4: Declare the key in ssh config
+
+The file name you chose is not one `ssh` tries by default, so declare it:
+
+[source,bash]
+----
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+cat >> ~/.ssh/config <<'EOF'
+Host *
+    IdentityFile ~/.ssh/id_yubikey_primary
+EOF
+chmod 600 ~/.ssh/config
+----
+
+"How credentials are named" below explains why this step exists, and when to
+replace `Host *` with per-host blocks.
+
+[[how-credentials-are-named]]
+==== How credentials are named
+
+The *application string* (`-O application`) lives on the YubiKey and names the
+service. It must begin with `ssh:`, and it appears in the file names
+`ssh-keygen -K` writes during recovery, so use a distinct string per service.
+It does not enforce uniqueness: several credentials can share one string, as
+Step 2 describes.
+
+The *file name* (`-f`) is local to this machine and names the physical key,
+which pays off when you add a backup YubiKey and hold two handle files. The
+tradeoff: `ssh` only tries a fixed list of default names (`id_ed25519_sk`,
+`id_ecdsa_sk`, `id_rsa`, and a few others), so any other name must be declared
+in `~/.ssh/config`, which Step 4 does. Without the declaration, `ssh` never
+offers the key.
+
+The `Host *` block in Step 4 is fine for one key, since servers only trigger
+the PIN and touch after accepting a public key. When you add a credential for
+a second service, replace the wildcard with per-host blocks and add
+`IdentitiesOnly yes` to them, so `ssh` offers only the right identity to each
+host.
+
+A credential cannot be copied between YubiKeys, so a backup key holds its own
+credential and its own handle file. Enroll one by repeating Step 1 with
+`-f "$HOME/.ssh/id_yubikey_backup"`, then add it below the primary. Identities
+are tried in order, so the backup is only used when the primary is absent:
+
+[source,bash]
+----
+Host *
+    IdentityFile ~/.ssh/id_yubikey_primary
+    IdentityFile ~/.ssh/id_yubikey_backup
+----
+
+Register the backup's `.pub` with GitHub in both lists, as in Part 5. For
+rotating and revoking keys, see
+link:/SSH/Securing_git_with_SSH_and_FIDO2.html#key-management-lifecycle[Key Management Lifecycle].
+
+[[part-5-register-the-key-with-github]]
+=== Part 5: Register the key with GitHub
+
+GitHub keeps two separate key lists, and the same `.pub` file goes into both.
+It goes in once as an authentication key, for SSH and `git push`. It goes in
+again as a signing key, for the *Verified* badge. GitHub's
+link:https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification[explanation of commit signature verification]
+covers what that badge means. Registering the key in only one list is the most
+common reason half of this setup works and the other half does not.
+
+You can use the same key for both, as this guide does, or generate two
+separate keys and register one as the authentication key and the other as the
+signing key. A common reason to split them: `-O verify-required` on the
+signing key so every commit demands a PIN, while the authentication key stays
+touch-only so everyday `git pull` and `ssh` connections do not. Repeat Part 4
+with a different `-f` path and application string for the second key.
+
+Other services follow the same pattern and differ only in where you paste the
+public key. GitLab, for example, uses one *Usage type* dropdown covering both
+purposes instead of two lists.
+
+[[part-5-step-1-register-in-both-lists]]
+==== Step 1: Register in both lists
+
+. Copy the public key to the Windows clipboard. The `clip.exe` command reaches
+  the Windows clipboard from inside WSL2:
++
+[source,bash]
+----
+cat ~/.ssh/id_yubikey_primary.pub | clip.exe
+----
++
+. In GitHub, go to *Settings > SSH and GPG keys > New SSH key*.
+. In the *Key type* list, select *Authentication Key*. Paste the key, then
+  select *Add SSH key*.
+. Select *New SSH key* again. In the *Key type* list, select *Signing Key*.
+  Paste the same key, then select *Add SSH key*.
+
+[[part-5-step-2-verify-authentication]]
+==== Step 2: Verify authentication
+
+[source,bash]
+----
+ssh -T git@github.com
+----
+
+On first connection, `ssh` shows GitHub's host key fingerprint and asks you to
+confirm it. Compare it against GitHub's published
+link:https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints[SSH key fingerprints]
+before you accept. This is the one moment when host authenticity is in your
+hands.
+
+Then expect the Windows dialog to ask for your FIDO2 PIN, followed by a touch.
+As in Part 4, the PIN goes into the dialog and not into the terminal. The
+result:
+
+[source,text]
+----
+Hi <username>! You've successfully authenticated, but GitHub does not provide shell access.
+----
+
+That message is a success. GitHub authenticated you, and it is saying that it
+speaks only Git, not shell. Part 7 verifies signing end to end, after Part 6
+configures it.
+
+[[part-6-configure-git-signing-in-wsl2]]
+=== Part 6: Configure Git signing in WSL2
+
+Your SSH key doubles as a commit-signing key. Git has supported SSH-based
+signing since 2.34, so there is no GPG to install and no second key to manage.
+
+[[part-6-step-1-set-your-git-identity]]
+==== Step 1: Set your Git identity
+
+If `git config user.email` prints nothing, set your identity. The verification
+in Part 7 matches on this email:
+
+[source,bash]
+----
+git config --global user.name  "Your Name"
+git config --global user.email "you@example.com"
+----
+
+If you already sign commits with GPG, check your current setup before you
+continue. Run this from inside a repository you work in, so that any
+repository-level setting is included:
+
+[source,bash]
+----
+git config --get gpg.format
+git config --get user.signingkey
+git config --get commit.gpgsign
+----
+
+No output means nothing is configured and you can continue. If `gpg.format`
+prints `openpgp`, or `user.signingkey` prints a hex key ID, you are signing
+with GPG today and Step 2 will replace that globally. To keep GPG as your
+default and use SSH signing only in specific repositories, run Step 2's
+commands with `--local` from inside those repositories.
+
+[[part-6-step-2-point-git-at-the-key]]
+==== Step 2: Point Git at the key
+
+[source,bash]
+----
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_yubikey_primary.pub
+git config --global commit.gpgsign true
+git config --global tag.gpgsign true
+----
+
+WSL2 needs no `gpg.ssh.program`. Its own `ssh-keygen` reaches the YubiKey
+through the bridge from Part 3. That setting matters only when Git runs from a
+Windows shell instead of a WSL shell, which Part 9 covers.
+
+With `commit.gpgsign true` and a `verify-required` credential, every commit
+from now on takes a PIN and a touch. That happens per commit, permanently.
+Using `ssh-agent` does not change it, because `verify-required` means user
+verification on every operation, not once per session. To opt in per commit
+instead, skip the `commit.gpgsign` and `tag.gpgsign` lines, then pass `-S`
+when you want a signature. The rest of this guide assumes sign-by-default.
+
+[[part-6-step-3-tell-git-which-signatures-to-trust]]
+==== Step 3: Tell Git which signatures to trust
+
+Without this step, your own signatures show as unverifiable in your own log.
+GitHub keeps its own trust list, as Part 5 covers. Local `git log` needs one
+too, called `allowed_signers`:
+
+[source,bash]
+----
+echo "$(git config user.email) namespaces=\"git\" $(cat ~/.ssh/id_yubikey_primary.pub)" > ~/.ssh/allowed_signers
+git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+----
+
+Each line in `allowed_signers` holds the identity (an email address), then any
+options, then the key format, then the public key, separated by spaces. The
+`namespaces="git"` option restricts the key to Git signatures, so a signature
+made for Git cannot be presented as valid for another purpose that also checks
+this file.
+
+[[part-7-confirm-the-whole-chain-works]]
+=== Part 7: Confirm the whole chain works
+
+Three checks prove the chain. You sign a commit locally, push it and confirm
+the badge, then confirm that removing the YubiKey stops everything.
+
+[[part-7-step-1-sign-a-commit-locally]]
+==== Step 1: Sign a commit locally
+
+[source,bash]
+----
+cd /tmp && mkdir -p sign-test && cd sign-test && git init -q
+git commit --allow-empty -m "WSL2 signing test"
+git log --show-signature -1
+----
+
+Signing is entirely local: no connection to GitHub is needed. It also prompts
+differently from the authentication in Part 5. The terminal asks first:
+
+[source,text]
+----
+Enter PIN for ED25519-SK key:
+----
+
+Press Enter. That prompt accepts any value, including an empty one, and does
+not check anything. The Windows dialog opens next and collects the real PIN,
+followed by a touch. Expect the log to show `Good "git" signature`.
+
+[[part-7-step-2-push-and-confirm-the-badge]]
+==== Step 2: Push and confirm the badge
+
+In GitHub, create a new empty repository. Private is fine. Do not add a
+README, because that creates a commit you did not sign.
+
+Then, from `/tmp/sign-test`:
+
+[source,bash]
+----
+git remote add origin git@github.com:<you>/<repo>.git
+git branch -M main
+git push -u origin main
+----
+
+Expect another PIN and touch. Open the repository on github.com and select the
+commit. It carries a green *Verified* badge.
+
+[[part-7-step-3-confirm-the-security-model]]
+==== Step 3: Confirm the security model
+
+Unplug the YubiKey, then try creating another signed commit and rerun
+`ssh -T git@github.com`. Both must fail, because signing and authentication
+need the hardware. `git log --show-signature -1` still succeeds, and should:
+verification uses only the public key, so anyone can check your signatures
+without your YubiKey.
+
+[[part-7-step-4-clean-up]]
+==== Step 4: Clean up
+
+The test repository and the commit you pushed are both disposable:
+
+[source,bash]
+----
+rm -rf /tmp/sign-test
+----
+
+Delete the GitHub repository too, if you created it only for this test.
+
+[[part-8-recover-on-a-new-machine]]
+=== Part 8: Recover on a new machine
+
+Because the credential is discoverable, it lives on the YubiKey rather than in
+the files on any one machine. A new machine needs no file transfer. You
+download fresh handle files from the key itself.
+
+[[part-8-step-1-download-the-credential]]
+==== Step 1: Download the credential
+
+Open an elevated WSL2 session. Launch Windows Terminal as administrator, then
+open your distribution. Elevation applies to the Windows side, not to Linux.
+You are still a normal Linux user, but the interop process needs administrator
+rights to reach the device directly.
+
+From `~/.ssh`, run:
+
+[source,bash]
+----
+cd ~/.ssh
+ssh-keygen -K
+----
+
+Every other command in this guide reaches the YubiKey through `webauthn.dll`,
+the Windows library that gives ordinary programs unprivileged access to
+security keys. Despite the name, it is not browser-only: it is the same
+machinery behind the PIN dialogs you have seen so far. But it only creates
+credentials and signs with them. It has no call for listing what a key holds.
+So `ssh-keygen -K` has to talk to the YubiKey directly, and direct FIDO device
+access on Windows requires administrator rights.
+
+Going direct also means `ssh` collects the PIN itself, in the terminal, rather
+than through a Windows dialog.
+
+Without elevation, the command fails with an error that names neither
+permissions nor elevation:
+
+[source,text]
+----
+Provider "internal" returned failure -1
+Unable to load resident keys: invalid format
+----
+
+Seeing that means running `ssh-keygen -K` again from an elevated WSL2 session.
+
+Enter the FIDO2 PIN and touch the key when prompted.
+
+[[part-8-step-2-put-the-files-in-place]]
+==== Step 2: Put the files in place
+
+The command writes a fresh handle and public key file for each discoverable
+credential on the key. It names them
+`id_ed25519_sk_rk_<application-suffix>_<user-id-hex>`, plus the same name with
+`.pub` appended. For example:
+`id_ed25519_sk_rk_github_f9681759ccf46f50a2b43d3beb7a8aa6cdf10519...`. The
+final hexadecimal component is the generated FIDO user ID, not the credential
+key handle. The application string appears in the file name, so the recovered
+files identify themselves when the key holds several credentials.
+
+Rename the files to the name your ssh config declares, `id_yubikey_primary`
+and `id_yubikey_primary.pub` in this guide, then repeat the Git configuration
+from Part 6. The keys registered with GitHub do not change, so no
+re-registration is needed.
+
+The recovered handle has the same fingerprint as the original. A handle
+created with `-O verify-required` still demands the PIN after recovery, on
+OpenSSH 9.5p2 for Windows. The known exception is the YubiKey Bio Series,
+where verification is a fingerprint rather than a PIN: recovered keys have
+been
+link:https://marc.info/?t=178500525200001&r=1&w=2[reported to lose `verify-required`]
+there, so test a recovered handle before trusting it. Back up the handle files
+as you would any other OpenSSH key regardless. Recovery through
+`ssh-keygen -K` is a fallback, not a substitute.
+
+[[part-8-step-3-manage-credentials-on-the-key]]
+==== Step 3: Manage credentials on the key
+
+The credentials this guide creates live on the YubiKey itself, not in
+`~/.ssh`. Deleting the local key handle files removes nothing from the key.
+Regenerating a credential removes nothing either, as Part 4, Step 2 explains.
+Retiring a credential means deleting it here.
+
+From an elevated PowerShell prompt, list what the key holds:
+
+[source,powershell]
+----
+ykman fido credentials list
+----
+
+Then delete anything you no longer need, by credential ID:
+
+[source,powershell]
+----
+ykman fido credentials delete <id>
+----
+
+A truncated ID prefix from the list output is enough.
+
+Discoverable credentials share a limited pool on the key: 25 slots on firmware
+earlier than 5.7.0, and 100 from firmware 5.7.0 onward. Credentials you
+replaced but never deleted still occupy slots.
+
+[[part-9-use-the-same-credential-in-native-windows]]
+=== Part 9: Use the same credential in native Windows (optional)
+
+The credential already lives on the YubiKey and is already registered with
+GitHub. Nothing is generated or re-registered here. You copy the handle files
+to the Windows side and configure Git there. Windows and WSL2 keep separate
+Git configurations, so nothing in this part affects Parts 1 through 8.
+
+[[part-9-step-1-copy-the-handle-files]]
+==== Step 1: Copy the handle files
+
+From inside WSL2, replacing `<windows-username>` with your Windows user name:
+
+[source,bash]
+----
+mkdir -p /mnt/c/Users/<windows-username>/.ssh
+cp ~/.ssh/id_yubikey_primary ~/.ssh/id_yubikey_primary.pub \
+  /mnt/c/Users/<windows-username>/.ssh/
+----
+
+The files are key handles, not private keys, so the copy exposes nothing the
+hardware does not protect. If the WSL2 files are gone, run the Part 8 recovery
+from an elevated PowerShell prompt instead.
+
+[[part-9-step-2-declare-the-key-in-ssh-config]]
+==== Step 2: Declare the key in ssh config
+
+In PowerShell:
+
+[source,powershell]
+----
+Add-Content ~\.ssh\config "`nHost *`n    IdentityFile ~/.ssh/id_yubikey_primary"
+----
+
+[[part-9-step-3-point-git-at-windows-openssh]]
+==== Step 3: Point Git at Windows OpenSSH and the key
+
+Git for Windows bundles its own OpenSSH, whose FIDO2 behavior varies by
+build. Point Git at the Windows-native binaries explicitly. Find them first:
+
+[source,powershell]
+----
+(Get-Command ssh.exe).Source
+(Get-Command ssh-keygen.exe).Source
+----
+
+If either path is under `\Git\`, that is Git's own bundled copy, which is the
+build this step exists to avoid. Git for Windows usually sits ahead of the
+Windows client on `PATH`, so this is the common result rather than the
+exception. Ignore it and use the Windows install instead, either
+`C:\Windows\System32\OpenSSH` or the `C:\Program Files\OpenSSH` install from
+Part 1.
+
+Use those paths below, with forward slashes. If yours contain a space, as
+`C:\Program Files\OpenSSH` does, wrap the `core.sshCommand` value in single
+quotes inside the double quotes. Windows Git keeps its own configuration, so
+set your identity here even if you already set it in WSL2 in Part 6.
+
+[source,powershell]
+----
+git config --global user.name  "Your Name"
+git config --global user.email "you@example.com"
+git config --global core.sshCommand "C:/Windows/System32/OpenSSH/ssh.exe"
+git config --global gpg.ssh.program "C:/Windows/System32/OpenSSH/ssh-keygen.exe"
+git config --global gpg.format ssh
+git config --global user.signingkey "$env:USERPROFILE/.ssh/id_yubikey_primary.pub"
+git config --global commit.gpgsign true
+git config --global tag.gpgsign true
+----
+
+[[part-9-step-4-set-up-allowed-signers]]
+==== Step 4: Set up allowed_signers
+
+[source,powershell]
+----
+$email = git config user.email
+$pubkey = Get-Content "$env:USERPROFILE\.ssh\id_yubikey_primary.pub"
+Add-Content "$env:USERPROFILE\.ssh\allowed_signers" "$email namespaces=`"git`" $pubkey"
+git config --global gpg.ssh.allowedSignersFile "$env:USERPROFILE/.ssh/allowed_signers"
+----
+
+[[part-9-step-5-verify]]
+==== Step 5: Verify
+
+[source,powershell]
+----
+ssh -T git@github.com
+----
+
+Expect the Windows dialog for PIN and touch, then GitHub's greeting. That
+confirms the copied handle and the ssh config. The two Git settings verify
+themselves on first use: your next commit from a Windows shell takes a PIN and
+a touch, and `git log --show-signature -1` shows `Good "git" signature`.
+
+[[next-steps]]
+=== Next steps
+
+Now that you have completed this guide, these pages go deeper:
+
+* link:/SSH/Securing_SSH_with_FIDO2.html[Securing SSH Authentication with FIDO2 Security Keys]
+  covers the same key type on Linux and macOS, and the platform notes behind
+  the Windows checks in Part 1.
+* link:/SSH/Securing_git_with_SSH_and_FIDO2.html[Git Commit Signing with YubiKey and SSH/FIDO2]
+  covers signing configuration in more depth, including dedicated signing
+  keys.
+* link:/SSH/Storing_SSH_Certificates.html[Storing SSH certificates] covers SSH
+  certificates, which are issued by a certificate authority. They are a
+  different trust model from the individual public keys this guide registers,
+  and a more centrally managed one.
