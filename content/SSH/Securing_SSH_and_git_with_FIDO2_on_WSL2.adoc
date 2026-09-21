@@ -124,54 +124,29 @@ Both are read-only. Nothing on Windows is configured here.
 ssh -V
 ----
 
-You need `8.9` or newer, for example `OpenSSH_for_Windows_9.5p2`.
+You need `8.9` or newer. Most Windows 11 machines already have it.
 
-If your version is older, install a current build from the
-link:https://github.com/PowerShell/Win32-OpenSSH/releases[Win32-OpenSSH releases page],
-following the
-link:https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH[Win32-OpenSSH install wiki].
-The installer requires administrator rights.
-
-Open a new terminal afterward, since an already-open shell keeps the `PATH` it
-started with, then confirm which binary now answers:
-
-[source,powershell]
-----
-(Get-Command ssh.exe).Source
-ssh -V
-----
-
-A manual install does not replace the in-box client, and `PATH` order decides
-which one runs. If `ssh -V` still reports the old version, the in-box client
-is winning. Remove it from an elevated prompt and open a new terminal again:
+If yours is older, reinstall the built-in client from an elevated PowerShell
+prompt. This pulls the current version from Windows Update and keeps it in
+`C:\Windows\System32\OpenSSH`, where Windows Update maintains it from then on:
 
 [source,powershell]
 ----
 Remove-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
 ----
 
-After removal, confirm the new install is on `PATH`:
+Restart Windows, open a new terminal, then check `ssh -V` again.
 
-[source,powershell]
-----
-(Get-Command ssh.exe).Source
-ssh -V
-----
-
-If `Get-Command` fails, the Win32-OpenSSH installer did not add itself to
-`PATH`. Add it manually from an elevated prompt, using the path where it
-installed (typically `C:\Program Files\OpenSSH`):
-
-[source,powershell]
-----
-[Environment]::SetEnvironmentVariable(
-  "Path",
-  "C:\Program Files\OpenSSH;" + [Environment]::GetEnvironmentVariable("Path","Machine"),
-  "Machine"
-)
-----
-
-Open a new terminal and confirm `ssh -V` reports the version you installed.
+If it is still older than `8.9`, install the newest build from the
+link:https://github.com/PowerShell/Win32-OpenSSH/releases[Win32-OpenSSH releases page],
+following the
+link:https://github.com/PowerShell/Win32-OpenSSH/wiki/Install-Win32-OpenSSH[install wiki].
+Despite the name, those are the Win64 and ARM64 builds, and every release
+there is tagged `Beta`, including the ones that ship in Windows. Install the
+newest. Windows Update does not maintain this install, so you own updating it
+from then on. It also installs to `C:\Program Files\OpenSSH`, so use that path
+wherever this guide shows a `System32\OpenSSH` example.
 
 [[part-1-step-2-locate-the-fido-helper]]
 ==== Step 2: Locate the FIDO helper
@@ -453,11 +428,10 @@ The file name you chose is not one `ssh` tries by default, so declare it:
 
 [source,bash]
 ----
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
 cat >> ~/.ssh/config <<'EOF'
 Host *
     IdentityFile ~/.ssh/id_yubikey_primary
-# backup yubikey
-#    IdentityFile ~/.ssh/id_yubikey_backup
 EOF
 chmod 600 ~/.ssh/config
 ----
@@ -486,6 +460,22 @@ the PIN and touch after accepting a public key. When you add a credential for
 a second service, replace the wildcard with per-host blocks and add
 `IdentitiesOnly yes` to them, so `ssh` offers only the right identity to each
 host.
+
+A credential cannot be copied between YubiKeys, so a backup key holds its own
+credential and its own handle file. Enroll one by repeating Step 1 with
+`-f "$HOME/.ssh/id_yubikey_backup"`, then add it below the primary. Identities
+are tried in order, so the backup is only used when the primary is absent:
+
+[source,bash]
+----
+Host *
+    IdentityFile ~/.ssh/id_yubikey_primary
+    IdentityFile ~/.ssh/id_yubikey_backup
+----
+
+Register the backup's `.pub` with GitHub in both lists, as in Part 5. For
+rotating and revoking keys, see
+link:/SSH/Securing_git_with_SSH_and_FIDO2.html#key-management-lifecycle[Key Management Lifecycle].
 
 [[part-5-register-the-key-with-github]]
 === Part 5: Register the key with GitHub
@@ -571,19 +561,21 @@ git config --global user.email "you@example.com"
 ----
 
 If you already sign commits with GPG, check your current setup before you
-continue:
+continue. Run this from inside a repository you work in, so that any
+repository-level setting is included:
 
 [source,bash]
 ----
-git config --global gpg.format
-git config --global user.signingkey
+git config --get gpg.format
+git config --get user.signingkey
+git config --get commit.gpgsign
 ----
 
-An empty result means GPG signing is already configured, and so does
-`openpgp` paired with a hex key ID. Step 2 replaces that configuration
-globally with the SSH key. To keep GPG as your default and use SSH signing
-only in specific repositories, run Step 2's commands with `--local` from
-inside those repositories.
+No output means nothing is configured and you can continue. If `gpg.format`
+prints `openpgp`, or `user.signingkey` prints a hex key ID, you are signing
+with GPG today and Step 2 will replace that globally. To keep GPG as your
+default and use SSH signing only in specific repositories, run Step 2's
+commands with `--local` from inside those repositories.
 
 [[part-6-step-2-point-git-at-the-key]]
 ==== Step 2: Point Git at the key
@@ -829,14 +821,24 @@ Add-Content ~\.ssh\config "`nHost *`n    IdentityFile ~/.ssh/id_yubikey_primary"
 [[part-9-step-3-point-git-at-windows-openssh]]
 ==== Step 3: Point Git at Windows OpenSSH and the key
 
-Git for Windows bundles its own OpenSSH, whose FIDO2 behavior varies by build.
-Point Git at the Windows-native binaries explicitly:
+Git for Windows bundles its own OpenSSH, whose FIDO2 behavior varies by
+build. Point Git at the Windows-native binaries explicitly. Find them first:
+
+[source,powershell]
+----
+(Get-Command ssh.exe).Source
+(Get-Command ssh-keygen.exe).Source
+----
+
+Use those paths below, with forward slashes. If yours contain a space, as
+`C:\Program Files\OpenSSH` does, wrap the `core.sshCommand` value in single
+quotes inside the double quotes:
 
 [source,powershell]
 ----
 git config --global core.sshCommand "C:/Windows/System32/OpenSSH/ssh.exe"
-git config --global gpg.format ssh
 git config --global gpg.ssh.program "C:/Windows/System32/OpenSSH/ssh-keygen.exe"
+git config --global gpg.format ssh
 git config --global user.signingkey "$env:USERPROFILE/.ssh/id_yubikey_primary.pub"
 git config --global commit.gpgsign true
 git config --global tag.gpgsign true
