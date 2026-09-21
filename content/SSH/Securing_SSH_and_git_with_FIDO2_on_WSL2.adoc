@@ -667,9 +667,11 @@ commit. It carries a green *Verified* badge.
 [[part-7-step-3-confirm-the-security-model]]
 ==== Step 3: Confirm the security model
 
-Unplug the YubiKey and run any command from this part again. Every one
-refuses. That refusal is the security model working. Nothing on disk can
-authenticate or sign without the hardware present.
+Unplug the YubiKey, then try creating another signed commit and rerun
+`ssh -T git@github.com`. Both must fail, because signing and authentication
+need the hardware. `git log --show-signature -1` still succeeds, and should:
+verification uses only the public key, so anyone can check your signatures
+without your YubiKey.
 
 [[part-7-step-4-clean-up]]
 ==== Step 4: Clean up
@@ -735,11 +737,12 @@ Enter the FIDO2 PIN and touch the key when prompted.
 
 The command writes a fresh handle and public key file for each discoverable
 credential on the key. It names them
-`id_ed25519_sk_rk_<application-suffix>_<keyhandle-hex>`, plus the same name
-with `.pub` appended. For example:
+`id_ed25519_sk_rk_<application-suffix>_<user-id-hex>`, plus the same name with
+`.pub` appended. For example:
 `id_ed25519_sk_rk_github_f9681759ccf46f50a2b43d3beb7a8aa6cdf10519...`. The
-application string appears in the file name, so the recovered files identify
-themselves when the key holds several credentials.
+final hexadecimal component is the generated FIDO user ID, not the credential
+key handle. The application string appears in the file name, so the recovered
+files identify themselves when the key holds several credentials.
 
 Rename the files to the name your ssh config declares, `id_yubikey_primary`
 and `id_yubikey_primary.pub` in this guide, then repeat the Git configuration
@@ -830,12 +833,22 @@ build. Point Git at the Windows-native binaries explicitly. Find them first:
 (Get-Command ssh-keygen.exe).Source
 ----
 
+If either path is under `\Git\`, that is Git's own bundled copy, which is the
+build this step exists to avoid. Git for Windows usually sits ahead of the
+Windows client on `PATH`, so this is the common result rather than the
+exception. Ignore it and use the Windows install instead, either
+`C:\Windows\System32\OpenSSH` or the `C:\Program Files\OpenSSH` install from
+Part 1.
+
 Use those paths below, with forward slashes. If yours contain a space, as
 `C:\Program Files\OpenSSH` does, wrap the `core.sshCommand` value in single
-quotes inside the double quotes:
+quotes inside the double quotes. Windows Git keeps its own configuration, so
+set your identity here even if you already set it in WSL2 in Part 6.
 
 [source,powershell]
 ----
+git config --global user.name  "Your Name"
+git config --global user.email "you@example.com"
 git config --global core.sshCommand "C:/Windows/System32/OpenSSH/ssh.exe"
 git config --global gpg.ssh.program "C:/Windows/System32/OpenSSH/ssh-keygen.exe"
 git config --global gpg.format ssh
