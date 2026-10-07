@@ -21,10 +21,12 @@ While both domains share the login.acme.com domain, they are separated by two su
 
 EA would allow you to configure authenticators to only be usable in their specific subdomain. This means that the identity solution will:
 
-* Use attestation to validate that user used an accepted authenticator model
+* Use attestation to validate that the user used an accepted class of authenticator
 * Use EA to validate that the serial number has been authorized in this region
 
-If a user in regionB attempts to register in regionA, the identity solution should deny the request as the user’s serial number should not exist in the list of allowed serial numbers for the region. 
+These two checks are not interchangeable. The AAGUID check is a coarse filter: it confirms the key belongs to a class Acme approves, but every key of that class passes it, including the ones Acme shipped to the other region. The serial number check is what actually enforces the regional boundary. Build the allow list around the serial numbers and treat the AAGUID as a precondition, not as the control.
+
+If a user in regionB attempts to register in regionA, the identity solution should deny the request as the user’s serial number should not exist in the list of allowed serial numbers for the region.
 
 == Derived FIDO2 credentials
 In this scenario, derived does not refer to “cryptographically derived” but rather assurance that the credential was derived from another credential on the same device. Remember, FIDO2 credentials and PIV certificates that reside on a YubiKey cannot be exported.
