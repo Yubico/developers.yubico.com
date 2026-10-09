@@ -9,11 +9,41 @@ The adoption of passkeys and WebAuthn aim to make online accounts more secure by
 Enterprise attestation aims to close this gap by giving enterprises the ability to **uniquely identify authenticators** to determine if they have been approved for use in a protected environment. In this series we are going to explore enterprise attestation: what it is, applicable use cases, how to integrate it into your enterprise, and how to enable it in your custom applications. 
 
 == Attestation 
-Before we dive into enterprise attestation, let’s first understand what attestation is. Attestation in the context of WebAuthn is the ability for a security device to prove its own identity type, and for a backend service to validate what the authenticator has provided. The identity that is provided will typically include a make/model specific identifier (commonly referred to as the AAGUID), and a verified chain of trust that can be verified against a publicly registered attestation key.
+Before we dive into enterprise attestation, let’s first understand what attestation is. Attestation in the context of WebAuthn is the ability for a security device to prove its own identity type, and for a backend service to validate what the authenticator has provided. The identity that is provided will typically include an identifier for the class of authenticator (commonly referred to as the AAGUID), and a verified chain of trust that can be verified against a publicly registered attestation key.
 
-In its most basic form, **attestation will help a backend service identify the make and model**, but it won’t be able to determine uniquely identifiable information such as a serial number, or user information. What does this mean? This means that a backend service could identify that I am using a YubiKey 5 NFC, but nothing beyond that. 
+In its most basic form, **attestation will help a backend service identify the class of an authenticator**, but it won’t be able to determine uniquely identifiable information such as a serial number, or user information. What does this mean? This means that a backend service could identify that I am using a YubiKey 5 Series key with NFC, but nothing beyond that: not which model within that group, and not which individual key.
 
-The above scenario was done to provide additional privacy protections to prevent backend services from tracking users across applications, or tying user identities to specific devices. You can learn more about attestation privacy concerns here in the link:https://www.w3.org/TR/webauthn-2/#sctn-attestation-privacy[WebAuthn specification]. 
+[NOTE]
+====
+An AAGUID identifies a _class_ of authenticator, not an individual product. Keys that share a manufacturer, a capability set, and a firmware generation can share an AAGUID, so an AAGUID allow list admits every model in that class. Plan for this: if your policy needs to tell two models apart, the AAGUID won't do it.
+====
+
+The above scenario was done to provide additional privacy protections to prevent backend services from tracking users across applications, or tying user identities to specific devices. You can learn more about attestation privacy concerns here in the link:https://www.w3.org/TR/webauthn-2/#sctn-attestation-privacy[WebAuthn specification].
+
+=== What an AAGUID does and doesn't tell you
+
+An AAGUID reflects the manufacturer, the capability set, the firmware generation, and whether the key is an enterprise profile key. It doesn't identify the model, the exact firmware version, or the individual device.
+
+Don't try to work out which AAGUID a key will report. Yubico publishes the criteria that trigger a new one, and several of them, such as a change to the attestation CA, aren't visible in a key's feature list. Read the published values instead.
+
+The clearest way to see this is to compare two values from the same series on the same firmware:
+
+[cols="2,3", options="header"]
+|===
+| AAGUID (firmware 5.8) | Models that report it
+| `f4ce5fc0-57d3-46f5-a736-efb7d5bc63b5` | YubiKey 5 NFC, YubiKey 5C NFC
+| `0a357157-9b18-4c8a-920e-d156e972b2f8` | YubiKey 5C, YubiKey 5 Nano, YubiKey 5C Nano
+|===
+
+The first value groups the two NFC keychain models; the USB connector is the only difference between them, and attestation doesn't convey it. The second groups three models at once. An allow list built from either value accepts every model on its row. Both rows are keys in the standard configuration. Keys configured for enterprise attestation carry separate AAGUIDs, covered below.
+
+Three further properties matter when you build a list:
+
+* **FIPS keys are a separate AAGUID family, and the two FIPS generations differ from each other.** FIPS 140-2 keys (firmware 5.4) and FIPS 140-3 keys (firmware 5.7) report different AAGUIDs. Neither shares an AAGUID with a non-FIPS key.
+* **AAGUIDs change between firmware generations.** The same model reports a different AAGUID on firmware 5.4, 5.7, and 5.8, and several 5.7 products report two. A list that targets a product family needs every AAGUID that family has shipped under, including the ones on keys your users already own.
+* **Product names and AAGUIDs don’t map one to one in either direction.** The YubiKey 5 NFC FIPS reports `c1f9a0bc-1dd2-404a-b27f-8e29047a43fd` on firmware 5.4 and `fcc0118f-cd45-435b-8da1-9782b2da0715` on firmware 5.7. That first value also covers the YubiKey 5C NFC FIPS. Matching on the human-readable name won’t give you a tighter control than the AAGUID does.
+
+For the current mappings, see link:https://support.yubico.com/s/article/YubiKey-hardware-FIDO2-AAGUIDs[YubiKey hardware FIDO2 AAGUIDs]. For what causes a new AAGUID to be issued and how identity providers pick it up, see link:https://support.yubico.com/s/article/Best-practices-for-managing-AAGUID-changes[Best practices for managing AAGUID changes].
 
 If you wish to dive deeper into attestation, the links below are great resources to help you understand the concept in more detail:
 
@@ -25,9 +55,17 @@ Now that we have some understanding of what attestation is, let’s dive into ho
 
 == Enterprise attestation
 Let’s envision a scenario where an enterprise, Acme Inc, has worked with a trusted authenticator manufacturer, Yubico, to purchase and deploy YubiKey 5 NFCs to their workforce. 
-With “regular” YubiKey attestation, Acme will be able to limit registrations in their application to ONLY accept YubiKey 5 NFCs. This means that any attempt to register any other form of authenticator will be rejected. What if the RP could identify the make/model of the device, **AND** also uniquely identify each device to determine whether it is to be allowed for use in the environment? One problem is that this notion goes against the privacy features of WebAuthn that prevent a backend service from uniquely identifying devices. 
+With “regular” YubiKey attestation, Acme will be able to limit registrations in their application to ONLY accept the AAGUIDs that a YubiKey 5 NFC reports. Any attempt to register an authenticator outside of that class, such as a key from another manufacturer or a YubiKey 5 Series key without NFC, will be rejected.
+
+That list leaves Acme with two gaps. It can’t separate a YubiKey 5C NFC from a YubiKey 5 NFC, because the two models share an AAGUID, so a 5C NFC bought by an employee registers successfully. And it can’t tell one Acme-issued key from another, so a 5 NFC bought by an employee registers successfully too. What if the RP could identify the class of the device, **AND** also uniquely identify each device to determine whether it is to be allowed for use in the environment? One problem is that this notion goes against the privacy features of WebAuthn that prevent a backend service from uniquely identifying devices.
 
 Enterprise Attestation **(EA)** looks to close this gap by providing the ability to configure authenticators with an attestation statement that could offer uniquely identifiable information. This could mean that if a backend service specifically requests EA, the authenticator could provide an identifier like the device's serial number. 
+
+YubiKeys that are configured for EA are assigned their own AAGUIDs, separate from the ones used by the equivalent consumer keys. Yubico refers to these as enterprise profile keys. That separation is useful at registration time, because the AAGUID tells your relying party that it is looking at an enterprise profile key before it inspects the attestation statement itself.
+
+Watch the naming here, because two similar terms mean different things. Enterprise profile is a FIDO2 configuration; Enterprise Edition is a product line. The Security Key NFC - Enterprise Edition is a product you can buy, and on firmware 5.8 it ships in both profiles: `24083bcb-3034-4867-99de-a3b52e1d426a` for the consumer profile and `ab7d1767-3fa0-4388-b6c4-feef7a844809` for the enterprise profile. A product name with Enterprise Edition in it therefore tells you nothing about whether a given key can do EA. The profile decides that, and the profile is one of the things an AAGUID reflects.
+
+Keep in mind that EA gives you a unique identifier, not a more precise model. The serial number tells you exactly which key you are looking at, but it still does not tell you whether that key is a YubiKey 5 NFC or a YubiKey 5C NFC. If you need to map a serial number back to an exact model, that mapping lives in your purchasing records. For how to read the serial number out of an EA attestation statement, see link:/WebAuthn/Concepts/Enterprise_Attestation/Getting_Started.html[Getting started with enterprise attestation].
 
 The ability to uniquely identify devices will allow security and application teams to fine tune their link:/WebAuthn/Concepts/Authenticator_Management/[authenticator management strategy], which would to only allow specific devices, with specific identifiers contained in the attestation statement from the YubiKey.
 
