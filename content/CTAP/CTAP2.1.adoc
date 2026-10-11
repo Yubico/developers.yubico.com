@@ -39,13 +39,14 @@ options: rk, up, noplat, alwaysUv, credMgmt, authnrCfg, clientPin, largeBlobs, p
 ...
 ....
 
+[[credential-management]]
 ===== Credential Management
 
 Credential management is used to manage discoverable credentials on the authenticator. This feature is important, as without it there is no way to delete specific credentials that are stored on an authenticator, other than resetting the entire device. Hardware security keys typically have limited storage for discoverable credentials, so it is useful to delete credentials that are no longer in use.
 
 The `fido2-token` tool can be used for performing credential management from the command-line.
 
-To list discoverable credentials stored on a device:
+To list relying parties having discoverable credentials stored on a device:
 
 ....
 $ fido2-token -L -r $DEV
@@ -54,10 +55,18 @@ Enter PIN: ******
 01: 5Yaf4EYzO6ALp/K7s+p+BQLPSCYVYcKLZptoXwxqQzs= passkey.org
 ....
 
+To list stored discoverable credentials for a given relying party:
+
+....
+$ fido2-token -L -k ssh: $DEV
+Enter PIN: ******
+00: bH95gDocVbWZtAzHcyZhHi1LLmh6gYl857P3ffraUzTDfe1/dqgTPMDS+awITlxC openssh AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= eddsa uvreq
+....
+
 To delete a discoverable credential, use the `-D` option and specify its base64-encoded credential ID with `-i`:
 
 ....
-$ fido2-token -D -i VGhpcyBpcyBqdXN0IGFuIGV4YW1wbGUsIG5vdCBhbiBhY3R1YWwgY3JlZCBJRDop /dev/hidraw0
+$ fido2-token -D -i bH95gDocVbWZtAzHcyZhHi1LLmh6gYl857P3ffraUzTDfe1/dqgTPMDS+awITlxC $DEV
 Enter PIN: ******
 ....
 
