@@ -30,7 +30,7 @@ SUFFIXES = SIG_SUFFIXES + \
 
 def classifier(filename):
     # Make sure that the specific classifiers come before the general ones so they are matched first. Tex 'win32' should come before 'win'
-    cp = re.compile(r'\b(win32|win64|win|mac-amd64|mac-arm64|mac-universal|mac|linux|amd64|android)\b')
+    cp = re.compile(r'\b(win32|win64|win-x64|win-arm64|win|mac-amd64|mac-arm64|mac-universal|mac|linux-x64|linux-arm64|linux|amd64|android)\b')
     m = cp.search(filename)
     if m:
         return m.group()
