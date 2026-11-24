@@ -24,8 +24,8 @@ LOCAL_VERSION = 'local_version'
 CONSECUTIVE_TIMEOUTS = 'consecutive_timeouts'
 
 JAVADOC_ARCHIVE_URL = (
-    'http://search.maven.org/remotecontent?'
-    'filepath={group_url}/'
+    'https://repo1.maven.org/maven2/'
+    '{group_url}/'
     '{artifact}/{version}/'
     '{artifact}-{version}-javadoc.jar')
 
